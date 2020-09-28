@@ -1,0 +1,9 @@
+# https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# 4 space indentation
+[*.rs]
+indent_style = tab
+indent_size = 4

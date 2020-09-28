@@ -1,0 +1,16 @@
+edition = "2018"
+max_width = 85
+newline_style = "Unix"
+hard_tabs = true
+tab_spaces = 4
+use_field_init_shorthand = true
+reorder_imports = true
+binop_separator = "Back"
+format_code_in_doc_comments = true
+format_strings = true
+imports_layout = "Vertical"
+normalize_comments = true
+normalize_doc_attributes = true
+overflow_delimited_expr = true
+struct_field_align_threshold = 20
+wrap_comments = true

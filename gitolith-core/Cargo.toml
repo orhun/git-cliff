@@ -1,0 +1,15 @@
+[package]
+name = "gitolith-core"
+version = "0.1.0"
+description = ""
+authors = ["gitolith contributors <gitolith@protonmail.com>"]
+license = "GPL-3.0"
+readme = "README.md"
+documentation = "https://github.com/gitolith/gitolith/blob/master/README.md"
+homepage = "https://github.com/gitolith/gitolith"
+repository = "https://github.com/gitolith/gitolith"
+keywords = []
+categories = []
+edition = "2018"
+
+[dependencies]
