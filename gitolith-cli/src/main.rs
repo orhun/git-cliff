@@ -1,3 +1,7 @@
+#[macro_use]
+extern crate log;
+
 fn main() {
-	println!("Hello, world!");
+	pretty_env_logger::init();
+	info!("test")
 }
