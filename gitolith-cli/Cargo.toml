@@ -16,6 +16,6 @@ edition = "2018"
 gitolith-core = { path = "../gitolith-core" }
 
 [dependencies.structopt]
-version = "0.3.21"
+version = "0.3"
 default-features = false
 features = ["suggestions", "color", "wrap_help"]
