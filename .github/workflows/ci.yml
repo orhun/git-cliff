@@ -92,7 +92,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: fmt
-          args: -- --check --all --verbose
+          args: --all -- --check --verbose
 
   lychee:
     name: Links
