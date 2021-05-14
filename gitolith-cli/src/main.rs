@@ -1,12 +1,13 @@
 mod args;
 
 use args::Opt;
+use gitolith_core::error::Result;
 use std::env;
 use structopt::StructOpt;
 #[macro_use]
 extern crate log;
 
-fn main() {
+fn main() -> Result<()> {
 	let args = Opt::from_args();
 	if args.debug {
 		env::set_var("RUST_LOG", "debug");
@@ -16,4 +17,6 @@ fn main() {
 	pretty_env_logger::init();
 	info!("hello world");
 	debug!("debugging");
+
+	Ok(())
 }
