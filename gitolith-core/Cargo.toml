@@ -13,3 +13,4 @@ categories = []
 edition = "2018"
 
 [dependencies]
+thiserror = "1.0"
