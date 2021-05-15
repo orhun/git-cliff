@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use structopt::clap::AppSettings;
 use structopt::StructOpt;
 
@@ -18,5 +19,8 @@ use structopt::StructOpt;
 pub struct Opt {
 	/// Activates the debug mode
 	#[structopt(short, long)]
-	pub debug: bool,
+	pub debug:      bool,
+	/// Sets the repository to parse commits from.
+	#[structopt(short, long, env, value_name = "PATH")]
+	pub repository: Option<PathBuf>,
 }
