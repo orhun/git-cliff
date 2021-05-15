@@ -38,6 +38,8 @@ jobs:
           override: true
       - name: Checkout
         uses: actions/checkout@master
+        with:
+          fetch-depth: 0
       - name: Setup cargo-tarpaulin
         run: |
           curl -s https://api.github.com/repos/xd009642/tarpaulin/releases/latest | \
