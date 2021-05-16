@@ -10,6 +10,9 @@ pub enum Error {
 	/// Error variant that represents errors coming out of libgit2.
 	#[error("Git error: `{0}`")]
 	GitError(#[from] git2::Error),
+	/// Error that may occur while parsing the config file.
+	#[error("Cannot parse config: `{0}`")]
+	ConfigError(#[from] config::ConfigError),
 	/// When commit's not follow the conventional commit structure we throw this
 	/// error.
 	#[error("Cannot parse the commit: `{0}`")]

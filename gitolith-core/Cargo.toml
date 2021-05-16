@@ -16,3 +16,10 @@ edition = "2018"
 thiserror = "1.0"
 git2 = "0.13"
 conventional-commit = "0.1.0"
+serde = "1.0"
+serde_derive = "1.0"
+
+[dependencies.config]
+version = "0.11.0"
+default-features = false
+features = ["toml"]
