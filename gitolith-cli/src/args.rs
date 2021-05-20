@@ -26,4 +26,7 @@ pub struct Opt {
 	/// Sets the configuration file name.
 	#[structopt(short, long, env, value_name = "FILE", default_value = "gitolith")]
 	pub config:     String,
+	/// Sets the template for changelog generation.
+	#[structopt(short, long, env, value_name = "FILE")]
+	pub template:   PathBuf,
 }

@@ -17,6 +17,9 @@ pub enum Error {
 	/// error.
 	#[error("Cannot parse the commit: `{0}`")]
 	ParseError(#[from] git_conventional::Error),
+	/// Error that may occur while template operations such as parse and render.
+	#[error("Template error: `{0}`")]
+	TemplateError(#[from] tera::Error),
 }
 
 /// Result type of the core library.

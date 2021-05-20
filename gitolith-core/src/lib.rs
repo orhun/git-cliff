@@ -1,3 +1,5 @@
+/// Changelog generator.
+pub mod changelog;
 /// Git commit.
 pub mod commit;
 /// Config file parser.

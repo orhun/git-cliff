@@ -1,6 +1,7 @@
 mod args;
 
 use args::Opt;
+use gitolith_core::changelog::Changelog;
 use gitolith_core::config::Config;
 use gitolith_core::error::Result;
 use gitolith_core::release::{
@@ -9,6 +10,10 @@ use gitolith_core::release::{
 };
 use gitolith_core::repo::Repository;
 use std::env;
+use std::io::{
+	self,
+	Write,
+};
 use structopt::StructOpt;
 #[macro_use]
 extern crate log;
@@ -21,7 +26,7 @@ fn main() -> Result<()> {
 		env::set_var("RUST_LOG", "info");
 	}
 	pretty_env_logger::init();
-	let _config = Config::parse(args.config)?;
+	let config = Config::parse(args.config)?;
 
 	let mut release_root = ReleaseRoot {
 		releases: vec![Release::default()],
@@ -33,9 +38,12 @@ fn main() -> Result<()> {
 			Ok(_conv_commit) => {
 				release_root.releases[0].commits.push(commit.short_id)
 			}
-			Err(e) => warn!("{} is not conventional: {}", commit.short_id, e),
+			Err(e) => debug!("{} is not conventional: {}", commit.short_id, e),
 		}
 	}
+
+	let changelog = Changelog::new(args.template, config.changelog)?.generate()?;
+	writeln!(&mut io::stdout(), "{}", changelog)?;
 
 	Ok(())
 }
