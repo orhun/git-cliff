@@ -1,7 +1,6 @@
 use crate::error::Result;
-use conventional_commit::ConventionalCommit;
 use git2::Commit as GitCommit;
-use std::str::FromStr;
+use git_conventional::Commit as ConventionalCommit;
 
 /// Common commit object that is parsed from a repository.
 #[derive(Debug)]
@@ -24,7 +23,7 @@ impl<'a> From<GitCommit<'a>> for Commit {
 impl Commit {
 	/// Returns a conventional commit using the commit message.
 	pub fn as_conventional(&self) -> Result<ConventionalCommit> {
-		Ok(ConventionalCommit::from_str(&self.message)?)
+		Ok(ConventionalCommit::parse(&self.message)?)
 	}
 }
 

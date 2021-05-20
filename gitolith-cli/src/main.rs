@@ -17,7 +17,7 @@ fn main() -> Result<()> {
 		env::set_var("RUST_LOG", "info");
 	}
 	pretty_env_logger::init();
-	let config = Config::parse(args.config)?;
+	let _config = Config::parse(args.config)?;
 	let repository =
 		Repository::init(args.repository.unwrap_or(env::current_dir()?))?;
 	for commit in repository.commits()? {
