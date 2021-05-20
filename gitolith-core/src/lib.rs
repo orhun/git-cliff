@@ -1,4 +1,4 @@
-/// Changelog generator.
+/// Changelog handler.
 pub mod changelog;
 /// Git commit.
 pub mod commit;

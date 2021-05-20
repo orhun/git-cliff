@@ -1,7 +1,7 @@
 mod args;
 
 use args::Opt;
-use gitolith_core::changelog::Changelog;
+use gitolith_core::changelog::generator::Changelog;
 use gitolith_core::config::Config;
 use gitolith_core::error::Result;
 use gitolith_core::release::{
@@ -33,17 +33,26 @@ fn main() -> Result<()> {
 	};
 	let repository =
 		Repository::init(args.repository.unwrap_or(env::current_dir()?))?;
-	for commit in repository.commits()? {
+	let commits = repository.commits()?;
+	for commit in &commits {
 		match commit.as_conventional() {
-			Ok(_conv_commit) => {
-				release_root.releases[0].commits.push(commit.short_id)
-			}
+			Ok(_conv_commit) => release_root.releases[0]
+				.commits
+				.push(commit.short_id.to_string()),
 			Err(e) => debug!("{} is not conventional: {}", commit.short_id, e),
 		}
 	}
 
-	let changelog = Changelog::new(args.template, config.changelog)?.generate()?;
-	writeln!(&mut io::stdout(), "{}", changelog)?;
+	let changelog = Changelog::new(args.template, &config.changelog)?;
+	for mut release in release_root.releases {
+		release.commits = release
+			.commits
+			.iter()
+			.filter_map(|v| commits.iter().find(|c| &c.short_id == v))
+			.map(|commit| commit.message.to_string())
+			.collect();
+		writeln!(&mut io::stdout(), "{}", changelog.generate(release)?)?;
+	}
 
 	Ok(())
 }
