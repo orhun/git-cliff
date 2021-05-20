@@ -50,7 +50,7 @@ impl Repository {
 #[cfg(test)]
 mod test {
 	use super::*;
-	use conventional_commit::Error as ConventionError;
+	use git_conventional::ErrorKind;
 	use std::env;
 	use std::process::Command;
 	use std::str;
@@ -80,10 +80,14 @@ mod test {
 		let last_commit = commits.first().unwrap();
 		assert_eq!(Some(get_last_commit_hash()?), last_commit.hash);
 		if let Err(e) = last_commit.as_conventional() {
-			assert_eq!(
-				Error::ParseError(ConventionError::InvalidFormat).to_string(),
-				e.to_string()
-			)
+			match e {
+				Error::ParseError(e) => {
+					assert_eq!(ErrorKind::InvalidFormat, e.kind())
+				}
+				_ => {
+					unreachable!()
+				}
+			}
 		}
 		Ok(())
 	}

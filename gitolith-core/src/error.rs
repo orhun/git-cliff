@@ -1,6 +1,6 @@
 use thiserror::Error as ThisError;
 
-/// Gitolith-core related errors that we are exposing to the rest of the
+/// Library related errors that we are exposing to the rest of the
 /// workspaces.
 #[derive(Debug, ThisError)]
 pub enum Error {
@@ -16,28 +16,34 @@ pub enum Error {
 	/// When commit's not follow the conventional commit structure we throw this
 	/// error.
 	#[error("Cannot parse the commit: `{0}`")]
-	ParseError(#[from] conventional_commit::Error),
+	ParseError(#[from] git_conventional::Error),
 }
 
-/// Result type of the gitolith-core libraries.
+/// Result type of the core library.
 pub type Result<T> = core::result::Result<T, Error>;
 
 #[cfg(test)]
 mod test {
 	use super::*;
-	use conventional_commit::{
-		ConventionalCommit,
-		Error as ConventionError,
+	use git_conventional::{
+		Commit,
+		ErrorKind,
 	};
-	use std::str::FromStr;
-	fn mock_function() -> super::Result<ConventionalCommit> {
-		Ok(ConventionalCommit::from_str("test")?)
+	fn mock_function() -> super::Result<Commit<'static>> {
+		Ok(Commit::parse("test")?)
 	}
 
 	#[test]
 	fn throw_parse_error() {
 		let actual_error = mock_function().unwrap_err();
-		let expected_error = Error::ParseError(ConventionError::InvalidFormat);
-		assert_eq!(actual_error.to_string(), expected_error.to_string());
+		let expected_error_kind = ErrorKind::InvalidFormat;
+		match actual_error {
+			Error::ParseError(e) => {
+				assert_eq!(expected_error_kind, e.kind());
+			}
+			_ => {
+				unreachable!()
+			}
+		}
 	}
 }
