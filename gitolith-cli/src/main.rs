@@ -3,6 +3,10 @@ mod args;
 use args::Opt;
 use gitolith_core::config::Config;
 use gitolith_core::error::Result;
+use gitolith_core::release::{
+	Release,
+	ReleaseRoot,
+};
 use gitolith_core::repo::Repository;
 use std::env;
 use structopt::StructOpt;
@@ -18,15 +22,20 @@ fn main() -> Result<()> {
 	}
 	pretty_env_logger::init();
 	let _config = Config::parse(args.config)?;
+
+	let mut release_root = ReleaseRoot {
+		releases: vec![Release::default()],
+	};
 	let repository =
 		Repository::init(args.repository.unwrap_or(env::current_dir()?))?;
 	for commit in repository.commits()? {
 		match commit.as_conventional() {
 			Ok(_conv_commit) => {
-				info!("{:?} is conventional!", commit.hash)
+				release_root.releases[0].commits.push(commit.short_id)
 			}
-			Err(e) => warn!("{:?} is not conventional: {}", commit.hash, e),
+			Err(e) => warn!("{} is not conventional: {}", commit.short_id, e),
 		}
 	}
+
 	Ok(())
 }

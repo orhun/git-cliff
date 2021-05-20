@@ -4,5 +4,7 @@ pub mod commit;
 pub mod config;
 /// Error handling.
 pub mod error;
+/// Common release type.
+pub mod release;
 /// Git repository.
 pub mod repo;

@@ -5,17 +5,17 @@ use git_conventional::Commit as ConventionalCommit;
 /// Common commit object that is parsed from a repository.
 #[derive(Debug)]
 pub struct Commit {
-	/// Commit hash.
-	pub hash:    Option<String>,
+	/// Commit ID.
+	pub short_id: String,
 	/// Commit message including title, description and summary.
-	pub message: String,
+	pub message:  String,
 }
 
 impl<'a> From<GitCommit<'a>> for Commit {
 	fn from(commit: GitCommit<'a>) -> Self {
 		Self {
-			hash:    Some(commit.id().to_string()[0..7].to_string()),
-			message: commit.message().unwrap_or_default().to_string(),
+			short_id: commit.id().to_string()[0..7].to_string(),
+			message:  commit.message().unwrap_or_default().to_string(),
 		}
 	}
 }
