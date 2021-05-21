@@ -1,9 +1,9 @@
-use crate::commit::Commit;
 use crate::error::{
 	Error,
 	Result,
 };
 use git2::{
+	Commit,
 	Repository as GitRepository,
 	Sort,
 };
@@ -42,7 +42,6 @@ impl Repository {
 		Ok(revwalk
 			.filter_map(|id| id.ok())
 			.filter_map(|id| self.inner.find_commit(id).ok())
-			.map(Commit::from)
 			.collect())
 	}
 }

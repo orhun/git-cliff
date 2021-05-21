@@ -1,7 +1,4 @@
-use crate::changelog::context::{
-	Change,
-	Context,
-};
+use crate::changelog::context::Context;
 use crate::config::ChangelogConfig;
 use crate::error::Result;
 use crate::release::Release;
@@ -32,10 +29,7 @@ impl<'a> Changelog<'a> {
 			release_title: release
 				.version
 				.unwrap_or_else(|| self.config.unreleased_title.to_string()),
-			changes:       vec![Change {
-				title:   String::from("commits"),
-				entries: release.commits,
-			}],
+			changes:       release.commits,
 		};
 		Ok(self.tera.render(
 			"changelog_template",

@@ -2,6 +2,7 @@ mod args;
 
 use args::Opt;
 use gitolith_core::changelog::generator::Changelog;
+use gitolith_core::commit::Commit;
 use gitolith_core::config::Config;
 use gitolith_core::error::Result;
 use gitolith_core::release::{
@@ -33,11 +34,10 @@ fn main() -> Result<()> {
 	};
 	let repository =
 		Repository::init(args.repository.unwrap_or(env::current_dir()?))?;
-	let commits = repository.commits()?;
-	for commit in commits {
-		match commit.as_conventional() {
-			Ok(_conv_commit) => release_root.releases[0].commits.push(commit),
-			Err(e) => debug!("{} is not conventional: {}", commit.id, e),
+	for git_commit in repository.commits()? {
+		match Commit::new(git_commit.clone()) {
+			Ok(c) => release_root.releases[0].commits.push(c),
+			Err(e) => debug!("{} is not conventional: {}", git_commit.id(), e),
 		}
 	}
 

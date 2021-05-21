@@ -1,8 +1,6 @@
 ## {{ release_title }}
-
-{% for change in changes %}
-### {{ change.title }}
-{% for entry in change.entries %}
-- {{ entry.message }}
-{% endfor %}
+{% for type, commits in changes | group_by(attribute="commit_type") %}
+### {{ type | capitalize}}
+{% for commit in commits %}
+- {{ commit.message | capitalize }}{% endfor %}
 {% endfor %}

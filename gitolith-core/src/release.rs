@@ -10,8 +10,8 @@ use crate::commit::Commit;
 	serde_derive::Deserialize,
 )]
 #[serde(rename_all = "camelCase")]
-pub struct ReleaseRoot {
-	pub releases: Vec<Release>,
+pub struct ReleaseRoot<'a> {
+	pub releases: Vec<Release<'a>>,
 }
 
 /// Representation of a release.
@@ -24,9 +24,9 @@ pub struct ReleaseRoot {
 	serde_derive::Deserialize,
 )]
 #[serde(rename_all = "camelCase")]
-pub struct Release {
+pub struct Release<'a> {
 	pub version:   Option<String>,
-	pub commits:   Vec<Commit>,
+	pub commits:   Vec<Commit<'a>>,
 	#[serde(rename = "commit_id")]
 	pub commit_id: Option<String>,
 }
