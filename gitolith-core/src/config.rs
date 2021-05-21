@@ -23,8 +23,7 @@ pub struct Config {
 	serde_derive::Deserialize,
 )]
 pub struct ChangelogConfig {
-	pub header:           String,
-	pub unreleased_title: String,
+	pub header: String,
 }
 
 impl Config {

@@ -27,7 +27,7 @@ fn main() -> Result<()> {
 		env::set_var("RUST_LOG", "info");
 	}
 	pretty_env_logger::init();
-	let config = Config::parse(args.config)?;
+	let _config = Config::parse(args.config)?;
 
 	let mut release_root = ReleaseRoot {
 		releases: vec![Release::default()],
@@ -41,7 +41,7 @@ fn main() -> Result<()> {
 		}
 	}
 
-	let changelog = Changelog::new(args.template, &config.changelog)?;
+	let changelog = Changelog::new(args.template)?;
 	for release in release_root.releases {
 		writeln!(&mut io::stdout(), "{}", changelog.generate(release)?)?;
 	}
