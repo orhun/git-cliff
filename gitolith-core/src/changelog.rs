@@ -1,4 +1,3 @@
-use crate::changelog::context::Context;
 use crate::error::Result;
 use crate::release::Release;
 use std::path::PathBuf;
@@ -23,13 +22,9 @@ impl Changelog {
 
 	/// Generates the changelog.
 	pub fn generate(&self, release: Release) -> Result<String> {
-		let context = Context {
-			release_title: release.version,
-			changes:       release.commits,
-		};
 		Ok(self.tera.render(
 			"changelog_template",
-			&TeraContext::from_serialize(&context)?,
+			&TeraContext::from_serialize(&release)?,
 		)?)
 	}
 }

@@ -1,7 +1,7 @@
 mod args;
 
 use args::Opt;
-use gitolith_core::changelog::generator::Changelog;
+use gitolith_core::changelog::Changelog;
 use gitolith_core::commit::Commit;
 use gitolith_core::config::Config;
 use gitolith_core::error::Result;
