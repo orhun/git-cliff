@@ -3,19 +3,27 @@ use git2::Commit as GitCommit;
 use git_conventional::Commit as ConventionalCommit;
 
 /// Common commit object that is parsed from a repository.
-#[derive(Debug)]
+#[derive(
+	Default,
+	Debug,
+	Clone,
+	PartialEq,
+	serde_derive::Serialize,
+	serde_derive::Deserialize,
+)]
+#[serde(rename_all = "camelCase")]
 pub struct Commit {
 	/// Commit ID.
-	pub short_id: String,
+	pub id:      String,
 	/// Commit message including title, description and summary.
-	pub message:  String,
+	pub message: String,
 }
 
 impl<'a> From<GitCommit<'a>> for Commit {
 	fn from(commit: GitCommit<'a>) -> Self {
 		Self {
-			short_id: commit.id().to_string()[0..7].to_string(),
-			message:  commit.message().unwrap_or_default().to_string(),
+			id:      commit.id().to_string()[0..7].to_string(),
+			message: commit.message().unwrap_or_default().to_string(),
 		}
 	}
 }

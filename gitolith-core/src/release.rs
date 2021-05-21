@@ -1,3 +1,5 @@
+use crate::commit::Commit;
+
 /// Root object for deserializing from JSON
 #[derive(
 	Default,
@@ -24,7 +26,7 @@ pub struct ReleaseRoot {
 #[serde(rename_all = "camelCase")]
 pub struct Release {
 	pub version:   Option<String>,
-	pub commits:   Vec<String>,
+	pub commits:   Vec<Commit>,
 	#[serde(rename = "commit_id")]
 	pub commit_id: Option<String>,
 }

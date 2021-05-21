@@ -34,23 +34,15 @@ fn main() -> Result<()> {
 	let repository =
 		Repository::init(args.repository.unwrap_or(env::current_dir()?))?;
 	let commits = repository.commits()?;
-	for commit in &commits {
+	for commit in commits {
 		match commit.as_conventional() {
-			Ok(_conv_commit) => release_root.releases[0]
-				.commits
-				.push(commit.short_id.to_string()),
-			Err(e) => debug!("{} is not conventional: {}", commit.short_id, e),
+			Ok(_conv_commit) => release_root.releases[0].commits.push(commit),
+			Err(e) => debug!("{} is not conventional: {}", commit.id, e),
 		}
 	}
 
 	let changelog = Changelog::new(args.template, &config.changelog)?;
-	for mut release in release_root.releases {
-		release.commits = release
-			.commits
-			.iter()
-			.filter_map(|v| commits.iter().find(|c| &c.short_id == v))
-			.map(|commit| commit.message.to_string())
-			.collect();
+	for release in release_root.releases {
 		writeln!(&mut io::stdout(), "{}", changelog.generate(release)?)?;
 	}
 

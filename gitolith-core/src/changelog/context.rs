@@ -1,3 +1,5 @@
+use crate::commit::Commit;
+
 /// Context of a template rendering.
 #[derive(Debug, Default, serde_derive::Serialize)]
 pub struct Context {
@@ -9,5 +11,5 @@ pub struct Context {
 #[derive(Debug, serde_derive::Serialize)]
 pub struct Change {
 	pub title:   String,
-	pub entries: Vec<String>,
+	pub entries: Vec<Commit>,
 }
