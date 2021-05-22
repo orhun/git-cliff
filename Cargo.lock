@@ -264,11 +264,11 @@ dependencies = [
 [[package]]
 name = "git-conventional"
 version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b154369d65c23e2b768324e1b0143e991fe1dd3c6d617a26d8a6917303941e88"
+source = "git+https://github.com/orhun/git-conventional#cb19e480b1a933ef16cd80091d02f6d3a7986ee3"
 dependencies = [
  "doc-comment",
  "nom 6.1.2",
+ "serde",
  "unicase",
 ]
 
@@ -788,6 +788,9 @@ name = "serde"
 version = "1.0.126"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec7505abeacaec74ae4778d9d9328fe5a5d04253220a85c4ee022239fc996d03"
+dependencies = [
+ "serde_derive",
+]
 
 [[package]]
 name = "serde_derive"
