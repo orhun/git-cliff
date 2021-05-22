@@ -1,6 +1,6 @@
 ## {{ version | default(value="[unreleased]") }}
-{% for type, commits in commits | group_by(attribute="commit_type") %}
-### {{ type | capitalize}}
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | capitalize}}
 {% for commit in commits %}
 - {{ commit.message | capitalize }}{% endfor %}
 {% endfor %}

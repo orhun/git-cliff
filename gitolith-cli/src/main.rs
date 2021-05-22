@@ -27,19 +27,40 @@ fn main() -> Result<()> {
 		env::set_var("RUST_LOG", "info");
 	}
 	pretty_env_logger::init();
-	let _config = Config::parse(args.config)?;
+	let config = Config::parse(args.config)?;
 
 	let mut release_root = ReleaseRoot {
-		releases: vec![Release::default()],
+		releases: vec![Release::default(), Release::default()],
 	};
 	let repository =
 		Repository::init(args.repository.unwrap_or(env::current_dir()?))?;
 	for git_commit in repository.commits()? {
-		match Commit::new(git_commit.clone()) {
-			Ok(c) => release_root.releases[0].commits.push(c),
-			Err(e) => debug!("{} is not conventional: {}", git_commit.id(), e),
-		}
+		release_root.releases[0]
+			.commits
+			.push(Commit::from(git_commit));
 	}
+	release_root.releases[1].version = Some(String::from("v1.0.0"));
+	release_root.releases[1].commits.extend(vec![
+		Commit::new(String::from("abc123"), String::from("feat: add xyz")),
+		Commit::new(String::from("def789"), String::from("invalid commit")),
+	]);
+
+	release_root.releases.iter_mut().for_each(|release| {
+		release.commits = release
+			.commits
+			.iter()
+			.filter_map(|commit| match commit.as_conventional() {
+				Ok(mut commit) => {
+					commit.set_group(&config.changelog.group_parsers);
+					Some(commit)
+				}
+				Err(e) => {
+					debug!("{} is not conventional: {}", commit.id, e);
+					None
+				}
+			})
+			.collect::<Vec<Commit>>();
+	});
 
 	let changelog = Changelog::new(args.template)?;
 	for release in release_root.releases {

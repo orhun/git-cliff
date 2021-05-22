@@ -304,6 +304,7 @@ dependencies = [
  "config",
  "git-conventional",
  "git2",
+ "regex",
  "serde",
  "serde_derive",
  "tera",

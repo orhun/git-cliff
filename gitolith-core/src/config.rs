@@ -23,7 +23,22 @@ pub struct Config {
 	serde_derive::Deserialize,
 )]
 pub struct ChangelogConfig {
-	pub header: String,
+	pub header:        String,
+	pub group_parsers: Vec<GroupParser>,
+}
+
+#[derive(
+	Default,
+	Debug,
+	Clone,
+	PartialEq,
+	serde_derive::Serialize,
+	serde_derive::Deserialize,
+)]
+#[serde(rename_all = "camelCase")]
+pub struct GroupParser {
+	pub regex: String,
+	pub group: String,
 }
 
 impl Config {
