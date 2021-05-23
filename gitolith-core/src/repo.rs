@@ -49,6 +49,7 @@ impl Repository {
 #[cfg(test)]
 mod test {
 	use super::*;
+	use crate::commit::Commit as AppCommit;
 	use git_conventional::ErrorKind;
 	use std::env;
 	use std::process::Command;
@@ -57,7 +58,7 @@ mod test {
 	fn get_last_commit_hash() -> Result<String> {
 		Ok(str::from_utf8(
 			Command::new("git")
-				.args(&["log", "--pretty=format:'%h'", "-n", "1"])
+				.args(&["log", "--pretty=format:'%H'", "-n", "1"])
 				.output()?
 				.stdout
 				.as_ref(),
@@ -76,8 +77,8 @@ mod test {
 				.to_path_buf(),
 		)?;
 		let commits = repository.commits()?;
-		let last_commit = commits.first().unwrap();
-		assert_eq!(Some(get_last_commit_hash()?), last_commit.hash);
+		let last_commit = AppCommit::from(commits.first().unwrap().clone());
+		assert_eq!(get_last_commit_hash()?, last_commit.id);
 		if let Err(e) = last_commit.as_conventional() {
 			match e {
 				Error::ParseError(e) => {

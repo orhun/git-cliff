@@ -99,22 +99,25 @@ mod test {
 	fn conventional_commit() {
 		let test_cases = vec![
 			(
-				Commit {
-					hash:    None,
-					message: String::from("test(commit): add test"),
-				},
+				Commit::new(
+					String::from("123123"),
+					String::from("test(commit): add test"),
+				),
 				true,
 			),
 			(
-				Commit {
-					hash:    None,
-					message: String::from("xyz"),
-				},
+				Commit::new(String::from("124124"), String::from("xyz")),
 				false,
 			),
 		];
-		for (commit, is_conventional) in test_cases {
-			assert_eq!(is_conventional, commit.as_conventional().is_ok())
+		for (commit, is_conventional) in &test_cases {
+			assert_eq!(is_conventional, &commit.as_conventional().is_ok())
 		}
+		let mut commit = test_cases[0].0.clone();
+		commit.set_group(&[GroupParser {
+			regex: String::from("test*"),
+			group: String::from("test_group"),
+		}]);
+		assert_eq!(Some(String::from("test_group")), commit.group);
 	}
 }
