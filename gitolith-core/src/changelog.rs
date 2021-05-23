@@ -27,3 +27,49 @@ impl Changelog {
 		)?)
 	}
 }
+
+#[cfg(test)]
+mod test {
+	use super::*;
+	use crate::commit::Commit;
+
+	#[test]
+	fn changelog_template() -> Result<()> {
+		let template = r#"
+		## {{ version }}
+		{% for commit in commits %}
+		### {{ commit.group }}
+		- {{ commit.message }}
+		{% endfor %}"#;
+		let changelog = Changelog::new(template.to_string())?;
+		assert_eq!(
+			r#"
+		## 1.0
+		
+		### feat
+		- add xyz
+		
+		### fix
+		- fix abc
+		"#,
+			changelog.generate(Release {
+				version:   Some(String::from("1.0")),
+				commits:   vec![
+					Commit::new(
+						String::from("123123"),
+						String::from("feat(xyz): add xyz"),
+					),
+					Commit::new(
+						String::from("124124"),
+						String::from("fix(abc): fix abc"),
+					)
+				]
+				.iter()
+				.filter_map(|c| c.as_conventional().ok())
+				.collect(),
+				commit_id: None,
+			})?
+		);
+		Ok(())
+	}
+}
