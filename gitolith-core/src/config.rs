@@ -29,6 +29,7 @@ pub struct ChangelogConfig {
 	pub group_parsers: Vec<GroupParser>,
 }
 
+/// Parser for grouping commits.
 #[derive(
 	Default,
 	Debug,
