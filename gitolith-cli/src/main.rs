@@ -30,7 +30,7 @@ fn main() -> Result<()> {
 	let config = Config::parse(args.config)?;
 
 	let mut release_root = ReleaseRoot {
-		releases: vec![Release::default(), Release::default()],
+		releases: vec![Release::default()],
 	};
 	let repository =
 		Repository::init(args.repository.unwrap_or(env::current_dir()?))?;
@@ -39,11 +39,6 @@ fn main() -> Result<()> {
 			.commits
 			.push(Commit::from(git_commit));
 	}
-	release_root.releases[1].version = Some(String::from("v1.0.0"));
-	release_root.releases[1].commits.extend(vec![
-		Commit::new(String::from("abc123"), String::from("feat: add xyz")),
-		Commit::new(String::from("def789"), String::from("invalid commit")),
-	]);
 
 	release_root.releases.iter_mut().for_each(|release| {
 		release.commits = release

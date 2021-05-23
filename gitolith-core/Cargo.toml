@@ -25,6 +25,9 @@ version = "0.11.0"
 default-features = false
 features = ["toml"]
 
+[dev-dependencies]
+pretty_assertions = "0.7"
+
 [dependencies.git-conventional]
 git = "https://github.com/orhun/git-conventional"
 features = ["serde"]
