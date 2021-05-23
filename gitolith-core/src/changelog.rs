@@ -1,6 +1,5 @@
 use crate::error::Result;
 use crate::release::Release;
-use std::path::PathBuf;
 use tera::{
 	Context as TeraContext,
 	Tera,
@@ -14,9 +13,9 @@ pub struct Changelog {
 
 impl Changelog {
 	/// Constructs a new instance.
-	pub fn new(template: PathBuf) -> Result<Self> {
+	pub fn new(template: String) -> Result<Self> {
 		let mut tera = Tera::default();
-		tera.add_template_file(template, Some("changelog_template"))?;
+		tera.add_raw_template("changelog_template", &template)?;
 		Ok(Self { tera })
 	}
 

@@ -23,10 +23,13 @@ pub struct Opt {
 	/// Sets the repository to parse commits from.
 	#[structopt(short, long, env, value_name = "PATH")]
 	pub repository: Option<PathBuf>,
-	/// Sets the configuration file name.
-	#[structopt(short, long, env, value_name = "FILE", default_value = "gitolith")]
+	/// Sets the configuration file.
+	#[structopt(
+		short,
+		long,
+		env,
+		value_name = "FILE",
+		default_value = "gitolith.toml"
+	)]
 	pub config:     String,
-	/// Sets the template for changelog generation.
-	#[structopt(short, long, env, value_name = "FILE")]
-	pub template:   PathBuf,
 }

@@ -62,7 +62,7 @@ fn main() -> Result<()> {
 			.collect::<Vec<Commit>>();
 	});
 
-	let changelog = Changelog::new(args.template)?;
+	let changelog = Changelog::new(config.changelog.body)?;
 	for release in release_root.releases {
 		writeln!(&mut io::stdout(), "{}", changelog.generate(release)?)?;
 	}

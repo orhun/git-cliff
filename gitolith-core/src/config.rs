@@ -24,6 +24,7 @@ pub struct Config {
 )]
 pub struct ChangelogConfig {
 	pub header:        String,
+	pub body:          String,
 	pub group_parsers: Vec<GroupParser>,
 }
 
