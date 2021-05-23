@@ -79,7 +79,7 @@ mod test {
 		let commits = repository.commits()?;
 		let last_commit = AppCommit::from(commits.first().unwrap().clone());
 		assert_eq!(get_last_commit_hash()?, last_commit.id);
-		if let Err(e) = last_commit.as_conventional() {
+		if let Err(e) = last_commit.into_conventional() {
 			match e {
 				Error::ParseError(e) => {
 					assert_eq!(ErrorKind::InvalidFormat, e.kind())

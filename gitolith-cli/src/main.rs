@@ -44,14 +44,16 @@ fn main() -> Result<()> {
 		release.commits = release
 			.commits
 			.iter()
-			.filter_map(|commit| match commit.as_conventional() {
-				Ok(mut commit) => {
-					commit.set_group(&config.changelog.group_parsers);
-					Some(commit)
-				}
-				Err(e) => {
-					debug!("{} is not conventional: {}", commit.id, e);
-					None
+			.filter_map(|commit| {
+				match commit.process(
+					&config.changelog.group_parsers,
+					config.changelog.filter_group,
+				) {
+					Ok(commit) => Some(commit),
+					Err(e) => {
+						debug!("Cannot process commit: {} ({})", commit.id, e);
+						None
+					}
 				}
 			})
 			.collect::<Vec<Commit>>();

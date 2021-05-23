@@ -64,8 +64,8 @@ mod test {
 						String::from("fix(abc): fix abc"),
 					)
 				]
-				.iter()
-				.filter_map(|c| c.as_conventional().ok())
+				.into_iter()
+				.filter_map(|c| c.into_conventional().ok())
 				.collect(),
 				commit_id: None,
 			})?

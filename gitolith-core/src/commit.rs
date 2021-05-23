@@ -47,29 +47,48 @@ impl Commit<'_> {
 		}
 	}
 
-	/// Returns the commit with conventional type.
-	pub fn as_conventional(&self) -> Result<Self> {
+	/// Processes the commit.
+	///
+	/// * converts commit to a conventional commit
+	/// * sets the group for the commit
+	pub fn process(&self, parsers: &[GroupParser], filter: bool) -> Result<Self> {
+		let commit = self.clone();
+		let commit = commit.into_conventional()?;
+		let commit = commit.into_grouped(parsers, filter)?;
+		Ok(commit)
+	}
+
+	/// Returns the commit with its conventional type set.
+	pub fn into_conventional(mut self) -> Result<Self> {
 		match ConventionalCommit::parse(Box::leak(
 			self.message.to_string().into_boxed_str(),
 		)) {
 			Ok(conv) => {
-				let mut commit = self.clone();
-				commit.conv = conv;
-				Ok(commit)
+				self.conv = conv;
+				Ok(self)
 			}
 			Err(e) => Err(AppError::ParseError(e)),
 		}
 	}
 
-	/// Sets the commit group using the given parsers.
-	pub fn set_group(&mut self, parsers: &[GroupParser]) {
+	/// Returns the commit with its group set.
+	pub fn into_grouped(
+		mut self,
+		parsers: &[GroupParser],
+		filter: bool,
+	) -> Result<Self> {
 		for parser in parsers {
 			if let Ok(re) = Regex::new(&parser.regex) {
 				if re.is_match(&self.message) {
 					self.group = Some(parser.group.to_string());
-					break;
+					return Ok(self);
 				}
 			}
+		}
+		if !filter {
+			Ok(self)
+		} else {
+			Err(AppError::GroupError)
 		}
 	}
 }
@@ -111,13 +130,19 @@ mod test {
 			),
 		];
 		for (commit, is_conventional) in &test_cases {
-			assert_eq!(is_conventional, &commit.as_conventional().is_ok())
+			assert_eq!(is_conventional, &commit.clone().into_conventional().is_ok())
 		}
-		let mut commit = test_cases[0].0.clone();
-		commit.set_group(&[GroupParser {
-			regex: String::from("test*"),
-			group: String::from("test_group"),
-		}]);
+		let commit = test_cases[0]
+			.0
+			.clone()
+			.into_grouped(
+				&[GroupParser {
+					regex: String::from("test*"),
+					group: String::from("test_group"),
+				}],
+				false,
+			)
+			.unwrap();
 		assert_eq!(Some(String::from("test_group")), commit.group);
 	}
 }

@@ -23,10 +23,17 @@ fn generate_changelog() -> Result<()> {
         {% endfor %}"#,
 		),
 		footer:        String::from("eoc - end of changelog"),
-		group_parsers: vec![GroupParser {
-			regex: String::from("feat*"),
-			group: String::from("shiny features"),
-		}],
+		group_parsers: vec![
+			GroupParser {
+				regex: String::from("feat*"),
+				group: String::from("shiny features"),
+			},
+			GroupParser {
+				regex: String::from("fix*"),
+				group: String::from("fix bugs"),
+			},
+		],
+		filter_group:  true,
 	};
 
 	let release_root = ReleaseRoot {
@@ -57,10 +64,7 @@ fn generate_changelog() -> Result<()> {
 				]
 				.iter()
 				.filter_map(|c| {
-					c.as_conventional().ok().map(|mut c| {
-						c.set_group(&config.group_parsers);
-						c
-					})
+					c.process(&config.group_parsers, config.filter_group).ok()
 				})
 				.collect::<Vec<Commit>>(),
 				commit_id: None,
@@ -85,8 +89,8 @@ fn generate_changelog() -> Result<()> {
 						String::from("chore: do nothing"),
 					),
 				]
-				.iter()
-				.filter_map(|c| c.as_conventional().ok())
+				.into_iter()
+				.filter_map(|c| c.into_conventional().ok())
 				.collect::<Vec<Commit>>(),
 				commit_id: None,
 			},
@@ -110,11 +114,7 @@ fn generate_changelog() -> Result<()> {
 
         ## Release v2.0.0
         
-        ### chore
-        
-        - do boring stuff
-        
-        ### fix
+        ### fix bugs
         
         - fix abc
         

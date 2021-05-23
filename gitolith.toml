@@ -23,3 +23,5 @@ group_parsers = [
     { regex = "fix*", group = "Bug Fixes"},
     { regex = "chore*", group = "Miscellaneous Tasks"},
 ]
+
+filter_group = false
