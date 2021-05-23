@@ -16,6 +16,8 @@ body = """
 {% endfor %}
 """
 
+footer = ""
+
 group_parsers = [
     { regex = "feat*", group = "Features"},
     { regex = "fix*", group = "Bug Fixes"},

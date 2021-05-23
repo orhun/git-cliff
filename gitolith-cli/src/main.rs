@@ -62,9 +62,16 @@ fn main() -> Result<()> {
 			.collect::<Vec<Commit>>();
 	});
 
+	let stdout = &mut io::stdout();
 	let changelog = Changelog::new(config.changelog.body)?;
+	if !config.changelog.header.is_empty() {
+		writeln!(stdout, "{}", config.changelog.header)?;
+	}
 	for release in release_root.releases {
-		writeln!(&mut io::stdout(), "{}", changelog.generate(release)?)?;
+		write!(stdout, "{}", changelog.generate(release)?)?;
+	}
+	if !config.changelog.footer.is_empty() {
+		writeln!(stdout, "{}", config.changelog.footer)?;
 	}
 
 	Ok(())
