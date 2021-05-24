@@ -22,7 +22,7 @@ pub struct Commit<'a> {
 	pub message: String,
 	/// Conventional commit.
 	#[serde(skip_deserializing)]
-	pub conv:    ConventionalCommit<'a>,
+	pub conv:    Option<ConventionalCommit<'a>>,
 	/// Commit group based on a group parser or its conventional type.
 	pub group:   Option<String>,
 }
@@ -42,7 +42,7 @@ impl Commit<'_> {
 		Self {
 			id,
 			message,
-			conv: ConventionalCommit::default(),
+			conv: None,
 			group: None,
 		}
 	}
@@ -64,7 +64,7 @@ impl Commit<'_> {
 			self.message.to_string().into_boxed_str(),
 		)) {
 			Ok(conv) => {
-				self.conv = conv;
+				self.conv = Some(conv);
 				Ok(self)
 			}
 			Err(e) => Err(AppError::ParseError(e)),
@@ -100,13 +100,19 @@ impl Serialize for Commit<'_> {
 	{
 		let mut commit = serializer.serialize_struct("Commit", 3)?;
 		commit.serialize_field("id", &self.id)?;
-		commit.serialize_field("message", &self.conv.description())?;
-		commit.serialize_field(
-			"group",
-			self.group
-				.as_ref()
-				.unwrap_or(&self.conv.type_().to_string()),
-		)?;
+		match &self.conv {
+			Some(conv) => {
+				commit.serialize_field("message", conv.description())?;
+				commit.serialize_field(
+					"group",
+					self.group.as_ref().unwrap_or(&conv.type_().to_string()),
+				)?;
+			}
+			None => {
+				commit.serialize_field("message", &self.message)?;
+				commit.serialize_field("group", &self.group)?;
+			}
+		}
 		commit.end()
 	}
 }

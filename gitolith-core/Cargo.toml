@@ -29,6 +29,5 @@ features = ["toml"]
 pretty_assertions = "0.7"
 
 [dependencies.git-conventional]
-git = "https://github.com/orhun/git-conventional"
-branch = "master"
+version = "0.9.2"
 features = ["serde"]
