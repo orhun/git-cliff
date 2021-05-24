@@ -34,30 +34,23 @@ jobs:
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          profile: minimal
+          toolchain: nightly
           override: true
       - name: Checkout
         uses: actions/checkout@master
         with:
           fetch-depth: 0
-      - name: Setup cargo-tarpaulin
-        run: |
-          curl -s https://api.github.com/repos/xd009642/tarpaulin/releases/latest | \
-            grep "browser_download_url.*tar.gz" | cut -d : -f 2,3 | tr -d \" | wget -qi -
-          tar -xzf cargo-tarpaulin-*.tar.gz
-          mv cargo-tarpaulin ~/.cargo/bin/
       - name: Run tests
-        run: cargo tarpaulin --out Xml --verbose
-      - name: Upload reports to codecov
-        uses: codecov/codecov-action@v1
-        with:
-          name: code-coverage-report
-          file: cobertura.xml
-          flags: unit-tests
-          fail_ci_if_error: true
-          verbose: true
-          token: ${{ secrets.CODECOV_TOKEN }}
-
+        run: |
+          export CARGO_INCREMENTAL=0
+          export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
+          export RUSTDOCFLAGS="-Cpanic=abort"
+          curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar jxf -
+          cargo test --verbose $CARGO_OPTIONS
+          zip -0 ccov.zip `find . \( -name "gitolith*.gc*" \) -print`;
+          ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o lcov.info;
+          bash <(curl -s https://codecov.io/bash) -f lcov.info;
   clippy:
     name: Lints
     runs-on: ubuntu-18.04
