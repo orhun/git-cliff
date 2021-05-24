@@ -14,7 +14,7 @@ edition = "2018"
 
 [dependencies]
 thiserror = "1.0"
-git2 = "0.13"
+git2 = "0.13.20"
 serde = "1.0"
 serde_derive = "1.0"
 tera = "1.9.0"

@@ -51,6 +51,7 @@ jobs:
           zip -0 ccov.zip `find . \( -name "gitolith*.gc*" \) -print`;
           ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o lcov.info;
           bash <(curl -s https://codecov.io/bash) -f lcov.info;
+
   clippy:
     name: Lints
     runs-on: ubuntu-18.04
