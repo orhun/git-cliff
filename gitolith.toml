@@ -8,11 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 """
 
 body = """
-## {{ version | default(value="[unreleased]") }}
+## {% if version %}Release {{ version }}{% else %}[unreleased]{% endif %}
 {% for group, commits in commits | group_by(attribute="group") %}
 ### {{ group | capitalize}}
 {% for commit in commits %}
-- {{ commit.message | capitalize }}{% endfor %}
+- {{ commit.message }}{% endfor %}
 {% endfor %}
 """
 
@@ -25,3 +25,5 @@ group_parsers = [
 ]
 
 filter_group = false
+
+tag_regex = "*"

@@ -34,6 +34,7 @@ fn generate_changelog() -> Result<()> {
 			},
 		],
 		filter_group:  true,
+		tag_regex:     String::new(),
 	};
 
 	let release_root = ReleaseRoot {

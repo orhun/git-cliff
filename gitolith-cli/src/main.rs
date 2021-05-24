@@ -29,15 +29,24 @@ fn main() -> Result<()> {
 	pretty_env_logger::init();
 	let config = Config::parse(args.config)?;
 
-	let mut release_root = ReleaseRoot {
-		releases: vec![Release::default()],
-	};
 	let repository =
 		Repository::init(args.repository.unwrap_or(env::current_dir()?))?;
-	for git_commit in repository.commits()? {
-		release_root.releases[0]
-			.commits
-			.push(Commit::from(git_commit));
+	let tags = repository.tags(&config.changelog.tag_regex)?;
+	let commits = repository.commits()?;
+
+	let mut release_root = ReleaseRoot {
+		releases: vec![Release::default(); tags.len() + 1],
+	};
+	let mut release_index = 0;
+	for git_commit in commits.into_iter().rev() {
+		let commit = Commit::from(git_commit);
+		let commit_id = commit.id.to_string();
+		release_root.releases[release_index].commits.push(commit);
+		if let Some(tag) = tags.get(&commit_id) {
+			release_root.releases[release_index].version = Some(tag.to_string());
+			release_root.releases[release_index].commit_id = Some(commit_id);
+			release_index += 1;
+		}
 	}
 
 	release_root.releases.iter_mut().for_each(|release| {
@@ -58,6 +67,25 @@ fn main() -> Result<()> {
 			})
 			.collect::<Vec<Commit>>();
 	});
+	release_root.releases = release_root
+		.releases
+		.into_iter()
+		.rev()
+		.filter(|release| {
+			let empty = release.commits.is_empty();
+			if empty {
+				debug!(
+					"Release {} doesn't have any commits",
+					release
+						.version
+						.as_ref()
+						.cloned()
+						.unwrap_or_else(|| String::from("[?]"))
+				)
+			}
+			!empty
+		})
+		.collect();
 
 	let stdout = &mut io::stdout();
 	let changelog = Changelog::new(config.changelog.body)?;

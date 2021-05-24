@@ -4,9 +4,11 @@ use crate::error::{
 };
 use git2::{
 	Commit,
+	ObjectType,
 	Repository as GitRepository,
 	Sort,
 };
+use std::collections::HashMap;
 use std::io;
 use std::path::PathBuf;
 
@@ -43,6 +45,25 @@ impl Repository {
 			.filter_map(|id| id.ok())
 			.filter_map(|id| self.inner.find_commit(id).ok())
 			.collect())
+	}
+
+	/// Parses and returns a commit-tag map.
+	///
+	/// It collects lightweight and annotated tags.
+	pub fn tags(&self, pattern: &str) -> Result<HashMap<String, String>> {
+		let mut tags = HashMap::new();
+		let tag_names = self.inner.tag_names(Some(pattern))?;
+		for name in tag_names.iter().flatten().map(String::from) {
+			let obj = self.inner.revparse_single(&name)?;
+			if let Ok(commit) = obj.clone().into_commit() {
+				tags.insert(commit.id().to_string(), name);
+			} else if let Some(tag) = obj.as_tag() {
+				if let Some(ObjectType::Commit) = tag.target_type() {
+					tags.insert(tag.target_id().to_string(), name);
+				}
+			}
+		}
+		Ok(tags)
 	}
 }
 
