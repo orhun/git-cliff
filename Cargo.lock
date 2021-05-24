@@ -289,7 +289,7 @@ dependencies = [
 [[package]]
 name = "git-conventional"
 version = "0.9.1"
-source = "git+https://github.com/orhun/git-conventional#cb19e480b1a933ef16cd80091d02f6d3a7986ee3"
+source = "git+https://github.com/orhun/git-conventional?branch=no_bitvec#f1138e088af1055e7eaf7e5fa21d43b886ab141e"
 dependencies = [
  "doc-comment",
  "nom 6.1.2",
