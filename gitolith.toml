@@ -20,7 +20,7 @@ body = """
 {% for group, commits in commits | group_by(attribute="group") %}
 ### {{ group | capitalize}}
 {% for commit in commits %}
-- {{ commit.message }}\
+- {{ commit.message | capitalize_first }}\
 {% endfor %}
 {% endfor %}
 """
