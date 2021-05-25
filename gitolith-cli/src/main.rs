@@ -31,7 +31,7 @@ fn main() -> Result<()> {
 
 	let repository =
 		Repository::init(args.repository.unwrap_or(env::current_dir()?))?;
-	let tags = repository.tags(&config.changelog.tag_regex)?;
+	let tags = repository.tags(&config.changelog.tag_pattern)?;
 	let commits = repository.commits()?;
 
 	let mut release_root = ReleaseRoot {

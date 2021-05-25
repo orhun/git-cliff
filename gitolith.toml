@@ -26,4 +26,4 @@ group_parsers = [
 
 filter_group = false
 
-tag_regex = "*"
+tag_pattern = "v[0-9]*"
