@@ -68,6 +68,7 @@ mod test {
 				.filter_map(|c| c.into_conventional().ok())
 				.collect(),
 				commit_id: None,
+				timestamp: 0,
 			})?
 		);
 		Ok(())

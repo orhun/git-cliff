@@ -69,6 +69,7 @@ fn generate_changelog() -> Result<()> {
 				})
 				.collect::<Vec<Commit>>(),
 				commit_id: None,
+				timestamp: 0,
 			},
 			Release {
 				version:   Some(String::from("v1.0.0")),
@@ -94,6 +95,7 @@ fn generate_changelog() -> Result<()> {
 				.filter_map(|c| c.into_conventional().ok())
 				.collect::<Vec<Commit>>(),
 				commit_id: None,
+				timestamp: 0,
 			},
 		],
 	};
