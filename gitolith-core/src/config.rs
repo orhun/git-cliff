@@ -29,7 +29,6 @@ pub struct ChangelogConfig {
 	pub group_parsers: Vec<GroupParser>,
 	pub filter_group:  bool,
 	pub tag_pattern:   String,
-	pub date_format:   String,
 }
 
 /// Parser for grouping commits.

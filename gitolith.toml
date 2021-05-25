@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 # template for the changelog body
 # https://tera.netlify.app/docs/#introduction
 body = """
-## {% if version %}[{{ version }}] - {{ date }}{% else %}[unreleased]{% endif %}
+## {% if version %}[{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}{% else %}[unreleased]{% endif %}
 {% for group, commits in commits | group_by(attribute="group") %}
 ### {{ group | capitalize}}
 {% for commit in commits %}
@@ -34,6 +34,3 @@ filter_group = false
 
 # glob pattern for matching tags
 tag_pattern = "v[0-9]*"
-
-# https://docs.rs/chrono/latest/chrono/format/strftime/index.html
-date_format = "%Y-%m-%d"

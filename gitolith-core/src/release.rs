@@ -29,5 +29,5 @@ pub struct Release<'a> {
 	pub commits:   Vec<Commit<'a>>,
 	#[serde(rename = "commit_id")]
 	pub commit_id: Option<String>,
-	pub date:      Option<String>,
+	pub timestamp: i64,
 }

@@ -1,11 +1,6 @@
 mod args;
 
 use args::Opt;
-use chrono::{
-	DateTime,
-	NaiveDateTime,
-	Utc,
-};
 use gitolith_core::changelog::Changelog;
 use gitolith_core::commit::Commit;
 use gitolith_core::config::Config;
@@ -50,14 +45,8 @@ fn main() -> Result<()> {
 		if let Some(tag) = tags.get(&commit_id) {
 			release_root.releases[release_index].version = Some(tag.to_string());
 			release_root.releases[release_index].commit_id = Some(commit_id);
-			release_root.releases[release_index].date = Some(
-				DateTime::<Utc>::from_utc(
-					NaiveDateTime::from_timestamp(git_commit.time().seconds(), 0),
-					Utc,
-				)
-				.format(&config.changelog.date_format)
-				.to_string(),
-			);
+			release_root.releases[release_index].timestamp =
+				git_commit.time().seconds();
 			release_index += 1;
 		}
 	}

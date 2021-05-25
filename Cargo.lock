@@ -317,7 +317,6 @@ dependencies = [
 name = "gitolith-cli"
 version = "0.1.0"
 dependencies = [
- "chrono",
  "gitolith-core",
  "log",
  "pretty_env_logger",
