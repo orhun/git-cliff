@@ -23,7 +23,7 @@ regex = "1.5.4"
 [dependencies.config]
 version = "0.11.0"
 default-features = false
-features = ["toml"]
+features = ["toml", "yaml"]
 
 [dev-dependencies]
 pretty_assertions = "0.7"
