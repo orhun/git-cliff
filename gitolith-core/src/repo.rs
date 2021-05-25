@@ -98,7 +98,7 @@ mod test {
 				.to_path_buf(),
 		)?;
 		let commits = repository.commits()?;
-		let last_commit = AppCommit::from(commits.first().unwrap().clone());
+		let last_commit = AppCommit::from(&commits.first().unwrap().clone());
 		assert_eq!(get_last_commit_hash()?, last_commit.id);
 		if let Err(e) = last_commit.into_conventional() {
 			match e {

@@ -27,8 +27,8 @@ pub struct Commit<'a> {
 	pub group:   Option<String>,
 }
 
-impl<'a> From<GitCommit<'a>> for Commit<'a> {
-	fn from(commit: GitCommit<'a>) -> Self {
+impl<'a> From<&GitCommit<'a>> for Commit<'a> {
+	fn from(commit: &GitCommit<'a>) -> Self {
 		Self::new(
 			commit.id().to_string(),
 			commit.message().unwrap_or_default().to_string(),
