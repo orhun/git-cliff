@@ -31,8 +31,21 @@ fn main() -> Result<()> {
 
 	let repository =
 		Repository::init(args.repository.unwrap_or(env::current_dir()?))?;
-	let tags = repository.tags(&config.changelog.tag_pattern)?;
+	let mut tags = repository.tags(&config.changelog.tag_pattern)?;
 	let commits = repository.commits()?;
+
+	if let Some(tag) = args.tag {
+		if let Some(commit_id) = commits.first().map(|c| c.id().to_string()) {
+			match tags.get(&commit_id) {
+				Some(tag) => {
+					debug!("There is already a tag ({}) for {}", tag, commit_id)
+				}
+				None => {
+					tags.insert(commit_id, tag);
+				}
+			}
+		}
+	}
 
 	let mut release_root = ReleaseRoot {
 		releases: vec![Release::default(); tags.len() + 1],
