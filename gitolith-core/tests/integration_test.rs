@@ -13,8 +13,8 @@ use std::fmt::Write;
 #[test]
 fn generate_changelog() -> Result<()> {
 	let config = ChangelogConfig {
-		header:        String::from("this is a changelog"),
-		body:          String::from(
+		header:          String::from("this is a changelog"),
+		body:            String::from(
 			r#"
         ## Release {{ version }}
         {% for group, commits in commits | group_by(attribute="group") %}
@@ -23,8 +23,8 @@ fn generate_changelog() -> Result<()> {
         - {{ commit.message }}{% endfor %}
         {% endfor %}"#,
 		),
-		footer:        String::from("eoc - end of changelog"),
-		group_parsers: vec![
+		footer:          String::from("eoc - end of changelog"),
+		group_parsers:   vec![
 			GroupParser {
 				regex: Regex::new("feat*").unwrap(),
 				group: String::from("shiny features"),
@@ -34,8 +34,9 @@ fn generate_changelog() -> Result<()> {
 				group: String::from("fix bugs"),
 			},
 		],
-		filter_group:  true,
-		tag_pattern:   String::new(),
+		filter_group:    true,
+		git_tag_pattern: String::new(),
+		skip_tags_regex: Regex::new("v3*").unwrap(),
 	};
 
 	let release_root = ReleaseRoot {

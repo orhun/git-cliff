@@ -2,24 +2,22 @@ use crate::error::Result;
 use regex::Regex;
 
 /// Configuration values.
-#[derive(
-	Default, Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize,
-)]
+#[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct Config {
 	pub changelog: ChangelogConfig,
 }
 
 /// Changelog configuration.
-#[derive(
-	Default, Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize,
-)]
+#[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct ChangelogConfig {
-	pub header:        String,
-	pub body:          String,
-	pub footer:        String,
-	pub group_parsers: Vec<GroupParser>,
-	pub filter_group:  bool,
-	pub tag_pattern:   String,
+	pub header:          String,
+	pub body:            String,
+	pub footer:          String,
+	pub group_parsers:   Vec<GroupParser>,
+	pub filter_group:    bool,
+	pub git_tag_pattern: String,
+	#[serde(with = "serde_regex")]
+	pub skip_tags_regex: Regex,
 }
 
 /// Parser for grouping commits.

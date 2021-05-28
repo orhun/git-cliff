@@ -31,7 +31,7 @@ fn main() -> Result<()> {
 
 	let repository =
 		Repository::init(args.repository.unwrap_or(env::current_dir()?))?;
-	let mut tags = repository.tags(&config.changelog.tag_pattern)?;
+	let mut tags = repository.tags(&config.changelog.git_tag_pattern)?;
 	let commits = repository.commits()?;
 
 	if let Some(tag) = args.tag {
@@ -87,8 +87,7 @@ fn main() -> Result<()> {
 		.into_iter()
 		.rev()
 		.filter(|release| {
-			let empty = release.commits.is_empty();
-			if empty {
+			if release.commits.is_empty() {
 				debug!(
 					"Release {} doesn't have any commits",
 					release
@@ -96,9 +95,13 @@ fn main() -> Result<()> {
 						.as_ref()
 						.cloned()
 						.unwrap_or_else(|| String::from("[?]"))
-				)
+				);
+				false
+			} else if let Some(version) = &release.version {
+				!config.changelog.skip_tags_regex.is_match(version)
+			} else {
+				true
 			}
-			!empty
 		})
 		.collect();
 
