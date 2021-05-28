@@ -1,13 +1,9 @@
 use crate::error::Result;
+use regex::Regex;
 
 /// Configuration values.
 #[derive(
-	Default,
-	Debug,
-	Clone,
-	PartialEq,
-	serde_derive::Serialize,
-	serde_derive::Deserialize,
+	Default, Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize,
 )]
 pub struct Config {
 	pub changelog: ChangelogConfig,
@@ -15,12 +11,7 @@ pub struct Config {
 
 /// Changelog configuration.
 #[derive(
-	Default,
-	Debug,
-	Clone,
-	PartialEq,
-	serde_derive::Serialize,
-	serde_derive::Deserialize,
+	Default, Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize,
 )]
 pub struct ChangelogConfig {
 	pub header:        String,
@@ -32,17 +23,11 @@ pub struct ChangelogConfig {
 }
 
 /// Parser for grouping commits.
-#[derive(
-	Default,
-	Debug,
-	Clone,
-	PartialEq,
-	serde_derive::Serialize,
-	serde_derive::Deserialize,
-)]
+#[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GroupParser {
-	pub regex: String,
+	#[serde(with = "serde_regex")]
+	pub regex: Regex,
 	pub group: String,
 }
 

@@ -5,7 +5,6 @@ use crate::error::{
 };
 use git2::Commit as GitCommit;
 use git_conventional::Commit as ConventionalCommit;
-use regex::Regex;
 use serde::ser::{
 	Serialize,
 	SerializeStruct,
@@ -78,11 +77,9 @@ impl Commit<'_> {
 		filter: bool,
 	) -> Result<Self> {
 		for parser in parsers {
-			if let Ok(re) = Regex::new(&parser.regex) {
-				if re.is_match(&self.message) {
-					self.group = Some(parser.group.to_string());
-					return Ok(self);
-				}
+			if parser.regex.is_match(&self.message) {
+				self.group = Some(parser.group.to_string());
+				return Ok(self);
 			}
 		}
 		if !filter {
@@ -120,6 +117,7 @@ impl Serialize for Commit<'_> {
 #[cfg(test)]
 mod test {
 	use super::*;
+	use regex::Regex;
 	#[test]
 	fn conventional_commit() {
 		let test_cases = vec![
@@ -143,7 +141,7 @@ mod test {
 			.clone()
 			.into_grouped(
 				&[GroupParser {
-					regex: String::from("test*"),
+					regex: Regex::new("test*").unwrap(),
 					group: String::from("test_group"),
 				}],
 				false,

@@ -19,6 +19,7 @@ serde = "1.0"
 serde_derive = "1.0"
 tera = "1.9.0"
 regex = "1.5.4"
+serde_regex = "1.1.0"
 
 [dependencies.config]
 version = "0.11.0"

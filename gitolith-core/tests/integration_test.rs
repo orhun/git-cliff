@@ -7,6 +7,7 @@ use gitolith_core::config::{
 use gitolith_core::error::Result;
 use gitolith_core::release::*;
 use pretty_assertions::assert_eq;
+use regex::Regex;
 use std::fmt::Write;
 
 #[test]
@@ -25,11 +26,11 @@ fn generate_changelog() -> Result<()> {
 		footer:        String::from("eoc - end of changelog"),
 		group_parsers: vec![
 			GroupParser {
-				regex: String::from("feat*"),
+				regex: Regex::new("feat*").unwrap(),
 				group: String::from("shiny features"),
 			},
 			GroupParser {
-				regex: String::from("fix*"),
+				regex: Regex::new("fix*").unwrap(),
 				group: String::from("fix bugs"),
 			},
 		],
