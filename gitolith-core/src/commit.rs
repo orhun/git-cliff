@@ -1,4 +1,4 @@
-use crate::config::GroupParser;
+use crate::config::CommitParser;
 use crate::error::{
 	Error as AppError,
 	Result,
@@ -50,7 +50,7 @@ impl Commit<'_> {
 	///
 	/// * converts commit to a conventional commit
 	/// * sets the group for the commit
-	pub fn process(&self, parsers: &[GroupParser], filter: bool) -> Result<Self> {
+	pub fn process(&self, parsers: &[CommitParser], filter: bool) -> Result<Self> {
 		let commit = self.clone();
 		let commit = commit.into_conventional()?;
 		let commit = commit.into_grouped(parsers, filter)?;
@@ -73,7 +73,7 @@ impl Commit<'_> {
 	/// Returns the commit with its group set.
 	pub fn into_grouped(
 		mut self,
-		parsers: &[GroupParser],
+		parsers: &[CommitParser],
 		filter: bool,
 	) -> Result<Self> {
 		for parser in parsers {
@@ -140,7 +140,7 @@ mod test {
 			.0
 			.clone()
 			.into_grouped(
-				&[GroupParser {
+				&[CommitParser {
 					regex: Regex::new("test*").unwrap(),
 					group: String::from("test_group"),
 				}],

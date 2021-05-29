@@ -70,7 +70,7 @@ fn main() -> Result<()> {
 			.iter()
 			.filter_map(|commit| {
 				match commit.process(
-					&config.changelog.group_parsers,
+					&config.changelog.commit_parsers,
 					config.changelog.filter_group,
 				) {
 					Ok(commit) => Some(commit),

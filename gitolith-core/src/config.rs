@@ -13,7 +13,7 @@ pub struct ChangelogConfig {
 	pub header:          String,
 	pub body:            String,
 	pub footer:          String,
-	pub group_parsers:   Vec<GroupParser>,
+	pub commit_parsers:  Vec<CommitParser>,
 	pub filter_group:    bool,
 	pub git_tag_pattern: String,
 	#[serde(with = "serde_regex")]
@@ -23,7 +23,7 @@ pub struct ChangelogConfig {
 /// Parser for grouping commits.
 #[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct GroupParser {
+pub struct CommitParser {
 	#[serde(with = "serde_regex")]
 	pub regex: Regex,
 	pub group: String,

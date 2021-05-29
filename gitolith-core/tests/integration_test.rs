@@ -2,7 +2,7 @@ use gitolith_core::changelog::Changelog;
 use gitolith_core::commit::Commit;
 use gitolith_core::config::{
 	ChangelogConfig,
-	GroupParser,
+	CommitParser,
 };
 use gitolith_core::error::Result;
 use gitolith_core::release::*;
@@ -24,12 +24,12 @@ fn generate_changelog() -> Result<()> {
         {% endfor %}"#,
 		),
 		footer:          String::from("eoc - end of changelog"),
-		group_parsers:   vec![
-			GroupParser {
+		commit_parsers:  vec![
+			CommitParser {
 				regex: Regex::new("feat*").unwrap(),
 				group: String::from("shiny features"),
 			},
-			GroupParser {
+			CommitParser {
 				regex: Regex::new("fix*").unwrap(),
 				group: String::from("fix bugs"),
 			},
@@ -67,7 +67,7 @@ fn generate_changelog() -> Result<()> {
 				]
 				.iter()
 				.filter_map(|c| {
-					c.process(&config.group_parsers, config.filter_group).ok()
+					c.process(&config.commit_parsers, config.filter_group).ok()
 				})
 				.collect::<Vec<Commit>>(),
 				commit_id: None,
