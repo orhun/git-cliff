@@ -1,1 +1,1 @@
-# gitolith
+# git-cliff

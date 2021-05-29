@@ -1,7 +1,6 @@
 use thiserror::Error as ThisError;
 
-/// Library related errors that we are exposing to the rest of the
-/// workspaces.
+/// Library related errors that we are exposing to the rest of the workspaces.
 #[derive(Debug, ThisError)]
 pub enum Error {
 	/// Error that may occur while I/O operations.

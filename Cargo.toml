@@ -1,7 +1,7 @@
 [workspace]
 members = [
-    "gitolith-core",
-    "gitolith-cli",
+    "git-cliff-core",
+    "git-cliff",
 ]
 
 [profile.dev]

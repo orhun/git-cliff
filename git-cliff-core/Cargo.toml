@@ -1,13 +1,13 @@
 [package]
-name = "gitolith-core"
+name = "git-cliff-core"
 version = "0.1.0"
 description = ""
-authors = ["gitolith contributors <gitolith@protonmail.com>"]
+authors = ["git-cliff contributors <git-cliff@protonmail.com>"]
 license = "GPL-3.0"
 readme = "README.md"
-documentation = "https://github.com/gitolith/gitolith/blob/master/README.md"
-homepage = "https://github.com/gitolith/gitolith"
-repository = "https://github.com/gitolith/gitolith"
+documentation = "https://github.com/orhun/git-cliff/blob/master/README.md"
+homepage = "https://github.com/orhun/git-cliff"
+repository = "https://github.com/orhun/git-cliff"
 keywords = []
 categories = []
 edition = "2018"

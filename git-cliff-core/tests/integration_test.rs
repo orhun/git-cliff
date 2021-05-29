@@ -1,11 +1,11 @@
-use gitolith_core::commit::Commit;
-use gitolith_core::config::{
+use git_cliff_core::commit::Commit;
+use git_cliff_core::config::{
 	ChangelogConfig,
 	CommitParser,
 };
-use gitolith_core::error::Result;
-use gitolith_core::release::*;
-use gitolith_core::template::Template;
+use git_cliff_core::error::Result;
+use git_cliff_core::release::*;
+use git_cliff_core::template::Template;
 use pretty_assertions::assert_eq;
 use regex::Regex;
 use std::fmt::Write;

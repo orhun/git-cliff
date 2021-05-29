@@ -1,15 +1,15 @@
 mod args;
 
 use args::Opt;
-use gitolith_core::commit::Commit;
-use gitolith_core::config::Config;
-use gitolith_core::error::Result;
-use gitolith_core::release::{
+use git_cliff_core::commit::Commit;
+use git_cliff_core::config::Config;
+use git_cliff_core::error::Result;
+use git_cliff_core::release::{
 	Release,
 	ReleaseRoot,
 };
-use gitolith_core::repo::Repository;
-use gitolith_core::template::Template;
+use git_cliff_core::repo::Repository;
+use git_cliff_core::template::Template;
 use std::env;
 use std::io::{
 	self,

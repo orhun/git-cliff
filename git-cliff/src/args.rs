@@ -29,7 +29,7 @@ pub struct Opt {
 		long,
 		env,
 		value_name = "FILE",
-		default_value = "gitolith.toml"
+		default_value = "cliff.toml"
 	)]
 	pub config:     String,
 	#[structopt(short, long, env, value_name = "TAG", allow_hyphen_values = true)]

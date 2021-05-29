@@ -5,4 +5,7 @@
 **/*.rs.bk
 
 # Ignore library's lock file
-gitolith-core/Cargo.lock
+git-cliff-core/Cargo.lock
+
+# Miscellaneous
+/etc/

@@ -288,6 +288,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "git-cliff-cli"
+version = "0.1.0"
+dependencies = [
+ "git-cliff-core",
+ "log",
+ "pretty_env_logger",
+ "structopt",
+]
+
+[[package]]
+name = "git-cliff-core"
+version = "0.1.0"
+dependencies = [
+ "config",
+ "git-conventional",
+ "git2",
+ "pretty_assertions",
+ "regex",
+ "serde",
+ "serde_derive",
+ "serde_regex",
+ "tera",
+ "thiserror",
+]
+
+[[package]]
 name = "git-conventional"
 version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -312,32 +338,6 @@ dependencies = [
  "openssl-probe",
  "openssl-sys",
  "url",
-]
-
-[[package]]
-name = "gitolith-cli"
-version = "0.1.0"
-dependencies = [
- "gitolith-core",
- "log",
- "pretty_env_logger",
- "structopt",
-]
-
-[[package]]
-name = "gitolith-core"
-version = "0.1.0"
-dependencies = [
- "config",
- "git-conventional",
- "git2",
- "pretty_assertions",
- "regex",
- "serde",
- "serde_derive",
- "serde_regex",
- "tera",
- "thiserror",
 ]
 
 [[package]]
