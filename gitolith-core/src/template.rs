@@ -8,17 +8,17 @@ use tera::{
 	Value,
 };
 
-/// Changelog generator.
+/// Wrapper for [`Tera`].
 #[derive(Debug)]
-pub struct Changelog {
+pub struct Template {
 	tera: Tera,
 }
 
-impl Changelog {
+impl Template {
 	/// Constructs a new instance.
 	pub fn new(template: String) -> Result<Self> {
 		let mut tera = Tera::default();
-		tera.add_raw_template("changelog_template", &template)?;
+		tera.add_raw_template("template", &template)?;
 		tera.register_filter("capitalize_first", Self::capitalize_first_filter);
 		Ok(Self { tera })
 	}
@@ -38,12 +38,11 @@ impl Changelog {
 		Ok(tera::to_value(&s)?)
 	}
 
-	/// Generates the changelog.
-	pub fn generate(&self, release: Release) -> Result<String> {
-		Ok(self.tera.render(
-			"changelog_template",
-			&TeraContext::from_serialize(&release)?,
-		)?)
+	/// Renders the template.
+	pub fn render(&self, release: Release) -> Result<String> {
+		Ok(self
+			.tera
+			.render("template", &TeraContext::from_serialize(&release)?)?)
 	}
 }
 
@@ -53,14 +52,14 @@ mod test {
 	use crate::commit::Commit;
 
 	#[test]
-	fn changelog_template() -> Result<()> {
+	fn render_template() -> Result<()> {
 		let template = r#"
 		## {{ version }}
 		{% for commit in commits %}
 		### {{ commit.group }}
 		- {{ commit.message | capitalize_first }}
 		{% endfor %}"#;
-		let changelog = Changelog::new(template.to_string())?;
+		let template = Template::new(template.to_string())?;
 		assert_eq!(
 			r#"
 		## 1.0
@@ -71,7 +70,7 @@ mod test {
 		### fix
 		- Fix abc
 		"#,
-			changelog.generate(Release {
+			template.render(Release {
 				version:   Some(String::from("1.0")),
 				commits:   vec![
 					Commit::new(

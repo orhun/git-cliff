@@ -1,7 +1,6 @@
 mod args;
 
 use args::Opt;
-use gitolith_core::changelog::Changelog;
 use gitolith_core::commit::Commit;
 use gitolith_core::config::Config;
 use gitolith_core::error::Result;
@@ -10,6 +9,7 @@ use gitolith_core::release::{
 	ReleaseRoot,
 };
 use gitolith_core::repo::Repository;
+use gitolith_core::template::Template;
 use std::env;
 use std::io::{
 	self,
@@ -106,12 +106,12 @@ fn main() -> Result<()> {
 		.collect();
 
 	let stdout = &mut io::stdout();
-	let changelog = Changelog::new(config.changelog.body)?;
+	let template = Template::new(config.changelog.body)?;
 	if !config.changelog.header.is_empty() {
 		writeln!(stdout, "{}", config.changelog.header)?;
 	}
 	for release in release_root.releases {
-		write!(stdout, "{}", changelog.generate(release)?)?;
+		write!(stdout, "{}", template.render(release)?)?;
 	}
 	if !config.changelog.footer.is_empty() {
 		writeln!(stdout, "{}", config.changelog.footer)?;

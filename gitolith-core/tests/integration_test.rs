@@ -1,4 +1,3 @@
-use gitolith_core::changelog::Changelog;
 use gitolith_core::commit::Commit;
 use gitolith_core::config::{
 	ChangelogConfig,
@@ -6,6 +5,7 @@ use gitolith_core::config::{
 };
 use gitolith_core::error::Result;
 use gitolith_core::release::*;
+use gitolith_core::template::Template;
 use pretty_assertions::assert_eq;
 use regex::Regex;
 use std::fmt::Write;
@@ -105,12 +105,12 @@ fn generate_changelog() -> Result<()> {
 	};
 
 	let out = &mut String::new();
-	let changelog = Changelog::new(config.body)?;
+	let template = Template::new(config.body)?;
 	if !config.header.is_empty() {
 		writeln!(out, "{}", config.header).unwrap();
 	}
 	for release in release_root.releases {
-		write!(out, "{}", changelog.generate(release)?).unwrap();
+		write!(out, "{}", template.render(release)?).unwrap();
 	}
 	if !config.footer.is_empty() {
 		writeln!(out, "{}", config.footer).unwrap();

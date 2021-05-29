@@ -1,5 +1,3 @@
-/// Changelog generator.
-pub mod changelog;
 /// Git commit.
 pub mod commit;
 /// Config file parser.
@@ -10,3 +8,5 @@ pub mod error;
 pub mod release;
 /// Git repository.
 pub mod repo;
+/// Template engine.
+pub mod template;
