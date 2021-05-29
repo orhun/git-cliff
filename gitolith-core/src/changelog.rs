@@ -35,7 +35,7 @@ impl Changelog {
 			None => String::new(),
 			Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
 		};
-		Ok(tera::to_value(&s).unwrap())
+		Ok(tera::to_value(&s)?)
 	}
 
 	/// Generates the changelog.
