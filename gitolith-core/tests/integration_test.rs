@@ -27,11 +27,13 @@ fn generate_changelog() -> Result<()> {
 		commit_parsers:  vec![
 			CommitParser {
 				regex: Regex::new("feat*").unwrap(),
-				group: String::from("shiny features"),
+				group: Some(String::from("shiny features")),
+				skip:  None,
 			},
 			CommitParser {
 				regex: Regex::new("fix*").unwrap(),
-				group: String::from("fix bugs"),
+				group: Some(String::from("fix bugs")),
+				skip:  None,
 			},
 		],
 		filter_group:    true,

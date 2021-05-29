@@ -17,7 +17,7 @@ pub enum Error {
 	/// error.
 	#[error("Cannot parse the commit: `{0}`")]
 	ParseError(#[from] git_conventional::Error),
-	/// When commit's not belongs to any group we throw this error.
+	/// When commit's not belong to any group we throw this error.
 	#[error("Commit does not belong to any group")]
 	GroupError,
 	/// Error that may occur while template operations such as parse and render.

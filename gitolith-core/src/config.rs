@@ -26,7 +26,8 @@ pub struct ChangelogConfig {
 pub struct CommitParser {
 	#[serde(with = "serde_regex")]
 	pub regex: Regex,
-	pub group: String,
+	pub group: Option<String>,
+	pub skip:  Option<bool>,
 }
 
 impl Config {

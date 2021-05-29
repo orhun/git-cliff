@@ -78,8 +78,12 @@ impl Commit<'_> {
 	) -> Result<Self> {
 		for parser in parsers {
 			if parser.regex.is_match(&self.message) {
-				self.group = Some(parser.group.to_string());
-				return Ok(self);
+				if parser.skip != Some(true) {
+					self.group = parser.group.as_ref().cloned();
+					return Ok(self);
+				} else {
+					return Err(AppError::GroupError);
+				}
 			}
 		}
 		if !filter {
@@ -142,7 +146,8 @@ mod test {
 			.into_grouped(
 				&[CommitParser {
 					regex: Regex::new("test*").unwrap(),
-					group: String::from("test_group"),
+					group: Some(String::from("test_group")),
+					skip:  None,
 				}],
 				false,
 			)
