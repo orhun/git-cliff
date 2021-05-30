@@ -3,10 +3,10 @@ name: Continuous Integration
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
 
 jobs:
   check:
@@ -20,7 +20,7 @@ jobs:
           profile: minimal
           override: true
       - name: Checkout
-        uses: actions/checkout@master
+        uses: actions/checkout@main
       - name: Check
         uses: actions-rs/cargo@v1
         with:
@@ -38,7 +38,7 @@ jobs:
           toolchain: nightly
           override: true
       - name: Checkout
-        uses: actions/checkout@master
+        uses: actions/checkout@main
         with:
           fetch-depth: 0
       - name: Run tests
@@ -64,7 +64,7 @@ jobs:
           components: clippy
           override: true
       - name: Checkout
-        uses: actions/checkout@master
+        uses: actions/checkout@main
       - name: Check the lints
         uses: actions-rs/cargo@v1
         with:
@@ -83,7 +83,7 @@ jobs:
           components: rustfmt
           override: true
       - name: Checkout
-        uses: actions/checkout@master
+        uses: actions/checkout@main
       - name: Check the formatting
         uses: actions-rs/cargo@v1
         with:
@@ -95,7 +95,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - name: Checkout
-        uses: actions/checkout@master
+        uses: actions/checkout@main
       - name: Check the links
         uses: lycheeverse/lychee-action@v1
         env:

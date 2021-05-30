@@ -5,7 +5,6 @@ description = ""
 authors = ["git-cliff contributors <git-cliff@protonmail.com>"]
 license = "GPL-3.0"
 readme = "README.md"
-documentation = "https://github.com/orhun/git-cliff/blob/master/README.md"
 homepage = "https://github.com/orhun/git-cliff"
 repository = "https://github.com/orhun/git-cliff"
 keywords = []
