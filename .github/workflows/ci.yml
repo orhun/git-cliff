@@ -48,7 +48,7 @@ jobs:
           export RUSTDOCFLAGS="-Cpanic=abort"
           curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar jxf -
           cargo test --verbose $CARGO_OPTIONS
-          zip -0 ccov.zip `find . \( -name "git-cliff*.gc*" \) -print`;
+          zip -0 ccov.zip `find . \( -name "git_cliff*.gc*" \) -print`;
           ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o lcov.info;
           bash <(curl -s https://codecov.io/bash) -f lcov.info;
 
