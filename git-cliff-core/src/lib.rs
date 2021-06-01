@@ -1,3 +1,6 @@
+//! Highly customizable Changelog Generator
+#![warn(missing_docs, clippy::unwrap_used)]
+
 /// Git commit.
 pub mod commit;
 /// Config file parser.

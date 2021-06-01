@@ -25,9 +25,13 @@ pub struct ReleaseRoot<'a> {
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Release<'a> {
+	/// Release version, git tag.
 	pub version:   Option<String>,
+	/// Commits made for the release.
 	pub commits:   Vec<Commit<'a>>,
 	#[serde(rename = "commit_id")]
+	/// Commit ID of the tag.
 	pub commit_id: Option<String>,
+	/// Timestamp of the release.
 	pub timestamp: i64,
 }
