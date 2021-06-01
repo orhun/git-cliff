@@ -2,6 +2,7 @@ use git_cliff_core::commit::Commit;
 use git_cliff_core::config::{
 	ChangelogConfig,
 	CommitParser,
+	GitConfig,
 };
 use git_cliff_core::error::Result;
 use git_cliff_core::release::*;
@@ -12,9 +13,9 @@ use std::fmt::Write;
 
 #[test]
 fn generate_changelog() -> Result<()> {
-	let config = ChangelogConfig {
-		header:          String::from("this is a changelog"),
-		body:            String::from(
+	let changelog_config = ChangelogConfig {
+		header: String::from("this is a changelog"),
+		body:   String::from(
 			r#"
         ## Release {{ version }}
         {% for group, commits in commits | group_by(attribute="group") %}
@@ -23,8 +24,10 @@ fn generate_changelog() -> Result<()> {
         - {{ commit.message }}{% endfor %}
         {% endfor %}"#,
 		),
-		footer:          String::from("eoc - end of changelog"),
-		commit_parsers:  vec![
+		footer: String::from("eoc - end of changelog"),
+	};
+	let git_config = GitConfig {
+		commit_parsers: vec![
 			CommitParser {
 				regex: Regex::new("feat*").unwrap(),
 				group: Some(String::from("shiny features")),
@@ -36,9 +39,9 @@ fn generate_changelog() -> Result<()> {
 				skip:  None,
 			},
 		],
-		filter_group:    true,
-		git_tag_pattern: String::new(),
-		skip_tags_regex: Regex::new("v3*").unwrap(),
+		filter_commits: true,
+		tag_pattern:    String::new(),
+		skip_tags:      Regex::new("v3*").unwrap(),
 	};
 
 	let releases = vec![
@@ -56,7 +59,8 @@ fn generate_changelog() -> Result<()> {
 			]
 			.iter()
 			.filter_map(|c| {
-				c.process(&config.commit_parsers, config.filter_group).ok()
+				c.process(&git_config.commit_parsers, git_config.filter_commits)
+					.ok()
 			})
 			.collect::<Vec<Commit>>(),
 			commit_id: None,
@@ -88,15 +92,15 @@ fn generate_changelog() -> Result<()> {
 	];
 
 	let out = &mut String::new();
-	let template = Template::new(config.body)?;
-	if !config.header.is_empty() {
-		writeln!(out, "{}", config.header).unwrap();
+	let template = Template::new(changelog_config.body)?;
+	if !changelog_config.header.is_empty() {
+		writeln!(out, "{}", changelog_config.header).unwrap();
 	}
 	for release in releases {
 		write!(out, "{}", template.render(&release)?).unwrap();
 	}
-	if !config.footer.is_empty() {
-		writeln!(out, "{}", config.footer).unwrap();
+	if !changelog_config.footer.is_empty() {
+		writeln!(out, "{}", changelog_config.footer).unwrap();
 	}
 
 	assert_eq!(

@@ -26,7 +26,7 @@ fn main() -> Result<()> {
 
 	let repository =
 		Repository::init(args.repository.unwrap_or(env::current_dir()?))?;
-	let mut tags = repository.tags(&config.changelog.git_tag_pattern)?;
+	let mut tags = repository.tags(&config.git.tag_pattern)?;
 	let commits = repository.commits()?;
 
 	if let Some(tag) = args.tag {
@@ -56,5 +56,5 @@ fn main() -> Result<()> {
 		}
 	}
 
-	Changelog::new(releases, &config.changelog)?.generate(&mut io::stdout())
+	Changelog::new(releases, &config)?.generate(&mut io::stdout())
 }

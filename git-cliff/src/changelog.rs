@@ -1,5 +1,5 @@
 use git_cliff_core::commit::Commit;
-use git_cliff_core::config::ChangelogConfig as Config;
+use git_cliff_core::config::Config;
 use git_cliff_core::error::Result;
 use git_cliff_core::release::Release;
 use git_cliff_core::template::Template;
@@ -18,7 +18,7 @@ impl<'a> Changelog<'a> {
 	pub fn new(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
 		let mut changelog = Self {
 			releases,
-			template: Template::new(config.body.to_string())?,
+			template: Template::new(config.changelog.body.to_string())?,
 			config,
 		};
 		changelog.process_commits();
@@ -35,8 +35,10 @@ impl<'a> Changelog<'a> {
 				.commits
 				.iter()
 				.filter_map(|commit| {
-					match commit.process(&config.commit_parsers, config.filter_group)
-					{
+					match commit.process(
+						&config.git.commit_parsers,
+						config.git.filter_commits,
+					) {
 						Ok(commit) => Some(commit),
 						Err(e) => {
 							debug!("Cannot process commit: {} ({})", commit.id, e);
@@ -67,7 +69,7 @@ impl<'a> Changelog<'a> {
 					);
 					false
 				} else if let Some(version) = &release.version {
-					!self.config.skip_tags_regex.is_match(version)
+					!self.config.git.skip_tags.is_match(version)
 				} else {
 					true
 				}
@@ -76,14 +78,14 @@ impl<'a> Changelog<'a> {
 	}
 
 	pub fn generate<W: Write>(&self, out: &mut W) -> Result<()> {
-		if !self.config.header.is_empty() {
-			writeln!(out, "{}", self.config.header)?;
+		if !self.config.changelog.header.is_empty() {
+			writeln!(out, "{}", self.config.changelog.header)?;
 		}
 		for release in &self.releases {
 			write!(out, "{}", self.template.render(release)?)?;
 		}
-		if !self.config.footer.is_empty() {
-			writeln!(out, "{}", self.config.footer)?;
+		if !self.config.changelog.footer.is_empty() {
+			writeln!(out, "{}", self.config.changelog.footer)?;
 		}
 		Ok(())
 	}

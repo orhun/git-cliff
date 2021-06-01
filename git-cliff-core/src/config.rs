@@ -6,26 +6,33 @@ use regex::Regex;
 pub struct Config {
 	/// Configuration values about changelog generation.
 	pub changelog: ChangelogConfig,
+	/// Configuration values about git.
+	pub git:       GitConfig,
 }
 
 /// Changelog configuration.
 #[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct ChangelogConfig {
 	/// Changelog header.
-	pub header:          String,
+	pub header: String,
 	/// Changelog body, template.
-	pub body:            String,
+	pub body:   String,
 	/// Changelog footer.
-	pub footer:          String,
+	pub footer: String,
+}
+
+/// Git configuration
+#[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
+pub struct GitConfig {
 	/// Git commit parsers.
-	pub commit_parsers:  Vec<CommitParser>,
+	pub commit_parsers: Vec<CommitParser>,
 	/// Whether to filter out commits.
-	pub filter_group:    bool,
+	pub filter_commits: bool,
 	/// Blob pattern for git tags.
-	pub git_tag_pattern: String,
+	pub tag_pattern:    String,
 	#[serde(with = "serde_regex")]
 	/// Regex to skip matched tags.
-	pub skip_tags_regex: Regex,
+	pub skip_tags:      Regex,
 }
 
 /// Parser for grouping commits.
