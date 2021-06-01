@@ -39,10 +39,10 @@ impl Template {
 	}
 
 	/// Renders the template.
-	pub fn render(&self, release: Release) -> Result<String> {
+	pub fn render(&self, release: &Release) -> Result<String> {
 		Ok(self
 			.tera
-			.render("template", &TeraContext::from_serialize(&release)?)?)
+			.render("template", &TeraContext::from_serialize(release)?)?)
 	}
 }
 

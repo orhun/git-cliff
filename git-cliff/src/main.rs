@@ -1,6 +1,8 @@
 mod args;
+mod changelog;
 
 use args::Opt;
+use changelog::Changelog;
 use git_cliff_core::commit::Commit;
 use git_cliff_core::config::Config;
 use git_cliff_core::error::Result;
@@ -9,12 +11,8 @@ use git_cliff_core::release::{
 	ReleaseRoot,
 };
 use git_cliff_core::repo::Repository;
-use git_cliff_core::template::Template;
 use std::env;
-use std::io::{
-	self,
-	Write,
-};
+use std::io;
 use structopt::StructOpt;
 #[macro_use]
 extern crate log;
@@ -64,58 +62,5 @@ fn main() -> Result<()> {
 		}
 	}
 
-	release_root.releases.iter_mut().for_each(|release| {
-		release.commits = release
-			.commits
-			.iter()
-			.filter_map(|commit| {
-				match commit.process(
-					&config.changelog.commit_parsers,
-					config.changelog.filter_group,
-				) {
-					Ok(commit) => Some(commit),
-					Err(e) => {
-						debug!("Cannot process commit: {} ({})", commit.id, e);
-						None
-					}
-				}
-			})
-			.collect::<Vec<Commit>>();
-	});
-	release_root.releases = release_root
-		.releases
-		.into_iter()
-		.rev()
-		.filter(|release| {
-			if release.commits.is_empty() {
-				debug!(
-					"Release {} doesn't have any commits",
-					release
-						.version
-						.as_ref()
-						.cloned()
-						.unwrap_or_else(|| String::from("[?]"))
-				);
-				false
-			} else if let Some(version) = &release.version {
-				!config.changelog.skip_tags_regex.is_match(version)
-			} else {
-				true
-			}
-		})
-		.collect();
-
-	let stdout = &mut io::stdout();
-	let template = Template::new(config.changelog.body)?;
-	if !config.changelog.header.is_empty() {
-		writeln!(stdout, "{}", config.changelog.header)?;
-	}
-	for release in release_root.releases {
-		write!(stdout, "{}", template.render(release)?)?;
-	}
-	if !config.changelog.footer.is_empty() {
-		writeln!(stdout, "{}", config.changelog.footer)?;
-	}
-
-	Ok(())
+	Changelog::new(release_root, &config.changelog)?.generate(&mut io::stdout())
 }
