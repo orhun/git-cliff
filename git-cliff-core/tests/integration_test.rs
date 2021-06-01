@@ -41,76 +41,59 @@ fn generate_changelog() -> Result<()> {
 		skip_tags_regex: Regex::new("v3*").unwrap(),
 	};
 
-	let release_root = ReleaseRoot {
-		releases: vec![
-			Release {
-				version:   Some(String::from("v2.0.0")),
-				commits:   vec![
-					Commit::new(
-						String::from("abc123"),
-						String::from("feat: add xyz"),
-					),
-					Commit::new(
-						String::from("abc124"),
-						String::from("feat: add zyx"),
-					),
-					Commit::new(
-						String::from("def789"),
-						String::from("invalid commit"),
-					),
-					Commit::new(
-						String::from("qwerty"),
-						String::from("fix: fix abc"),
-					),
-					Commit::new(
-						String::from("hjkl12"),
-						String::from("chore: do boring stuff"),
-					),
-				]
-				.iter()
-				.filter_map(|c| {
-					c.process(&config.commit_parsers, config.filter_group).ok()
-				})
-				.collect::<Vec<Commit>>(),
-				commit_id: None,
-				timestamp: 0,
-			},
-			Release {
-				version:   Some(String::from("v1.0.0")),
-				commits:   vec![
-					Commit::new(
-						String::from("0bc123"),
-						String::from("feat: add cool features"),
-					),
-					Commit::new(
-						String::from("0werty"),
-						String::from("fix: fix stuff"),
-					),
-					Commit::new(
-						String::from("0w3rty"),
-						String::from("fix: fix more stuff"),
-					),
-					Commit::new(
-						String::from("0jkl12"),
-						String::from("chore: do nothing"),
-					),
-				]
-				.into_iter()
-				.filter_map(|c| c.into_conventional().ok())
-				.collect::<Vec<Commit>>(),
-				commit_id: None,
-				timestamp: 0,
-			},
-		],
-	};
+	let releases = vec![
+		Release {
+			version:   Some(String::from("v2.0.0")),
+			commits:   vec![
+				Commit::new(String::from("abc123"), String::from("feat: add xyz")),
+				Commit::new(String::from("abc124"), String::from("feat: add zyx")),
+				Commit::new(String::from("def789"), String::from("invalid commit")),
+				Commit::new(String::from("qwerty"), String::from("fix: fix abc")),
+				Commit::new(
+					String::from("hjkl12"),
+					String::from("chore: do boring stuff"),
+				),
+			]
+			.iter()
+			.filter_map(|c| {
+				c.process(&config.commit_parsers, config.filter_group).ok()
+			})
+			.collect::<Vec<Commit>>(),
+			commit_id: None,
+			timestamp: 0,
+		},
+		Release {
+			version:   Some(String::from("v1.0.0")),
+			commits:   vec![
+				Commit::new(
+					String::from("0bc123"),
+					String::from("feat: add cool features"),
+				),
+				Commit::new(String::from("0werty"), String::from("fix: fix stuff")),
+				Commit::new(
+					String::from("0w3rty"),
+					String::from("fix: fix more stuff"),
+				),
+				Commit::new(
+					String::from("0jkl12"),
+					String::from("chore: do nothing"),
+				),
+			]
+			.into_iter()
+			.filter_map(|c| c.into_conventional().ok())
+			.collect::<Vec<Commit>>(),
+			commit_id: None,
+			timestamp: 0,
+		},
+	];
 
 	let out = &mut String::new();
 	let template = Template::new(config.body)?;
 	if !config.header.is_empty() {
 		writeln!(out, "{}", config.header).unwrap();
 	}
-	for release in release_root.releases {
-		write!(out, "{}", template.render(release)?).unwrap();
+	for release in releases {
+		write!(out, "{}", template.render(&release)?).unwrap();
 	}
 	if !config.footer.is_empty() {
 		writeln!(out, "{}", config.footer).unwrap();

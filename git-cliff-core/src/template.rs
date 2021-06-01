@@ -70,7 +70,7 @@ mod test {
 		### fix
 		- Fix abc
 		"#,
-			template.render(Release {
+			template.render(&Release {
 				version:   Some(String::from("1.0")),
 				commits:   vec![
 					Commit::new(
