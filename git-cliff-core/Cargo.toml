@@ -1,14 +1,14 @@
 [package]
 name = "git-cliff-core"
 version = "0.1.0"
-description = ""
+description = "Core library of git-cliff"
 authors = ["git-cliff contributors <git-cliff@protonmail.com>"]
 license = "GPL-3.0"
 readme = "README.md"
 homepage = "https://github.com/orhun/git-cliff"
 repository = "https://github.com/orhun/git-cliff"
-keywords = []
-categories = []
+keywords = ["changelog", "generator", "conventional", "commit"]
+categories = ["command-line-utilities"]
 edition = "2018"
 
 [dependencies]

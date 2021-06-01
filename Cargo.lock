@@ -288,7 +288,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "git-cliff-cli"
+name = "git-cliff"
 version = "0.1.0"
 dependencies = [
  "git-cliff-core",
