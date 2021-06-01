@@ -1,19 +1,5 @@
 use crate::commit::Commit;
 
-/// Root object for deserializing from JSON
-#[derive(
-	Default,
-	Debug,
-	Clone,
-	PartialEq,
-	serde_derive::Serialize,
-	serde_derive::Deserialize,
-)]
-#[serde(rename_all = "camelCase")]
-pub struct ReleaseRoot<'a> {
-	pub releases: Vec<Release<'a>>,
-}
-
 /// Representation of a release.
 #[derive(
 	Default,

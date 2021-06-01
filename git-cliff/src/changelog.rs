@@ -1,23 +1,23 @@
 use git_cliff_core::commit::Commit;
 use git_cliff_core::config::ChangelogConfig as Config;
 use git_cliff_core::error::Result;
-use git_cliff_core::release::ReleaseRoot;
+use git_cliff_core::release::Release;
 use git_cliff_core::template::Template;
 use std::io::Write;
 
 /// Changelog generator.
 #[derive(Debug)]
 pub struct Changelog<'a> {
-	release_root: ReleaseRoot<'a>,
-	template:     Template,
-	config:       &'a Config,
+	releases: Vec<Release<'a>>,
+	template: Template,
+	config:   &'a Config,
 }
 
 impl<'a> Changelog<'a> {
 	/// Constructs a new instance.
-	pub fn new(release_root: ReleaseRoot<'a>, config: &'a Config) -> Result<Self> {
+	pub fn new(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
 		let mut changelog = Self {
-			release_root,
+			releases,
 			template: Template::new(config.body.to_string())?,
 			config,
 		};
@@ -30,7 +30,7 @@ impl<'a> Changelog<'a> {
 	/// criteria set by configuration file.
 	fn process_commits(&mut self) {
 		let config = &self.config;
-		self.release_root.releases.iter_mut().for_each(|release| {
+		self.releases.iter_mut().for_each(|release| {
 			release.commits = release
 				.commits
 				.iter()
@@ -50,8 +50,7 @@ impl<'a> Changelog<'a> {
 
 	/// Processes the releases and filters them out based on the configuration.
 	fn process_releases(&mut self) {
-		self.release_root.releases = self
-			.release_root
+		self.releases = self
 			.releases
 			.clone()
 			.into_iter()
@@ -80,7 +79,7 @@ impl<'a> Changelog<'a> {
 		if !self.config.header.is_empty() {
 			writeln!(out, "{}", self.config.header)?;
 		}
-		for release in &self.release_root.releases {
+		for release in &self.releases {
 			write!(out, "{}", self.template.render(release)?)?;
 		}
 		if !self.config.footer.is_empty() {

@@ -6,10 +6,7 @@ use changelog::Changelog;
 use git_cliff_core::commit::Commit;
 use git_cliff_core::config::Config;
 use git_cliff_core::error::Result;
-use git_cliff_core::release::{
-	Release,
-	ReleaseRoot,
-};
+use git_cliff_core::release::Release;
 use git_cliff_core::repo::Repository;
 use std::env;
 use std::io;
@@ -45,22 +42,19 @@ fn main() -> Result<()> {
 		}
 	}
 
-	let mut release_root = ReleaseRoot {
-		releases: vec![Release::default(); tags.len() + 1],
-	};
+	let mut releases = vec![Release::default(); tags.len() + 1];
 	let mut release_index = 0;
 	for git_commit in commits.into_iter().rev() {
 		let commit = Commit::from(&git_commit);
 		let commit_id = commit.id.to_string();
-		release_root.releases[release_index].commits.push(commit);
+		releases[release_index].commits.push(commit);
 		if let Some(tag) = tags.get(&commit_id) {
-			release_root.releases[release_index].version = Some(tag.to_string());
-			release_root.releases[release_index].commit_id = Some(commit_id);
-			release_root.releases[release_index].timestamp =
-				git_commit.time().seconds();
+			releases[release_index].version = Some(tag.to_string());
+			releases[release_index].commit_id = Some(commit_id);
+			releases[release_index].timestamp = git_commit.time().seconds();
 			release_index += 1;
 		}
 	}
 
-	Changelog::new(release_root, &config.changelog)?.generate(&mut io::stdout())
+	Changelog::new(releases, &config.changelog)?.generate(&mut io::stdout())
 }
