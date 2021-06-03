@@ -27,7 +27,8 @@ fn generate_changelog() -> Result<()> {
 		footer: String::from("eoc - end of changelog"),
 	};
 	let git_config = GitConfig {
-		commit_parsers: vec![
+		conventional_commits: true,
+		commit_parsers:       vec![
 			CommitParser {
 				regex: Regex::new("feat*").unwrap(),
 				group: Some(String::from("shiny features")),
@@ -39,9 +40,9 @@ fn generate_changelog() -> Result<()> {
 				skip:  None,
 			},
 		],
-		filter_commits: true,
-		tag_pattern:    String::new(),
-		skip_tags:      Regex::new("v3*").unwrap(),
+		filter_commits:       true,
+		tag_pattern:          String::new(),
+		skip_tags:            Regex::new("v3*").unwrap(),
 	};
 
 	let releases = vec![
@@ -59,8 +60,12 @@ fn generate_changelog() -> Result<()> {
 			]
 			.iter()
 			.filter_map(|c| {
-				c.process(&git_config.commit_parsers, git_config.filter_commits)
-					.ok()
+				c.process(
+					&git_config.commit_parsers,
+					git_config.filter_commits,
+					git_config.conventional_commits,
+				)
+				.ok()
 			})
 			.collect::<Vec<Commit>>(),
 			commit_id: None,

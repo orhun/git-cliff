@@ -31,6 +31,8 @@ footer = """
 """
 
 [git]
+# allow only conventional commits
+conventional_commits = true
 # regex for parsing and grouping commits
 commit_parsers = [
     { regex = "feat*", group = "Features"},

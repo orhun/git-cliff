@@ -24,15 +24,17 @@ pub struct ChangelogConfig {
 /// Git configuration
 #[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct GitConfig {
+	/// Whether to enable conventional commits.
+	pub conventional_commits: bool,
 	/// Git commit parsers.
-	pub commit_parsers: Vec<CommitParser>,
+	pub commit_parsers:       Vec<CommitParser>,
 	/// Whether to filter out commits.
-	pub filter_commits: bool,
+	pub filter_commits:       bool,
 	/// Blob pattern for git tags.
-	pub tag_pattern:    String,
+	pub tag_pattern:          String,
 	#[serde(with = "serde_regex")]
 	/// Regex to skip matched tags.
-	pub skip_tags:      Regex,
+	pub skip_tags:            Regex,
 }
 
 /// Parser for grouping commits.

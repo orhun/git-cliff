@@ -50,10 +50,17 @@ impl Commit<'_> {
 	///
 	/// * converts commit to a conventional commit
 	/// * sets the group for the commit
-	pub fn process(&self, parsers: &[CommitParser], filter: bool) -> Result<Self> {
-		let commit = self.clone();
-		let commit = commit.into_conventional()?;
-		let commit = commit.into_grouped(parsers, filter)?;
+	pub fn process(
+		&self,
+		parsers: &[CommitParser],
+		filter_commits: bool,
+		conventional_commits: bool,
+	) -> Result<Self> {
+		let mut commit = self.clone();
+		if conventional_commits {
+			commit = commit.into_conventional()?;
+		}
+		let commit = commit.into_grouped(parsers, filter_commits)?;
 		Ok(commit)
 	}
 

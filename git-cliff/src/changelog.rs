@@ -38,6 +38,7 @@ impl<'a> Changelog<'a> {
 					match commit.process(
 						&config.git.commit_parsers,
 						config.git.filter_commits,
+						config.git.conventional_commits,
 					) {
 						Ok(commit) => Some(commit),
 						Err(e) => {
