@@ -19,7 +19,7 @@ body = """
 ## [unreleased]
 {% endif %}\
 {% for group, commits in commits | group_by(attribute="group") %}
-### {{ group | capitalize}}
+### {{ group | capitalize_first }}
 {% for commit in commits %}
 - {{ commit.message | capitalize_first }}\
 {% endfor %}
