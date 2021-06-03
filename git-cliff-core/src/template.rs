@@ -19,17 +19,17 @@ impl Template {
 	pub fn new(template: String) -> Result<Self> {
 		let mut tera = Tera::default();
 		tera.add_raw_template("template", &template)?;
-		tera.register_filter("capitalize_first", Self::capitalize_first_filter);
+		tera.register_filter("upper_first", Self::upper_first_filter);
 		Ok(Self { tera })
 	}
 
-	/// Filter for capitalizing the first character of a string.
-	fn capitalize_first_filter(
+	/// Filter for making the first character of a string uppercase.
+	fn upper_first_filter(
 		value: &Value,
 		_: &HashMap<String, Value>,
 	) -> TeraResult<Value> {
 		let mut s =
-			tera::try_get_value!("capitalize_first_filter", "value", String, value);
+			tera::try_get_value!("upper_first_filter", "value", String, value);
 		let mut c = s.chars();
 		s = match c.next() {
 			None => String::new(),
@@ -57,7 +57,7 @@ mod test {
 		## {{ version }}
 		{% for commit in commits %}
 		### {{ commit.group }}
-		- {{ commit.message | capitalize_first }}
+		- {{ commit.message | upper_first }}
 		{% endfor %}"#;
 		let template = Template::new(template.to_string())?;
 		assert_eq!(
