@@ -99,15 +99,19 @@ impl Serialize for Commit<'_> {
 	where
 		S: Serializer,
 	{
-		let mut commit = serializer.serialize_struct("Commit", 3)?;
+		let mut commit = serializer.serialize_struct("Commit", 7)?;
 		commit.serialize_field("id", &self.id)?;
 		match &self.conv {
 			Some(conv) => {
 				commit.serialize_field("message", conv.description())?;
+				commit.serialize_field("body", &conv.body())?;
+				commit.serialize_field("footer", conv.footers())?;
 				commit.serialize_field(
 					"group",
 					self.group.as_ref().unwrap_or(&conv.type_().to_string()),
 				)?;
+				commit.serialize_field("breaking", &conv.breaking())?;
+				commit.serialize_field("scope", &conv.scope())?;
 			}
 			None => {
 				commit.serialize_field("message", &self.message)?;
