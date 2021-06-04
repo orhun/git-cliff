@@ -52,15 +52,18 @@ impl Commit<'_> {
 	/// * sets the group for the commit
 	pub fn process(
 		&self,
-		parsers: &[CommitParser],
-		filter_commits: bool,
+		parsers: Option<&Vec<CommitParser>>,
+		filter_commits: Option<bool>,
 		conventional_commits: bool,
 	) -> Result<Self> {
 		let mut commit = self.clone();
 		if conventional_commits {
 			commit = commit.into_conventional()?;
 		}
-		let commit = commit.into_grouped(parsers, filter_commits)?;
+		if let Some(parsers) = parsers {
+			commit =
+				commit.into_grouped(parsers, filter_commits.unwrap_or(false))?;
+		}
 		Ok(commit)
 	}
 

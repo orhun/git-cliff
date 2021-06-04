@@ -27,9 +27,9 @@ pub struct GitConfig {
 	/// Whether to enable conventional commits.
 	pub conventional_commits: bool,
 	/// Git commit parsers.
-	pub commit_parsers:       Vec<CommitParser>,
+	pub commit_parsers:       Option<Vec<CommitParser>>,
 	/// Whether to filter out commits.
-	pub filter_commits:       bool,
+	pub filter_commits:       Option<bool>,
 	/// Blob pattern for git tags.
 	pub tag_pattern:          String,
 	#[serde(with = "serde_regex")]

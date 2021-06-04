@@ -36,7 +36,7 @@ impl<'a> Changelog<'a> {
 				.iter()
 				.filter_map(|commit| {
 					match commit.process(
-						&config.git.commit_parsers,
+						config.git.commit_parsers.as_ref(),
 						config.git.filter_commits,
 						config.git.conventional_commits,
 					) {

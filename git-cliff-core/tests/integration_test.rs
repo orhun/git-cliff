@@ -28,7 +28,7 @@ fn generate_changelog() -> Result<()> {
 	};
 	let git_config = GitConfig {
 		conventional_commits: true,
-		commit_parsers:       vec![
+		commit_parsers:       Some(vec![
 			CommitParser {
 				message: Regex::new("feat*").ok(),
 				body:    None,
@@ -41,8 +41,8 @@ fn generate_changelog() -> Result<()> {
 				group:   Some(String::from("fix bugs")),
 				skip:    None,
 			},
-		],
-		filter_commits:       true,
+		]),
+		filter_commits:       Some(true),
 		tag_pattern:          String::new(),
 		skip_tags:            Regex::new("v3*").unwrap(),
 	};
@@ -63,7 +63,7 @@ fn generate_changelog() -> Result<()> {
 			.iter()
 			.filter_map(|c| {
 				c.process(
-					&git_config.commit_parsers,
+					git_config.commit_parsers.as_ref(),
 					git_config.filter_commits,
 					git_config.conventional_commits,
 				)
