@@ -14,11 +14,11 @@ pub struct Config {
 #[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct ChangelogConfig {
 	/// Changelog header.
-	pub header: String,
+	pub header: Option<String>,
 	/// Changelog body, template.
 	pub body:   String,
 	/// Changelog footer.
-	pub footer: String,
+	pub footer: Option<String>,
 }
 
 /// Git configuration

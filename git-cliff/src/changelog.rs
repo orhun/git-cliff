@@ -79,14 +79,14 @@ impl<'a> Changelog<'a> {
 	}
 
 	pub fn generate<W: Write>(&self, out: &mut W) -> Result<()> {
-		if !self.config.changelog.header.is_empty() {
-			writeln!(out, "{}", self.config.changelog.header)?;
+		if let Some(header) = &self.config.changelog.header {
+			writeln!(out, "{}", header)?;
 		}
 		for release in &self.releases {
 			write!(out, "{}", self.template.render(release)?)?;
 		}
-		if !self.config.changelog.footer.is_empty() {
-			writeln!(out, "{}", self.config.changelog.footer)?;
+		if let Some(footer) = &self.config.changelog.footer {
+			writeln!(out, "{}", footer)?;
 		}
 		Ok(())
 	}
