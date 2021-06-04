@@ -30,14 +30,16 @@ fn generate_changelog() -> Result<()> {
 		conventional_commits: true,
 		commit_parsers:       vec![
 			CommitParser {
-				regex: Regex::new("feat*").unwrap(),
-				group: Some(String::from("shiny features")),
-				skip:  None,
+				message: Regex::new("feat*").ok(),
+				body:    None,
+				group:   Some(String::from("shiny features")),
+				skip:    None,
 			},
 			CommitParser {
-				regex: Regex::new("fix*").unwrap(),
-				group: Some(String::from("fix bugs")),
-				skip:  None,
+				message: Regex::new("fix*").ok(),
+				body:    None,
+				group:   Some(String::from("fix bugs")),
+				skip:    None,
 			},
 		],
 		filter_commits:       true,

@@ -41,13 +41,16 @@ pub struct GitConfig {
 #[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CommitParser {
-	/// Regex for matching commit message.
-	#[serde(with = "serde_regex")]
-	pub regex: Regex,
+	/// Regex for matching the commit message.
+	#[serde(with = "serde_regex", default)]
+	pub message: Option<Regex>,
+	/// Regex for matching the commit body.
+	#[serde(with = "serde_regex", default)]
+	pub body:    Option<Regex>,
 	/// Group of the commit.
-	pub group: Option<String>,
+	pub group:   Option<String>,
 	/// Whether to skip this commit group.
-	pub skip:  Option<bool>,
+	pub skip:    Option<bool>,
 }
 
 impl Config {

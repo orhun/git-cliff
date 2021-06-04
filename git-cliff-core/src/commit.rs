@@ -84,12 +84,17 @@ impl Commit<'_> {
 		filter: bool,
 	) -> Result<Self> {
 		for parser in parsers {
-			if parser.regex.is_match(&self.message) {
-				if parser.skip != Some(true) {
-					self.group = parser.group.as_ref().cloned();
-					return Ok(self);
-				} else {
-					return Err(AppError::GroupError);
+			for regex in vec![parser.message.as_ref(), parser.body.as_ref()]
+				.into_iter()
+				.flatten()
+			{
+				if regex.is_match(&self.message) {
+					if parser.skip != Some(true) {
+						self.group = parser.group.as_ref().cloned();
+						return Ok(self);
+					} else {
+						return Err(AppError::GroupError);
+					}
 				}
 			}
 		}
@@ -156,9 +161,10 @@ mod test {
 			.clone()
 			.into_grouped(
 				&[CommitParser {
-					regex: Regex::new("test*").unwrap(),
-					group: Some(String::from("test_group")),
-					skip:  None,
+					message: Regex::new("test*").ok(),
+					body:    None,
+					group:   Some(String::from("test_group")),
+					skip:    None,
 				}],
 				false,
 			)
