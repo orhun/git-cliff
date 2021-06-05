@@ -27,7 +27,7 @@ fn main() -> Result<()> {
 	let repository =
 		Repository::init(args.repository.unwrap_or(env::current_dir()?))?;
 	let mut tags = repository.tags(&config.git.tag_pattern)?;
-	let commits = repository.commits()?;
+	let commits = repository.commits(args.range)?;
 
 	if let Some(tag) = args.tag {
 		if let Some(commit_id) = commits.first().map(|c| c.id().to_string()) {

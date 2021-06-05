@@ -32,7 +32,9 @@ pub struct Opt {
 		default_value = "cliff.toml"
 	)]
 	pub config:     String,
-	#[structopt(short, long, env, value_name = "TAG", allow_hyphen_values = true)]
 	/// Sets the tag for the latest version.
+	#[structopt(short, long, env, value_name = "TAG", allow_hyphen_values = true)]
 	pub tag:        Option<String>,
+	/// Sets the commit range to process.
+	pub range:      Option<String>,
 }

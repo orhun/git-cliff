@@ -37,10 +37,14 @@ impl Repository {
 	/// Parses and returns the commits.
 	///
 	/// Sorts the commits by their time.
-	pub fn commits(&self) -> Result<Vec<Commit>> {
+	pub fn commits(&self, range: Option<String>) -> Result<Vec<Commit>> {
 		let mut revwalk = self.inner.revwalk()?;
 		revwalk.set_sorting(Sort::TIME)?;
-		revwalk.push_head()?;
+		if let Some(range) = range {
+			revwalk.push_range(&range)?;
+		} else {
+			revwalk.push_head()?;
+		}
 		Ok(revwalk
 			.filter_map(|id| id.ok())
 			.filter_map(|id| self.inner.find_commit(id).ok())
