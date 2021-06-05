@@ -78,6 +78,7 @@ impl<'a> Changelog<'a> {
 			.collect();
 	}
 
+	/// Generates the changelog and writes it to the given output.
 	pub fn generate<W: Write>(&self, out: &mut W) -> Result<()> {
 		if let Some(header) = &self.config.changelog.header {
 			writeln!(out, "{}", header)?;
