@@ -15,9 +15,11 @@ pub struct Release<'a> {
 	pub version:   Option<String>,
 	/// Commits made for the release.
 	pub commits:   Vec<Commit<'a>>,
-	#[serde(rename = "commit_id")]
 	/// Commit ID of the tag.
+	#[serde(rename = "commit_id")]
 	pub commit_id: Option<String>,
 	/// Timestamp of the release.
 	pub timestamp: i64,
+	/// Previous release.
+	pub previous:  Option<Box<Release<'a>>>,
 }

@@ -44,6 +44,7 @@ fn main() -> Result<()> {
 
 	let mut releases = vec![Release::default(); tags.len() + 1];
 	let mut release_index = 0;
+	let mut previous_release = Release::default();
 	for git_commit in commits.into_iter().rev() {
 		let commit = Commit::from(&git_commit);
 		let commit_id = commit.id.to_string();
@@ -52,6 +53,8 @@ fn main() -> Result<()> {
 			releases[release_index].version = Some(tag.to_string());
 			releases[release_index].commit_id = Some(commit_id);
 			releases[release_index].timestamp = git_commit.time().seconds();
+			releases[release_index].previous = Some(Box::new(previous_release));
+			previous_release = releases[release_index].clone();
 			release_index += 1;
 		}
 	}

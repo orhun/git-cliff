@@ -87,6 +87,7 @@ mod test {
 				.collect(),
 				commit_id: None,
 				timestamp: 0,
+				previous:  None,
 			})?
 		);
 		Ok(())
