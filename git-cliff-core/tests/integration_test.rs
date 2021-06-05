@@ -14,7 +14,7 @@ use std::fmt::Write;
 #[test]
 fn generate_changelog() -> Result<()> {
 	let changelog_config = ChangelogConfig {
-		header: String::from("this is a changelog"),
+		header: Some(String::from("this is a changelog")),
 		body:   String::from(
 			r#"
         ## Release {{ version }}
@@ -24,7 +24,7 @@ fn generate_changelog() -> Result<()> {
         - {{ commit.message }}{% endfor %}
         {% endfor %}"#,
 		),
-		footer: String::from("eoc - end of changelog"),
+		footer: Some(String::from("eoc - end of changelog")),
 	};
 	let git_config = GitConfig {
 		conventional_commits: true,
@@ -72,6 +72,7 @@ fn generate_changelog() -> Result<()> {
 			.collect::<Vec<Commit>>(),
 			commit_id: None,
 			timestamp: 0,
+			previous:  None,
 		},
 		Release {
 			version:   Some(String::from("v1.0.0")),
@@ -95,20 +96,18 @@ fn generate_changelog() -> Result<()> {
 			.collect::<Vec<Commit>>(),
 			commit_id: None,
 			timestamp: 0,
+			previous:  None,
 		},
 	];
 
 	let out = &mut String::new();
 	let template = Template::new(changelog_config.body)?;
-	if !changelog_config.header.is_empty() {
-		writeln!(out, "{}", changelog_config.header).unwrap();
-	}
+
+	writeln!(out, "{}", changelog_config.header.unwrap()).unwrap();
 	for release in releases {
 		write!(out, "{}", template.render(&release)?).unwrap();
 	}
-	if !changelog_config.footer.is_empty() {
-		writeln!(out, "{}", changelog_config.footer).unwrap();
-	}
+	writeln!(out, "{}", changelog_config.footer.unwrap()).unwrap();
 
 	assert_eq!(
 		"this is a changelog
