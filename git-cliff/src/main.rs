@@ -22,7 +22,12 @@ fn main() -> Result<()> {
 		env::set_var("RUST_LOG", "info");
 	}
 	pretty_env_logger::init();
-	let config = Config::parse(args.config)?;
+	let mut config = Config::parse(args.config)?;
+
+	if args.strip {
+		config.changelog.header = None;
+		config.changelog.footer = None;
+	}
 
 	let repository =
 		Repository::init(args.repository.unwrap_or(env::current_dir()?))?;

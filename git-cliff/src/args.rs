@@ -41,6 +41,9 @@ pub struct Opt {
 	/// Processes the commits that do not belong to a tag.
 	#[structopt(short, long)]
 	pub unreleased: bool,
+	/// Strips the header and footer from the changelog.
+	#[structopt(short, long)]
+	pub strip:      bool,
 	/// Sets the commit range to process.
 	pub range:      Option<String>,
 }
