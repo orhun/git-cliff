@@ -8,7 +8,7 @@ use git2::{
 	Repository as GitRepository,
 	Sort,
 };
-use std::collections::HashMap;
+use indexmap::IndexMap;
 use std::io;
 use std::path::PathBuf;
 
@@ -54,8 +54,8 @@ impl Repository {
 	/// Parses and returns a commit-tag map.
 	///
 	/// It collects lightweight and annotated tags.
-	pub fn tags(&self, pattern: &str) -> Result<HashMap<String, String>> {
-		let mut tags = HashMap::new();
+	pub fn tags(&self, pattern: &str) -> Result<IndexMap<String, String>> {
+		let mut tags = IndexMap::new();
 		let tag_names = self.inner.tag_names(Some(pattern))?;
 		for name in tag_names.iter().flatten().map(String::from) {
 			let obj = self.inner.revparse_single(&name)?;

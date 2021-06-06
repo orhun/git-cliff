@@ -35,6 +35,12 @@ pub struct Opt {
 	/// Sets the tag for the latest version.
 	#[structopt(short, long, env, value_name = "TAG", allow_hyphen_values = true)]
 	pub tag:        Option<String>,
+	/// Processes the commits starting from the latest tag.
+	#[structopt(short, long)]
+	pub latest:     bool,
+	/// Processes the commits that do not belong to a tag.
+	#[structopt(short, long)]
+	pub unreleased: bool,
 	/// Sets the commit range to process.
 	pub range:      Option<String>,
 }

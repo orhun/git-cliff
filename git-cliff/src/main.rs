@@ -27,7 +27,20 @@ fn main() -> Result<()> {
 	let repository =
 		Repository::init(args.repository.unwrap_or(env::current_dir()?))?;
 	let mut tags = repository.tags(&config.git.tag_pattern)?;
-	let commits = repository.commits(args.range)?;
+	let mut commit_range = args.range;
+	if args.unreleased {
+		if let Some(last_tag) = tags.last().map(|(k, _)| k) {
+			commit_range = Some(format!("{}..HEAD", last_tag));
+		}
+	} else if args.latest {
+		if let (Some(tag1), Some(tag2)) = (
+			tags.get_index(tags.len() - 2).map(|(k, _)| k),
+			tags.get_index(tags.len() - 1).map(|(k, _)| k),
+		) {
+			commit_range = Some(format!("{}..{}", tag1, tag2));
+		}
+	}
+	let commits = repository.commits(commit_range)?;
 
 	if let Some(tag) = args.tag {
 		if let Some(commit_id) = commits.first().map(|c| c.id().to_string()) {
