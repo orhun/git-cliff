@@ -1,0 +1,13 @@
+coverage:
+  range: 50..75
+  round: up
+  precision: 2
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 5%
+        branches:
+          - master
+        if_ci_failed: error
+    patch: off
