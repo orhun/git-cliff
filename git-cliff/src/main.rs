@@ -9,7 +9,10 @@ use git_cliff_core::error::Result;
 use git_cliff_core::release::Release;
 use git_cliff_core::repo::Repository;
 use std::env;
-use std::io;
+use std::io::{
+	self,
+	Read,
+};
 use structopt::StructOpt;
 #[macro_use]
 extern crate log;
@@ -26,6 +29,8 @@ fn main() -> Result<()> {
 
 	if args.strip {
 		config.changelog.header = None;
+		config.changelog.footer = None;
+	} else if args.prepend {
 		config.changelog.footer = None;
 	}
 
@@ -77,5 +82,12 @@ fn main() -> Result<()> {
 		}
 	}
 
-	Changelog::new(releases, &config)?.generate(&mut io::stdout())
+	let changelog = Changelog::new(releases, &config)?;
+	if args.prepend {
+		let mut buffer = String::new();
+		io::stdin().read_to_string(&mut buffer)?;
+		changelog.prepend(buffer, &mut io::stdout())
+	} else {
+		changelog.generate(&mut io::stdout())
+	}
 }
