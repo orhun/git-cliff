@@ -90,13 +90,13 @@ impl<'a> Changelog<'a> {
 	/// Generates the changelog and writes it to the given output.
 	pub fn generate<W: Write>(&self, out: &mut W) -> Result<()> {
 		if let Some(header) = &self.config.changelog.header {
-			writeln!(out, "{}", header)?;
+			write!(out, "{}", header)?;
 		}
 		for release in &self.releases {
 			write!(out, "{}", self.template.render(release)?)?;
 		}
 		if let Some(footer) = &self.config.changelog.footer {
-			writeln!(out, "{}", footer)?;
+			write!(out, "{}", footer)?;
 		}
 		Ok(())
 	}
