@@ -71,7 +71,15 @@ impl<'a> Changelog<'a> {
 					);
 					false
 				} else if let Some(version) = &release.version {
-					!skip_regex.map(|r| r.is_match(version)).unwrap_or_default()
+					!skip_regex
+						.map(|r| {
+							let skip_tag = r.is_match(version);
+							if skip_tag {
+								debug!("Skipping release: {}", version)
+							}
+							skip_tag
+						})
+						.unwrap_or_default()
 				} else {
 					true
 				}
