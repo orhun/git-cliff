@@ -20,3 +20,6 @@ log = "0.4.14"
 version = "0.3"
 default-features = false
 features = ["suggestions", "color", "wrap_help"]
+
+[dev-dependencies]
+pretty_assertions = "0.7"
