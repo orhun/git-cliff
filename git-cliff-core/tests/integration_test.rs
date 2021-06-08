@@ -44,7 +44,7 @@ fn generate_changelog() -> Result<()> {
 		]),
 		filter_commits:       Some(true),
 		tag_pattern:          String::new(),
-		skip_tags:            Regex::new("v3*").unwrap(),
+		skip_tags:            None,
 	};
 
 	let releases = vec![

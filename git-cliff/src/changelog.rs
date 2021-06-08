@@ -53,6 +53,7 @@ impl<'a> Changelog<'a> {
 
 	/// Processes the releases and filters them out based on the configuration.
 	fn process_releases(&mut self) {
+		let skip_regex = self.config.git.skip_tags.as_ref();
 		self.releases = self
 			.releases
 			.clone()
@@ -70,7 +71,7 @@ impl<'a> Changelog<'a> {
 					);
 					false
 				} else if let Some(version) = &release.version {
-					!self.config.git.skip_tags.is_match(version)
+					!skip_regex.map(|r| r.is_match(version)).unwrap_or_default()
 				} else {
 					true
 				}
