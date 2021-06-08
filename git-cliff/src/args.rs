@@ -35,9 +35,9 @@ pub struct Opt {
 	/// Sets the tag for the latest version.
 	#[structopt(short, long, env, value_name = "TAG", allow_hyphen_values = true)]
 	pub tag:        Option<String>,
-	/// Prepend entries to the given changelog from stdin.
-	#[structopt(short, long)]
-	pub prepend:    bool,
+	/// Prepends entries to the given changelog file.
+	#[structopt(short = "p", long, env, value_name = "PATH")]
+	pub changelog:  Option<PathBuf>,
 	/// Processes the commits starting from the latest tag.
 	#[structopt(short, long)]
 	pub latest:     bool,
