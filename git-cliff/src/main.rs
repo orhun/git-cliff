@@ -19,15 +19,21 @@ use structopt::StructOpt;
 extern crate log;
 
 fn main() -> Result<()> {
+	// Parse command line arguments.
 	let args = Opt::from_args();
+
+	// Initialize logger.
 	if args.debug {
 		env::set_var("RUST_LOG", "debug");
 	} else if env::var_os("RUST_LOG").is_none() {
 		env::set_var("RUST_LOG", "info");
 	}
 	pretty_env_logger::init();
+
+	// Parse configuration file.
 	let mut config = Config::parse(args.config)?;
 
+	// Update the configuration based on command line arguments.
 	match args.strip.as_deref() {
 		Some("header") => {
 			config.changelog.header = None;
@@ -41,7 +47,6 @@ fn main() -> Result<()> {
 		}
 		_ => {}
 	}
-
 	if args.changelog.is_some() {
 		config.changelog.footer = None;
 		if !(args.unreleased || args.latest) {
@@ -51,9 +56,14 @@ fn main() -> Result<()> {
 		}
 	}
 
+	// Initialize the git repository.
 	let repository =
 		Repository::init(args.repository.unwrap_or(env::current_dir()?))?;
+
+	// Parse tags.
 	let mut tags = repository.tags(&config.git.tag_pattern)?;
+
+	// Parse commits.
 	let mut commit_range = args.range;
 	if args.unreleased {
 		if let Some(last_tag) = tags.last().map(|(k, _)| k) {
@@ -69,6 +79,7 @@ fn main() -> Result<()> {
 	}
 	let commits = repository.commits(commit_range)?;
 
+	// Update tags.
 	if let Some(tag) = args.tag {
 		if let Some(commit_id) = commits.first().map(|c| c.id().to_string()) {
 			match tags.get(&commit_id) {
@@ -82,6 +93,7 @@ fn main() -> Result<()> {
 		}
 	}
 
+	// Process releases.
 	let mut releases = vec![Release::default(); tags.len() + 1];
 	let mut release_index = 0;
 	let mut previous_release = Release::default();
@@ -99,6 +111,7 @@ fn main() -> Result<()> {
 		}
 	}
 
+	// Generate changelog.
 	let changelog = Changelog::new(releases, &config)?;
 	if let Some(file) = args.changelog {
 		changelog.prepend(fs::read_to_string(file)?, &mut io::stdout())
