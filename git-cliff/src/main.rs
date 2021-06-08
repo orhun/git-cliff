@@ -25,10 +25,21 @@ fn main() -> Result<()> {
 	pretty_env_logger::init();
 	let mut config = Config::parse(args.config)?;
 
-	if args.strip {
-		config.changelog.header = None;
-		config.changelog.footer = None;
-	} else if args.changelog.is_some() {
+	match args.strip.as_deref() {
+		Some("header") => {
+			config.changelog.header = None;
+		}
+		Some("footer") => {
+			config.changelog.footer = None;
+		}
+		Some("all") => {
+			config.changelog.header = None;
+			config.changelog.footer = None;
+		}
+		_ => {}
+	}
+
+	if args.changelog.is_some() {
 		config.changelog.footer = None;
 	}
 
