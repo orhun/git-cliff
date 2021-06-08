@@ -22,6 +22,9 @@ pub enum Error {
 	/// Error that may occur while template operations such as parse and render.
 	#[error("Template error: `{0}`")]
 	TemplateError(#[from] tera::Error),
+	/// Error that may occur while parsing the command line arguments.
+	#[error("Argument error: `{0}`")]
+	ArgumentError(String),
 }
 
 /// Result type of the core library.

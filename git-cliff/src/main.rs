@@ -5,7 +5,10 @@ use args::Opt;
 use changelog::Changelog;
 use git_cliff_core::commit::Commit;
 use git_cliff_core::config::Config;
-use git_cliff_core::error::Result;
+use git_cliff_core::error::{
+	Error,
+	Result,
+};
 use git_cliff_core::release::Release;
 use git_cliff_core::repo::Repository;
 use std::env;
@@ -41,6 +44,11 @@ fn main() -> Result<()> {
 
 	if args.changelog.is_some() {
 		config.changelog.footer = None;
+		if !(args.unreleased || args.latest) {
+			return Err(Error::ArgumentError(String::from(
+				"'-u' or '-l' is not specified",
+			)));
+		}
 	}
 
 	let repository =
