@@ -25,6 +25,7 @@ fn generate_changelog() -> Result<()> {
         {% endfor %}"#,
 		),
 		footer: Some(String::from("eoc - end of changelog")),
+		trim:   None,
 	};
 	let git_config = GitConfig {
 		conventional_commits: true,

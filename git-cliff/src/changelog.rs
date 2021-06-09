@@ -18,7 +18,17 @@ impl<'a> Changelog<'a> {
 	pub fn new(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
 		let mut changelog = Self {
 			releases,
-			template: Template::new(config.changelog.body.to_string())?,
+			template: Template::new({
+				let mut template = config.changelog.body.to_string();
+				if config.changelog.trim == Some(true) {
+					template = template
+						.lines()
+						.map(|v| v.trim())
+						.collect::<Vec<&str>>()
+						.join("\n")
+				}
+				template
+			})?,
 			config,
 		};
 		changelog.process_commits();
@@ -142,9 +152,9 @@ mod test {
 				#### {{ group }}{% for commit in commits %}
 				- {{ commit.message }}{% endfor %}
 				{% endfor %}{% endfor %}"#,
-				)
-				.replace("				", ""),
+				),
 				footer: Some(String::from("------------")),
+				trim:   Some(true),
 			},
 			git:       GitConfig {
 				conventional_commits: true,
@@ -239,7 +249,6 @@ mod test {
 		assert_eq!(
 			String::from(
 				r#"# Changelog
-
 			## Unreleased
 
 			### Bug Fixes
@@ -274,8 +283,7 @@ mod test {
 
 			#### ui
 			- make good stuff
-			------------
-			"#
+			------------"#
 			)
 			.replace("			", ""),
 			str::from_utf8(&out).unwrap()

@@ -19,6 +19,8 @@ pub struct ChangelogConfig {
 	pub body:   String,
 	/// Changelog footer.
 	pub footer: Option<String>,
+	/// Trim the template.
+	pub trim:   Option<bool>,
 }
 
 /// Git configuration
