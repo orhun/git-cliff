@@ -12,7 +12,10 @@ use git_cliff_core::error::{
 use git_cliff_core::release::Release;
 use git_cliff_core::repo::Repository;
 use std::env;
-use std::fs;
+use std::fs::{
+	self,
+	File,
+};
 use std::io;
 use structopt::StructOpt;
 #[macro_use]
@@ -113,8 +116,8 @@ fn main() -> Result<()> {
 
 	// Generate changelog.
 	let changelog = Changelog::new(releases, &config)?;
-	if let Some(file) = args.changelog {
-		changelog.prepend(fs::read_to_string(file)?, &mut io::stdout())
+	if let Some(path) = args.changelog {
+		changelog.prepend(fs::read_to_string(&path)?, &mut File::create(path)?)
 	} else {
 		changelog.generate(&mut io::stdout())
 	}
