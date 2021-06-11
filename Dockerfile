@@ -10,6 +10,10 @@ RUN cargo chef cook --release --recipe-path recipe.json
 
 FROM rust:1.52-slim-buster as builder
 WORKDIR app
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    --allow-unauthenticated zlib1g-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 COPY . .
 COPY --from=cacher /app/target target
 COPY --from=cacher $CARGO_HOME $CARGO_HOME
