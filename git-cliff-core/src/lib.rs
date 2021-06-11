@@ -1,4 +1,4 @@
-//! Highly customizable Changelog Generator
+//! A highly customizable changelog generator
 #![warn(missing_docs, clippy::unwrap_used)]
 
 /// Export regex crate.
