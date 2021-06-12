@@ -20,24 +20,24 @@ pub struct Opt {
 	/// Activates the debug mode
 	#[structopt(short, long)]
 	pub debug:      bool,
-	/// Sets the repository to parse commits from.
-	#[structopt(short, long, env, value_name = "PATH")]
-	pub repository: Option<PathBuf>,
 	/// Sets the configuration file.
 	#[structopt(
 		short,
 		long,
 		env,
-		value_name = "FILE",
+		value_name = "PATH",
 		default_value = "cliff.toml"
 	)]
 	pub config:     String,
-	/// Sets the tag for the latest version.
-	#[structopt(short, long, env, value_name = "TAG", allow_hyphen_values = true)]
-	pub tag:        Option<String>,
+	/// Sets the repository to parse commits from.
+	#[structopt(short, long, env, value_name = "PATH")]
+	pub repository: Option<PathBuf>,
 	/// Prepends entries to the given changelog file.
 	#[structopt(short = "p", long, env, value_name = "PATH")]
 	pub changelog:  Option<PathBuf>,
+	/// Sets the tag for the latest version.
+	#[structopt(short, long, env, value_name = "TAG", allow_hyphen_values = true)]
+	pub tag:        Option<String>,
 	/// Processes the commits starting from the latest tag.
 	#[structopt(short, long)]
 	pub latest:     bool,
