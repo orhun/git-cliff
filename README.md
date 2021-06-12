@@ -14,7 +14,7 @@ The easiest way of running **git-cliff** (in the git root directory) is to use t
 
 
 ```sh
-docker run -t -v "$(pwd)":/app/ orhunp/git-cliff
+docker run -t -v "$(pwd)":/app/ orhunp/git-cliff:latest
 ```
 
 Or you can use the image from the [GitHub Package Registry](https://github.com/orhun/git-cliff/packages/841947):
