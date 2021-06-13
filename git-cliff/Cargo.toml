@@ -9,6 +9,7 @@ homepage = "https://github.com/orhun/git-cliff"
 repository = "https://github.com/orhun/git-cliff"
 keywords = ["changelog", "generator", "conventional", "commit"]
 categories = ["command-line-utilities"]
+default-run = "git-cliff"
 edition = "2018"
 
 [dependencies]
