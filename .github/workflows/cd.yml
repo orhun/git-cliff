@@ -42,6 +42,12 @@ jobs:
         uses: actions/checkout@main
       - name: Set the release version
         run: echo "RELEASE_VERSION=${GITHUB_REF:11}" >> $GITHUB_ENV
+      - name: Install musl-tools
+        if: matrix.TARGET == 'x86_64-unknown-linux-musl'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            --allow-unauthenticated musl-tools
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
