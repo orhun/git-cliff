@@ -41,6 +41,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@main
       - name: Set the release version
+        shell: bash
         run: echo "RELEASE_VERSION=${GITHUB_REF:11}" >> $GITHUB_ENV
       - name: Install musl-tools
         if: matrix.TARGET == 'x86_64-unknown-linux-musl'
