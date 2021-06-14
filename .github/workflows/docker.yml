@@ -8,9 +8,10 @@ on:
 jobs:
   docker:
     name: Docker
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v1
+      - name: Checkout
+        uses: actions/checkout@main
       - name: Build
         run: docker build -t git-cliff .
       - name: Tag
