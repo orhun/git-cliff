@@ -69,6 +69,7 @@ jobs:
           fi
           mv release/ git-cliff-${{ env.RELEASE_VERSION }}/
       - name: Create release artifacts
+        shell: bash
         run: |
           if [ "${{ matrix.OS }}" = "windows-2019" ]; then
             7z a -tzip "git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.TARGET }}.zip" \
