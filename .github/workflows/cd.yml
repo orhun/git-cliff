@@ -97,6 +97,7 @@ jobs:
           file_glob: true
           tag: ${{ github.ref }}
           overwrite: true
+          body: "git-cliff release v${{ env.RELEASE_VERSION }}"
 #  publish-crates-io:
 #    name: Publish on crates.io
 #    needs: publish-github
