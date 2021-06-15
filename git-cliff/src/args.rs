@@ -28,7 +28,10 @@ pub struct Opt {
 		value_name = "PATH",
 		default_value = "cliff.toml"
 	)]
-	pub config:     String,
+	pub config:     PathBuf,
+	/// Sets the working directory.
+	#[structopt(short, long, env, value_name = "PATH")]
+	pub workdir:    Option<PathBuf>,
 	/// Sets the repository to parse commits from.
 	#[structopt(short, long, env, value_name = "PATH")]
 	pub repository: Option<PathBuf>,

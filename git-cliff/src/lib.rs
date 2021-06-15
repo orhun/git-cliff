@@ -24,9 +24,27 @@ use std::fs::{
 use std::io;
 
 /// Runs `git-cliff`.
-pub fn run(args: Opt) -> Result<()> {
+pub fn run(mut args: Opt) -> Result<()> {
+	// Set the working directory.
+	if let Some(workdir) = args.workdir {
+		args.config = workdir.join(args.config);
+		args.repository = match args.repository {
+			Some(repository) => Some(workdir.join(repository)),
+			None => Some(workdir.clone()),
+		};
+		if let Some(changelog) = args.changelog {
+			args.changelog = Some(workdir.join(changelog));
+		}
+	}
+
 	// Parse configuration file.
-	let mut config = Config::parse(args.config)?;
+	let mut config = Config::parse(match args.config.to_str() {
+		Some(v) => Ok(v.to_string()),
+		None => Err(Error::IoError(io::Error::new(
+			io::ErrorKind::Other,
+			"path contains invalid characters",
+		))),
+	}?)?;
 
 	// Update the configuration based on command line arguments.
 	match args.strip.as_deref() {
