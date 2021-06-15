@@ -48,7 +48,8 @@ pub struct Opt {
 	#[structopt(short, long)]
 	pub unreleased: bool,
 	/// Strips the given parts from the changelog.
-	#[structopt(short, long, possible_values = &["header", "footer", "all"])]
+	#[structopt(short, long, value_name = "PART",
+		possible_values = &["header", "footer", "all"])]
 	pub strip:      Option<String>,
 	/// Sets the commit range to process.
 	pub range:      Option<String>,
