@@ -53,7 +53,17 @@ impl<'a> Changelog<'a> {
 					) {
 						Ok(commit) => Some(commit),
 						Err(e) => {
-							trace!("{} ({})", commit.id[..7].to_string(), e);
+							trace!(
+								"{} - {} ({})",
+								commit.id[..7].to_string(),
+								e,
+								commit
+									.message
+									.lines()
+									.next()
+									.unwrap_or_default()
+									.trim()
+							);
 							None
 						}
 					}
