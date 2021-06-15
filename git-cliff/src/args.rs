@@ -17,9 +17,9 @@ use structopt::StructOpt;
     rename_all_env = "screaming-snake"
 )]
 pub struct Opt {
-	/// Activates the debug mode
-	#[structopt(short, long)]
-	pub debug:      bool,
+	/// Activates the verbose mode
+	#[structopt(short, long, parse(from_occurrences), alias = "debug")]
+	pub verbose:    u8,
 	/// Sets the configuration file.
 	#[structopt(
 		short,

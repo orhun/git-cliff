@@ -39,6 +39,7 @@ impl<'a> Changelog<'a> {
 	/// Processes the commits and omits the ones that doesn't match the
 	/// criteria set by configuration file.
 	fn process_commits(&mut self) {
+		debug!("Processing the commits...");
 		let config = &self.config;
 		self.releases.iter_mut().for_each(|release| {
 			release.commits = release
@@ -52,7 +53,7 @@ impl<'a> Changelog<'a> {
 					) {
 						Ok(commit) => Some(commit),
 						Err(e) => {
-							debug!("Cannot process commit: {} ({})", commit.id, e);
+							trace!("{} ({})", commit.id[..7].to_string(), e);
 							None
 						}
 					}
@@ -63,6 +64,7 @@ impl<'a> Changelog<'a> {
 
 	/// Processes the releases and filters them out based on the configuration.
 	fn process_releases(&mut self) {
+		debug!("Processing the releases...");
 		let skip_regex = self.config.git.skip_tags.as_ref();
 		self.releases = self
 			.releases
@@ -71,21 +73,16 @@ impl<'a> Changelog<'a> {
 			.rev()
 			.filter(|release| {
 				if release.commits.is_empty() {
-					debug!(
-						"Release {} doesn't have any commits",
-						release
-							.version
-							.as_ref()
-							.cloned()
-							.unwrap_or_else(|| String::from("[?]"))
-					);
+					if let Some(version) = release.version.as_ref().cloned() {
+						trace!("Release doesn't have any commits: {}", version);
+					}
 					false
 				} else if let Some(version) = &release.version {
 					!skip_regex
 						.map(|r| {
 							let skip_tag = r.is_match(version);
 							if skip_tag {
-								debug!("Skipping release: {}", version)
+								trace!("Skipping release: {}", version)
 							}
 							skip_tag
 						})
@@ -99,6 +96,7 @@ impl<'a> Changelog<'a> {
 
 	/// Generates the changelog and writes it to the given output.
 	pub fn generate<W: Write>(&self, out: &mut W) -> Result<()> {
+		debug!("Generating changelog...");
 		if let Some(header) = &self.config.changelog.header {
 			write!(out, "{}", header)?;
 		}
@@ -117,6 +115,7 @@ impl<'a> Changelog<'a> {
 		mut changelog: String,
 		out: &mut W,
 	) -> Result<()> {
+		debug!("Generating changelog and prepending...");
 		if let Some(header) = &self.config.changelog.header {
 			changelog = changelog.replacen(header, "", 1);
 		}

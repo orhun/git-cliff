@@ -97,7 +97,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		if let Some(commit_id) = commits.first().map(|c| c.id().to_string()) {
 			match tags.get(&commit_id) {
 				Some(tag) => {
-					debug!("There is already a tag ({}) for {}", tag, commit_id)
+					warn!("There is already a tag ({}) for {}", tag, commit_id)
 				}
 				None => {
 					tags.insert(commit_id, tag);
