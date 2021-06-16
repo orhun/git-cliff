@@ -7,5 +7,5 @@ if [ -n "$1" ]; then
 	git -c user.name="git-cliff" \
 		-c user.email="git-cliff@protonmail.com" \
 		-c user.signingkey="1D2D410A741137EBC544826F4A92FA17B6619297" \
-		tag -s -a "$1" -m "${changelog//### /}"
+		tag -s -a "$1" -m "Release $1\n\n${changelog//### /}"
 fi
