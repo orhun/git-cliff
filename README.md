@@ -8,10 +8,40 @@
 
 ## Usage
 
+```
+git-cliff [FLAGS] [OPTIONS] [RANGE]
+```
+
+**Flags:**
+
+```
+-v, --verbose       Increases the logging verbosity
+-l, --latest        Processes the commits starting from the latest tag
+-u, --unreleased    Processes the commits that do not belong to a tag
+-h, --help          Prints help information
+-V, --version       Prints version information
+```
+
+**Options:**
+
+```
+-c, --config <PATH>        Sets the configuration file [env: CONFIG=]  [default: cliff.toml]
+-w, --workdir <PATH>       Sets the working directory [env: WORKDIR=]
+-r, --repository <PATH>    Sets the repository to parse commits from [env: REPOSITORY=]
+-p, --changelog <PATH>     Prepends entries to the given changelog file [env: CHANGELOG=]
+-t, --tag <TAG>            Sets the tag for the latest version [env: TAG=]
+-s, --strip <PART>         Strips the given parts from the changelog [possible values: header, footer, all]
+```
+
+**Args:**
+
+```
+<RANGE>    Sets the commit range to process
+```
+
 ### Docker
 
 The easiest way of running **git-cliff** (in the git root directory) is to use the [available tags](https://hub.docker.com/repository/docker/orhunp/git-cliff/tags) from [Docker Hub](https://hub.docker.com/repository/docker/orhunp/git-cliff):
-
 
 ```sh
 docker run -t -v "$(pwd)":/app/ orhunp/git-cliff:latest
@@ -24,6 +54,8 @@ docker run -t -v "$(pwd)":/app/ docker.pkg.github.com/orhun/git-cliff/git-cliff:
 ```
 
 Also, you can build the image yourself using `docker build -t git-cliff .` command.
+
+## Examples
 
 ## License
 
