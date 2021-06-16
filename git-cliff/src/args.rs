@@ -17,7 +17,7 @@ use structopt::StructOpt;
     rename_all_env = "screaming-snake"
 )]
 pub struct Opt {
-	/// Activates the verbose mode
+	/// Increases the logging verbosity.
 	#[structopt(short, long, parse(from_occurrences), alias = "debug")]
 	pub verbose:    u8,
 	/// Sets the configuration file.
@@ -52,5 +52,6 @@ pub struct Opt {
 		possible_values = &["header", "footer", "all"])]
 	pub strip:      Option<String>,
 	/// Sets the commit range to process.
+	#[structopt(value_name = "RANGE")]
 	pub range:      Option<String>,
 }
