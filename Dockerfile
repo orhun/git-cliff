@@ -23,5 +23,4 @@ RUN rm -f target/release/deps/git_cliff*
 FROM debian:buster-slim as runner
 WORKDIR app
 COPY --from=builder /app/target/release/git-cliff /usr/local/bin
-USER nobody
 ENTRYPOINT ["git-cliff"]
