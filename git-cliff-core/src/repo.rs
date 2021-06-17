@@ -54,9 +54,12 @@ impl Repository {
 	/// Parses and returns a commit-tag map.
 	///
 	/// It collects lightweight and annotated tags.
-	pub fn tags(&self, pattern: &str) -> Result<IndexMap<String, String>> {
+	pub fn tags(
+		&self,
+		pattern: &Option<String>,
+	) -> Result<IndexMap<String, String>> {
 		let mut tags = IndexMap::new();
-		let tag_names = self.inner.tag_names(Some(pattern))?;
+		let tag_names = self.inner.tag_names(pattern.as_deref())?;
 		for name in tag_names.iter().flatten().map(String::from) {
 			let obj = self.inner.revparse_single(&name)?;
 			if let Ok(commit) = obj.clone().into_commit() {

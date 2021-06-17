@@ -33,7 +33,7 @@ pub struct GitConfig {
 	/// Whether to filter out commits.
 	pub filter_commits:       Option<bool>,
 	/// Blob pattern for git tags.
-	pub tag_pattern:          String,
+	pub tag_pattern:          Option<String>,
 	#[serde(with = "serde_regex", default)]
 	/// Regex to skip matched tags.
 	pub skip_tags:            Option<Regex>,
