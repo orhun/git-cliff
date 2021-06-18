@@ -38,6 +38,9 @@ pub struct Opt {
 	/// Prepends entries to the given changelog file.
 	#[structopt(short = "p", long, env, value_name = "PATH")]
 	pub changelog:  Option<PathBuf>,
+	/// Writes output to the given file.
+	#[structopt(short, long, env, value_name = "PATH")]
+	pub output:     Option<PathBuf>,
 	/// Sets the tag for the latest version.
 	#[structopt(short, long, env, value_name = "TAG", allow_hyphen_values = true)]
 	pub tag:        Option<String>,

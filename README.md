@@ -29,6 +29,7 @@ git-cliff [FLAGS] [OPTIONS] [RANGE]
 -w, --workdir <PATH>       Sets the working directory [env: WORKDIR=]
 -r, --repository <PATH>    Sets the repository to parse commits from [env: REPOSITORY=]
 -p, --changelog <PATH>     Prepends entries to the given changelog file [env: CHANGELOG=]
+-o, --output <PATH>        Writes output to the given file [env: OUTPUT=]
 -t, --tag <TAG>            Sets the tag for the latest version [env: TAG=]
 -s, --strip <PART>         Strips the given parts from the changelog [possible values: header, footer, all]
 ```

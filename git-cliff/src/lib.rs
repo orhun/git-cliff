@@ -128,6 +128,8 @@ pub fn run(mut args: Opt) -> Result<()> {
 	let changelog = Changelog::new(releases, &config)?;
 	if let Some(path) = args.changelog {
 		changelog.prepend(fs::read_to_string(&path)?, &mut File::create(path)?)
+	} else if let Some(path) = args.output {
+		changelog.generate(&mut File::create(path)?)
 	} else {
 		changelog.generate(&mut io::stdout())
 	}
