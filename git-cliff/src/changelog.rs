@@ -188,7 +188,7 @@ mod test {
 					},
 				]),
 				filter_commits:       Some(false),
-				tag_pattern:          String::new(),
+				tag_pattern:          None,
 				skip_tags:            Regex::new("v3.*").ok(),
 			},
 		};

@@ -44,7 +44,7 @@ fn generate_changelog() -> Result<()> {
 			},
 		]),
 		filter_commits:       Some(true),
-		tag_pattern:          String::new(),
+		tag_pattern:          None,
 		skip_tags:            None,
 	};
 
