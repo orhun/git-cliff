@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-rc.5] - 2021-06-19
+
+### Bug Fixes
+
+- Update config to skip release commits
+
 ## [0.1.0-rc.4] - 2021-06-19
 
 ### Revert
@@ -19,7 +25,6 @@ All notable changes to this project will be documented in this file.
 - Fix setting the release body
 - Update the skip_tags regex
 - Update template to include commit ids
-- Prepare for v0.1.0-rc.3
 
 ## [0.1.0-rc.2] - 2021-06-19
 
