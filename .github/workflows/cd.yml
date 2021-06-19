@@ -97,7 +97,7 @@ jobs:
         id: git-cliff
         with:
           config: cliff.toml
-          args: --verbose --latest --strip header
+          args: -vv --latest --strip header
         env:
           OUTPUT: CHANGES.md
       - name: Set release body
@@ -116,9 +116,8 @@ jobs:
           file: git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.TARGET }}*
           file_glob: true
           tag: ${{ github.ref }}
-          release_name: "Release ${{ github.ref }}"
           overwrite: true
-          body: ${{ steps.release.outputs.RELEASE_BODY }}
+          body: "${{ steps.release.outputs.RELEASE_BODY }}"
 
   publish-docker:
     name: Publish the Docker image
