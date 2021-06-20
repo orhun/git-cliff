@@ -96,7 +96,9 @@ impl Commit<'_> {
 						self.group = parser.group.as_ref().cloned();
 						return Ok(self);
 					} else {
-						return Err(AppError::GroupError);
+						return Err(AppError::GroupError(String::from(
+							"Skipping commit",
+						)));
 					}
 				}
 			}
@@ -104,7 +106,9 @@ impl Commit<'_> {
 		if !filter {
 			Ok(self)
 		} else {
-			Err(AppError::GroupError)
+			Err(AppError::GroupError(String::from(
+				"Commit does not belong to any group",
+			)))
 		}
 	}
 }
