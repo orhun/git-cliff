@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-rc.6] - 2021-06-20
+
+### Miscellaneous Tasks
+
+- Set the release body on linux
+
 ## [0.1.0-rc.5] - 2021-06-19
 
 ### Bug Fixes
