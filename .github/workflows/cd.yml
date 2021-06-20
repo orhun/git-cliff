@@ -93,6 +93,7 @@ jobs:
             --passphrase-fd 0 --detach-sign \
             git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.TARGET }}.tar.gz
       - name: Generate a changelog
+        if: matrix.OS == 'ubuntu-18.04'
         uses: orhun/git-cliff-action@v1
         id: git-cliff
         with:
@@ -104,11 +105,15 @@ jobs:
         id: release
         shell: bash
         run: |
-          r=$(cat ${{ steps.git-cliff.outputs.changelog }})
-          r="${r//'%'/'%25'}"
-          r="${r//$'\n'/'%0A'}"
-          r="${r//$'\r'/'%0D'}"
-          echo "::set-output name=RELEASE_BODY::$r"
+          if [ "${{ matrix.OS }}" = "ubuntu-18.04" ]; then
+            r=$(cat ${{ steps.git-cliff.outputs.changelog }})
+            r="${r//'%'/'%25'}"
+            r="${r//$'\n'/'%0A'}"
+            r="${r//$'\r'/'%0D'}"
+            echo "::set-output name=RELEASE_BODY::$r"
+          else
+            echo "::set-output name=RELEASE_BODY::${{ env.RELEASE_VERSION }}"
+          fi
       - name: Upload the release
         uses: svenstaro/upload-release-action@v2
         with:
@@ -117,6 +122,7 @@ jobs:
           file_glob: true
           tag: ${{ github.ref }}
           overwrite: true
+          release_name: "Release v${{ env.RELEASE_VERSION }}"
           body: "${{ steps.release.outputs.RELEASE_BODY }}"
 
   publish-docker:
