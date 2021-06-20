@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-rc.10] - 2021-06-20
+
+### Styling
+
+- Update the order of entries in config
+
 ## [0.1.0-rc.8] - 2021-06-20
 
 ### Bug Fixes
