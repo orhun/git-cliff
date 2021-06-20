@@ -1,4 +1,4 @@
-name: Automated Builds
+name: Docker Automated Builds
 
 on:
   push:
