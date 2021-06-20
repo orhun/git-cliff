@@ -31,6 +31,7 @@ git-cliff [FLAGS] [OPTIONS] [RANGE]
 -p, --changelog <PATH>     Prepends entries to the given changelog file [env: CHANGELOG=]
 -o, --output <PATH>        Writes output to the given file [env: OUTPUT=]
 -t, --tag <TAG>            Sets the tag for the latest version [env: TAG=]
+-b, --body <TEMPLATE>      Sets the template for the changelog body [env: TEMPLATE=]
 -s, --strip <PART>         Strips the given parts from the changelog [possible values: header, footer, all]
 ```
 

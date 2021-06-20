@@ -44,6 +44,15 @@ pub struct Opt {
 	/// Sets the tag for the latest version.
 	#[structopt(short, long, env, value_name = "TAG", allow_hyphen_values = true)]
 	pub tag:        Option<String>,
+	/// Sets the template for the changelog body.
+	#[structopt(
+		short,
+		long,
+		env = "TEMPLATE",
+		value_name = "TEMPLATE",
+		allow_hyphen_values = true
+	)]
+	pub body:       Option<String>,
 	/// Processes the commits starting from the latest tag.
 	#[structopt(short, long)]
 	pub latest:     bool,
@@ -51,8 +60,12 @@ pub struct Opt {
 	#[structopt(short, long)]
 	pub unreleased: bool,
 	/// Strips the given parts from the changelog.
-	#[structopt(short, long, value_name = "PART",
-		possible_values = &["header", "footer", "all"])]
+	#[structopt(
+		short,
+		long,
+		value_name = "PART",
+		possible_values = &["header", "footer", "all"]
+	)]
 	pub strip:      Option<String>,
 	/// Sets the commit range to process.
 	#[structopt(value_name = "RANGE")]

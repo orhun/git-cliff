@@ -68,6 +68,9 @@ pub fn run(mut args: Opt) -> Result<()> {
 			)));
 		}
 	}
+	if let Some(template) = args.body {
+		config.changelog.body = template;
+	}
 
 	// Initialize the git repository.
 	let repository =
