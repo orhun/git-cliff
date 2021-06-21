@@ -4,7 +4,6 @@ use crate::error::{
 };
 use git2::{
 	Commit,
-	ObjectType,
 	Repository as GitRepository,
 	Sort,
 };
@@ -58,19 +57,28 @@ impl Repository {
 		&self,
 		pattern: &Option<String>,
 	) -> Result<IndexMap<String, String>> {
-		let mut tags = IndexMap::new();
+		let mut tags: Vec<(Commit, String)> = Vec::new();
 		let tag_names = self.inner.tag_names(pattern.as_deref())?;
 		for name in tag_names.iter().flatten().map(String::from) {
 			let obj = self.inner.revparse_single(&name)?;
 			if let Ok(commit) = obj.clone().into_commit() {
-				tags.insert(commit.id().to_string(), name);
+				tags.push((commit, name));
 			} else if let Some(tag) = obj.as_tag() {
-				if let Some(ObjectType::Commit) = tag.target_type() {
-					tags.insert(tag.target_id().to_string(), name);
+				if let Some(commit) = tag
+					.target()
+					.ok()
+					.map(|target| target.into_commit().ok())
+					.flatten()
+				{
+					tags.push((commit, name));
 				}
 			}
 		}
-		Ok(tags)
+		tags.sort_by(|a, b| a.0.time().seconds().cmp(&b.0.time().seconds()));
+		Ok(tags
+			.into_iter()
+			.map(|(a, b)| (a.id().to_string(), b))
+			.collect())
 	}
 }
 
