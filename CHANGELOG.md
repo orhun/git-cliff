@@ -1,6 +1,16 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-rc.11] - 2021-06-21
+
+### Miscellaneous Tasks
+
+- Remove the custom changelog template
+
+### Refactor
+
+- Use custom error message for GroupError
+
 ## [0.1.0-rc.10] - 2021-06-20
 
 ### Styling
