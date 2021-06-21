@@ -98,16 +98,9 @@ jobs:
         id: git-cliff
         with:
           config: cliff.toml
-          args: -vv --latest --strip header --body "$template"
+          args: -vv --latest --strip header
         env:
           OUTPUT: CHANGES.md
-          template: >
-            {% for group, commits in commits | group_by(attribute="group") %}
-                ### {{ group | upper_first }}
-                {% for commit in commits %}
-                    - {{ commit.message | upper_first }}\
-                {% endfor %}
-            {% endfor %}
       - name: Set release body
         id: release
         shell: bash
@@ -117,6 +110,7 @@ jobs:
             r="${r//'%'/'%25'}"
             r="${r//$'\n'/'%0A'}"
             r="${r//$'\r'/'%0D'}"
+            r="$(echo $r | tail -n +3)"
             echo "::set-output name=RELEASE_BODY::$r"
           else
             echo "::set-output name=RELEASE_BODY::${{ env.RELEASE_VERSION }}"
