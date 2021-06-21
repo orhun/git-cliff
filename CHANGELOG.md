@@ -1,6 +1,19 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-rc.12] - 2021-06-21
+
+### Bug Fixes
+
+- Use printf to prevent field splitting the variable
+- Fix the character escape in release script
+- Return tags by their creation order
+
+### Miscellaneous Tasks
+
+- Update .editorconfig about shell scripts
+- Include the commit id in the custom template
+
 ## [0.1.0-rc.11] - 2021-06-21
 
 ### Miscellaneous Tasks
