@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-rc.14] - 2021-06-23
+
+### Bug Fixes
+
+- Strip the changelog header before escaping
+
 ## [0.1.0-rc.13] - 2021-06-23
 
 ### Miscellaneous Tasks
