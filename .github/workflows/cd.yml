@@ -107,10 +107,10 @@ jobs:
         run: |
           if [ "${{ matrix.OS }}" = "ubuntu-18.04" ]; then
             r=$(cat ${{ steps.git-cliff.outputs.changelog }})
+            r="$(printf "$r" | tail -n +3)"
             r="${r//'%'/'%25'}"
             r="${r//$'\n'/'%0A'}"
             r="${r//$'\r'/'%0D'}"
-            r="$(printf "$r" | tail -n +3)"
             echo "::set-output name=RELEASE_BODY::$r"
           else
             echo "::set-output name=RELEASE_BODY::${{ env.RELEASE_VERSION }}"
