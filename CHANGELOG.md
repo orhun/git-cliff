@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-rc.13] - 2021-06-23
+
+### Miscellaneous Tasks
+
+- Use seperate steps for uploading releases
+
 ## [0.1.0-rc.12] - 2021-06-21
 
 ### Bug Fixes
