@@ -151,15 +151,16 @@ jobs:
           docker login -u orhun docker.pkg.github.com --password-stdin
       - name: Push (Package Registry)
         run: docker push docker.pkg.github.com/orhun/git-cliff/git-cliff:${{ env.RELEASE_VERSION }}
-#  publish-crates-io:
-#    name: Publish on crates.io
-#    needs: publish-github
-#    runs-on: ubuntu-18.04
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@main
-#      - name: Publish
-#        uses: actions-rs/cargo@v1
-#        with:
-#          command: publish
-#          args: --locked --token ${{ secrets.CARGO_TOKEN }}
+
+  publish-crates-io:
+    name: Publish on crates.io
+    needs: publish-github
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: Publish
+        uses: actions-rs/cargo@v1
+        with:
+          command: publish
+          args: --locked --token ${{ secrets.CARGO_TOKEN }}
