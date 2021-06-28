@@ -98,5 +98,7 @@ jobs:
         uses: actions/checkout@main
       - name: Check the links
         uses: lycheeverse/lychee-action@v1
+        with:
+          args: --exclude "%7Busername%7D" -v *.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
