@@ -1,6 +1,6 @@
 [package]
 name = "git-cliff"
-version = "0.1.0"
+version = "0.1.0-rc.16"
 description = "A highly customizable changelog generator ⛰️"
 authors = ["git-cliff contributors <git-cliff@protonmail.com>"]
 license = "GPL-3.0"

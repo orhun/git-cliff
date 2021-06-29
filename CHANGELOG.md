@@ -1,6 +1,23 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-rc.16] - 2021-06-29
+
+### Bug Fixes
+
+- Update lychee arguments to exclude invalid links
+
+### Documentation
+
+- Add CONTRIBUTING.md
+- Add link to the signer key of the tag
+- Add RELEASE.md
+
+### Miscellaneous Tasks
+
+- Enable crates.io releases
+- Set the new version in release script
+
 ## [0.1.0-rc.15] - 2021-06-23
 
 ### Miscellaneous Tasks
