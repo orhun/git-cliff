@@ -1,6 +1,17 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-rc.17] - 2021-06-29
+
+### Bug Fixes
+
+- Publish the cargo workspace members seperately
+
+### Miscellaneous Tasks
+
+- Verify the created tag after creation
+- Indicate which versions are managed by the script
+
 ## [0.1.0-rc.16] - 2021-06-29
 
 ### Bug Fixes
