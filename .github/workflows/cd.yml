@@ -159,8 +159,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@main
-      - name: Publish
+      - name: Publish the library
         uses: actions-rs/cargo@v1
         with:
           command: publish
-          args: --locked --token ${{ secrets.CARGO_TOKEN }}
+          args: |
+            --manifest-path git-cliff-core/Cargo.toml \
+            --locked --token ${{ secrets.CARGO_TOKEN }}
+      - name: Publish the binary
+        uses: actions-rs/cargo@v1
+        with:
+          command: publish
+          args: |
+            --manifest-path git-cliff/Cargo.toml \
+            --locked --token ${{ secrets.CARGO_TOKEN }}
