@@ -14,7 +14,8 @@ if [ -n "$1" ]; then
 	{% endfor %}
 	{% endfor %}"
 	changelog=$(cargo run -- --unreleased --strip all)
-	# create a tag
+	# create a signed tag
+	# https://keyserver.ubuntu.com/pks/lookup?search=0x4A92FA17B6619297&op=vindex
 	git -c user.name="git-cliff" \
 		-c user.email="git-cliff@protonmail.com" \
 		-c user.signingkey="1D2D410A741137EBC544826F4A92FA17B6619297" \
