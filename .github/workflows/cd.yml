@@ -6,8 +6,38 @@ on:
       - "v*.*.*"
 
 jobs:
+  generate-changelog:
+    name: Generate changelog
+    runs-on: ubuntu-18.04
+    outputs:
+      release_body: ${{ steps.release.outputs.release_body }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 0
+      - name: Generate a changelog
+        uses: orhun/git-cliff-action@v1
+        id: git-cliff
+        with:
+          config: cliff.toml
+          args: -vv --latest --strip header
+        env:
+          OUTPUT: CHANGES.md
+      - name: Set the release body
+        id: release
+        shell: bash
+        run: |
+          r=$(cat ${{ steps.git-cliff.outputs.changelog }})
+          r="$(printf "$r" | tail -n +3)"
+          r="${r//'%'/'%25'}"
+          r="${r//$'\n'/'%0A'}"
+          r="${r//$'\r'/'%0D'}"
+          echo "::set-output name=release_body::$r"
+
   publish-github:
     name: Publish on GitHub
+    needs: generate-changelog
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -40,8 +70,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@main
-        with:
-          fetch-depth: 0
       - name: Set the release version
         shell: bash
         run: echo "RELEASE_VERSION=${GITHUB_REF:11}" >> $GITHUB_ENV
@@ -92,45 +120,16 @@ jobs:
           echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --pinentry-mode=loopback \
             --passphrase-fd 0 --detach-sign \
             git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.TARGET }}.tar.gz
-      - name: Generate a changelog
-        if: matrix.OS == 'ubuntu-18.04'
-        uses: orhun/git-cliff-action@v1
-        id: git-cliff
-        with:
-          config: cliff.toml
-          args: -vv --latest --strip header
-        env:
-          OUTPUT: CHANGES.md
-      - name: Set release body
-        if: matrix.OS == 'ubuntu-18.04'
-        id: release
-        shell: bash
-        run: |
-          r=$(cat ${{ steps.git-cliff.outputs.changelog }})
-          r="$(printf "$r" | tail -n +3)"
-          r="${r//'%'/'%25'}"
-          r="${r//$'\n'/'%0A'}"
-          r="${r//$'\r'/'%0D'}"
-          echo "::set-output name=RELEASE_BODY::$r"
       - name: Upload the release
-        if: matrix.OS == 'ubuntu-18.04'
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.TARGET }}*
           file_glob: true
+          overwrite: true
           tag: ${{ github.ref }}
           release_name: "Release v${{ env.RELEASE_VERSION }}"
-          body: "${{ steps.release.outputs.RELEASE_BODY }}"
-      - name: Upload the release
-        if: matrix.OS != 'ubuntu-18.04'
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.TARGET }}*
-          file_glob: true
-          tag: ${{ github.ref }}
-          release_name: "Release v${{ env.RELEASE_VERSION }}"
+          body: "${{ needs.generate-changelog.outputs.release_body }}"
 
   publish-docker:
     name: Publish the Docker image
