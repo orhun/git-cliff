@@ -1,6 +1,16 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-rc.19] - 2021-06-30
+
+### Bug Fixes
+
+- Generate changelog on a dedicated/different job
+
+### Miscellaneous Tasks
+
+- Update project details
+
 ## [0.1.0-rc.18] - 2021-06-30
 
 ### Bug Fixes
