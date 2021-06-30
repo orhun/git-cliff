@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-rc.20] - 2021-06-30
+
+### Bug Fixes
+
+- Wait between publishing crates
+
 ## [0.1.0-rc.19] - 2021-06-30
 
 ### Bug Fixes
