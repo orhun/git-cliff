@@ -171,6 +171,9 @@ jobs:
           args: |
             --manifest-path git-cliff-core/Cargo.toml
             --locked --token ${{ secrets.CARGO_TOKEN }}
+      - name: Wait for 10 seconds
+        shell: bash
+        run: sleep 10s
       - name: Publish the binary
         uses: actions-rs/cargo@v1
         with:
