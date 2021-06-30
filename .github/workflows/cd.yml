@@ -102,20 +102,18 @@ jobs:
         env:
           OUTPUT: CHANGES.md
       - name: Set release body
+        if: matrix.OS == 'ubuntu-18.04'
         id: release
         shell: bash
         run: |
-          if [ "${{ matrix.OS }}" = "ubuntu-18.04" ]; then
-            r=$(cat ${{ steps.git-cliff.outputs.changelog }})
-            r="$(printf "$r" | tail -n +3)"
-            r="${r//'%'/'%25'}"
-            r="${r//$'\n'/'%0A'}"
-            r="${r//$'\r'/'%0D'}"
-            echo "::set-output name=RELEASE_BODY::$r"
-          else
-            echo "::set-output name=RELEASE_BODY::${{ env.RELEASE_VERSION }}"
-          fi
+          r=$(cat ${{ steps.git-cliff.outputs.changelog }})
+          r="$(printf "$r" | tail -n +3)"
+          r="${r//'%'/'%25'}"
+          r="${r//$'\n'/'%0A'}"
+          r="${r//$'\r'/'%0D'}"
+          echo "::set-output name=RELEASE_BODY::$r"
       - name: Upload the release
+        if: matrix.OS == 'ubuntu-18.04'
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -123,8 +121,16 @@ jobs:
           file_glob: true
           tag: ${{ github.ref }}
           release_name: "Release v${{ env.RELEASE_VERSION }}"
-          overwrite: true
           body: "${{ steps.release.outputs.RELEASE_BODY }}"
+      - name: Upload the release
+        if: matrix.OS != 'ubuntu-18.04'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.TARGET }}*
+          file_glob: true
+          tag: ${{ github.ref }}
+          release_name: "Release v${{ env.RELEASE_VERSION }}"
 
   publish-docker:
     name: Publish the Docker image
