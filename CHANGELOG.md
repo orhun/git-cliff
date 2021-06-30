@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-rc.18] - 2021-06-30
+
+### Bug Fixes
+
+- Use a separate step for setting the changelog body
+- Fix the syntax of publish step arguments
+
 ## [0.1.0-rc.17] - 2021-06-29
 
 ### Bug Fixes
