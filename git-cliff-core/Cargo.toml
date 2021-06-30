@@ -4,11 +4,9 @@ version = "0.1.0-rc.18" # managed by release.sh
 description = "Core library of git-cliff"
 authors = ["git-cliff contributors <git-cliff@protonmail.com>"]
 license = "GPL-3.0"
-readme = "README.md"
 homepage = "https://github.com/orhun/git-cliff"
 repository = "https://github.com/orhun/git-cliff"
 keywords = ["changelog", "generator", "conventional", "commit"]
-categories = ["command-line-utilities"]
 edition = "2018"
 
 [dependencies]
