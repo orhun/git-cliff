@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-rc.21] - 2021-07-01
+
+### Bug Fixes
+
+- Wait for core library to update on crates.io before publish
+
 ## [0.1.0-rc.20] - 2021-06-30
 
 ### Bug Fixes
