@@ -104,6 +104,19 @@ mod test {
 		.to_string())
 	}
 
+	fn get_last_tag() -> Result<String> {
+		Ok(str::from_utf8(
+			Command::new("git")
+				.args(&["describe", "--abbrev=0"])
+				.output()?
+				.stdout
+				.as_ref(),
+		)
+		.unwrap()
+		.trim()
+		.to_string())
+	}
+
 	#[test]
 	fn git_log() -> Result<()> {
 		let repository = Repository::init(
@@ -125,6 +138,8 @@ mod test {
 				}
 			}
 		}
+		let tags = repository.tags(&None)?;
+		assert_eq!(&get_last_tag()?, tags.last().unwrap().1);
 		Ok(())
 	}
 }
