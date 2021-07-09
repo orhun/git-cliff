@@ -65,3 +65,26 @@ impl Config {
 		Ok(config.try_into()?)
 	}
 }
+
+#[cfg(test)]
+mod test {
+	use super::*;
+	use pretty_assertions::assert_eq;
+	use std::env;
+	use std::path::PathBuf;
+	#[test]
+	fn parse_config() -> Result<()> {
+		let file_name = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+			.parent()
+			.unwrap()
+			.to_path_buf()
+			.join("cliff.toml")
+			.to_str()
+			.unwrap()
+			.to_string();
+		env::set_var("CLIFF_CHANGELOG_FOOTER", "test");
+		let config = Config::parse(file_name)?;
+		assert_eq!("test", config.changelog.footer.unwrap());
+		Ok(())
+	}
+}
