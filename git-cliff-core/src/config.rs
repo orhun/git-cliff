@@ -61,7 +61,7 @@ impl Config {
 		let mut config = config::Config::default();
 		config
 			.merge(config::File::with_name(&file_name))?
-			.merge(config::Environment::with_prefix(env!("CARGO_PKG_NAME")))?;
+			.merge(config::Environment::with_prefix("CLIFF").separator("_"))?;
 		Ok(config.try_into()?)
 	}
 }
