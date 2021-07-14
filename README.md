@@ -2,20 +2,29 @@
     <a href="https://github.com/orhun/git-cliff">
         <img src="https://user-images.githubusercontent.com/24392180/121790699-8808dc80-cbea-11eb-8ab6-2fb6b08b66d8.png" width="300"></a>
     <br>
+    <a href="https://github.com/orhun/git-cliff/releases">
+        <img src="https://img.shields.io/github/v/release/orhun/git-cliff?style=flat&labelColor=1C2C2E&color=C96329&logo=GitHub&logoColor=white">
+    </a>
+    <a href="https://crates.io/crates/git-cliff/">
+        <img src="https://img.shields.io/crates/v/git-cliff?style=flat&labelColor=1C2C2E&color=C96329&logo=Rust&logoColor=white">
+    </a>
+    <a href="https://codecov.io/gh/orhun/git-cliff">
+        <img src="https://img.shields.io/codecov/c/gh/orhun/git-cliff?style=flat&labelColor=1C2C2E&color=C96329&logo=Codecov&logoColor=white">
+    </a>
+    <br>
+    <a href="https://github.com/orhun/git-cliff/actions?query=workflow%3A%22Continuous+Integration%22">
+        <img src="https://img.shields.io/github/workflow/status/orhun/git-cliff/Continuous%20Integration?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=GitHub%20Actions&logoColor=BEC5C9">
+    </a>
+    <a href="https://github.com/orhun/git-cliff/actions?query=workflow%3A%22Continuous+Deployment%22">
+        <img src="https://img.shields.io/github/workflow/status/orhun/git-cliff/Continuous%20Deployment?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=GitHub%20Actions&logoColor=BEC5C9&label=deploy">
+    </a>
+    <a href="https://hub.docker.com/r/orhunp/git-cliff">
+        <img src="https://img.shields.io/docker/cloud/build/orhunp/git-cliff?style=flat&labelColor=1C2C2E&color=BEC5C9&label=docker&logo=Docker&logoColor=BEC5C9">
+    </a>
+    <a href="https://docs.rs/git-cliff-core/">
+        <img src="https://img.shields.io/docsrs/git-cliff-core?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=Rust&logoColor=BEC5C9E">
+    </a>
 </p>
-
-<center>
-
-[![GitHub Release](https://img.shields.io/github/v/release/orhun/git-cliff?style=flat&labelColor=1C2C2E&color=C96329&logo=GitHub&logoColor=white)](https://github.com/orhun/git-cliff/releases)
-[![Crate Release](https://img.shields.io/crates/v/git-cliff?style=flat&labelColor=1C2C2E&color=C96329&logo=Rust&logoColor=white)](https://crates.io/crates/git-cliff/)
-[![Coverage](https://img.shields.io/codecov/c/gh/orhun/git-cliff?style=flat&labelColor=1C2C2E&color=C96329&logo=Codecov&logoColor=white)](https://codecov.io/gh/orhun/git-cliff)
-<br>
-[![Continuous Integration](https://img.shields.io/github/workflow/status/orhun/git-cliff/Continuous%20Integration?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=GitHub%20Actions&logoColor=BEC5C9)](https://github.com/orhun/git-cliff/actions?query=workflow%3A%22Continuous+Integration%22)
-[![Continuous Deployment](https://img.shields.io/github/workflow/status/orhun/git-cliff/Continuous%20Deployment?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=GitHub%20Actions&logoColor=BEC5C9&label=deploy)](https://github.com/orhun/git-cliff/actions?query=workflow%3A%22Continuous+Deployment%22)
-[![Docker Builds](https://img.shields.io/docker/cloud/build/orhunp/git-cliff?style=flat&labelColor=1C2C2E&color=BEC5C9&label=docker&logo=Docker&logoColor=BEC5C9)](https://hub.docker.com/r/orhunp/git-cliff)
-[![Documentation](https://img.shields.io/docsrs/git-cliff-core?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=Rust&logoColor=BEC5C9E)](https://docs.rs/git-cliff-core/)
-
-</center>
 
 ## About
 
