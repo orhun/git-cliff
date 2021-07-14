@@ -254,9 +254,7 @@ For a [conventional commit](#conventional_commits) like this,
 
 following context is generated to use for templating:
 
-<!-- json cannot have comments but whatever -->
 ```json
-// represents a release
 {
   "version": "v0.1.0-rc.21",
   "commits": [
@@ -285,9 +283,7 @@ following context is generated to use for templating:
 
 If [conventional_commits](#conventional_commits) is set to `false`, then some of the fields are omitted from the context or squashed into the `message` field:
 
-<!-- json cannot have comments but whatever -->
 ```json
-// represents a release
 {
   "version": "v0.1.0-rc.21",
   "commits": [
