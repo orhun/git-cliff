@@ -262,7 +262,7 @@ following context is generated to use for templating:
   "commits": [
     {
       "id": "e795460c9bb7275294d1fa53a9d73258fb51eb10",
-      "group": "<type>", // overrided by commit_parsers
+      "group": "<type> (overrided by commit_parsers)",
       "scope": "[scope]",
       "message": "<description>",
       "body": "[body]",
@@ -270,9 +270,12 @@ following context is generated to use for templating:
       "breaking": false
     }
   ],
-  "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210", // release commit
+  "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210 (release commit)",
   "timestamp": 1625169301,
-  "previous": {} // previous release
+  "previous": {
+    "version": "previous release",
+    "..."
+  }
 }
 ```
 
@@ -290,13 +293,16 @@ If [conventional_commits](#conventional_commits) is set to `false`, then some of
   "commits": [
     {
       "id": "e795460c9bb7275294d1fa53a9d73258fb51eb10",
-      "group": "", // overrided by commit_parsers
-      "message": "", // whole commit message including description, footer, etc.
+      "group": "(overrided by commit_parsers)",
+      "message": "(whole commit message including description, footer, etc.)",
     }
   ],
-  "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210", // release commit
+  "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210 (release commit)",
   "timestamp": 1625169301,
-  "previous": {} // previous release
+  "previous": {
+    "version": "previous release",
+    "..."
+  }
 }
 ```
 
