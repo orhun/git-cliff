@@ -38,7 +38,7 @@ impl Repository {
 	/// Sorts the commits by their time.
 	pub fn commits(&self, range: Option<String>) -> Result<Vec<Commit>> {
 		let mut revwalk = self.inner.revwalk()?;
-		revwalk.set_sorting(Sort::TIME)?;
+		revwalk.set_sorting(Sort::TIME | Sort::TOPOLOGICAL)?;
 		if let Some(range) = range {
 			revwalk.push_range(&range)?;
 		} else {
