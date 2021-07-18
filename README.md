@@ -254,7 +254,7 @@ For a [conventional commit](#conventional_commits) like this,
 
 [body]
 
-[footer]
+[footer(s)]
 ```
 
 following context is generated to use for templating:
@@ -269,15 +269,14 @@ following context is generated to use for templating:
       "scope": "[scope]",
       "message": "<description>",
       "body": "[body]",
-      "footer": "[footer]",
+      "footers": ["[footer]", "[footer]"],
       "breaking": false
     }
   ],
   "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210 (release commit)",
   "timestamp": 1625169301,
   "previous": {
-    "version": "previous release",
-    "..."
+    "version": "previous release"
   }
 }
 ```
@@ -295,14 +294,13 @@ If [conventional_commits](#conventional_commits) is set to `false`, then some of
     {
       "id": "e795460c9bb7275294d1fa53a9d73258fb51eb10",
       "group": "(overrided by commit_parsers)",
-      "message": "(whole commit message including description, footer, etc.)",
+      "message": "(whole commit message including description, footers, etc.)"
     }
   ],
   "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210 (release commit)",
   "timestamp": 1625169301,
   "previous": {
-    "version": "previous release",
-    "..."
+    "version": "previous release"
   }
 }
 ```
@@ -317,11 +315,37 @@ There are 3 kinds of delimiters and those cannot be changed:
 - `{%` or `{%-` and `%}` or `-%}` for statements
 - `{#` and `#}` for comments
 
-See the [Tera Documentation](https://tera.netlify.app/docs/#templates) for more information about [control structures](https://tera.netlify.app/docs/#control-structures), [built-ins](https://tera.netlify.app/docs/#built-ins), etc.
+See the [Tera Documentation](https://tera.netlify.app/docs/#templates) for more information about [control structures](https://tera.netlify.app/docs/#control-structures), [built-ins filters](https://tera.netlify.app/docs/#built-ins), etc.
+
+Custom built-in filters that **git-cliff** uses:
+
+- `upper_first`: Converts the first character of a string to uppercase.
 
 ## Examples
 
-### Simple
+Examples are based on the following Git history:
+
+```log
+* df6aef4 (HEAD -> master) feat(cache): use cache while fetching pages
+* a9d4050 feat(config): support multiple file formats
+* 06412ac (tag: v1.0.0) chore(release): add release script
+* e4fd3cf refactor(parser): expose string functions
+* ad27b43 docs(example)!: add tested usage example
+* 9add0d4 fix(args): rename help argument due to conflict
+* a140cef feat(parser): add ability to parse arrays
+* 81fbc63 docs(project): add README.md
+* a78bc36 Initial commit
+```
+
+### Simple Changelog
+
+TODO
+
+### Detailed Changelog
+
+TODO
+
+### Prepending Entries
 
 TODO
 
@@ -364,6 +388,7 @@ See the [repository](https://github.com/orhun/git-cliff-action) for other [examp
 
 ## Similar Projects
 
+- [git-journal](https://github.com/saschagrunert/git-journal) - The Git Commit Message and Changelog Generation Framework
 - [clog-cli](https://github.com/clog-tool/clog-cli) - Generate beautiful changelogs from your Git commit history
 - [relnotes](https://crates.io/crates/relnotes) - A tool to automatically generate release notes for your project.
 - [cocogitto](https://github.com/oknozor/cocogitto) - A set of CLI tools for the conventional commit
