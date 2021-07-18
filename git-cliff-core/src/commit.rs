@@ -124,7 +124,15 @@ impl Serialize for Commit<'_> {
 			Some(conv) => {
 				commit.serialize_field("message", conv.description())?;
 				commit.serialize_field("body", &conv.body())?;
-				commit.serialize_field("footer", conv.footers())?;
+				commit.serialize_field(
+					"footers",
+					&conv
+						.footers()
+						.to_vec()
+						.iter()
+						.map(|f| f.value())
+						.collect::<Vec<&str>>(),
+				)?;
 				commit.serialize_field(
 					"group",
 					self.group.as_ref().unwrap_or(&conv.type_().to_string()),
