@@ -86,7 +86,11 @@ pub fn run(mut args: Opt) -> Result<()> {
 			commit_range = Some(format!("{}..HEAD", last_tag));
 		}
 	} else if args.latest {
-		if let (Some(tag1), Some(tag2)) = (
+		if tags.len() < 2 {
+			return Err(Error::ChangelogError(String::from(
+				"latest tag cannot be processed",
+			)));
+		} else if let (Some(tag1), Some(tag2)) = (
 			tags.get_index(tags.len() - 2).map(|(k, _)| k),
 			tags.get_index(tags.len() - 1).map(|(k, _)| k),
 		) {

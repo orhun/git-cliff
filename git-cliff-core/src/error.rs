@@ -19,6 +19,9 @@ pub enum Error {
 	/// Error that may occur while grouping commits.
 	#[error("Grouping error: `{0}`")]
 	GroupError(String),
+	/// Error that may occur while generating changelog.
+	#[error("Changelog error: `{0}`")]
+	ChangelogError(String),
 	/// Error that may occur while template operations such as parse and render.
 	#[error("Template error: `{0}`")]
 	TemplateError(#[from] tera::Error),
