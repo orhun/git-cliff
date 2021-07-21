@@ -36,8 +36,8 @@ pub struct Opt {
 	#[structopt(short, long, env, value_name = "PATH")]
 	pub repository: Option<PathBuf>,
 	/// Prepends entries to the given changelog file.
-	#[structopt(short = "p", long, env, value_name = "PATH")]
-	pub changelog:  Option<PathBuf>,
+	#[structopt(short, long, env, value_name = "PATH")]
+	pub prepend:    Option<PathBuf>,
 	/// Writes output to the given file.
 	#[structopt(short, long, env, value_name = "PATH")]
 	pub output:     Option<PathBuf>,

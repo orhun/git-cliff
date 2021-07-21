@@ -32,8 +32,8 @@ pub fn run(mut args: Opt) -> Result<()> {
 			Some(repository) => Some(workdir.join(repository)),
 			None => Some(workdir.clone()),
 		};
-		if let Some(changelog) = args.changelog {
-			args.changelog = Some(workdir.join(changelog));
+		if let Some(changelog) = args.prepend {
+			args.prepend = Some(workdir.join(changelog));
 		}
 	}
 
@@ -60,7 +60,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 		_ => {}
 	}
-	if args.changelog.is_some() {
+	if args.prepend.is_some() {
 		config.changelog.footer = None;
 		if !(args.unreleased || args.latest) {
 			return Err(Error::ArgumentError(String::from(
@@ -133,7 +133,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 
 	// Generate changelog.
 	let changelog = Changelog::new(releases, &config)?;
-	if let Some(path) = args.changelog {
+	if let Some(path) = args.prepend {
 		changelog.prepend(fs::read_to_string(&path)?, &mut File::create(path)?)
 	} else if let Some(path) = args.output {
 		changelog.generate(&mut File::create(path)?)
