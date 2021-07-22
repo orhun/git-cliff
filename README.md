@@ -39,6 +39,9 @@
   - [Binary Releases](#binary-releases)
 - [Usage](#usage)
   - [Command Line Arguments](#command-line-arguments)
+  - [Examples](#examples)
+- [Docker](#docker)
+- [GitHub Action](#github-action)
 - [Configuration File](#configuration-file)
   - [changelog](#changelog)
     - [header](#header)
@@ -56,11 +59,7 @@
     - [Conventional Commits](#conventional-commits)
     - [Non-Conventional Commits](#non-conventional-commits)
   - [Syntax](#syntax)
-- [Examples](#examples)
-  - [Simple](#simple)
-  - [Other](#other)
-- [Docker](#docker)
-- [GitHub Action](#github-action)
+  - [Examples](#examples-1)
 - [Similar Projects](#similar-projects)
 - [License](#license)
 - [Copyright](#copyright)
@@ -105,7 +104,7 @@ git-cliff [FLAGS] [OPTIONS] [RANGE]
 -c, --config <PATH>        Sets the configuration file [env: CONFIG=]  [default: cliff.toml]
 -w, --workdir <PATH>       Sets the working directory [env: WORKDIR=]
 -r, --repository <PATH>    Sets the repository to parse commits from [env: REPOSITORY=]
--p, --changelog <PATH>     Prepends entries to the given changelog file [env: CHANGELOG=]
+-p, --prepend <PATH>       Prepends entries to the given changelog file [env: PREPEND=]
 -o, --output <PATH>        Writes output to the given file [env: OUTPUT=]
 -t, --tag <TAG>            Sets the tag for the latest version [env: TAG=]
 -b, --body <TEMPLATE>      Sets the template for the changelog body [env: TEMPLATE=]
@@ -117,6 +116,95 @@ git-cliff [FLAGS] [OPTIONS] [RANGE]
 ```
 <RANGE>    Sets the commit range to process
 ```
+
+### Examples
+
+To simply create a changelog at your projects git root directory with a [configuration file](#configuration-file) (e.g. `cliff.toml`) present:
+
+```sh
+# same as running `git-cliff --config cliff.toml --repository .`
+# same as running `git-cliff --workdir .`
+git cliff
+```
+
+Set a tag for the "unreleased" changes:
+
+```sh
+git cliff --tag 1.0.0
+```
+
+Create a changelog for a certain part of git history:
+
+```sh
+# only takes the latest tag into account
+# (requires at least 2 tags to be present)
+git cliff --latest
+
+# generate changelog for unreleased commits
+git cliff --unreleased
+git cliff --unreleased --tag 1.0.0
+
+# generate changelog for a specific commit range
+git cliff 4c7b043..a440c6e
+git cliff 4c7b043..HEAD
+git cliff HEAD~2..
+```
+
+Save the changelog file to the specified file:
+
+```sh
+git cliff --output CHANGELOG.md
+```
+
+Prepend new changes to an existing changelog file:
+
+```sh
+# 1- changelog header is removed from CHANGELOG.md
+# 2- new entries are prepended to CHANGELOG.md without footer part
+git cliff --unreleased --tag 1.0.0 --prepend CHANGELOG.md
+```
+
+Set/remove the changelog parts:
+
+```sh
+git cliff --body $template --strip footer
+```
+
+Also, see the [release script](./release.sh) of this project which sets the changelog as a message of an annotated tag.
+
+## Docker
+
+The easiest way of running **git-cliff** (in the git root directory with [configuration file](#configuration-file) present) is to use the [available tags](https://hub.docker.com/repository/docker/orhunp/git-cliff/tags) from [Docker Hub](https://hub.docker.com/repository/docker/orhunp/git-cliff):
+
+```sh
+docker run -t -v "$(pwd)":/app/ orhunp/git-cliff:latest
+```
+
+Or you can use the image from the [GitHub Package Registry](https://github.com/orhun/git-cliff/packages/841947):
+
+```sh
+docker run -t -v "$(pwd)":/app/ docker.pkg.github.com/orhun/git-cliff/git-cliff:latest
+```
+
+Also, you can build the image yourself using `docker build -t git-cliff .` command.
+
+## GitHub Action
+
+It is possible to generate changelogs using [GitHub Actions](https://docs.github.com/en/actions) via [git-cliff-action](https://github.com/orhun/git-cliff-action).
+
+```yml
+- name: Generate a changelog
+  uses: orhun/git-cliff-action@v1
+  with:
+    config: cliff.toml
+    args: --verbose
+  env:
+    OUTPUT: CHANGELOG.md
+```
+
+See the [repository](https://github.com/orhun/git-cliff-action) for other [examples](https://github.com/orhun/git-cliff-action#examples).
+
+Also, see the [continuous deployment workflow](./.github/workflows/cd.yml) of this project which sets the release notes for GitHub releases using this action.
 
 ## Configuration File
 
@@ -307,7 +395,7 @@ If [conventional_commits](#conventional_commits) is set to `false`, then some of
 
 ### Syntax
 
-**git-cliff** uses [Tera](https://github.com/Keats/tera) as a template engine which has a syntax based on [Jinja2](http://jinja.pocoo.org/) and [Django](https://docs.djangoproject.com/en/3.1/topics/templates/) templates.
+**git-cliff** uses [Tera](https://github.com/Keats/tera) as the template engine. It has a syntax based on [Jinja2](http://jinja.pocoo.org/) and [Django](https://docs.djangoproject.com/en/3.1/topics/templates/) templates.
 
 There are 3 kinds of delimiters and those cannot be changed:
 
@@ -321,70 +409,23 @@ Custom built-in filters that **git-cliff** uses:
 
 - `upper_first`: Converts the first character of a string to uppercase.
 
-## Examples
+### Examples
 
 Examples are based on the following Git history:
 
 ```log
 * df6aef4 (HEAD -> master) feat(cache): use cache while fetching pages
 * a9d4050 feat(config): support multiple file formats
-* 06412ac (tag: v1.0.0) chore(release): add release script
+* 06412ac (tag: v1.0.1) chore(release): add release script
 * e4fd3cf refactor(parser): expose string functions
-* ad27b43 docs(example)!: add tested usage example
+* ad27b43 (tag: v1.0.0) docs(example)!: add tested usage example
 * 9add0d4 fix(args): rename help argument due to conflict
 * a140cef feat(parser): add ability to parse arrays
 * 81fbc63 docs(project): add README.md
 * a78bc36 Initial commit
 ```
 
-### Simple Changelog
-
 TODO
-
-### Detailed Changelog
-
-TODO
-
-### Prepending Entries
-
-TODO
-
-### Other
-
-- [Setting the release notes for GitHub releases using git-cliff-action](./.github/workflows/cd.yml)
-- [Setting the changelog as a message of an annotated tag](./release.sh)
-
-## Docker
-
-The easiest way of running **git-cliff** (in the git root directory with [configuration file](#configuration-file) present) is to use the [available tags](https://hub.docker.com/repository/docker/orhunp/git-cliff/tags) from [Docker Hub](https://hub.docker.com/repository/docker/orhunp/git-cliff):
-
-```sh
-docker run -t -v "$(pwd)":/app/ orhunp/git-cliff:latest
-```
-
-Or you can use the image from the [GitHub Package Registry](https://github.com/orhun/git-cliff/packages/841947):
-
-```sh
-docker run -t -v "$(pwd)":/app/ docker.pkg.github.com/orhun/git-cliff/git-cliff:latest
-```
-
-Also, you can build the image yourself using `docker build -t git-cliff .` command.
-
-## GitHub Action
-
-It is possible to generate changelogs using [GitHub Actions](https://docs.github.com/en/actions) via [git-cliff-action](https://github.com/orhun/git-cliff-action).
-
-```yml
-- name: Generate a changelog
-  uses: orhun/git-cliff-action@v1
-  with:
-    config: cliff.toml
-    args: --verbose
-  env:
-    OUTPUT: CHANGELOG.md
-```
-
-See the [repository](https://github.com/orhun/git-cliff-action) for other [examples](https://github.com/orhun/git-cliff-action#examples).
 
 ## Similar Projects
 
