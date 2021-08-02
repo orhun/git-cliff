@@ -13,7 +13,7 @@ if [ -n "$1" ]; then
 	{% for group, commits in commits | group_by(attribute=\"group\") %}
 	{{ group | upper_first }}\
 	{% for commit in commits %}
-		- {{ commit.message | upper_first }} ({{ commit.id | truncate(length=8, end=\"\") }})\
+		- {{ commit.message | upper_first }} ({{ commit.id | truncate(length=7, end=\"\") }})\
 	{% endfor %}
 	{% endfor %}"
 	changelog=$(cargo run -- --unreleased --strip all)
