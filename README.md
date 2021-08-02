@@ -431,7 +431,7 @@ Examples are based on the following Git history:
 
 See [examples](./examples/) directory for example configuration files.
 
-#### [Basic](./examples/basic.toml)
+#### [Basic](./cliff.toml)
 
 <details>
   <summary>Raw Output</summary>
