@@ -6,6 +6,3 @@
 
 # Ignore library's lock file
 git-cliff-core/Cargo.lock
-
-# Miscellaneous
-/etc/
