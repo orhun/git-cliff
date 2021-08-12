@@ -8,7 +8,7 @@ WORKDIR app
 COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 
-FROM rust:1.52-slim-buster as builder
+FROM rust:1.54-slim-buster as builder
 WORKDIR app
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
