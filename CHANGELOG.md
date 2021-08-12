@@ -1,6 +1,51 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.0] - 2021-08-12
+
+### Bug Fixes
+
+- Update the environment variable parsing settings
+- Use footers field as an array for the context
+- Sort the commits in topological order
+- Return error if there is not a latest tag to process
+- Update symbolic link to the default config
+- Remove symbolic link
+- Use 7 digits for short SHA
+
+### Documentation
+
+- Update README.md about usage
+- Update README.md about template and examples
+- Add examples for CLI usage
+- Add examples for templating
+- Update detailed template example
+- Add preview image to README.md
+
+### Miscellaneous Tasks
+
+- Upgrade dependencies
+- Remove etc directory from .gitignore
+- Bump the rust version
+- Upgrade dependencies
+
+### Refactor
+
+- Rename changelog argument to prepend
+
+### Styling
+
+- Center the badges
+- Update the comments in template context
+- Remove comments from template context
+- Wrap table of contents into summary
+- Remove quotes from rendered output
+
+### Testing
+
+- Add tests
+- Update repository tests about getting the latest tag
+
 ## [0.1.0-rc.21] - 2021-07-01
 
 ### Bug Fixes
