@@ -125,6 +125,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 			releases[release_index].version = Some(tag.to_string());
 			releases[release_index].commit_id = Some(commit_id);
 			releases[release_index].timestamp = git_commit.time().seconds();
+			previous_release.previous = None;
 			releases[release_index].previous = Some(Box::new(previous_release));
 			previous_release = releases[release_index].clone();
 			release_index += 1;
