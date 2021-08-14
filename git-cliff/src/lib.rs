@@ -132,6 +132,18 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 	}
 
+	// Set the previous release if needed.
+	if args.latest {
+		if let Some((commit_id, version)) = tags.get_index(tags.len() - 2) {
+			let previous_release = Release {
+				commit_id: Some(commit_id.to_string()),
+				version: Some(version.to_string()),
+				..Release::default()
+			};
+			releases[0].previous = Some(Box::new(previous_release));
+		}
+	}
+
 	// Generate changelog.
 	let changelog = Changelog::new(releases, &config)?;
 	if let Some(path) = args.prepend {
