@@ -114,7 +114,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 
 	// Process releases.
-	let mut releases = vec![Release::default(); tags.len() + 1];
+	let mut releases = vec![Release::default()];
 	let mut release_index = 0;
 	let mut previous_release = Release::default();
 	for git_commit in commits.into_iter().rev() {
@@ -128,6 +128,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 			previous_release.previous = None;
 			releases[release_index].previous = Some(Box::new(previous_release));
 			previous_release = releases[release_index].clone();
+			releases.push(Release::default());
 			release_index += 1;
 		}
 	}
