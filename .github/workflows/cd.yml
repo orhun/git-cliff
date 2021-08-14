@@ -92,7 +92,7 @@ jobs:
         run: |
           mkdir -p release/completions/
           cp {LICENSE,README.md,CHANGELOG.md,cliff.toml} release/
-          OUT_DIR=release/completions/ cargo run --release --bin completions
+          OUT_DIR=release/completions/ cargo run --release --bin git-cliff-completions
           if [ "${{ matrix.OS }}" = "windows-2019" ]; then
             cp target/${{ matrix.TARGET }}/release/git-cliff.exe release/
           else
