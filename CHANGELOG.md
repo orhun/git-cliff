@@ -1,6 +1,16 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.2] - 2021-08-14
+
+### Bug Fixes
+
+- Use the correct name of completions binary
+
+### Documentation
+
+- Update the example completion command
+
 ## [0.1.1] - 2021-08-14
 
 ### Bug Fixes
