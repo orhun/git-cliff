@@ -19,7 +19,7 @@ serde_regex = "1.1.0"
 indexmap = "1.7.0"
 
 [dependencies.git2]
-version = "0.13.20"
+version = "0.13.21"
 default-features = false
 
 [dependencies.config]
