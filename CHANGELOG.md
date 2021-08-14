@@ -1,6 +1,26 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] - 2021-08-14
+
+### Bug Fixes
+
+- Set the previous release when using `--latest` (#3)
+
+### Documentation
+
+- Add installation instructions for the AUR
+
+### Miscellaneous Tasks
+
+- Rename the shell completions binary
+- Upgrade dependencies
+
+### Performance
+
+- Process only the last 'previous' release
+- Optimize the release vector size
+
 ## [0.1.0] - 2021-08-12
 
 ### Bug Fixes
