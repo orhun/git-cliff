@@ -6,7 +6,8 @@ use std::{
 use structopt::clap::Shell;
 use structopt::StructOpt;
 
-/// Shell completions can be created with `cargo run --bin completions`
+/// Shell completions can be created with:
+/// `cargo run --bin git-cliff-completions`
 /// in a directory specified by the environment variable OUT_DIR.
 /// See <https://doc.rust-lang.org/cargo/reference/environment-variables.html>
 fn main() {
