@@ -79,7 +79,7 @@ mod test {
 			.unwrap()
 			.to_path_buf()
 			.join("config")
-			.join("cliff.toml")
+			.join(crate::DEFAULT_CONFIG)
 			.to_str()
 			.unwrap()
 			.to_string();

@@ -1,3 +1,4 @@
+use git_cliff_core::DEFAULT_CONFIG;
 use std::path::PathBuf;
 use structopt::clap::AppSettings;
 use structopt::StructOpt;
@@ -26,7 +27,7 @@ pub struct Opt {
 		long,
 		env,
 		value_name = "PATH",
-		default_value = "cliff.toml"
+		default_value = DEFAULT_CONFIG,
 	)]
 	pub config:     PathBuf,
 	/// Sets the working directory.
