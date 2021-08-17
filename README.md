@@ -225,7 +225,7 @@ Also, see the [continuous deployment workflow](./.github/workflows/cd.yml) of th
 
 **git-cliff** configuration file supports [TOML](https://github.com/toml-lang/toml) (preferred) and [YAML](https://yaml.org) formats.
 
-See [cliff.toml](./cliff.toml) for an example.
+See [config/cliff.toml](./config/cliff.toml) for an example.
 
 ### changelog
 
@@ -442,7 +442,7 @@ Examples are based on the following Git history:
 
 See [examples](./examples/) directory for example configuration files.
 
-#### [Basic](./cliff.toml)
+#### [Basic](./config/cliff.toml)
 
 <details>
   <summary>Raw Output</summary>

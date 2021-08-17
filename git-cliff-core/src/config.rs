@@ -78,6 +78,7 @@ mod test {
 			.parent()
 			.unwrap()
 			.to_path_buf()
+			.join("config")
 			.join("cliff.toml")
 			.to_str()
 			.unwrap()
