@@ -119,7 +119,7 @@ impl<'a> Changelog<'a> {
 		Ok(())
 	}
 
-	/// Generate changelog and prepend it to the given changelog.
+	/// Generates a changelog and prepends it to the given changelog.
 	pub fn prepend<W: Write>(
 		&self,
 		mut changelog: String,
