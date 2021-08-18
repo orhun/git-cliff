@@ -233,7 +233,13 @@ Also, see the [continuous deployment workflow](./.github/workflows/cd.yml) of th
 
 **git-cliff** configuration file supports [TOML](https://github.com/toml-lang/toml) (preferred) and [YAML](https://yaml.org) formats.
 
-See [config/cliff.toml](./config/cliff.toml) for an example.
+The configuration file is read from `$HOME/git-cliff/cliff.toml` if the file exists. This location depends on the platform, for example:
+
+- on Linux: `/home/<user>/.config/git-cliff/cliff.toml`
+- on Windows: `C:\Users\<user>\AppData\Roaming\git-cliff\cliff.toml`
+- on macOS: `/Users/<user>/Library/Application Support/git-cliff/cliff.toml`
+
+See [config/cliff.toml](./config/cliff.toml) for the default configuration values.
 
 ### changelog
 

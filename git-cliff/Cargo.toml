@@ -19,6 +19,7 @@ path = "src/bin/completions.rs"
 [dependencies]
 pretty_env_logger = "0.4.0"
 log = "0.4.14"
+dirs-next = "2.0.0"
 
 [dependencies.git-cliff-core]
 version = "0.1.2" # managed by release.sh

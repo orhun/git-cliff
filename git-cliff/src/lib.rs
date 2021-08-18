@@ -46,14 +46,24 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 	}
 
-	// Parse configuration file.
-	let path = match args.config.to_str() {
+	// Parse the configuration file.
+	let mut path = match args.config.to_str() {
 		Some(v) => Ok(v.to_string()),
 		None => Err(Error::IoError(io::Error::new(
 			io::ErrorKind::Other,
 			"path contains invalid characters",
 		))),
 	}?;
+	if let Some(config_path) = dirs_next::config_dir()
+		.map(|dir| dir.join(env!("CARGO_PKG_NAME")).join(DEFAULT_CONFIG))
+		.map(|path| path.to_str().map(String::from))
+		.flatten()
+	{
+		if fs::metadata(&config_path).is_ok() {
+			path = config_path;
+		}
+	}
+
 	let mut config = if fs::metadata(&path).is_ok() {
 		Config::parse(path)?
 	} else {
