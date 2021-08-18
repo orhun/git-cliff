@@ -170,10 +170,6 @@ jobs:
         run: |
           mkdir -p target/package/config/
           cp config/cliff.toml target/package/config/
-          for d in /home/runner/.cargo/registry/src/github.com-*/ ; do
-            mkdir "$d"/config/
-            cp config/cliff.toml "$d"/config/
-          done
       - name: Publish the library
         uses: actions-rs/cargo@v1
         with:
@@ -186,6 +182,18 @@ jobs:
         run: |
           crate_status="https://raw.githubusercontent.com/rust-lang/crates.io-index/master/gi/t-/git-cliff-core"
           until curl -s "$crate_status" | grep -q '"vers":"${{ env.RELEASE_VERSION }}"'; do sleep 5; done;
+      - name: Fetch the dependencies
+        uses: actions-rs/cargo@v1
+        with:
+          command: fetch
+          args: --manifest-path git-cliff/Cargo.toml
+      - name: Prepare the files to embed
+        shell: bash
+        run: |
+          for d in /home/runner/.cargo/registry/src/github.com-*/ ; do
+            mkdir "$d"/config/
+            cp config/cliff.toml "$d"/config/
+          done
       - name: Publish the binary
         uses: actions-rs/cargo@v1
         with:
