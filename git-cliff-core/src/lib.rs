@@ -7,6 +7,8 @@ pub use regex;
 pub mod commit;
 /// Config file parser.
 pub mod config;
+/// Embedded file handler.
+pub mod embed;
 /// Error handling.
 pub mod error;
 /// Common release type.

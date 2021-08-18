@@ -28,6 +28,12 @@ pub enum Error {
 	/// Error that may occur while parsing the command line arguments.
 	#[error("Argument error: `{0}`")]
 	ArgumentError(String),
+	/// Error that may occur while extracting the embedded content.
+	#[error("Embedded error: `{0}`")]
+	EmbeddedError(String),
+	/// Errors that may occur when deserializing types from TOML format.
+	#[error("Cannot parse TOML: `{0}`")]
+	DeserializeError(#[from] toml::de::Error),
 }
 
 /// Result type of the core library.

@@ -10,6 +10,7 @@ use args::Opt;
 use changelog::Changelog;
 use git_cliff_core::commit::Commit;
 use git_cliff_core::config::Config;
+use git_cliff_core::embed::EmbeddedConfig;
 use git_cliff_core::error::{
 	Error,
 	Result,
@@ -38,13 +39,19 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 
 	// Parse configuration file.
-	let mut config = Config::parse(match args.config.to_str() {
+	let path = match args.config.to_str() {
 		Some(v) => Ok(v.to_string()),
 		None => Err(Error::IoError(io::Error::new(
 			io::ErrorKind::Other,
 			"path contains invalid characters",
 		))),
-	}?)?;
+	}?;
+	let mut config = if fs::metadata(&path).is_ok() {
+		Config::parse(path)?
+	} else {
+		warn!("{:?} is not found, using the default configuration.", path);
+		EmbeddedConfig::parse()?
+	};
 
 	// Update the configuration based on command line arguments.
 	match args.strip.as_deref() {
