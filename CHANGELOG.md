@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.2.1] - 2021-08-18
+
+### Bug Fixes
+
+- Copy the configuration file to embed into package
+
 ## [0.2.0] - 2021-08-18
 
 ### Bug Fixes
