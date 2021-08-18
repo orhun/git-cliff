@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.2.3] - 2021-08-18
+
+### Bug Fixes
+
+- Fetch the dependencies before copying the file to embed
+
 ## [0.2.2] - 2021-08-18
 
 ### Bug Fixes
