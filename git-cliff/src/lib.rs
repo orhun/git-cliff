@@ -17,6 +17,7 @@ use git_cliff_core::error::{
 };
 use git_cliff_core::release::Release;
 use git_cliff_core::repo::Repository;
+use git_cliff_core::DEFAULT_CONFIG;
 use std::env;
 use std::fs::{
 	self,
@@ -26,6 +27,13 @@ use std::io;
 
 /// Runs `git-cliff`.
 pub fn run(mut args: Opt) -> Result<()> {
+	// Create the configuration file if init flag is given.
+	if args.init {
+		info!("Saving the configuration file to {:?}", DEFAULT_CONFIG);
+		fs::write(DEFAULT_CONFIG, EmbeddedConfig::get_config()?)?;
+		return Ok(());
+	}
+
 	// Set the working directory.
 	if let Some(workdir) = args.workdir {
 		args.config = workdir.join(args.config);

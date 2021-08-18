@@ -107,6 +107,7 @@ git-cliff [FLAGS] [OPTIONS] [RANGE]
 
 ```
 -v, --verbose       Increases the logging verbosity
+-i, --init          Creates the default configuration file
 -l, --latest        Processes the commits starting from the latest tag
 -u, --unreleased    Processes the commits that do not belong to a tag
 -h, --help          Prints help information
@@ -134,7 +135,14 @@ git-cliff [FLAGS] [OPTIONS] [RANGE]
 
 ### Examples
 
-To simply create a changelog at your projects git root directory with a [configuration file](#configuration-file) (e.g. `cliff.toml`) present:
+The default [configuration file](#configuration-file) (`cliff.toml`) can be generated using the `--init` flag:
+
+```sh
+# create cliff.toml
+git cliff --init
+```
+
+Then simply create a changelog at your projects git root directory:
 
 ```sh
 # same as running `git-cliff --config cliff.toml --repository .`
