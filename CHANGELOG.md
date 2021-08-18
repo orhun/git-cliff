@@ -1,6 +1,35 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2021-08-18
+
+### Bug Fixes
+
+- Use custom error type for UTF-8 errors
+
+### Documentation
+
+- Update the doc comment of `prepend`
+
+### Features
+
+- Embed the default configuration file into the binary
+- Add `--init` flag for creating the default config
+- Support a global location for configuration file (#2)
+
+### Miscellaneous Tasks
+
+- Move `cliff.toml` to config/
+
+### Refactor
+
+- Create a constant for default configuration file
+- Update the log message for unprocessed tags
+
+### Styling
+
+- Update the message of `--init` flag
+
 ## [0.1.2] - 2021-08-14
 
 ### Bug Fixes
