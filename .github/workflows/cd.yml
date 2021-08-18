@@ -166,6 +166,10 @@ jobs:
         uses: actions/checkout@main
       - name: Set the release version
         run: echo "RELEASE_VERSION=${GITHUB_REF:11}" >> $GITHUB_ENV
+      - name: Prepare the files to embed
+        run: |
+          mkdir -p target/package/config/
+          cp config/cliff.toml target/package/config/
       - name: Publish the library
         uses: actions-rs/cargo@v1
         with:
@@ -173,7 +177,7 @@ jobs:
           args: |
             --manifest-path git-cliff-core/Cargo.toml
             --locked --token ${{ secrets.CARGO_TOKEN }}
-      - name: Wait for core library to update
+      - name: Wait for library to update
         shell: bash
         run: |
           crate_status="https://raw.githubusercontent.com/rust-lang/crates.io-index/master/gi/t-/git-cliff-core"
