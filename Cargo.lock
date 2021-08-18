@@ -345,7 +345,7 @@ dependencies = [
 
 [[package]]
 name = "git-cliff"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "dirs-next",
  "git-cliff-core",
@@ -357,7 +357,7 @@ dependencies = [
 
 [[package]]
 name = "git-cliff-core"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "config",
  "git-conventional",
