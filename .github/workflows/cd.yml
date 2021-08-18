@@ -170,6 +170,10 @@ jobs:
         run: |
           mkdir -p target/package/config/
           cp config/cliff.toml target/package/config/
+          for d in /home/runner/.cargo/registry/src/github.com-*/ ; do
+            mkdir "$d"/config/
+            cp config/cliff.toml "$d"/config/
+          done
       - name: Publish the library
         uses: actions-rs/cargo@v1
         with:
