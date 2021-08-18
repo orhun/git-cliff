@@ -88,7 +88,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 	} else if args.latest {
 		if tags.len() < 2 {
 			return Err(Error::ChangelogError(String::from(
-				"latest tag cannot be processed",
+				"Latest tag cannot be processed",
 			)));
 		} else if let (Some(tag1), Some(tag2)) = (
 			tags.get_index(tags.len() - 2).map(|(k, _)| k),
