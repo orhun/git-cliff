@@ -54,7 +54,7 @@ pub struct Opt {
 		allow_hyphen_values = true
 	)]
 	pub body:       Option<String>,
-	/// Creates the default configuration file
+	/// Writes the default configuration file to cliff.toml
 	#[structopt(short, long)]
 	pub init:       bool,
 	/// Processes the commits starting from the latest tag.

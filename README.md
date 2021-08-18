@@ -107,7 +107,7 @@ git-cliff [FLAGS] [OPTIONS] [RANGE]
 
 ```
 -v, --verbose       Increases the logging verbosity
--i, --init          Creates the default configuration file
+-i, --init          Writes the default configuration file to cliff.toml
 -l, --latest        Processes the commits starting from the latest tag
 -u, --unreleased    Processes the commits that do not belong to a tag
 -h, --help          Prints help information
