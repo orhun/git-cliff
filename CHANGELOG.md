@@ -1,6 +1,21 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.2.5] - 2021-08-20
+
+### Documentation
+
+- Mention breaking changes for templating
+- Update template examples to mention how to contribute
+
+### Features
+
+- Add `breaking_description` to the template context (#4)
+
+### Miscellaneous Tasks
+
+- Show the committed changes before creating a tag
+
 ## [0.2.4] - 2021-08-20
 
 ### Bug Fixes
