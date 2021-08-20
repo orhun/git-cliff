@@ -8,6 +8,7 @@ if [ -n "$1" ]; then
 	# update the changelog
 	cargo run -- --tag "$1" > CHANGELOG.md
 	git add -A && git commit -m "chore(release): prepare for $1"
+	git show
 	# generate a changelog for the tag message
 	export TEMPLATE="\
 	{% for group, commits in commits | group_by(attribute=\"group\") %}
