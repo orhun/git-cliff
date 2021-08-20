@@ -60,6 +60,7 @@
 - [Templating](#templating)
   - [Context](#context)
     - [Conventional Commits](#conventional-commits)
+      - [Breaking Changes](#breaking-changes)
     - [Non-Conventional Commits](#non-conventional-commits)
   - [Syntax](#syntax)
   - [Examples](#examples-1)
@@ -387,6 +388,7 @@ following context is generated to use for templating:
       "message": "<description>",
       "body": "[body]",
       "footers": ["[footer]", "[footer]"],
+      "breaking_description": "<description>",
       "breaking": false
     }
   ],
@@ -397,6 +399,24 @@ following context is generated to use for templating:
   }
 }
 ```
+
+##### Breaking Changes
+
+`breaking` flag is set to `true` when the commit has an exclamation mark after the commit type and scope, e.g.:
+
+```
+feat(scope)!: this is a breaking change
+```
+
+Or when the `BREAKING CHANGE:` footer is defined:
+
+```
+feat: add xyz
+
+BREAKING CHANGE: this is a breaking change
+```
+
+`breaking_description` is set to the explanation of the breaking change. This description is expected to be present in the `BREAKING CHANGE` footer. However, if it's not provided, the `message` is expected to describe the breaking change.
 
 #### Non-Conventional Commits
 
