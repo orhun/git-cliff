@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.2.4] - 2021-08-20
+
+### Bug Fixes
+
+- Change the config file location for crates.io release
+
 ## [0.2.3] - 2021-08-18
 
 ### Bug Fixes
