@@ -38,7 +38,7 @@
 - [About](#about)
 - [Installation](#installation)
   - [From crates.io](#from-cratesio)
-  - [From AUR](#from-aur)
+  - [Using pacman](#using-pacman)
   - [Binary Releases](#binary-releases)
 - [Usage](#usage)
   - [Command Line Arguments](#command-line-arguments)
@@ -84,12 +84,12 @@
 cargo install git-cliff
 ```
 
-### From AUR
+### Using pacman
 
-If you are using Arch Linux, [git-cliff](https://aur.archlinux.org/packages/git-cliff/) can be installed from the [AUR](https://aur.archlinux.org/) using an [AUR helper](https://wiki.archlinux.org/title/AUR_helpers):
+If you are using Arch Linux, **git-cliff** can be installed from the [community repository](https://archlinux.org/packages/community/x86_64/git-cliff/):
 
 ```sh
-paru -S git-cliff
+pacman -S git-cliff
 ```
 
 ### Binary Releases
