@@ -26,7 +26,7 @@ version = "0.2.5" # managed by release.sh
 path = "../git-cliff-core"
 
 [dependencies.structopt]
-version = "0.3.22"
+version = "0.3.23"
 default-features = false
 features = ["suggestions", "color", "wrap_help"]
 

@@ -10,9 +10,9 @@ keywords = ["changelog", "generator", "conventional", "commit"]
 edition = "2018"
 
 [dependencies]
-thiserror = "1.0.26"
-serde = "1.0.27"
-serde_derive = "1.0.27"
+thiserror = "1.0.28"
+serde = "1.0.130"
+serde_derive = "1.0.130"
 tera = "1.12.1"
 regex = "1.5.4"
 serde_regex = "1.1.0"
@@ -33,7 +33,7 @@ version = "0.10.1"
 features = ["serde"]
 
 [dependencies.rust-embed]
-version = "6.0.0"
+version = "6.2.0"
 features = ["debug-embed"]
 
 [dev-dependencies]
