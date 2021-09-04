@@ -1,11 +1,9 @@
-# tracking issue about cargo-chef version: <https://github.com/LukeMathWalker/cargo-chef/issues/93>
-
-FROM lukemathwalker/cargo-chef:0.1.23-alpha.0-rust-1.54-slim-buster as planner
+FROM lukemathwalker/cargo-chef:0.1.31-rust-1.54-slim-buster as planner
 WORKDIR app
 COPY . .
 RUN cargo chef prepare --recipe-path recipe.json
 
-FROM lukemathwalker/cargo-chef:0.1.23-alpha.0-rust-1.54-slim-buster as cacher
+FROM lukemathwalker/cargo-chef:0.1.31-rust-1.54-slim-buster as cacher
 WORKDIR app
 COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
