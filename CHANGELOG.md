@@ -1,6 +1,22 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.2.6] - 2021-09-04
+
+### Bug Fixes
+
+- Pin the cargo-chef version in Dockerfile
+
+### Documentation
+
+- Update docker commands to only mount the .git directory
+
+### Miscellaneous Tasks
+
+- Bump `git-conventional` to `0.10.1` (fixes #6)
+- Bump dependencies
+- Bump cargo-chef version in Dockerfile
+
 ## [0.2.5] - 2021-08-20
 
 ### Documentation
