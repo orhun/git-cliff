@@ -37,15 +37,15 @@ footer = """
 conventional_commits = true
 # regex for parsing and grouping commits
 commit_parsers = [
-    { message = "^feat*", group = "Features"},
-    { message = "^fix*", group = "Bug Fixes"},
+    { message = "^feat", group = "Features"},
+    { message = "^fix", group = "Bug Fixes"},
     { message = "^doc*", group = "Documentation", default_scope = "unscoped"},
-    { message = "^perf*", group = "Performance"},
-    { message = "^refactor*", group = "Refactor"},
-    { message = "^style*", group = "Styling"},
-    { message = "^test*", group = "Testing"},
-    { message = "^chore\\(release\\): prepare for*", skip = true},
-    { message = "^chore*", group = "Miscellaneous Tasks"},
+    { message = "^perf", group = "Performance"},
+    { message = "^refactor", group = "Refactor"},
+    { message = "^style", group = "Styling"},
+    { message = "^test", group = "Testing"},
+    { message = "^chore\\(release\\): prepare for", skip = true},
+    { message = "^chore", group = "Miscellaneous Tasks"},
     { body = ".*security", group = "Security"},
 ]
 # filter out the commits that are not matched by commit parsers

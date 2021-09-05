@@ -326,13 +326,13 @@ An array of commit parsers for determining the commit groups by using regex.
 
 Examples:
 
-- `{ message = "^feat*", group = "Features"}`
+- `{ message = "^feat", group = "Features"}`
   - Group the commit as "Features" if the commit message (description) starts with "feat".
 - `{ body = ".*security", group = "Security"}`
   - Group the commit as "Security" if the commit body contains "security".
 - `{ message = ".*deprecated", body = ".*deprecated", group = "Deprecation"}`
   - Group the commit as "Deprecation" if the commit body and message contains "deprecated".
-- `{ message = "^revert*", skip = true}`
+- `{ message = "^revert", skip = true}`
   - Skip processing the commit if the commit message (description) starts with "revert".
 - `{ message = "^doc*", group = "Documentation", default_scope = "other"},`
   - If the commit starts with "doc", group the commit as "Documentation" and set the default scope to "other". (e.g. `docs: xyz` will be processed as `docs(other): xyz`)
