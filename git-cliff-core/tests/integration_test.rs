@@ -58,7 +58,7 @@ fn generate_changelog() -> Result<()> {
 				Commit::new(String::from("abc124"), String::from("feat: add zyx")),
 				Commit::new(String::from("def789"), String::from("invalid commit")),
 				Commit::new(String::from("qwerty"), String::from("fix: fix abc")),
-				Commit::new(String::from("qwop"), String::from("final invalid commit")),
+				Commit::new(String::from("qwop"), String::from("final: invalid commit")),
 				Commit::new(
 					String::from("hjkl12"),
 					String::from("chore: do boring stuff"),
