@@ -39,7 +39,7 @@ conventional_commits = true
 commit_parsers = [
     { message = "^feat*", group = "Features"},
     { message = "^fix*", group = "Bug Fixes"},
-    { message = "^doc*", group = "Documentation"},
+    { message = "^doc*", group = "Documentation", default_scope = "unscoped"},
     { message = "^perf*", group = "Performance"},
     { message = "^refactor*", group = "Refactor"},
     { message = "^style*", group = "Styling"},

@@ -334,6 +334,8 @@ Examples:
   - Group the commit as "Deprecation" if the commit body and message contains "deprecated".
 - `{ message = "^revert*", skip = true}`
   - Skip processing the commit if the commit message (description) starts with "revert".
+- `{ message = "^doc*", group = "Documentation", default_scope = "other"},`
+  - If the commit starts with "doc", group the commit as "Documentation" and set the default scope to "other". (e.g. `docs: xyz` will be processed as `docs(other): xyz`)
 
 #### filter_commits
 

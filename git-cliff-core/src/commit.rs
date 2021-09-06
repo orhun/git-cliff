@@ -22,8 +22,10 @@ pub struct Commit<'a> {
 	/// Conventional commit.
 	#[serde(skip_deserializing)]
 	pub conv:    Option<ConventionalCommit<'a>>,
-	/// Commit group based on a group parser or its conventional type.
+	/// Commit group based on a commit parser or its conventional type.
 	pub group:   Option<String>,
+	/// Commit scope based on conventional type or a commit parser.
+	pub scope:   Option<String>,
 }
 
 impl<'a> From<&GitCommit<'a>> for Commit<'a> {
@@ -43,6 +45,7 @@ impl Commit<'_> {
 			message,
 			conv: None,
 			group: None,
+			scope: None,
 		}
 	}
 
@@ -61,8 +64,7 @@ impl Commit<'_> {
 			commit = commit.into_conventional()?;
 		}
 		if let Some(parsers) = parsers {
-			commit =
-				commit.into_grouped(parsers, filter_commits.unwrap_or(false))?;
+			commit = commit.parse(parsers, filter_commits.unwrap_or(false))?;
 		}
 		Ok(commit)
 	}
@@ -80,12 +82,13 @@ impl Commit<'_> {
 		}
 	}
 
-	/// Returns the commit with its group set.
-	pub fn into_grouped(
-		mut self,
-		parsers: &[CommitParser],
-		filter: bool,
-	) -> Result<Self> {
+	/// Parses the commit using [`CommitParser`]s.
+	///
+	/// Sets the [`group`] and [`scope`] of the commit.
+	///
+	/// [`group`]: Commit::group
+	/// [`scope`]: Commit::scope
+	pub fn parse(mut self, parsers: &[CommitParser], filter: bool) -> Result<Self> {
 		for parser in parsers {
 			for regex in vec![parser.message.as_ref(), parser.body.as_ref()]
 				.into_iter()
@@ -94,6 +97,7 @@ impl Commit<'_> {
 				if regex.is_match(&self.message) {
 					if parser.skip != Some(true) {
 						self.group = parser.group.as_ref().cloned();
+						self.scope = parser.default_scope.as_ref().cloned();
 						return Ok(self);
 					} else {
 						return Err(AppError::GroupError(String::from(
@@ -142,7 +146,13 @@ impl Serialize for Commit<'_> {
 					&conv.breaking_description(),
 				)?;
 				commit.serialize_field("breaking", &conv.breaking())?;
-				commit.serialize_field("scope", &conv.scope())?;
+				commit.serialize_field(
+					"scope",
+					&conv
+						.scope()
+						.map(|v| v.as_str())
+						.or_else(|| self.scope.as_deref()),
+				)?;
 			}
 			None => {
 				commit.serialize_field("message", &self.message)?;
@@ -178,16 +188,18 @@ mod test {
 		let commit = test_cases[0]
 			.0
 			.clone()
-			.into_grouped(
+			.parse(
 				&[CommitParser {
-					message: Regex::new("test*").ok(),
-					body:    None,
-					group:   Some(String::from("test_group")),
-					skip:    None,
+					message:       Regex::new("test*").ok(),
+					body:          None,
+					group:         Some(String::from("test_group")),
+					default_scope: Some(String::from("test_scope")),
+					skip:          None,
 				}],
 				false,
 			)
 			.unwrap();
 		assert_eq!(Some(String::from("test_group")), commit.group);
+		assert_eq!(Some(String::from("test_scope")), commit.scope);
 	}
 }

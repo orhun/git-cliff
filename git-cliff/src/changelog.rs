@@ -169,22 +169,25 @@ mod test {
 				conventional_commits: true,
 				commit_parsers:       Some(vec![
 					CommitParser {
-						message: Regex::new("feat*").ok(),
-						body:    None,
-						group:   Some(String::from("New features")),
-						skip:    None,
+						message:       Regex::new("feat*").ok(),
+						body:          None,
+						group:         Some(String::from("New features")),
+						default_scope: Some(String::from("other")),
+						skip:          None,
 					},
 					CommitParser {
-						message: Regex::new("fix*").ok(),
-						body:    None,
-						group:   Some(String::from("Bug Fixes")),
-						skip:    None,
+						message:       Regex::new("fix*").ok(),
+						body:          None,
+						group:         Some(String::from("Bug Fixes")),
+						default_scope: None,
+						skip:          None,
 					},
 					CommitParser {
-						message: Regex::new(".*").ok(),
-						body:    None,
-						group:   Some(String::from("Other")),
-						skip:    None,
+						message:       Regex::new(".*").ok(),
+						body:          None,
+						group:         Some(String::from("Other")),
+						default_scope: None,
+						skip:          None,
 					},
 				]),
 				filter_commits:       Some(false),
@@ -198,6 +201,10 @@ mod test {
 				Commit::new(
 					String::from("0bc123"),
 					String::from("feat(app): add cool features"),
+				),
+				Commit::new(
+					String::from("0bc123"),
+					String::from("feat: support unscoped commits"),
 				),
 				Commit::new(
 					String::from("0werty"),
@@ -285,6 +292,9 @@ mod test {
 			### New features
 			#### app
 			- add cool features
+
+			#### other
+			- support unscoped commits
 
 			### Other
 			#### app
