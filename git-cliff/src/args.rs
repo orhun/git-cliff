@@ -20,7 +20,7 @@ use structopt::StructOpt;
 pub struct Opt {
 	/// Increases the logging verbosity.
 	#[structopt(short, long, parse(from_occurrences), alias = "debug")]
-	pub verbose:    u8,
+	pub verbose:     u8,
 	/// Sets the configuration file.
 	#[structopt(
 		short,
@@ -29,22 +29,25 @@ pub struct Opt {
 		value_name = "PATH",
 		default_value = DEFAULT_CONFIG,
 	)]
-	pub config:     PathBuf,
+	pub config:      PathBuf,
 	/// Sets the working directory.
 	#[structopt(short, long, env, value_name = "PATH")]
-	pub workdir:    Option<PathBuf>,
-	/// Sets the repository to parse commits from.
+	pub workdir:     Option<PathBuf>,
+	/// Sets the git repository.
 	#[structopt(short, long, env, value_name = "PATH")]
-	pub repository: Option<PathBuf>,
+	pub repository:  Option<PathBuf>,
+	/// Sets the directory to parse commits from.
+	#[structopt(long, env, value_name = "PATH")]
+	pub commit_path: Option<String>,
 	/// Prepends entries to the given changelog file.
 	#[structopt(short, long, env, value_name = "PATH")]
-	pub prepend:    Option<PathBuf>,
+	pub prepend:     Option<PathBuf>,
 	/// Writes output to the given file.
 	#[structopt(short, long, env, value_name = "PATH")]
-	pub output:     Option<PathBuf>,
+	pub output:      Option<PathBuf>,
 	/// Sets the tag for the latest version.
 	#[structopt(short, long, env, value_name = "TAG", allow_hyphen_values = true)]
-	pub tag:        Option<String>,
+	pub tag:         Option<String>,
 	/// Sets the template for the changelog body.
 	#[structopt(
 		short,
@@ -53,16 +56,16 @@ pub struct Opt {
 		value_name = "TEMPLATE",
 		allow_hyphen_values = true
 	)]
-	pub body:       Option<String>,
+	pub body:        Option<String>,
 	/// Writes the default configuration file to cliff.toml
 	#[structopt(short, long)]
-	pub init:       bool,
+	pub init:        bool,
 	/// Processes the commits starting from the latest tag.
 	#[structopt(short, long)]
-	pub latest:     bool,
+	pub latest:      bool,
 	/// Processes the commits that do not belong to a tag.
 	#[structopt(short, long)]
-	pub unreleased: bool,
+	pub unreleased:  bool,
 	/// Strips the given parts from the changelog.
 	#[structopt(
 		short,
@@ -70,8 +73,8 @@ pub struct Opt {
 		value_name = "PART",
 		possible_values = &["header", "footer", "all"]
 	)]
-	pub strip:      Option<String>,
+	pub strip:       Option<String>,
 	/// Sets the commit range to process.
 	#[structopt(value_name = "RANGE")]
-	pub range:      Option<String>,
+	pub range:       Option<String>,
 }

@@ -122,7 +122,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 			commit_range = Some(format!("{}..{}", tag1, tag2));
 		}
 	}
-	let commits = repository.commits(commit_range)?;
+	let commits = repository.commits(commit_range, args.commit_path)?;
 
 	// Update tags.
 	if let Some(tag) = args.tag {

@@ -124,7 +124,8 @@ git-cliff [FLAGS] [OPTIONS] [RANGE]
 ```
 -c, --config <PATH>        Sets the configuration file [env: CONFIG=]  [default: cliff.toml]
 -w, --workdir <PATH>       Sets the working directory [env: WORKDIR=]
--r, --repository <PATH>    Sets the repository to parse commits from [env: REPOSITORY=]
+-r, --repository <PATH>    Sets the git repository [env: REPOSITORY=]
+    --commit-path <PATH>   Sets the directory to parse commits from [env: COMMIT_PATH=]
 -p, --prepend <PATH>       Prepends entries to the given changelog file [env: PREPEND=]
 -o, --output <PATH>        Writes output to the given file [env: OUTPUT=]
 -t, --tag <TAG>            Sets the tag for the latest version [env: TAG=]
@@ -161,7 +162,7 @@ Set a tag for the "unreleased" changes:
 git cliff --tag 1.0.0
 ```
 
-Create a changelog for a certain part of git history:
+Generate a changelog for a certain part of git history:
 
 ```sh
 # only takes the latest tag into account
@@ -176,6 +177,12 @@ git cliff --unreleased --tag 1.0.0
 git cliff 4c7b043..a440c6e
 git cliff 4c7b043..HEAD
 git cliff HEAD~2..
+```
+
+Generate a changelog scoped to a specific directory (useful for monorepos):
+
+```sh
+git cliff --commit-path project1/
 ```
 
 Save the changelog file to the specified file:

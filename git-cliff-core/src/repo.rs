@@ -36,7 +36,11 @@ impl Repository {
 	/// Parses and returns the commits.
 	///
 	/// Sorts the commits by their time.
-	pub fn commits(&self, range: Option<String>) -> Result<Vec<Commit>> {
+	pub fn commits(
+		&self,
+		range: Option<String>,
+		path: Option<String>,
+	) -> Result<Vec<Commit>> {
 		let mut revwalk = self.inner.revwalk()?;
 		revwalk.set_sorting(Sort::TIME | Sort::TOPOLOGICAL)?;
 		if let Some(range) = range {
@@ -44,10 +48,32 @@ impl Repository {
 		} else {
 			revwalk.push_head()?;
 		}
-		Ok(revwalk
+		let mut commits: Vec<Commit> = revwalk
 			.filter_map(|id| id.ok())
 			.filter_map(|id| self.inner.find_commit(id).ok())
-			.collect())
+			.collect();
+		if let Some(commit_path) = path {
+			commits = commits
+				.into_iter()
+				.filter(|commit| {
+					if let Ok(prev_commit) = commit.parent(0) {
+						if let Ok(diff) = self.inner.diff_tree_to_tree(
+							commit.tree().ok().as_ref(),
+							prev_commit.tree().ok().as_ref(),
+							None,
+						) {
+							return diff.deltas().any(|delta| {
+								delta.new_file().path().map_or(false, |path| {
+									path.starts_with(&commit_path)
+								})
+							});
+						}
+					}
+					false
+				})
+				.collect()
+		}
+		Ok(commits)
 	}
 
 	/// Parses and returns a commit-tag map.
@@ -125,7 +151,7 @@ mod test {
 				.unwrap()
 				.to_path_buf(),
 		)?;
-		let commits = repository.commits(None)?;
+		let commits = repository.commits(None, None)?;
 		let last_commit = AppCommit::from(&commits.first().unwrap().clone());
 		assert_eq!(get_last_commit_hash()?, last_commit.id);
 		if let Err(e) = last_commit.into_conventional() {
