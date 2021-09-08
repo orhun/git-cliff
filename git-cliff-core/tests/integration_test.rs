@@ -31,14 +31,14 @@ fn generate_changelog() -> Result<()> {
 		conventional_commits: true,
 		commit_parsers:       Some(vec![
 			CommitParser {
-				message:       Regex::new("feat*").ok(),
+				message:       Regex::new("^feat").ok(),
 				body:          None,
 				group:         Some(String::from("shiny features")),
 				default_scope: None,
 				skip:          None,
 			},
 			CommitParser {
-				message:       Regex::new("fix*").ok(),
+				message:       Regex::new("^fix").ok(),
 				body:          None,
 				group:         Some(String::from("fix bugs")),
 				default_scope: None,
@@ -58,6 +58,10 @@ fn generate_changelog() -> Result<()> {
 				Commit::new(String::from("abc124"), String::from("feat: add zyx")),
 				Commit::new(String::from("def789"), String::from("invalid commit")),
 				Commit::new(String::from("qwerty"), String::from("fix: fix abc")),
+				Commit::new(
+					String::from("qwop"),
+					String::from("final: invalid commit"),
+				),
 				Commit::new(
 					String::from("hjkl12"),
 					String::from("chore: do boring stuff"),
