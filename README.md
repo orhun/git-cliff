@@ -24,6 +24,10 @@
     <a href="https://docs.rs/git-cliff-core/">
         <img src="https://img.shields.io/docsrs/git-cliff-core?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=Rust&logoColor=BEC5C9E">
     </a>
+    <br>
+    <a href="https://matrix.to/#/#git-cliff:matrix.org">
+        <img src="https://img.shields.io/matrix/git-cliff:matrix.org?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=matrix&logoColor=BEC5C9E&label=join%20matrix">
+    </a>
 </p>
 
 ## About
