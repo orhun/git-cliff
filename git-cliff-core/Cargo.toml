@@ -10,7 +10,7 @@ keywords = ["changelog", "generator", "conventional", "commit"]
 edition = "2018"
 
 [dependencies]
-thiserror = "1.0.28"
+thiserror = "1.0.29"
 serde = "1.0.130"
 serde_derive = "1.0.130"
 tera = "1.12.1"
@@ -20,7 +20,7 @@ indexmap = "1.7.0"
 toml = "0.5.8"
 
 [dependencies.git2]
-version = "0.13.21"
+version = "0.13.22"
 default-features = false
 
 [dependencies.config]
@@ -29,7 +29,7 @@ default-features = false
 features = ["toml", "yaml"]
 
 [dependencies.git-conventional]
-version = "0.10.1"
+version = "0.10.2"
 features = ["serde"]
 
 [dependencies.rust-embed]
