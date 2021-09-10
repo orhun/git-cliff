@@ -1,6 +1,28 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2021-09-10
+
+### Bug Fixes
+
+- Fix default regexes and references in docs (#7)
+
+### Documentation
+
+- Update installation instructions for Arch Linux
+- Add badge for joining the Matrix chat
+- Update example regexes
+- Update the default regex in scoped config example
+
+### Features
+
+- Support parsing the missing scopes with `default_scope` (#8)
+- Support generating a changelog scoped to a directory (#11)
+
+### Miscellaneous Tasks
+
+- Upgrade dependencies
+
 ## [0.2.6] - 2021-09-04
 
 ### Bug Fixes
