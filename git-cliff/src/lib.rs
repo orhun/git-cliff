@@ -145,7 +145,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 	for git_commit in commits.into_iter().rev() {
 		let commit = Commit::from(&git_commit);
 		let commit_id = commit.id.to_string();
-		releases[release_index].commits.push(commit);
+		releases[release_index].commits.insert(0, commit);
 		if let Some(tag) = tags.get(&commit_id) {
 			releases[release_index].version = Some(tag.to_string());
 			releases[release_index].commit_id = Some(commit_id);
