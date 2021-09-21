@@ -33,7 +33,8 @@ body = """
             {% endif -%}
         {% endif -%}
     {% endfor -%}
-{% endfor %}
+    {% raw %}\n{% endraw %}\
+{% endfor %}\n
 """
 # remove the leading and trailing whitespaces from the template
 trim = true
