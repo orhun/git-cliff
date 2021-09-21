@@ -108,6 +108,8 @@ pacman -S git-cliff
 
 See the available binaries for different operating systems/architectures from the [releases page](https://github.com/orhun/git-cliff/releases).
 
+\* Release tarballs are signed with the following PGP key: [1D2D410A741137EBC544826F4A92FA17B6619297](https://keyserver.ubuntu.com/pks/lookup?search=0x4A92FA17B6619297&op=vindex)
+
 ## Usage
 
 ### Command Line Arguments
