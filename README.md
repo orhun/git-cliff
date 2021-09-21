@@ -81,6 +81,13 @@
 
 ## Installation
 
+<details>
+  <summary>Packaging status</summary>
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/git-cliff.svg)](https://repology.org/project/git-cliff/versions)
+
+</details>
+
 ### From crates.io
 
 [git-cliff](crates.io/crates/git-cliff) can be installed from crates.io:
