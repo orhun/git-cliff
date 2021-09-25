@@ -21,8 +21,8 @@ jobs:
         uses: docker/metadata-action@v3
         with:
           images: |
-            ${{ secrets.DOCKER_HUB_USERNAME }}/git-cliff:latest
-            ghcr.io/${{ github.repository_owner }}/git-cliff:latest
+            ${{ secrets.DOCKER_HUB_USERNAME }}/git-cliff
+            ghcr.io/${{ github.repository_owner }}/git-cliff
           tags: |
             type=schedule
             type=ref,event=branch
