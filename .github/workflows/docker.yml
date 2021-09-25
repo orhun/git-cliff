@@ -25,12 +25,10 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/git-cliff/git-cliff
           tags: |
             type=schedule
-            type=ref,event=tag
             type=ref,event=branch
             type=ref,event=pr
             type=sha
-          flavor: |
-            latest=auto
+            type=raw,value=latest
 
       - name: Set up Docker Buildx
         id: buildx
