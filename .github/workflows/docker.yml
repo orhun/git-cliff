@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - name: Checkout
-        uses: actions/checkout@main
+        uses: actions/checkout@v2
       - name: Build
         run: docker build -t git-cliff .
       - name: Tag
