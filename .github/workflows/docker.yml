@@ -6,25 +6,42 @@ on:
       - main
 
 jobs:
-  docker:
-    name: Docker
+  docker-hub:
+    name: Docker Hub
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Build
-        run: docker build -t git-cliff .
-      - name: Tag
-        run: |
-          docker tag git-cliff orhunp/git-cliff:latest
-          docker tag git-cliff docker.pkg.github.com/orhun/git-cliff/git-cliff:latest
-      - name: Login (Docker Hub)
-        run: echo ${{ secrets.DOCKERHUB_PASS }} |
-          docker login -u orhunp --password-stdin
-      - name: Push (Docker Hub)
-        run: docker push orhunp/git-cliff:latest
-      - name: Login (Package Registry)
-        run: echo ${{ secrets.GITHUB_TOKEN }} |
-          docker login -u orhun docker.pkg.github.com --password-stdin
-      - name: Push (Package Registry)
-        run: docker push docker.pkg.github.com/orhun/git-cliff/git-cliff:latest
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          context: ./
+          file: ./Dockerfile
+          builder: ${{ steps.buildx.outputs.name }}
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/git-cliff:latest
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}
