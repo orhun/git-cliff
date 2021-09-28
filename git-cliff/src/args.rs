@@ -77,4 +77,12 @@ pub struct Opt {
 	/// Sets the commit range to process.
 	#[structopt(value_name = "RANGE")]
 	pub range:       Option<String>,
+
+	/// Sets sorting of the commits inside sections.
+	#[structopt(
+		long,
+		possible_values = &["oldest", "newest"],
+		default_value = "oldest"
+	)]
+	pub sort: String,
 }

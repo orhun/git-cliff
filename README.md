@@ -151,6 +151,7 @@ git-cliff [FLAGS] [OPTIONS] [RANGE]
 -t, --tag <TAG>            Sets the tag for the latest version [env: TAG=]
 -b, --body <TEMPLATE>      Sets the template for the changelog body [env: TEMPLATE=]
 -s, --strip <PART>         Strips the given parts from the changelog [possible values: header, footer, all]
+    --sort <sort>          Sets sorting of the commits inside sections [default: oldest] [possible values: oldest, newest]
 ```
 
 **Args:**
@@ -203,6 +204,17 @@ Generate a changelog scoped to a specific directory (useful for monorepos):
 
 ```sh
 git cliff --commit-path project1/
+```
+
+Sort the commits inside sections:
+
+```sh
+# The oldest commit will be on top.
+# (default)
+git cliff --sort oldest
+
+# The newest commit will be on top.
+git cliff --sort newest
 ```
 
 Save the changelog file to the specified file:
