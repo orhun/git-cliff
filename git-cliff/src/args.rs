@@ -78,15 +78,7 @@ pub struct Opt {
 	#[structopt(value_name = "RANGE")]
 	pub range:       Option<String>,
 
-	/// Sets sorting of the commits inside the sections
-	///
-	/// If sort is `oldest`, the oldest commit will be on top. {n}
-	/// - PR #1 {n}
-	/// - PR #2
-	///
-	/// If sort is `newest`, the newest commit will be on top. {n}
-	/// - PR #2 {n}
-	/// - PR #1 {n}
+	/// Sets sorting of the commits inside sections.
 	#[structopt(
 		long,
 		possible_values = &["oldest", "newest"],
