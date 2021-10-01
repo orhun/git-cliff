@@ -37,4 +37,4 @@ version = "6.2.0"
 features = ["debug-embed"]
 
 [dev-dependencies]
-pretty_assertions = "0.7"
+pretty_assertions = "1.0.0"

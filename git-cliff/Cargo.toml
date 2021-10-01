@@ -31,4 +31,4 @@ default-features = false
 features = ["suggestions", "color", "wrap_help"]
 
 [dev-dependencies]
-pretty_assertions = "0.7"
+pretty_assertions = "1.0.0"
