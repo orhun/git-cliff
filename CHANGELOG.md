@@ -1,6 +1,43 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2021-10-01
+
+### Bug Fixes
+
+- Update lychee arguments to skip checking files
+- Remove tags from the base image names
+- Remove only the leading "v" from tags (#18)
+
+### Documentation
+
+- Add scope-sorted example (#16)
+- Add raw/rendered output for scoped-sorted example
+- Add packaging status badge to installation section
+- Mention the signing key for binary releases (#17)
+- Add "build from source" section to README.md
+
+### Features
+
+- Add `--sort` argument for sorting commits (#15)
+
+### Miscellaneous Tasks
+
+- Set a version for the checkout action
+- Update the runner to ubuntu-20.04
+- Use cache for docker builds
+- Use docker meta for tagging for GHCR
+- Extend the tags for docker meta
+- Rename the GHCR package due to legacy reasons
+- Specify the latest tag explicitly
+- Use explicit image name for docker automated builds
+- Use docker.yml workflow for CI/CD
+- Upgrade dependencies
+
+### Styling
+
+- Fix the newline issues in scoped-sorted example
+
 ## [0.3.0] - 2021-09-10
 
 ### Bug Fixes
