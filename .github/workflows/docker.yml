@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*.*.*"
   pull_request:
     branches:
       - main
@@ -29,6 +31,7 @@ jobs:
             type=ref,event=pr
             type=sha
             type=raw,value=latest
+            type=semver,pattern={{version}}
 
       - name: Set up Docker Buildx
         id: buildx
