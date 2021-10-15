@@ -28,7 +28,7 @@ impl Repository {
 		} else {
 			Err(Error::IoError(io::Error::new(
 				io::ErrorKind::NotFound,
-				"path not found",
+				"repository path not found",
 			)))
 		}
 	}
