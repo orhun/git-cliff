@@ -50,6 +50,7 @@
   - [Examples](#examples)
 - [Docker](#docker)
 - [GitHub Action](#github-action)
+- [GitLab CI/CD](#gitlab-ci)
 - [Configuration File](#configuration-file)
   - [changelog](#changelog)
     - [header](#header)
@@ -272,6 +273,30 @@ It is possible to generate changelogs using [GitHub Actions](https://docs.github
 See the [repository](https://github.com/orhun/git-cliff-action) for other [examples](https://github.com/orhun/git-cliff-action#examples).
 
 Also, see the [continuous deployment workflow](./.github/workflows/cd.yml) of this project which sets the release notes for GitHub releases using this action.
+
+## GitLab CI/CD
+
+It is possible to generate changelogs using [GitLab CI/CD](https://docs.gitlab.com/ee/ci/).
+
+This minimal example creates artifacts that can be use on another job.
+
+```yml
+- changelog:
+    image:
+      name: orhunp/git-cliff:latest
+      entrypoint: [""]
+    variables:
+      GIT_STRATEGY: clone # clone entire repo instead of reusing workspace
+      GIT_DEPTH: 0 # avoid shallow clone to give cliff all the info it needs
+    stage: doc
+    script:
+      - git-cliff -r . > CHANGELOG.md
+    artifacts:
+      paths:
+        - CHANGELOG.md 
+```
+
+Please note that the stage is `doc` and has to be changed accordingly to your need. 
 
 ## Configuration File
 
