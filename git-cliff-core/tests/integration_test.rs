@@ -64,9 +64,15 @@ fn generate_changelog() -> Result<()> {
 			commits:   vec![
 				Commit::new(String::from("abc123"), String::from("feat: add xyz")),
 				Commit::new(String::from("abc124"), String::from("feat: add zyx")),
-				Commit::new(String::from("abc124"), String::from("feat(random-scope): add random feature")),
+				Commit::new(
+					String::from("abc124"),
+					String::from("feat(random-scope): add random feature"),
+				),
 				Commit::new(String::from("def789"), String::from("invalid commit")),
-				Commit::new(String::from("def789"), String::from("feat(big-feature)!: this is a breaking change")),
+				Commit::new(
+					String::from("def789"),
+					String::from("feat(big-feature)!: this is a breaking change"),
+				),
 				Commit::new(String::from("qwerty"), String::from("fix: fix abc")),
 				Commit::new(
 					String::from("qwop"),
