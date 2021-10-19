@@ -19,10 +19,18 @@ fn generate_changelog() -> Result<()> {
 			r#"
         ## Release {{ version }}
         {% for group, commits in commits | group_by(attribute="group") %}
-        ### {{ group }}
+        ### {{ group }}    
         {% for commit in commits %}
-        - {{ commit.message }}{% endfor %}
-        {% endfor %}"#,
+        {%- if commit.scope -%}
+        - *({{commit.scope}})* {{ commit.message }}    
+        {% else -%}
+        - {{ commit.message }}    
+        {% endif -%}
+        {% if commit.breaking -%}
+        {% raw %}  {% endraw %}- **BREAKING**: {{commit.breaking_description}}
+        {% endif -%}
+        {% endfor -%}
+{% endfor %}"#,
 		),
 		footer: Some(String::from("eoc - end of changelog")),
 		trim:   None,
@@ -56,7 +64,15 @@ fn generate_changelog() -> Result<()> {
 			commits:   vec![
 				Commit::new(String::from("abc123"), String::from("feat: add xyz")),
 				Commit::new(String::from("abc124"), String::from("feat: add zyx")),
+				Commit::new(
+					String::from("abc124"),
+					String::from("feat(random-scope): add random feature"),
+				),
 				Commit::new(String::from("def789"), String::from("invalid commit")),
+				Commit::new(
+					String::from("def789"),
+					String::from("feat(big-feature)!: this is a breaking change"),
+				),
 				Commit::new(String::from("qwerty"), String::from("fix: fix abc")),
 				Commit::new(
 					String::from("qwop"),
@@ -121,29 +137,27 @@ fn generate_changelog() -> Result<()> {
 
         ## Release v2.0.0
         
-        ### fix bugs
+        ### fix bugs    
+        - fix abc    
         
-        - fix abc
-        
-        ### shiny features
-        
-        - add xyz
-        - add zyx
+        ### shiny features    
+        - add xyz    
+        - add zyx    
+        - *(random-scope)* add random feature    
+        - *(big-feature)* this is a breaking change    
+          - **BREAKING**: this is a breaking change
         
         ## Release v1.0.0
         
-        ### chore
+        ### chore    
+        - do nothing    
         
-        - do nothing
+        ### feat    
+        - add cool features    
         
-        ### feat
-        
-        - add cool features
-        
-        ### fix
-        
-        - fix stuff
-        - fix more stuff
+        ### fix    
+        - fix stuff    
+        - fix more stuff    
         eoc - end of changelog\n",
 		out
 	);
