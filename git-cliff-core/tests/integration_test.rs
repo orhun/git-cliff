@@ -19,22 +19,15 @@ fn generate_changelog() -> Result<()> {
 			r#"
         ## Release {{ version }}
         {% for group, commits in commits | group_by(attribute="group") %}
-        ### {{ group }}
-        {% for commit in commits
-        | filter(attribute="scope")
-        | sort(attribute="scope") %}
-        - *({{commit.scope}})* {{ commit.message }}
-        {%- if commit.breaking %}
-        {% raw %}  {% endraw %}- **BREAKING**: {{commit.breaking_description}}
-        {%- endif -%}
-        {%- endfor -%}
-        {%- for commit in commits %}
+        ### {{ group }}    
+        {% for commit in commits %}
         {%- if commit.scope -%}
+        - *({{commit.scope}})* {{ commit.message }}    
         {% else -%}
-        - {{ commit.message }}
+        - {{ commit.message }}    
+        {% endif -%}
         {% if commit.breaking -%}
         {% raw %}  {% endraw %}- **BREAKING**: {{commit.breaking_description}}
-        {% endif -%}
         {% endif -%}
         {% endfor -%}
 {% endfor %}"#,
@@ -138,27 +131,27 @@ fn generate_changelog() -> Result<()> {
 
         ## Release v2.0.0
         
-        ### fix bugs
-        - fix abc
+        ### fix bugs    
+        - fix abc    
         
-        ### shiny features
-        
-        - *(big-feature)* this is a breaking change
+        ### shiny features    
+        - add xyz    
+        - add zyx    
+        - *(random-scope)* add random feature    
+        - *(big-feature)* this is a breaking change    
           - **BREAKING**: this is a breaking change
-        - *(random-scope)* add random feature- add xyz
-        - add zyx
         
         ## Release v1.0.0
         
-        ### chore
-        - do nothing
+        ### chore    
+        - do nothing    
         
-        ### feat
-        - add cool features
+        ### feat    
+        - add cool features    
         
-        ### fix
-        - fix stuff
-        - fix more stuff
+        ### fix    
+        - fix stuff    
+        - fix more stuff    
         eoc - end of changelog\n",
 		out
 	);
