@@ -50,7 +50,7 @@
   - [Examples](#examples)
 - [Docker](#docker)
 - [GitHub Action](#github-action)
-- [GitLab CI/CD](#gitlab-ci)
+- [GitLab CI/CD](#gitlab-cicd)
 - [Configuration File](#configuration-file)
   - [changelog](#changelog)
     - [header](#header)
@@ -278,7 +278,7 @@ Also, see the [continuous deployment workflow](./.github/workflows/cd.yml) of th
 
 It is possible to generate changelogs using [GitLab CI/CD](https://docs.gitlab.com/ee/ci/).
 
-This minimal example creates artifacts that can be use on another job.
+This minimal example creates artifacts that can be used on another job.
 
 ```yml
 - changelog:
@@ -293,7 +293,7 @@ This minimal example creates artifacts that can be use on another job.
       - git-cliff -r . > CHANGELOG.md
     artifacts:
       paths:
-        - CHANGELOG.md 
+        - CHANGELOG.md
 ```
 
 Please note that the stage is `doc` and has to be changed accordingly to your need. 
