@@ -20,9 +20,24 @@ fn generate_changelog() -> Result<()> {
         ## Release {{ version }}
         {% for group, commits in commits | group_by(attribute="group") %}
         ### {{ group }}
-        {% for commit in commits %}
-        - {{ commit.message }}{% endfor %}
-        {% endfor %}"#,
+        {% for commit in commits
+        | filter(attribute="scope")
+        | sort(attribute="scope") %}
+        - *({{commit.scope}})* {{ commit.message }}
+        {%- if commit.breaking %}
+        {% raw %}  {% endraw %}- **BREAKING**: {{commit.breaking_description}}
+        {%- endif -%}
+        {%- endfor -%}
+        {%- for commit in commits %}
+        {%- if commit.scope -%}
+        {% else -%}
+        - {{ commit.message }}
+        {% if commit.breaking -%}
+        {% raw %}  {% endraw %}- **BREAKING**: {{commit.breaking_description}}
+        {% endif -%}
+        {% endif -%}
+        {% endfor -%}
+{% endfor %}"#,
 		),
 		footer: Some(String::from("eoc - end of changelog")),
 		trim:   None,
@@ -56,7 +71,9 @@ fn generate_changelog() -> Result<()> {
 			commits:   vec![
 				Commit::new(String::from("abc123"), String::from("feat: add xyz")),
 				Commit::new(String::from("abc124"), String::from("feat: add zyx")),
+				Commit::new(String::from("abc124"), String::from("feat(random-scope): add random feature")),
 				Commit::new(String::from("def789"), String::from("invalid commit")),
+				Commit::new(String::from("def789"), String::from("feat(big-feature)!: this is a breaking change")),
 				Commit::new(String::from("qwerty"), String::from("fix: fix abc")),
 				Commit::new(
 					String::from("qwop"),
@@ -122,26 +139,24 @@ fn generate_changelog() -> Result<()> {
         ## Release v2.0.0
         
         ### fix bugs
-        
         - fix abc
         
         ### shiny features
         
-        - add xyz
+        - *(big-feature)* this is a breaking change
+          - **BREAKING**: this is a breaking change
+        - *(random-scope)* add random feature- add xyz
         - add zyx
         
         ## Release v1.0.0
         
         ### chore
-        
         - do nothing
         
         ### feat
-        
         - add cool features
         
         ### fix
-        
         - fix stuff
         - fix more stuff
         eoc - end of changelog\n",
