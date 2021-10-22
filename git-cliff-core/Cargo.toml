@@ -10,17 +10,17 @@ keywords = ["changelog", "generator", "conventional", "commit"]
 edition = "2018"
 
 [dependencies]
-thiserror = "1.0.29"
+thiserror = "1.0.30"
 serde = "1.0.130"
 serde_derive = "1.0.130"
-tera = "1.12.1"
+tera = "1.13.0"
 regex = "1.5.4"
 serde_regex = "1.1.0"
 indexmap = "1.7.0"
 toml = "0.5.8"
 
 [dependencies.git2]
-version = "0.13.22"
+version = "0.13.23"
 default-features = false
 
 [dependencies.config]
