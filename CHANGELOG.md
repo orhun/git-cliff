@@ -1,6 +1,29 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.4.1] - 2021-10-22
+
+### Bug Fixes
+
+- Add support for special characters in scopes (#26)
+
+### Documentation
+
+- Add GitLab CI/CD section to README.md (#24)
+- Update GitLab CI/CD section
+
+### Miscellaneous Tasks
+
+- Run CI workflows periodically
+- Remove unnecessary Cargo.lock entry from .gitignore
+- Upgrade dependencies
+- Migrate to Rust 2021 edition
+- Bump the Rust version in Dockerfile
+
+### Refactor
+
+- Use a better error message for invalid repo path
+
 ## [0.4.0] - 2021-10-01
 
 ### Bug Fixes
