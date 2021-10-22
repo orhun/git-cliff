@@ -7,7 +7,7 @@ license = "GPL-3.0"
 homepage = "https://github.com/orhun/git-cliff"
 repository = "https://github.com/orhun/git-cliff"
 keywords = ["changelog", "generator", "conventional", "commit"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 thiserror = "1.0.30"

@@ -10,7 +10,7 @@ repository = "https://github.com/orhun/git-cliff"
 keywords = ["changelog", "generator", "conventional", "commit"]
 categories = ["command-line-utilities"]
 default-run = "git-cliff"
-edition = "2018"
+edition = "2021"
 
 [[bin]]
 name = "git-cliff-completions"
