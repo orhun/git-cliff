@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.4.2] - 2021-10-22
+
+### Bug Fixes
+
+- Install the Rust toolchain explicitly for crates.io releases
+
 ## [0.4.1] - 2021-10-22
 
 ### Bug Fixes
