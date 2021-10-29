@@ -66,6 +66,9 @@ pub struct Opt {
 	/// Processes the commits that do not belong to a tag.
 	#[structopt(short, long)]
 	pub unreleased:  bool,
+	/// Sorts the tags topologically.
+	#[structopt(long)]
+	pub topo_order:  bool,
 	/// Strips the given parts from the changelog.
 	#[structopt(
 		short,
@@ -77,12 +80,11 @@ pub struct Opt {
 	/// Sets the commit range to process.
 	#[structopt(value_name = "RANGE")]
 	pub range:       Option<String>,
-
 	/// Sets sorting of the commits inside sections.
 	#[structopt(
 		long,
 		possible_values = &["oldest", "newest"],
 		default_value = "oldest"
 	)]
-	pub sort: String,
+	pub sort:        String,
 }

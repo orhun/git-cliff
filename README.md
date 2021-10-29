@@ -136,6 +136,7 @@ git-cliff [FLAGS] [OPTIONS] [RANGE]
 -i, --init          Writes the default configuration file to cliff.toml
 -l, --latest        Processes the commits starting from the latest tag
 -u, --unreleased    Processes the commits that do not belong to a tag
+    --topo-order    Sorts the tags topologically
 -h, --help          Prints help information
 -V, --version       Prints version information
 ```
@@ -216,6 +217,13 @@ git cliff --sort oldest
 
 # The newest commit will be on top.
 git cliff --sort newest
+```
+
+Sort the tags in topological order:
+
+```sh
+# Process in topological order instead of chronological.
+git cliff --topo-order
 ```
 
 Save the changelog file to the specified file:

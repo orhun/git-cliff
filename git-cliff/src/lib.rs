@@ -102,7 +102,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		Repository::init(args.repository.unwrap_or(env::current_dir()?))?;
 
 	// Parse tags.
-	let mut tags = repository.tags(&config.git.tag_pattern)?;
+	let mut tags = repository.tags(&config.git.tag_pattern, args.topo_order)?;
 
 	// Parse commits.
 	let mut commit_range = args.range;

@@ -82,6 +82,7 @@ impl Repository {
 	pub fn tags(
 		&self,
 		pattern: &Option<String>,
+		topo_order: bool,
 	) -> Result<IndexMap<String, String>> {
 		let mut tags: Vec<(Commit, String)> = Vec::new();
 		let tag_names = self.inner.tag_names(pattern.as_deref())?;
@@ -100,7 +101,9 @@ impl Repository {
 				}
 			}
 		}
-		tags.sort_by(|a, b| a.0.time().seconds().cmp(&b.0.time().seconds()));
+		if !topo_order {
+			tags.sort_by(|a, b| a.0.time().seconds().cmp(&b.0.time().seconds()));
+		}
 		Ok(tags
 			.into_iter()
 			.map(|(a, b)| (a.id().to_string(), b))
@@ -164,7 +167,7 @@ mod test {
 				}
 			}
 		}
-		let tags = repository.tags(&None)?;
+		let tags = repository.tags(&None, false)?;
 		assert_eq!(&get_last_tag()?, tags.last().unwrap().1);
 		Ok(())
 	}
