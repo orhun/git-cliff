@@ -96,8 +96,8 @@ pub fn run(mut args: Opt) -> Result<()> {
 	if let Some(template) = args.body {
 		config.changelog.body = template;
 	}
-	if let Some(commit_order) = &config.git.commit_order {
-		args.sort = commit_order.to_string();
+	if let Some(sort_commits) = &config.git.sort_commits {
+		args.sort = sort_commits.to_string();
 	}
 	if let Some(topo_order) = config.git.topo_order {
 		args.topo_order = topo_order;

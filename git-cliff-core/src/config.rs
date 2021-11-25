@@ -40,7 +40,7 @@ pub struct GitConfig {
 	/// Whether to sort tags topologically.
 	pub topo_order:           Option<bool>,
 	/// Sorting of the commits inside sections.
-	pub commit_order:         Option<String>,
+	pub sort_commits:         Option<String>,
 }
 
 /// Parser for grouping commits.
