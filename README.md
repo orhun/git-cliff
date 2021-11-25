@@ -63,6 +63,8 @@
     - [filter_commits](#filter_commits)
     - [tag_pattern](#tag_pattern)
     - [skip_tags](#skip_tags)
+    - [topo_order](#topo_order)
+    - [sort_commits](#sort_commits)
 - [Templating](#templating)
   - [Context](#context)
     - [Conventional Commits](#conventional-commits)
@@ -376,6 +378,8 @@ commit_parsers = [
 filter_commits = false
 tag_pattern = "v[0-9]*"
 skip_tags = "v0.1.0-beta.1"
+topo_order = false
+sort_commits = "oldest"
 ```
 
 #### conventional_commits
@@ -430,6 +434,23 @@ git tag --list 'v[0-9]*'
 #### skip_tags
 
 A regex for skip processing the matched tags.
+
+#### topo_order
+
+If set to `true`, tags are processed in topological order instead of chronological.
+
+This can also be achieved by using the `--topo-order` command line flag.
+
+#### sort_commits
+
+Sort the commits inside sections by specified order.
+
+Possible values:
+
+- `oldest`
+- `newest`
+
+This can also be achieved by specifying the `--sort` command line argument.
 
 ## Templating
 

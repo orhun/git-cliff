@@ -66,3 +66,7 @@ filter_commits = false
 tag_pattern = "v[0-9]*"
 # regex for skipping tags
 skip_tags = "v0.1.0-beta.1"
+# sort the tags topologically
+topo_order = false
+# sort the commits inside sections by oldest/newest order
+sort_commits = "oldest"

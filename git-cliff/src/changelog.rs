@@ -193,6 +193,8 @@ mod test {
 				filter_commits:       Some(false),
 				tag_pattern:          None,
 				skip_tags:            Regex::new("v3.*").ok(),
+				topo_order:           Some(false),
+				sort_commits:         Some(String::from("oldest")),
 			},
 		};
 		let test_release = Release {

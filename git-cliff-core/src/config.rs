@@ -37,6 +37,10 @@ pub struct GitConfig {
 	#[serde(with = "serde_regex", default)]
 	/// Regex to skip matched tags.
 	pub skip_tags:            Option<Regex>,
+	/// Whether to sort tags topologically.
+	pub topo_order:           Option<bool>,
+	/// Sorting of the commits inside sections.
+	pub commit_order:         Option<String>,
 }
 
 /// Parser for grouping commits.

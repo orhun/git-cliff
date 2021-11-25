@@ -71,7 +71,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		EmbeddedConfig::parse()?
 	};
 
-	// Update the configuration based on command line arguments.
+	// Update the configuration based on command line arguments and vice versa.
 	match args.strip.as_deref() {
 		Some("header") => {
 			config.changelog.header = None;
@@ -95,6 +95,12 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 	if let Some(template) = args.body {
 		config.changelog.body = template;
+	}
+	if let Some(commit_order) = &config.git.commit_order {
+		args.sort = commit_order.to_string();
+	}
+	if let Some(topo_order) = config.git.topo_order {
+		args.topo_order = topo_order;
 	}
 
 	// Initialize the git repository.
