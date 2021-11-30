@@ -7,6 +7,7 @@ use git2::{
 	Repository as GitRepository,
 	Sort,
 };
+use glob::Pattern;
 use indexmap::IndexMap;
 use std::io;
 use std::path::PathBuf;
@@ -39,7 +40,7 @@ impl Repository {
 	pub fn commits(
 		&self,
 		range: Option<String>,
-		path: Option<String>,
+		path: Option<Pattern>,
 	) -> Result<Vec<Commit>> {
 		let mut revwalk = self.inner.revwalk()?;
 		revwalk.set_sorting(Sort::TIME | Sort::TOPOLOGICAL)?;
@@ -64,7 +65,7 @@ impl Repository {
 						) {
 							return diff.deltas().any(|delta| {
 								delta.new_file().path().map_or(false, |path| {
-									path.starts_with(&commit_path)
+									commit_path.matches_path(path)
 								})
 							});
 						}

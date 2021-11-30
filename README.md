@@ -207,7 +207,7 @@ git cliff HEAD~2..
 Generate a changelog scoped to a specific directory (useful for monorepos):
 
 ```sh
-git cliff --commit-path project1/
+git cliff --commit-path '**/*.toml'
 ```
 
 Sort the commits inside sections:

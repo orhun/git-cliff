@@ -1,3 +1,4 @@
+use git_cliff_core::glob::Pattern;
 use git_cliff_core::DEFAULT_CONFIG;
 use std::path::PathBuf;
 use structopt::clap::AppSettings;
@@ -38,7 +39,7 @@ pub struct Opt {
 	pub repository:  Option<PathBuf>,
 	/// Sets the directory to parse commits from.
 	#[structopt(long, env, value_name = "PATH")]
-	pub commit_path: Option<String>,
+	pub commit_path: Option<Pattern>,
 	/// Prepends entries to the given changelog file.
 	#[structopt(short, long, env, value_name = "PATH")]
 	pub prepend:     Option<PathBuf>,
