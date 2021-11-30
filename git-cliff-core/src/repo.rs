@@ -40,7 +40,7 @@ impl Repository {
 	pub fn commits(
 		&self,
 		range: Option<String>,
-		path: Option<Pattern>,
+		path: Option<Vec<Pattern>>,
 	) -> Result<Vec<Commit>> {
 		let mut revwalk = self.inner.revwalk()?;
 		revwalk.set_sorting(Sort::TIME | Sort::TOPOLOGICAL)?;
@@ -65,7 +65,9 @@ impl Repository {
 						) {
 							return diff.deltas().any(|delta| {
 								delta.new_file().path().map_or(false, |path| {
-									commit_path.matches_path(path)
+									commit_path
+										.iter()
+										.any(|glob| glob.matches_path(path))
 								})
 							});
 						}

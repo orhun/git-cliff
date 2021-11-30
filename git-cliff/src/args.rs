@@ -38,8 +38,8 @@ pub struct Opt {
 	#[structopt(short, long, env, value_name = "PATH")]
 	pub repository:  Option<PathBuf>,
 	/// Sets the directory to parse commits from.
-	#[structopt(long, env, value_name = "PATH")]
-	pub commit_path: Option<Pattern>,
+	#[structopt(long, env, value_name = "PATTERN")]
+	pub commit_path: Option<Vec<Pattern>>,
 	/// Prepends entries to the given changelog file.
 	#[structopt(short, long, env, value_name = "PATH")]
 	pub prepend:     Option<PathBuf>,

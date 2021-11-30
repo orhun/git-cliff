@@ -129,7 +129,6 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 	}
 	let commits = repository.commits(commit_range, args.commit_path)?;
-
 	// Update tags.
 	if let Some(tag) = args.tag {
 		if let Some(commit_id) = commits.first().map(|c| c.id().to_string()) {

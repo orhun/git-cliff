@@ -146,16 +146,16 @@ git-cliff [FLAGS] [OPTIONS] [RANGE]
 **Options:**
 
 ```
--c, --config <PATH>        Sets the configuration file [env: CONFIG=]  [default: cliff.toml]
--w, --workdir <PATH>       Sets the working directory [env: WORKDIR=]
--r, --repository <PATH>    Sets the git repository [env: REPOSITORY=]
-    --commit-path <PATH>   Sets the directory to parse commits from [env: COMMIT_PATH=]
--p, --prepend <PATH>       Prepends entries to the given changelog file [env: PREPEND=]
--o, --output <PATH>        Writes output to the given file [env: OUTPUT=]
--t, --tag <TAG>            Sets the tag for the latest version [env: TAG=]
--b, --body <TEMPLATE>      Sets the template for the changelog body [env: TEMPLATE=]
--s, --strip <PART>         Strips the given parts from the changelog [possible values: header, footer, all]
-    --sort <sort>          Sets sorting of the commits inside sections [default: oldest] [possible values: oldest, newest]
+-c, --config <PATH>               Sets the configuration file [env: CONFIG=]  [default: cliff.toml]
+-w, --workdir <PATH>              Sets the working directory [env: WORKDIR=]
+-r, --repository <PATH>           Sets the git repository [env: REPOSITORY=]
+    --commit-path <PATTERN>...    Sets the directory to parse commits from [env: COMMIT_PATH=]
+-p, --prepend <PATH>              Prepends entries to the given changelog file [env: PREPEND=
+-o, --output <PATH>               Writes output to the given file [env: OUTPUT=]
+-t, --tag <TAG>                   Sets the tag for the latest version [env: TAG=]
+-b, --body <TEMPLATE>             Sets the template for the changelog body [env: TEMPLATE=]
+-s, --strip <PART>                Strips the given parts from the changelog [possible values: header, footer, all]
+    --sort <sort>                 Sets sorting of the commits inside sections [default: oldest] [possible values: oldest, newest]
 ```
 
 **Args:**
@@ -207,7 +207,7 @@ git cliff HEAD~2..
 Generate a changelog scoped to a specific directory (useful for monorepos):
 
 ```sh
-git cliff --commit-path '**/*.toml'
+git cliff --commit-path "**/*.toml" --commit-path "*.md"
 ```
 
 Sort the commits inside sections:
