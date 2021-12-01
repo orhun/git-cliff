@@ -39,7 +39,7 @@ pub struct Opt {
 	pub repository:   Option<PathBuf>,
 	/// Sets the path to include related commits.
 	#[structopt(long, env, value_name = "PATTERN")]
-	pub commit_path:  Option<Vec<Pattern>>,
+	pub include_path: Option<Vec<Pattern>>,
 	/// Sets the path to exclude related commits.
 	#[structopt(long, env, value_name = "PATTERN")]
 	pub exclude_path: Option<Vec<Pattern>>,
