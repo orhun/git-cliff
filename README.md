@@ -149,7 +149,8 @@ git-cliff [FLAGS] [OPTIONS] [RANGE]
 -c, --config <PATH>               Sets the configuration file [env: CONFIG=]  [default: cliff.toml]
 -w, --workdir <PATH>              Sets the working directory [env: WORKDIR=]
 -r, --repository <PATH>           Sets the git repository [env: REPOSITORY=]
-    --commit-path <PATTERN>...    Sets the directory to parse commits from [env: COMMIT_PATH=]
+    --commit-path <PATTERN>...    Sets the path to include related commits [env: COMMIT_PATH=]
+    --exclude-path <PATTERN>...   Sets the path to exclude related commits [env: EXCLUDE_PATH=]
 -p, --prepend <PATH>              Prepends entries to the given changelog file [env: PREPEND=
 -o, --output <PATH>               Writes output to the given file [env: OUTPUT=]
 -t, --tag <TAG>                   Sets the tag for the latest version [env: TAG=]
@@ -208,6 +209,7 @@ Generate a changelog scoped to a specific directory (useful for monorepos):
 
 ```sh
 git cliff --commit-path "**/*.toml" --commit-path "*.md"
+git cliff --exclude-path ".github/*"
 ```
 
 Sort the commits inside sections:

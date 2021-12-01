@@ -40,7 +40,8 @@ impl Repository {
 	pub fn commits(
 		&self,
 		range: Option<String>,
-		path: Option<Vec<Pattern>>,
+		include_path: Option<Vec<Pattern>>,
+		exclude_path: Option<Vec<Pattern>>,
 	) -> Result<Vec<Commit>> {
 		let mut revwalk = self.inner.revwalk()?;
 		revwalk.set_sorting(Sort::TIME | Sort::TOPOLOGICAL)?;
@@ -53,7 +54,7 @@ impl Repository {
 			.filter_map(|id| id.ok())
 			.filter_map(|id| self.inner.find_commit(id).ok())
 			.collect();
-		if let Some(commit_path) = path {
+		if include_path.is_some() || exclude_path.is_some() {
 			commits = commits
 				.into_iter()
 				.filter(|commit| {
@@ -63,13 +64,23 @@ impl Repository {
 							prev_commit.tree().ok().as_ref(),
 							None,
 						) {
-							return diff.deltas().any(|delta| {
-								delta.new_file().path().map_or(false, |path| {
-									commit_path
-										.iter()
-										.any(|glob| glob.matches_path(path))
-								})
-							});
+							return diff
+								.deltas()
+								.filter_map(|delta| delta.new_file().path())
+								.any(|new_file_path| {
+									if let Some(include_path) = &include_path {
+										include_path.iter().any(|glob| {
+											glob.matches_path(new_file_path)
+										})
+									} else if let Some(exclude_path) = &exclude_path
+									{
+										!exclude_path.iter().any(|glob| {
+											glob.matches_path(new_file_path)
+										})
+									} else {
+										false
+									}
+								});
 						}
 					}
 					false
