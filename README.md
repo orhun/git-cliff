@@ -137,6 +137,7 @@ git-cliff [FLAGS] [OPTIONS] [RANGE]
 -v, --verbose       Increases the logging verbosity
 -i, --init          Writes the default configuration file to cliff.toml
 -l, --latest        Processes the commits starting from the latest tag
+    --current       Processes the commits that belong to the current tag
 -u, --unreleased    Processes the commits that do not belong to a tag
     --topo-order    Sorts the tags topologically
 -h, --help          Prints help information
@@ -194,6 +195,11 @@ Generate a changelog for a certain part of git history:
 # only takes the latest tag into account
 # (requires at least 2 tags)
 git cliff --latest
+
+# only takes the current tag into account
+# useful if you checkout a specific tag (e.g. `git checkout v0.0.1`)
+# (requires a tag to be present for the current commit (i.e. HEAD))
+git cliff --current
 
 # generate changelog for unreleased commits
 git cliff --unreleased

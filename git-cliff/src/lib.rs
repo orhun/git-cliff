@@ -116,14 +116,31 @@ pub fn run(mut args: Opt) -> Result<()> {
 		if let Some(last_tag) = tags.last().map(|(k, _)| k) {
 			commit_range = Some(format!("{}..HEAD", last_tag));
 		}
-	} else if args.latest {
+	} else if args.latest || args.current {
 		if tags.len() < 2 {
 			return Err(Error::ChangelogError(String::from(
-				"Latest tag cannot be processed",
+				"Not enough tags exist for processing the latest/current tag",
 			)));
-		} else if let (Some(tag1), Some(tag2)) = (
-			tags.get_index(tags.len() - 2).map(|(k, _)| k),
-			tags.get_index(tags.len() - 1).map(|(k, _)| k),
+		}
+		let mut tag_index = tags.len() - 2;
+		if args.current {
+			if let Some(current_tag_index) =
+				repository.current_tag().as_ref().and_then(|tag| {
+					tags.iter()
+						.enumerate()
+						.find(|(_, (_, v))| v == &tag)
+						.map(|(i, _)| i)
+				}) {
+				tag_index = current_tag_index - 1;
+			} else {
+				return Err(Error::ChangelogError(String::from(
+					"No tag exists for the current commit",
+				)));
+			}
+		}
+		if let (Some(tag1), Some(tag2)) = (
+			tags.get_index(tag_index).map(|(k, _)| k),
+			tags.get_index(tag_index + 1).map(|(k, _)| k),
 		) {
 			commit_range = Some(format!("{}..{}", tag1, tag2));
 		}

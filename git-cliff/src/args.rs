@@ -67,6 +67,9 @@ pub struct Opt {
 	/// Processes the commits starting from the latest tag.
 	#[structopt(short, long)]
 	pub latest:       bool,
+	/// Processes the commits that belong to the current tag.
+	#[structopt(long)]
+	pub current:      bool,
 	/// Processes the commits that do not belong to a tag.
 	#[structopt(short, long)]
 	pub unreleased:   bool,

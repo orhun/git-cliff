@@ -4,6 +4,7 @@ use crate::error::{
 };
 use git2::{
 	Commit,
+	DescribeOptions,
 	Repository as GitRepository,
 	Sort,
 };
@@ -88,6 +89,16 @@ impl Repository {
 				.collect()
 		}
 		Ok(commits)
+	}
+
+	/// Returns the current tag.
+	///
+	/// It is the same as running `git describe --tags`
+	pub fn current_tag(&self) -> Option<String> {
+		self.inner
+			.describe(DescribeOptions::new().describe_tags())
+			.ok()
+			.and_then(|describe| describe.format(None).ok())
 	}
 
 	/// Parses and returns a commit-tag map.
