@@ -96,11 +96,15 @@ pub fn run(mut args: Opt) -> Result<()> {
 	if let Some(template) = args.body {
 		config.changelog.body = template;
 	}
-	if let Some(sort_commits) = &config.git.sort_commits {
-		args.sort = sort_commits.to_string();
+	if args.sort == "oldest" {
+		if let Some(ref sort_commits) = config.git.sort_commits {
+			args.sort = sort_commits.to_string();
+		}
 	}
-	if let Some(topo_order) = config.git.topo_order {
-		args.topo_order = topo_order;
+	if !args.topo_order {
+		if let Some(topo_order) = config.git.topo_order {
+			args.topo_order = topo_order;
+		}
 	}
 
 	// Initialize the git repository.
