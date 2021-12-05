@@ -56,6 +56,7 @@ fn generate_changelog() -> Result<()> {
 		filter_commits:       Some(true),
 		tag_pattern:          None,
 		skip_tags:            None,
+		ignore_tags:          None,
 		topo_order:           None,
 		sort_commits:         None,
 	};

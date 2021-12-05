@@ -114,6 +114,33 @@ pub fn run(mut args: Opt) -> Result<()> {
 	// Parse tags.
 	let mut tags = repository.tags(&config.git.tag_pattern, args.topo_order)?;
 
+	// Skip tags.
+	let skip_regex = config.git.skip_tags.as_ref();
+	let ignore_regex = config.git.ignore_tags.as_ref();
+	tags = tags
+		.into_iter()
+		.filter(|(_, name)| {
+			// Keep skip tags to drop commits in the later stage.
+			let skip = skip_regex.map(|r| r.is_match(name)).unwrap_or_default();
+
+			let ignore = ignore_regex
+				.map(|r| {
+					if r.as_str().trim().is_empty() {
+						return false;
+					}
+
+					let ignore_tag = r.is_match(name);
+					if ignore_tag {
+						trace!("Ignoring release: {}", name)
+					}
+					ignore_tag
+				})
+				.unwrap_or_default();
+
+			skip || !ignore
+		})
+		.collect();
+
 	// Parse commits.
 	let mut commit_range = args.range;
 	if args.unreleased {
