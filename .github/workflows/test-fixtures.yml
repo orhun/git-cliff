@@ -1,0 +1,45 @@
+name: Test fixtures
+
+on:
+  pull_request:
+
+jobs:
+  test-fixtures:
+    name: Test fixtures
+    runs-on: ubuntu-20.04
+    container: rust:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set .gitconfig
+        run: |
+          git config --global user.name github-actions
+          git config --global user.email github-actions@github.com
+      - name: Create commits and tags
+        run: |
+          mkdir .workspace && cd .workspace && git init
+          git commit --allow-empty -m "Initial commit"
+          git commit --allow-empty -m "feat: add skip feature"
+          git tag v0.1.0-beta.1
+          git commit --allow-empty -m "feat: add feature 1"
+          git commit --allow-empty -m "feat: fix feature 1"
+          git tag v0.1.0
+          git commit --allow-empty -m "feat: add feature 2"
+          git tag v0.2.0-beta.1
+          git commit --allow-empty -m "feat: add feature 3"
+          git tag v0.2.0
+        env:
+          GIT_AUTHOR_DATE: "2021-01-23 01:23:45"
+          GIT_COMMITTER_DATE: "2021-01-23 01:23:45"
+      - name: Generate a changelog
+        run: |
+          cd .workspace
+          fixtures_dir=${GITHUB_WORKSPACE}/.github/fixtures
+          cargo run -- --config "$fixtures_dir"/cliff.toml > "$fixtures_dir"/output.md
+      - name: Compare the output with the answer
+        run: |
+          cd .github/fixtures
+          cat output.md
+          diff output.md answer.md

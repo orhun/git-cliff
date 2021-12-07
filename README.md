@@ -63,6 +63,7 @@
     - [filter_commits](#filter_commits)
     - [tag_pattern](#tag_pattern)
     - [skip_tags](#skip_tags)
+    - [ignore_tags](#ignore_tags)
     - [topo_order](#topo_order)
     - [sort_commits](#sort_commits)
 - [Templating](#templating)
@@ -386,6 +387,7 @@ commit_parsers = [
 filter_commits = false
 tag_pattern = "v[0-9]*"
 skip_tags = "v0.1.0-beta.1"
+ignore_tags = ""
 topo_order = false
 sort_commits = "oldest"
 ```
@@ -442,6 +444,12 @@ git tag --list 'v[0-9]*'
 #### skip_tags
 
 A regex for skip processing the matched tags.
+
+#### ignore_tags
+
+A regex for ignore processing the matched tags.
+
+While `skip_tags` drop commits from the changelog, `ignore_tags` include ignored commits into the next tag.
 
 #### topo_order
 

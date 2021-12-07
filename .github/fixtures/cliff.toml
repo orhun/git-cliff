@@ -16,24 +16,9 @@ body = """
 {% endif %}\
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | upper_first }}
-    {% for commit in commits
-    | filter(attribute="scope")
-    | sort(attribute="scope") %}
-        - *({{commit.scope}})* {{ commit.message | upper_first }}
-        {%- if commit.breaking %}
-        {% raw %}  {% endraw %}- **BREAKING**: {{commit.breaking_description}}
-        {%- endif -%}
-    {%- endfor -%}
-    {%- for commit in commits %}
-        {%- if commit.scope -%}
-        {% else -%}
-            - *(No Category)* {{ commit.message | upper_first }}
-            {% if commit.breaking -%}
-            {% raw %}  {% endraw %}- **BREAKING**: {{commit.breaking_description}}
-            {% endif -%}
-        {% endif -%}
-    {% endfor -%}
-    {% raw %}\n{% endraw %}\
+    {% for commit in commits %}
+        - {{ commit.message | upper_first }}\
+    {% endfor %}
 {% endfor %}\n
 """
 # remove the leading and trailing whitespaces from the template
@@ -67,7 +52,7 @@ tag_pattern = "v[0-9]*"
 # regex for skipping tags
 skip_tags = "v0.1.0-beta.1"
 # regex for ignoring tags
-ignore_tags = ""
+ignore_tags = "v.*-beta.*"
 # sort the tags topologically
 topo_order = false
 # sort the commits inside sections by oldest/newest order
