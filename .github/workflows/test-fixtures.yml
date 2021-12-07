@@ -1,11 +1,11 @@
-name: Test git-cliff
+name: Test fixtures
 
 on:
   pull_request:
 
 jobs:
-  test-git-cliff:
-    name: Test git-cliff
+  test-fixtures:
+    name: Test fixtures
     runs-on: ubuntu-20.04
     container: rust:latest
     steps:
@@ -36,10 +36,10 @@ jobs:
       - name: Generate a changelog
         run: |
           cd .workspace
-          test_file_dir=${GITHUB_WORKSPACE}/.github/test-git-cliff
-          cargo run -- --config "$test_file_dir"/cliff.toml > "$test_file_dir"/output.md
+          fixtures_dir=${GITHUB_WORKSPACE}/.github/fixtures
+          cargo run -- --config "$fixtures_dir"/cliff.toml > "$fixtures_dir"/output.md
       - name: Compare the output with the answer
         run: |
-          cd .github/test-git-cliff
+          cd .github/fixtures
           cat output.md
           diff output.md answer.md
