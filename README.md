@@ -449,7 +449,7 @@ A regex for skip processing the matched tags.
 
 A regex for ignore processing the matched tags.
 
-While `skip_tags` drop commits from the Changelog, `ignore_tags` include ignored commits into the next tag.
+While `skip_tags` drop commits from the changelog, `ignore_tags` include ignored commits into the next tag.
 
 #### topo_order
 
