@@ -11,13 +11,8 @@ on:
 jobs:
   test-fixtures:
     name: Test fixtures
-    runs-on: ubuntu-20.04
-    container: rust:latest
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
       - name: Set git config
         run: |
           git config --global user.name github-actions
