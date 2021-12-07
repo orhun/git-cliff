@@ -42,7 +42,7 @@ jobs:
           cd .workspace
           fixtures_dir=${GITHUB_WORKSPACE}/.github/fixtures
           docker run -t \
-            -v "$(pwd)/.git":/app/
+            -v "$(pwd)/.git":/app/ \
             -v "$fixtures_dir/cliff.toml":/app/cliff.toml \
             orhunp/git-cliff:latest > "$fixtures_dir/output.md"
       - name: Compare the output with the expected output
