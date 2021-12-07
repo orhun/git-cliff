@@ -41,8 +41,10 @@ jobs:
         run: |
           cd .workspace
           fixtures_dir=${GITHUB_WORKSPACE}/.github/fixtures
-          docker run -t -v "$(pwd)/.git":/app/ orhunp/git-cliff:latest \
-            --config "$fixtures_dir/cliff.toml" > "$fixtures_dir/output.md"
+          docker run -t \
+            -v "$(pwd)/.git":/app/
+            -v "$fixtures_dir/cliff.toml":/app/cliff.toml \
+            orhunp/git-cliff:latest > "$fixtures_dir/output.md"
       - name: Compare the output with the expected output
         run: |
           cd ${GITHUB_WORKSPACE}/.github/fixtures
