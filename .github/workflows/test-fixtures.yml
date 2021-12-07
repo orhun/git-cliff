@@ -1,7 +1,12 @@
 name: Test fixtures
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
+    branches:
+      - main
 
 jobs:
   test-fixtures:
@@ -13,7 +18,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - name: Set .gitconfig
+      - name: Set git config
         run: |
           git config --global user.name github-actions
           git config --global user.email github-actions@github.com
@@ -37,9 +42,10 @@ jobs:
         run: |
           cd .workspace
           fixtures_dir=${GITHUB_WORKSPACE}/.github/fixtures
-          cargo run -- --config "$fixtures_dir"/cliff.toml > "$fixtures_dir"/output.md
-      - name: Compare the output with the answer
+          docker run -t -v "$(pwd)/.git":/app/ orhunp/git-cliff:latest \
+            --config "$fixtures_dir/cliff.toml" > "$fixtures_dir/output.md"
+      - name: Compare the output with the expected output
         run: |
-          cd .github/fixtures
+          cd ${GITHUB_WORKSPACE}/.github/fixtures
           cat output.md
-          diff output.md answer.md
+          diff output.md expected.md
