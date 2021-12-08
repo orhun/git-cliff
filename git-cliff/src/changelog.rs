@@ -102,6 +102,20 @@ impl<'a> Changelog<'a> {
 				}
 			})
 			.collect();
+		if skip_regex.is_some() {
+			let mut releases = self.releases.clone();
+			for (i, release) in self.releases.iter_mut().enumerate() {
+				if release.previous.is_none() {
+					continue;
+				}
+				if let Some(previous_release) = releases.get_mut(i + 1) {
+					previous_release.previous = None;
+					release.previous = Some(Box::new(previous_release.clone()));
+				} else {
+					release.previous = None;
+				}
+			}
+		}
 	}
 
 	/// Generates the changelog and writes it to the given output.
