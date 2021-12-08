@@ -1,6 +1,10 @@
-use crate::error::Result;
+use crate::error::{
+	Error,
+	Result,
+};
 use crate::release::Release;
 use std::collections::HashMap;
+use std::error::Error as ErrorImpl;
 use tera::{
 	Context as TeraContext,
 	Result as TeraResult,
@@ -18,7 +22,13 @@ impl Template {
 	/// Constructs a new instance.
 	pub fn new(template: String) -> Result<Self> {
 		let mut tera = Tera::default();
-		tera.add_raw_template("template", &template)?;
+		if let Err(e) = tera.add_raw_template("template", &template) {
+			return if let Some(error_source) = e.source() {
+				Err(Error::TemplateParseError(error_source.to_string()))
+			} else {
+				Err(Error::TemplateError(e))
+			};
+		}
 		tera.register_filter("upper_first", Self::upper_first_filter);
 		Ok(Self { tera })
 	}
@@ -40,9 +50,17 @@ impl Template {
 
 	/// Renders the template.
 	pub fn render(&self, release: &Release) -> Result<String> {
-		Ok(self
-			.tera
-			.render("template", &TeraContext::from_serialize(release)?)?)
+		let context = TeraContext::from_serialize(release)?;
+		match self.tera.render("template", &context) {
+			Ok(v) => Ok(v),
+			Err(e) => {
+				return if let Some(error_source) = e.source() {
+					Err(Error::TemplateRenderError(error_source.to_string()))
+				} else {
+					Err(Error::TemplateError(e))
+				};
+			}
+		}
 	}
 }
 

@@ -26,7 +26,13 @@ pub enum Error {
 	/// Error that may occur while generating changelog.
 	#[error("Changelog error: `{0}`")]
 	ChangelogError(String),
-	/// Error that may occur while template operations such as parse and render.
+	/// Error that may occur while parsing the template.
+	#[error("Template parse error:\n{0}")]
+	TemplateParseError(String),
+	/// Error that may occur while rendering the template.
+	#[error("Template render error:\n{0}")]
+	TemplateRenderError(String),
+	/// Error that may occur during more general template operations.
 	#[error("Template error: `{0}`")]
 	TemplateError(#[from] tera::Error),
 	/// Error that may occur while parsing the command line arguments.
