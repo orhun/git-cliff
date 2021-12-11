@@ -155,6 +155,7 @@ git-cliff [FLAGS] [OPTIONS] [RANGE]
 -r, --repository <PATH>           Sets the git repository [env: REPOSITORY=]
     --include-path <PATTERN>...   Sets the path to include related commits [env: INCLUDE_PATH=]
     --exclude-path <PATTERN>...   Sets the path to exclude related commits [env: EXCLUDE_PATH=]
+    --with-commit <MSG>...        Sets custom commit messages to include in the changelog [env: WITH_COMMIT=]
 -p, --prepend <PATH>              Prepends entries to the given changelog file [env: PREPEND=
 -o, --output <PATH>               Writes output to the given file [env: OUTPUT=]
 -t, --tag <TAG>                   Sets the tag for the latest version [env: TAG=]
@@ -219,6 +220,18 @@ Generate a changelog scoped to a specific directory (useful for monorepos):
 ```sh
 git cliff --include-path "**/*.toml" --include-path "*.md"
 git cliff --exclude-path ".github/*"
+```
+
+Generate a changelog that includes yet unexisting commit messages:
+
+```sh
+commit_msg="chore(release): update CHANGELOG.md for 1.0.0"
+
+# You might need to include the commit messages that do not exist
+# for testing purposes or solving the chicken-egg problem.
+git cliff --with-commit "$commit_msg"
+
+git commit -m "$commit_msg"
 ```
 
 Sort the commits inside sections:

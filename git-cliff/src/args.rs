@@ -43,6 +43,9 @@ pub struct Opt {
 	/// Sets the path to exclude related commits.
 	#[structopt(long, env, value_name = "PATTERN")]
 	pub exclude_path: Option<Vec<Pattern>>,
+	/// Sets custom commit messages to include in the changelog.
+	#[structopt(long, env, value_name = "MSG")]
+	pub with_commit:  Option<Vec<String>>,
 	/// Prepends entries to the given changelog file.
 	#[structopt(short, long, env, value_name = "PATH")]
 	pub prepend:      Option<PathBuf>,

@@ -217,6 +217,17 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 	}
 
+	// Add custom commit messages to the latest release.
+	if let Some(custom_commits) = args.with_commit {
+		if let Some(latest_release) = releases.iter_mut().last() {
+			custom_commits.iter().for_each(|commit_message| {
+				latest_release
+					.commits
+					.push(Commit::new(String::new(), commit_message.to_string()))
+			});
+		}
+	}
+
 	// Set the previous release if needed.
 	if args.latest {
 		if let Some((commit_id, version)) = tags.get_index(tags.len() - 2) {
