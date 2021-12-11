@@ -229,9 +229,9 @@ commit_msg="chore(release): update CHANGELOG.md for 1.0.0"
 
 # You might need to include the commit messages that do not exist
 # for testing purposes or solving the chicken-egg problem.
-git cliff --with-commit "$commit_msg"
+git cliff --with-commit "$commit_msg" -o CHANGELOG.md
 
-git commit -m "$commit_msg"
+git add CHANGELOG.md && git commit -m "$commit_msg"
 ```
 
 Sort the commits inside sections:
