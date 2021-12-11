@@ -36,8 +36,9 @@ fn generate_changelog() -> Result<()> {
 		trim:   None,
 	};
 	let git_config = GitConfig {
-		conventional_commits: true,
-		commit_parsers:       Some(vec![
+		conventional_commits:  true,
+		filter_unconventional: Some(true),
+		commit_parsers:        Some(vec![
 			CommitParser {
 				message:       Regex::new("^feat").ok(),
 				body:          None,
@@ -53,18 +54,22 @@ fn generate_changelog() -> Result<()> {
 				skip:          None,
 			},
 		]),
-		filter_commits:       Some(true),
-		tag_pattern:          None,
-		skip_tags:            None,
-		ignore_tags:          None,
-		topo_order:           None,
-		sort_commits:         None,
+		filter_commits:        Some(true),
+		tag_pattern:           None,
+		skip_tags:             None,
+		ignore_tags:           None,
+		topo_order:            None,
+		sort_commits:          None,
 	};
 
 	let releases = vec![
 		Release {
 			version:   Some(String::from("v2.0.0")),
 			commits:   vec![
+				Commit::new(
+					String::from("000abc"),
+					String::from("Add unconventional commit"),
+				),
 				Commit::new(String::from("abc123"), String::from("feat: add xyz")),
 				Commit::new(String::from("abc124"), String::from("feat: add zyx")),
 				Commit::new(
@@ -87,14 +92,7 @@ fn generate_changelog() -> Result<()> {
 				),
 			]
 			.iter()
-			.filter_map(|c| {
-				c.process(
-					git_config.commit_parsers.as_ref(),
-					git_config.filter_commits,
-					git_config.conventional_commits,
-				)
-				.ok()
-			})
+			.filter_map(|c| c.process(&git_config).ok())
 			.collect::<Vec<Commit>>(),
 			commit_id: None,
 			timestamp: 0,

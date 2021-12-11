@@ -32,9 +32,10 @@ footer = """
 """
 
 [git]
-# allow only conventional commits
-# https://www.conventionalcommits.org
+# parse the commits based on https://www.conventionalcommits.org
 conventional_commits = true
+# filter out the commits that are not conventional
+filter_unconventional = true
 # regex for parsing and grouping commits
 commit_parsers = [
     { message = "^feat", group = "Features"},

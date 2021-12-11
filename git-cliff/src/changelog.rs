@@ -40,32 +40,20 @@ impl<'a> Changelog<'a> {
 	/// criteria set by configuration file.
 	fn process_commits(&mut self) {
 		debug!("Processing the commits...");
-		let config = &self.config;
 		self.releases.iter_mut().for_each(|release| {
 			release.commits = release
 				.commits
 				.iter()
-				.filter_map(|commit| {
-					match commit.process(
-						config.git.commit_parsers.as_ref(),
-						config.git.filter_commits,
-						config.git.conventional_commits,
-					) {
-						Ok(commit) => Some(commit),
-						Err(e) => {
-							trace!(
-								"{} - {} ({})",
-								commit.id[..7].to_string(),
-								e,
-								commit
-									.message
-									.lines()
-									.next()
-									.unwrap_or_default()
-									.trim()
-							);
-							None
-						}
+				.filter_map(|commit| match commit.process(&self.config.git) {
+					Ok(commit) => Some(commit),
+					Err(e) => {
+						trace!(
+							"{} - {} ({})",
+							commit.id[..7].to_string(),
+							e,
+							commit.message.lines().next().unwrap_or_default().trim()
+						);
+						None
 					}
 				})
 				.collect::<Vec<Commit>>();
@@ -180,8 +168,9 @@ mod test {
 				trim:   Some(true),
 			},
 			git:       GitConfig {
-				conventional_commits: true,
-				commit_parsers:       Some(vec![
+				conventional_commits:  true,
+				filter_unconventional: Some(false),
+				commit_parsers:        Some(vec![
 					CommitParser {
 						message:       Regex::new("feat*").ok(),
 						body:          None,
@@ -197,19 +186,26 @@ mod test {
 						skip:          None,
 					},
 					CommitParser {
+						message:       Regex::new("merge*").ok(),
+						body:          None,
+						group:         None,
+						default_scope: None,
+						skip:          Some(true),
+					},
+					CommitParser {
 						message:       Regex::new(".*").ok(),
 						body:          None,
 						group:         Some(String::from("Other")),
-						default_scope: None,
+						default_scope: Some(String::from("other")),
 						skip:          None,
 					},
 				]),
-				filter_commits:       Some(false),
-				tag_pattern:          None,
-				skip_tags:            Regex::new("v3.*").ok(),
-				ignore_tags:          None,
-				topo_order:           Some(false),
-				sort_commits:         Some(String::from("oldest")),
+				filter_commits:        Some(false),
+				tag_pattern:           None,
+				skip_tags:             Regex::new("v3.*").ok(),
+				ignore_tags:           None,
+				topo_order:            Some(false),
+				sort_commits:          Some(String::from("oldest")),
 			},
 		};
 		let test_release = Release {
@@ -218,6 +214,10 @@ mod test {
 				Commit::new(
 					String::from("0bc123"),
 					String::from("feat(app): add cool features"),
+				),
+				Commit::new(
+					String::from("000000"),
+					String::from("support unconventional commits"),
 				),
 				Commit::new(
 					String::from("0bc123"),
@@ -316,6 +316,9 @@ mod test {
 			### Other
 			#### app
 			- do nothing
+
+			#### other
+			- support unconventional commits
 
 			#### ui
 			- make good stuff

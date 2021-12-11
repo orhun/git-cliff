@@ -16,24 +16,9 @@ body = """
 {% endif %}\
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | upper_first }}
-    {% for commit in commits
-    | filter(attribute="scope")
-    | sort(attribute="scope") %}
-        - *({{commit.scope}})* {{ commit.message | upper_first }}
-        {%- if commit.breaking %}
-        {% raw %}  {% endraw %}- **BREAKING**: {{commit.breaking_description}}
-        {%- endif -%}
-    {%- endfor -%}
-    {%- for commit in commits %}
-        {%- if commit.scope -%}
-        {% else -%}
-            - *(No Category)* {{ commit.message | upper_first }}
-            {% if commit.breaking -%}
-            {% raw %}  {% endraw %}- **BREAKING**: {{commit.breaking_description}}
-            {% endif -%}
-        {% endif -%}
-    {% endfor -%}
-    {% raw %}\n{% endraw %}\
+    {% for commit in commits %}
+        - {{ commit.message | upper_first | trim_end }} {% if commit.conventional %}✔️{% else %}❌{% endif %}\
+    {% endfor %}
 {% endfor %}\n
 """
 # remove the leading and trailing whitespaces from the template
@@ -47,7 +32,7 @@ footer = """
 # parse the commits based on https://www.conventionalcommits.org
 conventional_commits = true
 # filter out the commits that are not conventional
-filter_unconventional = true
+filter_unconventional = false
 # regex for parsing and grouping commits
 commit_parsers = [
     { message = "^feat", group = "Features"},
@@ -60,6 +45,7 @@ commit_parsers = [
     { message = "^chore\\(release\\): prepare for", skip = true},
     { message = "^chore", group = "Miscellaneous Tasks"},
     { body = ".*security", group = "Security"},
+    { body = ".*", group = "Other (unconventional)"},
 ]
 # filter out the commits that are not matched by commit parsers
 filter_commits = false

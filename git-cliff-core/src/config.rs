@@ -26,24 +26,26 @@ pub struct ChangelogConfig {
 /// Git configuration
 #[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct GitConfig {
-	/// Whether to enable conventional commits.
-	pub conventional_commits: bool,
+	/// Whether to enable parsing conventional commits.
+	pub conventional_commits:  bool,
+	/// Whether to filter out unconventional commits.
+	pub filter_unconventional: Option<bool>,
 	/// Git commit parsers.
-	pub commit_parsers:       Option<Vec<CommitParser>>,
+	pub commit_parsers:        Option<Vec<CommitParser>>,
 	/// Whether to filter out commits.
-	pub filter_commits:       Option<bool>,
+	pub filter_commits:        Option<bool>,
 	/// Blob pattern for git tags.
-	pub tag_pattern:          Option<String>,
+	pub tag_pattern:           Option<String>,
 	#[serde(with = "serde_regex", default)]
 	/// Regex to skip matched tags.
-	pub skip_tags:            Option<Regex>,
+	pub skip_tags:             Option<Regex>,
 	#[serde(with = "serde_regex", default)]
 	/// Regex to ignore matched tags.
-	pub ignore_tags:          Option<Regex>,
+	pub ignore_tags:           Option<Regex>,
 	/// Whether to sort tags topologically.
-	pub topo_order:           Option<bool>,
+	pub topo_order:            Option<bool>,
 	/// Sorting of the commits inside sections.
-	pub sort_commits:         Option<String>,
+	pub sort_commits:          Option<String>,
 }
 
 /// Parser for grouping commits.

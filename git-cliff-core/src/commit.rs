@@ -1,4 +1,7 @@
-use crate::config::CommitParser;
+use crate::config::{
+	CommitParser,
+	GitConfig,
+};
 use crate::error::{
 	Error as AppError,
 	Result,
@@ -53,18 +56,18 @@ impl Commit<'_> {
 	///
 	/// * converts commit to a conventional commit
 	/// * sets the group for the commit
-	pub fn process(
-		&self,
-		parsers: Option<&Vec<CommitParser>>,
-		filter_commits: Option<bool>,
-		conventional_commits: bool,
-	) -> Result<Self> {
+	pub fn process(&self, config: &GitConfig) -> Result<Self> {
 		let mut commit = self.clone();
-		if conventional_commits {
-			commit = commit.into_conventional()?;
+		if config.conventional_commits {
+			if config.filter_unconventional.unwrap_or(true) {
+				commit = commit.into_conventional()?;
+			} else if let Ok(conv_commit) = commit.clone().into_conventional() {
+				commit = conv_commit;
+			}
 		}
-		if let Some(parsers) = parsers {
-			commit = commit.parse(parsers, filter_commits.unwrap_or(false))?;
+		if let Some(parsers) = &config.commit_parsers {
+			commit =
+				commit.parse(parsers, config.filter_commits.unwrap_or(false))?;
 		}
 		Ok(commit)
 	}
@@ -122,7 +125,7 @@ impl Serialize for Commit<'_> {
 	where
 		S: Serializer,
 	{
-		let mut commit = serializer.serialize_struct("Commit", 8)?;
+		let mut commit = serializer.serialize_struct("Commit", 9)?;
 		commit.serialize_field("id", &self.id)?;
 		match &self.conv {
 			Some(conv) => {
@@ -157,8 +160,10 @@ impl Serialize for Commit<'_> {
 			None => {
 				commit.serialize_field("message", &self.message)?;
 				commit.serialize_field("group", &self.group)?;
+				commit.serialize_field("scope", &self.scope)?;
 			}
 		}
+		commit.serialize_field("conventional", &self.conv.is_some())?;
 		commit.end()
 	}
 }
