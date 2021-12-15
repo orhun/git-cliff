@@ -1,6 +1,49 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2021-12-15
+
+### Bug Fixes
+
+- Update log test about exclude path
+- Override the sort related config if args are present (#39)
+- Checkout the repository before running fixtures
+- Use the defined configuration file for fixtures
+- Update the multi line docker command
+- Strip the carriage return on fixtures while comparing
+- Drop the skipped releases from 'previous' field
+
+### Documentation
+
+- Update `--with-commit` example in README.md
+
+### Features
+
+- Add `--topo-order` flag for sorting tags (#29)
+- Support specifying the sorting methods in config (#31)
+- Accept glob patterns for `--commit-path` argument
+- Support multiple values for `--commit-path` argument
+- Add `--exclude-path` argument for excluding related commits
+- Add `--current` flag for processing the current tag (#37)
+- Add `ignore_tags` option (#40)
+- Use more explanatory error messages about templates
+- Support having both conventional and unconventional commits in the changelog
+- Add `--with-commit` argument for including custom commit messages in changelog
+
+### Miscellaneous Tasks
+
+- Improve the workflow for test fixtures
+- Run test fixtures on ubuntu-latest
+- Indicate the breaking changes via default config
+
+### Refactor
+
+- Rename the config value for commit order
+
+### Styling
+
+- [**breaking**] Rename `--commit-path` argument to `--include-path`
+
 ## [0.4.2] - 2021-10-22
 
 ### Bug Fixes
