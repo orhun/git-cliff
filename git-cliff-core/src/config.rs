@@ -32,6 +32,8 @@ pub struct GitConfig {
 	pub filter_unconventional: Option<bool>,
 	/// Git commit parsers.
 	pub commit_parsers:        Option<Vec<CommitParser>>,
+	/// Link parsers.
+	pub link_parsers:          Option<Vec<LinkParser>>,
 	/// Whether to filter out commits.
 	pub filter_commits:        Option<bool>,
 	/// Blob pattern for git tags.
@@ -63,6 +65,18 @@ pub struct CommitParser {
 	pub default_scope: Option<String>,
 	/// Whether to skip this commit group.
 	pub skip:          Option<bool>,
+}
+
+/// Parser for extracting links in commits.
+#[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
+pub struct LinkParser {
+	/// Regex for finding links in the commit message.
+	#[serde(with = "serde_regex")]
+	pub pattern: Regex,
+	/// The string used to generate the link URL.
+	pub href:    String,
+	/// The string used to generate the link text.
+	pub text:    Option<String>,
 }
 
 impl Config {

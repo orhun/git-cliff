@@ -206,6 +206,7 @@ mod test {
 				ignore_tags:           None,
 				topo_order:            Some(false),
 				sort_commits:          Some(String::from("oldest")),
+				link_parsers:          None,
 			},
 		};
 		let test_release = Release {
