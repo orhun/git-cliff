@@ -64,6 +64,7 @@ impl<'a> Changelog<'a> {
 	fn process_releases(&mut self) {
 		debug!("Processing the releases...");
 		let skip_regex = self.config.git.skip_tags.as_ref();
+		let mut skipped_tags = Vec::new();
 		self.releases = self
 			.releases
 			.clone()
@@ -80,6 +81,7 @@ impl<'a> Changelog<'a> {
 						.map(|r| {
 							let skip_tag = r.is_match(version);
 							if skip_tag {
+								skipped_tags.push(version.clone());
 								trace!("Skipping release: {}", version)
 							}
 							skip_tag
@@ -90,17 +92,22 @@ impl<'a> Changelog<'a> {
 				}
 			})
 			.collect();
-		if skip_regex.is_some() {
-			let mut releases = self.releases.clone();
-			for (i, release) in self.releases.iter_mut().enumerate() {
-				if release.previous.is_none() {
-					continue;
-				}
-				if let Some(previous_release) = releases.get_mut(i + 1) {
+		for skipped_tag in &skipped_tags {
+			if let Some(release_index) = self.releases.iter().position(|release| {
+				release
+					.previous
+					.as_ref()
+					.and_then(|release| release.version.as_ref()) ==
+					Some(skipped_tag)
+			}) {
+				if let Some(previous_release) =
+					self.releases.get_mut(release_index + 1)
+				{
 					previous_release.previous = None;
-					release.previous = Some(Box::new(previous_release.clone()));
-				} else {
-					release.previous = None;
+					self.releases[release_index].previous =
+						Some(Box::new(previous_release.clone()));
+				} else if release_index == self.releases.len() - 1 {
+					self.releases[release_index].previous = None;
 				}
 			}
 		}
