@@ -330,7 +330,7 @@ This minimal example creates artifacts that can be used on another job.
         - CHANGELOG.md
 ```
 
-Please note that the stage is `doc` and has to be changed accordingly to your need. 
+Please note that the stage is `doc` and has to be changed accordingly to your need.
 
 ## Configuration File
 
@@ -406,6 +406,10 @@ skip_tags = "v0.1.0-beta.1"
 ignore_tags = ""
 topo_order = false
 sort_commits = "oldest"
+link_parsers = [
+    { pattern = "#(\\d+)", href = "https://github.com/orhun/git-cliff/issues/$1"},
+    { pattern = "RFC(\\d+)", text = "ietf-rfc$1", href = "https://datatracker.ietf.org/doc/html/rfc$1"},
+]
 ```
 
 #### conventional_commits
@@ -513,6 +517,17 @@ Possible values:
 
 This can also be achieved by specifying the `--sort` command line argument.
 
+#### link_parsers
+
+An array of link parsers for extracting external references, and turning them into URLs, using regex.
+
+Examples:
+
+- `{ pattern = "#(\\d+)", href = "https://github.com/orhun/git-cliff/issues/$1"}`
+  - Extract all GitLab issues and PRs and generate URLs linking to them. The link text will be the matching pattern.
+- `{ pattern = "RFC(\\d+)", text = "ietf-rfc$1", href = "https://datatracker.ietf.org/doc/html/rfc$1"}`,
+  - Extract mentions of IETF RFCs and generate URLs linking to them. It also rewrites the text as `ietf-rfc...`.
+
 ## Templating
 
 A template is a text where variables and expressions get replaced with values when it is rendered.
@@ -550,7 +565,8 @@ following context is generated to use for templating:
       "footers": ["[footer]", "[footer]"],
       "breaking_description": "<description>",
       "breaking": false,
-      "conventional": true
+      "conventional": true,
+      "links": [{"text": "[text]", "href": "[href]"}]
     }
   ],
   "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210 (release commit)",
@@ -595,6 +611,7 @@ If [conventional_commits](#conventional_commits) is set to `false`, then some of
       "scope": "(overrided by commit_parsers)",
       "message": "(full commit message including description, footers, etc.)",
       "conventional": false,
+      "links": [{"text": "[text]", "href": "[href]"}]
     }
   ],
   "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210 (release commit)",

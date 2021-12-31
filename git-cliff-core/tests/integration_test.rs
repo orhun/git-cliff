@@ -3,6 +3,7 @@ use git_cliff_core::config::{
 	ChangelogConfig,
 	CommitParser,
 	GitConfig,
+	LinkParser,
 };
 use git_cliff_core::error::Result;
 use git_cliff_core::release::*;
@@ -17,19 +18,19 @@ fn generate_changelog() -> Result<()> {
 		header: Some(String::from("this is a changelog")),
 		body:   String::from(
 			r#"
-        ## Release {{ version }}
-        {% for group, commits in commits | group_by(attribute="group") %}
-        ### {{ group }}    
-        {% for commit in commits %}
-        {%- if commit.scope -%}
-        - *({{commit.scope}})* {{ commit.message }}    
-        {% else -%}
-        - {{ commit.message }}    
-        {% endif -%}
-        {% if commit.breaking -%}
-        {% raw %}  {% endraw %}- **BREAKING**: {{commit.breaking_description}}
-        {% endif -%}
-        {% endfor -%}
+## Release {{ version }}
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group }}
+{% for commit in commits %}
+{%- if commit.scope -%}
+- *({{commit.scope}})* {{ commit.message }}{%- if commit.links %} ({% for link in commit.links %}[{{link.text}}]({{link.href}}) {% endfor -%}){% endif %}
+{% else -%}
+- {{ commit.message }}
+{% endif -%}
+{% if commit.breaking -%}
+{% raw %}  {% endraw %}- **BREAKING**: {{commit.breaking_description}}
+{% endif -%}
+{% endfor -%}
 {% endfor %}"#,
 		),
 		footer: Some(String::from("eoc - end of changelog")),
@@ -60,6 +61,18 @@ fn generate_changelog() -> Result<()> {
 		ignore_tags:           None,
 		topo_order:            None,
 		sort_commits:          None,
+		link_parsers:          Some(vec![
+			LinkParser {
+				pattern: Regex::new("#(\\d+)").unwrap(),
+				href:    String::from("https://github.com/$1"),
+				text:    None,
+			},
+			LinkParser {
+				pattern: Regex::new("https://github.com/(.*)").unwrap(),
+				href:    String::from("https://github.com/$1"),
+				text:    Some(String::from("$1")),
+			},
+		]),
 	};
 
 	let releases = vec![
@@ -74,7 +87,9 @@ fn generate_changelog() -> Result<()> {
 				Commit::new(String::from("abc124"), String::from("feat: add zyx")),
 				Commit::new(
 					String::from("abc124"),
-					String::from("feat(random-scope): add random feature"),
+					String::from(
+						"feat(random-scope): add random feature\n\nThis is related to https://github.com/NixOS/nixpkgs/issues/136814\n\nCloses #123",
+					),
 				),
 				Commit::new(String::from("def789"), String::from("invalid commit")),
 				Commit::new(
@@ -134,32 +149,33 @@ fn generate_changelog() -> Result<()> {
 	writeln!(out, "{}", changelog_config.footer.unwrap()).unwrap();
 
 	assert_eq!(
-		"this is a changelog
+		r#"this is a changelog
 
-        ## Release v2.0.0
-        
-        ### fix bugs    
-        - fix abc    
-        
-        ### shiny features    
-        - add xyz    
-        - add zyx    
-        - *(random-scope)* add random feature    
-        - *(big-feature)* this is a breaking change    
-          - **BREAKING**: this is a breaking change
-        
-        ## Release v1.0.0
-        
-        ### chore    
-        - do nothing    
-        
-        ### feat    
-        - add cool features    
-        
-        ### fix    
-        - fix stuff    
-        - fix more stuff    
-        eoc - end of changelog\n",
+## Release v2.0.0
+
+### fix bugs
+- fix abc
+
+### shiny features
+- add xyz
+- add zyx
+- *(random-scope)* add random feature ([#123](https://github.com/123) [NixOS/nixpkgs/issues/136814](https://github.com/NixOS/nixpkgs/issues/136814) )
+- *(big-feature)* this is a breaking change
+  - **BREAKING**: this is a breaking change
+
+## Release v1.0.0
+
+### chore
+- do nothing
+
+### feat
+- add cool features
+
+### fix
+- fix stuff
+- fix more stuff
+eoc - end of changelog
+"#,
 		out
 	);
 

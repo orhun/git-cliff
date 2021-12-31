@@ -1,6 +1,7 @@
 use crate::config::{
 	CommitParser,
 	GitConfig,
+	LinkParser,
 };
 use crate::error::{
 	Error as AppError,
@@ -29,6 +30,20 @@ pub struct Commit<'a> {
 	pub group:   Option<String>,
 	/// Commit scope based on conventional type or a commit parser.
 	pub scope:   Option<String>,
+	/// A list of links found in the commit
+	pub links:   Vec<Link>,
+}
+
+/// Object representing a link
+#[derive(
+	Debug, Clone, PartialEq, serde_derive::Deserialize, serde_derive::Serialize,
+)]
+#[serde(rename_all = "camelCase")]
+pub struct Link {
+	/// Text of the link.
+	pub text: String,
+	/// URL of the link
+	pub href: String,
 }
 
 impl<'a> From<&GitCommit<'a>> for Commit<'a> {
@@ -49,6 +64,7 @@ impl Commit<'_> {
 			conv: None,
 			group: None,
 			scope: None,
+			links: vec![],
 		}
 	}
 
@@ -56,6 +72,7 @@ impl Commit<'_> {
 	///
 	/// * converts commit to a conventional commit
 	/// * sets the group for the commit
+	/// * extacts links and generates URLs
 	pub fn process(&self, config: &GitConfig) -> Result<Self> {
 		let mut commit = self.clone();
 		if config.conventional_commits {
@@ -68,6 +85,9 @@ impl Commit<'_> {
 		if let Some(parsers) = &config.commit_parsers {
 			commit =
 				commit.parse(parsers, config.filter_commits.unwrap_or(false))?;
+		}
+		if let Some(parsers) = &config.link_parsers {
+			commit = commit.parse_links(parsers)?;
 		}
 		Ok(commit)
 	}
@@ -118,6 +138,32 @@ impl Commit<'_> {
 			)))
 		}
 	}
+
+	/// Parses the commit using [`LinkParser`]s.
+	///
+	/// Sets the [`links`] of the commit.
+	///
+	/// [`links`]: Commit::links
+	pub fn parse_links(mut self, parsers: &[LinkParser]) -> Result<Self> {
+		for parser in parsers {
+			let regex = &parser.pattern;
+			let replace = &parser.href;
+			for mat in regex.find_iter(&self.message) {
+				let m = mat.as_str();
+				let text = if let Some(text_replace) = &parser.text {
+					regex.replace(m, text_replace).to_string()
+				} else {
+					m.to_string()
+				};
+				let href = regex.replace(m, replace);
+				self.links.push(Link {
+					text,
+					href: href.to_string(),
+				});
+			}
+		}
+		Ok(self)
+	}
 }
 
 impl Serialize for Commit<'_> {
@@ -163,6 +209,7 @@ impl Serialize for Commit<'_> {
 				commit.serialize_field("scope", &self.scope)?;
 			}
 		}
+		commit.serialize_field("links", &self.links)?;
 		commit.serialize_field("conventional", &self.conv.is_some())?;
 		commit.end()
 	}
@@ -206,5 +253,61 @@ mod test {
 			.unwrap();
 		assert_eq!(Some(String::from("test_group")), commit.group);
 		assert_eq!(Some(String::from("test_scope")), commit.scope);
+	}
+
+	#[test]
+	fn parse_link() {
+		let test_cases = vec![
+			(
+				Commit::new(
+					String::from("123123"),
+					String::from("test(commit): add test\n\nBody with issue #123"),
+				),
+				true,
+			),
+			(
+				Commit::new(
+					String::from("123123"),
+					String::from(
+						"test(commit): add test\n\nImlement RFC456\n\nFixes: #456",
+					),
+				),
+				true,
+			),
+		];
+		for (commit, is_conventional) in &test_cases {
+			assert_eq!(is_conventional, &commit.clone().into_conventional().is_ok())
+		}
+		let commit = Commit::new(
+			String::from("123123"),
+			String::from("test(commit): add test\n\nImlement RFC456\n\nFixes: #455"),
+		);
+		let commit = commit
+			.parse_links(&[
+				LinkParser {
+					pattern: Regex::new("RFC(\\d+)").unwrap(),
+					href:    String::from("rfc://$1"),
+					text:    None,
+				},
+				LinkParser {
+					pattern: Regex::new("#(\\d+)").unwrap(),
+					href:    String::from("https://github.com/$1"),
+					text:    None,
+				},
+			])
+			.unwrap();
+		assert_eq!(
+			vec![
+				Link {
+					text: String::from("RFC456"),
+					href: String::from("rfc://456"),
+				},
+				Link {
+					text: String::from("#455"),
+					href: String::from("https://github.com/455"),
+				}
+			],
+			commit.links
+		);
 	}
 }
