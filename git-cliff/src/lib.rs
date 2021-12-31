@@ -56,8 +56,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}?;
 	if let Some(config_path) = dirs_next::config_dir()
 		.map(|dir| dir.join(env!("CARGO_PKG_NAME")).join(DEFAULT_CONFIG))
-		.map(|path| path.to_str().map(String::from))
-		.flatten()
+		.and_then(|path| path.to_str().map(String::from))
 	{
 		if fs::metadata(&config_path).is_ok() {
 			path = config_path;

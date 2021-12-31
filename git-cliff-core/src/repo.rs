@@ -119,8 +119,7 @@ impl Repository {
 				if let Some(commit) = tag
 					.target()
 					.ok()
-					.map(|target| target.into_commit().ok())
-					.flatten()
+					.and_then(|target| target.into_commit().ok())
 				{
 					tags.push((commit, name));
 				}

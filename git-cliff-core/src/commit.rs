@@ -197,10 +197,7 @@ impl Serialize for Commit<'_> {
 				commit.serialize_field("breaking", &conv.breaking())?;
 				commit.serialize_field(
 					"scope",
-					&conv
-						.scope()
-						.map(|v| v.as_str())
-						.or_else(|| self.scope.as_deref()),
+					&conv.scope().map(|v| v.as_str()).or(self.scope.as_deref()),
 				)?;
 			}
 			None => {

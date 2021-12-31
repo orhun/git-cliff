@@ -21,7 +21,7 @@ impl EmbeddedConfig {
 	/// Extracts the embedded content.
 	pub fn get_config() -> Result<String> {
 		match Self::get(crate::DEFAULT_CONFIG) {
-			Some(v) => Ok(str::from_utf8(&v.data.into_owned())?.to_string()),
+			Some(v) => Ok(str::from_utf8(&v.data)?.to_string()),
 			None => Err(Error::EmbeddedError(String::from(
 				"Embedded config not found",
 			))),
