@@ -101,6 +101,6 @@ jobs:
       - name: Check the links
         uses: lycheeverse/lychee-action@v1
         with:
-          args: --exclude "%7Busername%7D|file:///" -v *.md
+          args: --exclude "%7Busername%7D|file:///|https://datatracker.ietf.org" -v *.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
