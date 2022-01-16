@@ -566,7 +566,7 @@ following context is generated to use for templating:
       "breaking_description": "<description>",
       "breaking": false,
       "conventional": true,
-      "links": [{"text": "[text]", "href": "[href]"}]
+      "links": [{"text": "(set by link_parsers)", "href": "(set by link_parsers)"}]
     }
   ],
   "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210 (release commit)",
@@ -611,7 +611,7 @@ If [conventional_commits](#conventional_commits) is set to `false`, then some of
       "scope": "(overrided by commit_parsers)",
       "message": "(full commit message including description, footers, etc.)",
       "conventional": false,
-      "links": [{"text": "[text]", "href": "[href]"}]
+      "links": [{"text": "(set by link_parsers)", "href": "(set by link_parsers)"}]
     }
   ],
   "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210 (release commit)",
