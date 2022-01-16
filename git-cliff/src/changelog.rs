@@ -171,7 +171,7 @@ mod test {
 		let config = Config {
 			changelog: ChangelogConfig {
 				header: Some(String::from("# Changelog")),
-				body:   String::from(
+				body:   Some(String::from(
 					r#"{% if version %}
 				## Release [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
 				({{ commit_id }}){% else %}
@@ -181,12 +181,12 @@ mod test {
 				#### {{ group }}{% for commit in commits %}
 				- {{ commit.message }}{% endfor %}
 				{% endfor %}{% endfor %}"#,
-				),
+				)),
 				footer: Some(String::from("------------")),
 				trim:   Some(true),
 			},
 			git:       GitConfig {
-				conventional_commits:  true,
+				conventional_commits:  Some(true),
 				filter_unconventional: Some(false),
 				commit_parsers:        Some(vec![
 					CommitParser {

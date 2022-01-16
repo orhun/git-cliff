@@ -16,7 +16,7 @@ use std::fmt::Write;
 fn generate_changelog() -> Result<()> {
 	let changelog_config = ChangelogConfig {
 		header: Some(String::from("this is a changelog")),
-		body:   String::from(
+		body:   Some(String::from(
 			r#"
 ## Release {{ version }}
 {% for group, commits in commits | group_by(attribute="group") %}
@@ -32,12 +32,12 @@ fn generate_changelog() -> Result<()> {
 {% endif -%}
 {% endfor -%}
 {% endfor %}"#,
-		),
+		)),
 		footer: Some(String::from("eoc - end of changelog")),
 		trim:   None,
 	};
 	let git_config = GitConfig {
-		conventional_commits:  true,
+		conventional_commits:  Some(true),
 		filter_unconventional: Some(true),
 		commit_parsers:        Some(vec![
 			CommitParser {
@@ -140,7 +140,7 @@ fn generate_changelog() -> Result<()> {
 	];
 
 	let out = &mut String::new();
-	let template = Template::new(changelog_config.body)?;
+	let template = Template::new(changelog_config.body.unwrap())?;
 
 	writeln!(out, "{}", changelog_config.header.unwrap()).unwrap();
 	for release in releases {
