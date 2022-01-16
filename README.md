@@ -526,7 +526,7 @@ Examples:
 - `{ pattern = "#(\\d+)", href = "https://github.com/orhun/git-cliff/issues/$1"}`
   - Extract all GitLab issues and PRs and generate URLs linking to them. The link text will be the matching pattern.
 - `{ pattern = "RFC(\\d+)", text = "ietf-rfc$1", href = "https://datatracker.ietf.org/doc/html/rfc$1"}`,
-  - Extract mentions of IETF RFCs and generate URLs linking to them. It also rewrites the text as `ietf-rfc...`.
+  - Extract mentions of IETF RFCs and generate URLs linking to them. It also rewrites the text as "ietf-rfc...".
 
 ## Templating
 
