@@ -20,7 +20,7 @@ impl<'a> Changelog<'a> {
 			releases,
 			template: Template::new({
 				let mut template = config.changelog.body.to_string();
-				if config.changelog.trim == Some(true) {
+				if config.changelog.trim.unwrap_or(true) {
 					template = template
 						.lines()
 						.map(|v| v.trim())
