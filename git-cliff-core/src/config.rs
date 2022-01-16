@@ -7,6 +7,7 @@ pub struct Config {
 	/// Configuration values about changelog generation.
 	pub changelog: ChangelogConfig,
 	/// Configuration values about git.
+	#[serde(default)]
 	pub git:       GitConfig,
 }
 
@@ -24,10 +25,12 @@ pub struct ChangelogConfig {
 }
 
 /// Git configuration
-#[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
+#[derive(
+	Debug, Default, Clone, serde_derive::Serialize, serde_derive::Deserialize,
+)]
 pub struct GitConfig {
 	/// Whether to enable parsing conventional commits.
-	pub conventional_commits:  bool,
+	pub conventional_commits:  Option<bool>,
 	/// Whether to filter out unconventional commits.
 	pub filter_unconventional: Option<bool>,
 	/// Git commit parsers.
