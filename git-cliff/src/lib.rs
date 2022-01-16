@@ -63,12 +63,17 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 	}
 
+	// Load the default configuration if necessary.
 	let mut config = if fs::metadata(&path).is_ok() {
 		Config::parse(path)?
 	} else {
 		warn!("{:?} is not found, using the default configuration.", path);
 		EmbeddedConfig::parse()?
 	};
+	if config.changelog.body.is_none() {
+		warn!("Changelog body is not specified, using the default template.");
+		config.changelog.body = EmbeddedConfig::parse()?.changelog.body;
+	}
 
 	// Update the configuration based on command line arguments and vice versa.
 	match args.strip.as_deref() {
@@ -92,8 +97,8 @@ pub fn run(mut args: Opt) -> Result<()> {
 			)));
 		}
 	}
-	if let Some(template) = args.body {
-		config.changelog.body = template;
+	if args.body.is_some() {
+		config.changelog.body = args.body;
 	}
 	if args.sort == "oldest" {
 		if let Some(ref sort_commits) = config.git.sort_commits {

@@ -5,6 +5,7 @@ use regex::Regex;
 #[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct Config {
 	/// Configuration values about changelog generation.
+	#[serde(default)]
 	pub changelog: ChangelogConfig,
 	/// Configuration values about git.
 	#[serde(default)]
@@ -12,12 +13,14 @@ pub struct Config {
 }
 
 /// Changelog configuration.
-#[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
+#[derive(
+	Debug, Default, Clone, serde_derive::Serialize, serde_derive::Deserialize,
+)]
 pub struct ChangelogConfig {
 	/// Changelog header.
 	pub header: Option<String>,
 	/// Changelog body, template.
-	pub body:   String,
+	pub body:   Option<String>,
 	/// Changelog footer.
 	pub footer: Option<String>,
 	/// Trim the template.

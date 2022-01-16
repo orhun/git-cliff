@@ -1,6 +1,9 @@
 use git_cliff_core::commit::Commit;
 use git_cliff_core::config::Config;
-use git_cliff_core::error::Result;
+use git_cliff_core::error::{
+	Error,
+	Result,
+};
 use git_cliff_core::release::Release;
 use git_cliff_core::template::Template;
 use std::io::Write;
@@ -16,19 +19,27 @@ pub struct Changelog<'a> {
 impl<'a> Changelog<'a> {
 	/// Constructs a new instance.
 	pub fn new(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
+		let mut template = config
+			.changelog
+			.body
+			.as_deref()
+			.unwrap_or_default()
+			.to_string();
+		if template.is_empty() {
+			return Err(Error::ChangelogError(String::from(
+				"changelog body cannot be empty",
+			)));
+		}
+		if config.changelog.trim.unwrap_or(true) {
+			template = template
+				.lines()
+				.map(|v| v.trim())
+				.collect::<Vec<&str>>()
+				.join("\n")
+		}
 		let mut changelog = Self {
 			releases,
-			template: Template::new({
-				let mut template = config.changelog.body.to_string();
-				if config.changelog.trim.unwrap_or(true) {
-					template = template
-						.lines()
-						.map(|v| v.trim())
-						.collect::<Vec<&str>>()
-						.join("\n")
-				}
-				template
-			})?,
+			template: Template::new(template)?,
 			config,
 		};
 		changelog.process_commits();
