@@ -6,7 +6,7 @@ pub mod changelog;
 #[macro_use]
 extern crate log;
 
-use args::Opt;
+use args::{Opt, Strip, Sort};
 use changelog::Changelog;
 use git_cliff_core::commit::Commit;
 use git_cliff_core::config::Config;
@@ -76,18 +76,19 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 
 	// Update the configuration based on command line arguments and vice versa.
-	match args.strip.as_deref() {
-		Some("header") => {
-			config.changelog.header = None;
+	if let Some(strip) = args.strip {
+		match strip {
+			Strip::Header => {
+				config.changelog.header = None;
+			}
+			Strip::Footer => {
+				config.changelog.footer = None;
+			}
+			Strip::All => {
+				config.changelog.header = None;
+				config.changelog.footer = None;
+			}
 		}
-		Some("footer") => {
-			config.changelog.footer = None;
-		}
-		Some("all") => {
-			config.changelog.header = None;
-			config.changelog.footer = None;
-		}
-		_ => {}
 	}
 	if args.prepend.is_some() {
 		config.changelog.footer = None;
@@ -100,9 +101,13 @@ pub fn run(mut args: Opt) -> Result<()> {
 	if args.body.is_some() {
 		config.changelog.body = args.body;
 	}
-	if args.sort == "oldest" {
+	if args.sort == Sort::Oldest {
 		if let Some(ref sort_commits) = config.git.sort_commits {
-			args.sort = sort_commits.to_string();
+			args.sort = match sort_commits.as_str() {
+				"oldest" => Sort::Oldest,
+				"newest" => Sort::Newest,
+				_ => unreachable!(),
+			};
 		}
 	}
 	if !args.topo_order {
@@ -204,10 +209,13 @@ pub fn run(mut args: Opt) -> Result<()> {
 	for git_commit in commits.into_iter().rev() {
 		let commit = Commit::from(&git_commit);
 		let commit_id = commit.id.to_string();
-		if args.sort == "newest" {
-			releases[release_index].commits.insert(0, commit);
-		} else {
-			releases[release_index].commits.push(commit);
+		match args.sort {
+			Sort::Newest => {
+				releases[release_index].commits.insert(0, commit);
+			}
+			Sort::Oldest => {
+				releases[release_index].commits.push(commit);
+			}
 		}
 		if let Some(tag) = tags.get(&commit_id) {
 			releases[release_index].version = Some(tag.to_string());
