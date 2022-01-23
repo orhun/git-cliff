@@ -27,7 +27,7 @@ pub enum Sort {
 )]
 pub struct Opt {
 	/// Increases the logging verbosity.
-	#[clap(short, long, parse(from_occurrences), alias = "debug")]
+	#[clap(short, long, parse(from_occurrences), alias = "debug", help_heading = Some("FLAGS"))]
 	pub verbose:      u8,
 	/// Sets the configuration file.
 	#[clap(
@@ -72,19 +72,19 @@ pub struct Opt {
 	)]
 	pub body:         Option<String>,
 	/// Writes the default configuration file to cliff.toml
-	#[clap(short, long)]
+	#[clap(short, long, help_heading = Some("FLAGS"))]
 	pub init:         bool,
 	/// Processes the commits starting from the latest tag.
-	#[clap(short, long)]
+	#[clap(short, long, help_heading = Some("FLAGS"))]
 	pub latest:       bool,
 	/// Processes the commits that belong to the current tag.
-	#[clap(long)]
+	#[clap(long, help_heading = Some("FLAGS"))]
 	pub current:      bool,
 	/// Processes the commits that do not belong to a tag.
-	#[clap(short, long)]
+	#[clap(short, long, help_heading = Some("FLAGS"))]
 	pub unreleased:   bool,
 	/// Sorts the tags topologically.
-	#[clap(long)]
+	#[clap(long, help_heading = Some("FLAGS"))]
 	pub topo_order:   bool,
 	/// Strips the given parts from the changelog.
 	#[clap(
