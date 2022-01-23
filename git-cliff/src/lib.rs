@@ -233,8 +233,10 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 
 	// Set the previous release if needed.
-	if args.latest {
-		if let Some((commit_id, version)) = tags.get_index(tags.len() - 2) {
+	if args.latest || args.unreleased {
+		if let Some((commit_id, version)) =
+			tags.len().checked_sub(2).and_then(|v| tags.get_index(v))
+		{
 			let previous_release = Release {
 				commit_id: Some(commit_id.to_string()),
 				version: Some(version.to_string()),
