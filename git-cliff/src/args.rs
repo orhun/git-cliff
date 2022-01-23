@@ -1,4 +1,8 @@
-use clap::{AppSettings, Parser, ArgEnum};
+use clap::{
+	AppSettings,
+	ArgEnum,
+	Parser,
+};
 use git_cliff_core::glob::Pattern;
 use git_cliff_core::DEFAULT_CONFIG;
 use std::path::PathBuf;
@@ -87,12 +91,7 @@ pub struct Opt {
 	#[clap(long, help_heading = Some("FLAGS"))]
 	pub topo_order:   bool,
 	/// Strips the given parts from the changelog.
-	#[clap(
-		short,
-		long,
-		value_name = "PART",
-		arg_enum,
-	)]
+	#[clap(short, long, value_name = "PART", arg_enum)]
 	pub strip:        Option<Strip>,
 	/// Sets the commit range to process.
 	#[clap(value_name = "RANGE")]

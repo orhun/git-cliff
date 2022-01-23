@@ -6,7 +6,11 @@ pub mod changelog;
 #[macro_use]
 extern crate log;
 
-use args::{Opt, Strip, Sort};
+use args::{
+	Opt,
+	Sort,
+	Strip,
+};
 use changelog::Changelog;
 use clap::ArgEnum;
 use git_cliff_core::commit::Commit;
