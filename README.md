@@ -131,7 +131,7 @@ CARGO_TARGET_DIR=target cargo build --release
 ### Command Line Arguments
 
 ```
-git-cliff [FLAGS] [OPTIONS] [RANGE]
+git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
 ```
 
 **Flags:**
@@ -150,18 +150,18 @@ git-cliff [FLAGS] [OPTIONS] [RANGE]
 **Options:**
 
 ```
--c, --config <PATH>               Sets the configuration file [env: CONFIG=]  [default: cliff.toml]
--w, --workdir <PATH>              Sets the working directory [env: WORKDIR=]
--r, --repository <PATH>           Sets the git repository [env: REPOSITORY=]
-    --include-path <PATTERN>...   Sets the path to include related commits [env: INCLUDE_PATH=]
-    --exclude-path <PATTERN>...   Sets the path to exclude related commits [env: EXCLUDE_PATH=]
-    --with-commit <MSG>...        Sets custom commit messages to include in the changelog [env: WITH_COMMIT=]
--p, --prepend <PATH>              Prepends entries to the given changelog file [env: PREPEND=
--o, --output <PATH>               Writes output to the given file [env: OUTPUT=]
--t, --tag <TAG>                   Sets the tag for the latest version [env: TAG=]
--b, --body <TEMPLATE>             Sets the template for the changelog body [env: TEMPLATE=]
--s, --strip <PART>                Strips the given parts from the changelog [possible values: header, footer, all]
-    --sort <sort>                 Sets sorting of the commits inside sections [default: oldest] [possible values: oldest, newest]
+-c, --config <PATH>                Sets the configuration file [env: CONFIG=] [default: cliff.toml]
+-w, --workdir <PATH>               Sets the working directory [env: WORKDIR=]
+-r, --repository <PATH>            Sets the git repository [env: REPOSITORY=]
+    --include-path <PATTERN>...    Sets the path to include related commits [env: INCLUDE_PATH=]
+    --exclude-path <PATTERN>...    Sets the path to exclude related commits [env: EXCLUDE_PATH=]
+    --with-commit <MSG>...         Sets custom commit messages to include in the changelog [env: WITH_COMMIT=]
+-p, --prepend <PATH>               Prepends entries to the given changelog file [env: PREPEND=]
+-o, --output <PATH>                Writes output to the given file [env: OUTPUT=]
+-t, --tag <TAG>                    Sets the tag for the latest version [env: TAG=]
+-b, --body <TEMPLATE>              Sets the template for the changelog body [env: TEMPLATE=]
+-s, --strip <PART>                 Strips the given parts from the changelog [possible values: header, footer, all]
+    --sort <SORT>                  Sets sorting of the commits inside sections [default: oldest] [possible values: oldest, newest]
 ```
 
 **Args:**
