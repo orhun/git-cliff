@@ -28,7 +28,7 @@ path = "../git-cliff-core"
 
 [dependencies.clap]
 version = "3.0"
-features = ["derive", "env"]
+features = ["derive", "env", "wrap_help"]
 
 [dev-dependencies]
 pretty_assertions = "1.0.0"
