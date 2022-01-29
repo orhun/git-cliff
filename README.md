@@ -746,6 +746,66 @@ All notable changes to this project will be documented in this file.
 
 </details>
 
+#### [Minimal](./examples/minimal.toml)
+
+<details>
+  <summary>Raw Output</summary>
+
+```
+## [unreleased]
+### Feat
+- Support multiple file formats
+- Use cache while fetching pages
+
+## [1.0.1] - 2021-07-18
+### Chore
+- Add release script
+
+### Refactor
+- Expose string functions
+
+## [1.0.0] - 2021-07-18
+### Docs
+- Add README.md
+- [**breaking**] Add tested usage example
+
+### Feat
+- Add ability to parse arrays
+
+### Fix
+- Rename help argument due to conflict
+```
+
+</details>
+
+<details>
+  <summary>Rendered Output</summary>
+
+## [unreleased]
+### Feat
+- Support multiple file formats
+- Use cache while fetching pages
+
+## [1.0.1] - 2021-07-18
+### Chore
+- Add release script
+
+### Refactor
+- Expose string functions
+
+## [1.0.0] - 2021-07-18
+### Docs
+- Add README.md
+- [**breaking**] Add tested usage example
+
+### Feat
+- Add ability to parse arrays
+
+### Fix
+- Rename help argument due to conflict
+
+</details>
+
 #### [Detailed](./examples/detailed.toml)
 
 <details>
