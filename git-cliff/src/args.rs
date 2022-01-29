@@ -27,7 +27,11 @@ pub enum Sort {
     author,
     about,
     global_setting = AppSettings::DeriveDisplayOrder,
-    rename_all_env = "screaming-snake"
+    rename_all_env = "screaming-snake",
+    help_heading = Some("OPTIONS"),
+    override_usage = "git-cliff [FLAGS] [OPTIONS] [--] [RANGE]",
+    mut_arg("help", |arg| arg.help("Prints help information").help_heading("FLAGS")),
+    mut_arg("version", |arg| arg.help("Prints version information").help_heading("FLAGS"))
 )]
 pub struct Opt {
 	/// Increases the logging verbosity.
@@ -49,13 +53,13 @@ pub struct Opt {
 	#[clap(short, long, env, value_name = "PATH")]
 	pub repository:   Option<PathBuf>,
 	/// Sets the path to include related commits.
-	#[clap(long, env, value_name = "PATTERN")]
+	#[clap(long, env, value_name = "PATTERN", multiple_values = true)]
 	pub include_path: Option<Vec<Pattern>>,
 	/// Sets the path to exclude related commits.
-	#[clap(long, env, value_name = "PATTERN")]
+	#[clap(long, env, value_name = "PATTERN", multiple_values = true)]
 	pub exclude_path: Option<Vec<Pattern>>,
 	/// Sets custom commit messages to include in the changelog.
-	#[clap(long, env, value_name = "MSG")]
+	#[clap(long, env, value_name = "MSG", multiple_values = true)]
 	pub with_commit:  Option<Vec<String>>,
 	/// Prepends entries to the given changelog file.
 	#[clap(short, long, env, value_name = "PATH")]
@@ -93,9 +97,6 @@ pub struct Opt {
 	/// Strips the given parts from the changelog.
 	#[clap(short, long, value_name = "PART", arg_enum)]
 	pub strip:        Option<Strip>,
-	/// Sets the commit range to process.
-	#[clap(value_name = "RANGE")]
-	pub range:        Option<String>,
 	/// Sets sorting of the commits inside sections.
 	#[clap(
 		long,
@@ -103,4 +104,7 @@ pub struct Opt {
 		default_value_t = Sort::Oldest
 	)]
 	pub sort:         Sort,
+	/// Sets the commit range to process.
+	#[clap(value_name = "RANGE", help_heading = Some("ARGS"))]
+	pub range:        Option<String>,
 }
