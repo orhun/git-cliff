@@ -1,29 +1,44 @@
+use clap::{
+	AppSettings,
+	ArgEnum,
+	Parser,
+};
 use git_cliff_core::glob::Pattern;
 use git_cliff_core::DEFAULT_CONFIG;
 use std::path::PathBuf;
-use structopt::clap::AppSettings;
-use structopt::StructOpt;
+
+#[derive(Debug, Clone, Copy, ArgEnum)]
+pub enum Strip {
+	Header,
+	Footer,
+	All,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
+pub enum Sort {
+	Oldest,
+	Newest,
+}
 
 /// Command-line arguments to parse.
-#[derive(Debug, StructOpt)]
-#[structopt(
-    name = env!("CARGO_PKG_NAME"),
-    version = env!("CARGO_PKG_VERSION"),
-    author = env!("CARGO_PKG_AUTHORS"),
-    about = env!("CARGO_PKG_DESCRIPTION"),
-    global_settings(&[
-        AppSettings::ColorAuto,
-        AppSettings::ColoredHelp,
-        AppSettings::DeriveDisplayOrder,
-    ]),
-    rename_all_env = "screaming-snake"
+#[derive(Debug, Parser)]
+#[clap(
+    version,
+    author,
+    about,
+    global_setting = AppSettings::DeriveDisplayOrder,
+    rename_all_env = "screaming-snake",
+    help_heading = Some("OPTIONS"),
+    override_usage = "git-cliff [FLAGS] [OPTIONS] [--] [RANGE]",
+    mut_arg("help", |arg| arg.help("Prints help information").help_heading("FLAGS")),
+    mut_arg("version", |arg| arg.help("Prints version information").help_heading("FLAGS"))
 )]
 pub struct Opt {
 	/// Increases the logging verbosity.
-	#[structopt(short, long, parse(from_occurrences), alias = "debug")]
+	#[clap(short, long, parse(from_occurrences), alias = "debug", help_heading = Some("FLAGS"))]
 	pub verbose:      u8,
 	/// Sets the configuration file.
-	#[structopt(
+	#[clap(
 		short,
 		long,
 		env,
@@ -32,31 +47,31 @@ pub struct Opt {
 	)]
 	pub config:       PathBuf,
 	/// Sets the working directory.
-	#[structopt(short, long, env, value_name = "PATH")]
+	#[clap(short, long, env, value_name = "PATH")]
 	pub workdir:      Option<PathBuf>,
 	/// Sets the git repository.
-	#[structopt(short, long, env, value_name = "PATH")]
+	#[clap(short, long, env, value_name = "PATH")]
 	pub repository:   Option<PathBuf>,
 	/// Sets the path to include related commits.
-	#[structopt(long, env, value_name = "PATTERN")]
+	#[clap(long, env, value_name = "PATTERN", multiple_values = true)]
 	pub include_path: Option<Vec<Pattern>>,
 	/// Sets the path to exclude related commits.
-	#[structopt(long, env, value_name = "PATTERN")]
+	#[clap(long, env, value_name = "PATTERN", multiple_values = true)]
 	pub exclude_path: Option<Vec<Pattern>>,
 	/// Sets custom commit messages to include in the changelog.
-	#[structopt(long, env, value_name = "MSG")]
+	#[clap(long, env, value_name = "MSG", multiple_values = true)]
 	pub with_commit:  Option<Vec<String>>,
 	/// Prepends entries to the given changelog file.
-	#[structopt(short, long, env, value_name = "PATH")]
+	#[clap(short, long, env, value_name = "PATH")]
 	pub prepend:      Option<PathBuf>,
 	/// Writes output to the given file.
-	#[structopt(short, long, env, value_name = "PATH")]
+	#[clap(short, long, env, value_name = "PATH")]
 	pub output:       Option<PathBuf>,
 	/// Sets the tag for the latest version.
-	#[structopt(short, long, env, value_name = "TAG", allow_hyphen_values = true)]
+	#[clap(short, long, env, value_name = "TAG", allow_hyphen_values = true)]
 	pub tag:          Option<String>,
 	/// Sets the template for the changelog body.
-	#[structopt(
+	#[clap(
 		short,
 		long,
 		env = "TEMPLATE",
@@ -65,36 +80,31 @@ pub struct Opt {
 	)]
 	pub body:         Option<String>,
 	/// Writes the default configuration file to cliff.toml
-	#[structopt(short, long)]
+	#[clap(short, long, help_heading = Some("FLAGS"))]
 	pub init:         bool,
 	/// Processes the commits starting from the latest tag.
-	#[structopt(short, long)]
+	#[clap(short, long, help_heading = Some("FLAGS"))]
 	pub latest:       bool,
 	/// Processes the commits that belong to the current tag.
-	#[structopt(long)]
+	#[clap(long, help_heading = Some("FLAGS"))]
 	pub current:      bool,
 	/// Processes the commits that do not belong to a tag.
-	#[structopt(short, long)]
+	#[clap(short, long, help_heading = Some("FLAGS"))]
 	pub unreleased:   bool,
 	/// Sorts the tags topologically.
-	#[structopt(long)]
+	#[clap(long, help_heading = Some("FLAGS"))]
 	pub topo_order:   bool,
 	/// Strips the given parts from the changelog.
-	#[structopt(
-		short,
-		long,
-		value_name = "PART",
-		possible_values = &["header", "footer", "all"]
-	)]
-	pub strip:        Option<String>,
-	/// Sets the commit range to process.
-	#[structopt(value_name = "RANGE")]
-	pub range:        Option<String>,
+	#[clap(short, long, value_name = "PART", arg_enum)]
+	pub strip:        Option<Strip>,
 	/// Sets sorting of the commits inside sections.
-	#[structopt(
+	#[clap(
 		long,
-		possible_values = &["oldest", "newest"],
-		default_value = "oldest"
+		arg_enum,
+		default_value_t = Sort::Oldest
 	)]
-	pub sort:         String,
+	pub sort:         Sort,
+	/// Sets the commit range to process.
+	#[clap(value_name = "RANGE", help_heading = Some("ARGS"))]
+	pub range:        Option<String>,
 }
