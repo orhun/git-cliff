@@ -107,7 +107,8 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 	if args.sort == Sort::Oldest {
 		if let Some(ref sort_commits) = config.git.sort_commits {
-			args.sort = Sort::from_str(sort_commits, false).expect("");
+			args.sort = Sort::from_str(sort_commits, true)
+				.expect("Incorrect config value for 'sort_commits'");
 		}
 	}
 	if !args.topo_order {
