@@ -11,8 +11,7 @@ edition = "2021"
 
 [dependencies]
 thiserror = "1.0.30"
-serde = "1.0.130"
-serde_derive = "1.0.130"
+serde = { version = "1.0.130", features = ["derive"] }
 tera = "1.13.0"
 regex = "1.5.4"
 serde_regex = "1.1.0"
