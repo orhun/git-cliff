@@ -16,7 +16,7 @@ use serde::ser::{
 };
 
 /// Common commit object that is parsed from a repository.
-#[derive(Debug, Clone, PartialEq, serde_derive::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Commit<'a> {
 	/// Commit ID.
@@ -35,9 +35,7 @@ pub struct Commit<'a> {
 }
 
 /// Object representing a link
-#[derive(
-	Debug, Clone, PartialEq, serde_derive::Deserialize, serde_derive::Serialize,
-)]
+#[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Link {
 	/// Text of the link.
