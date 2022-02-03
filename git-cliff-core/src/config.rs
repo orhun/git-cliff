@@ -1,5 +1,6 @@
 use crate::error::Result;
 use regex::Regex;
+use std::path::Path;
 
 /// Configuration values.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -83,10 +84,10 @@ pub struct LinkParser {
 
 impl Config {
 	/// Parses the config file and returns the values.
-	pub fn parse(file_name: String) -> Result<Config> {
+	pub fn parse(path: &Path) -> Result<Config> {
 		let mut config = config::Config::default();
 		config
-			.merge(config::File::with_name(&file_name))?
+			.merge(config::File::from(path))?
 			.merge(config::Environment::with_prefix("CLIFF").separator("_"))?;
 		Ok(config.try_into()?)
 	}
@@ -100,17 +101,14 @@ mod test {
 	use std::path::PathBuf;
 	#[test]
 	fn parse_config() -> Result<()> {
-		let file_name = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+		let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 			.parent()
 			.unwrap()
 			.to_path_buf()
 			.join("config")
-			.join(crate::DEFAULT_CONFIG)
-			.to_str()
-			.unwrap()
-			.to_string();
+			.join(crate::DEFAULT_CONFIG);
 		env::set_var("CLIFF_CHANGELOG_FOOTER", "test");
-		let config = Config::parse(file_name)?;
+		let config = Config::parse(&path)?;
 		assert_eq!("test", config.changelog.footer.unwrap());
 		Ok(())
 	}

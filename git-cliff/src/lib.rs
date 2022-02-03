@@ -52,27 +52,23 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 
 	// Parse the configuration file.
-	let mut path = match args.config.to_str() {
-		Some(v) => Ok(v.to_string()),
-		None => Err(Error::IoError(io::Error::new(
-			io::ErrorKind::Other,
-			"path contains invalid characters",
-		))),
-	}?;
-	if let Some(config_path) = dirs_next::config_dir()
-		.map(|dir| dir.join(env!("CARGO_PKG_NAME")).join(DEFAULT_CONFIG))
-		.and_then(|path| path.to_str().map(String::from))
-	{
-		if fs::metadata(&config_path).is_ok() {
+	let mut path = args.config.clone();
+	if !path.exists() {
+		if let Some(config_path) = dirs_next::config_dir()
+			.map(|dir| dir.join(env!("CARGO_PKG_NAME")).join(DEFAULT_CONFIG))
+		{
 			path = config_path;
 		}
 	}
 
 	// Load the default configuration if necessary.
-	let mut config = if fs::metadata(&path).is_ok() {
-		Config::parse(path)?
+	let mut config = if path.exists() {
+		Config::parse(&path)?
 	} else {
-		warn!("{:?} is not found, using the default configuration.", path);
+		warn!(
+			"{:?} is not found, using the default configuration.",
+			args.config
+		);
 		EmbeddedConfig::parse()?
 	};
 	if config.changelog.body.is_none() {
