@@ -111,11 +111,18 @@ impl Commit<'_> {
 	/// [`scope`]: Commit::scope
 	pub fn parse(mut self, parsers: &[CommitParser], filter: bool) -> Result<Self> {
 		for parser in parsers {
-			for regex in vec![parser.message.as_ref(), parser.body.as_ref()]
-				.into_iter()
-				.flatten()
-			{
-				if regex.is_match(&self.message) {
+			let mut regex_checks = Vec::new();
+			if let Some(message_regex) = parser.message.as_ref() {
+				regex_checks.push((message_regex, self.message.to_string()))
+			}
+			if let (Some(body_regex), Some(body)) = (
+				parser.body.as_ref(),
+				self.conv.as_ref().and_then(|v| v.body()),
+			) {
+				regex_checks.push((body_regex, body.to_string()))
+			}
+			for (regex, text) in regex_checks {
+				if regex.is_match(&text) {
 					if parser.skip != Some(true) {
 						self.group = parser.group.as_ref().cloned();
 						self.scope = parser.default_scope.as_ref().cloned();
