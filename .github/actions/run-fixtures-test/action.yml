@@ -1,0 +1,46 @@
+name: Run a fixtures test
+description: Run a fixtures test
+
+inputs:
+  fixtures-dir:
+    description: Path to the fixtures directory
+    required: true
+  command:
+    description: The git-cliff command to run
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Set git config
+      run: |
+        git config --global user.name github-actions
+        git config --global user.email github-actions@github.com
+      shell: bash
+
+    - name: Create commits and tags
+      working-directory: ${{ inputs.fixtures-dir }}
+      run: |
+        git init
+        ./commit.sh
+      env:
+        GIT_AUTHOR_DATE: "2021-01-23 01:23:45"
+        GIT_COMMITTER_DATE: "2021-01-23 01:23:45"
+      shell: bash
+
+    - name: Generate a changelog
+      working-directory: ${{ inputs.fixtures-dir }}
+      run: |
+        cargo run -- --config cliff.toml ${{ inputs.command }} > output.md
+      shell: bash
+
+    - name: Compare the output with the expected output
+      working-directory: ${{ inputs.fixtures-dir }}
+      run: |
+        cat output.md
+        diff --strip-trailing-cr output.md expected.md
+      shell: bash
