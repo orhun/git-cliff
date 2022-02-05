@@ -21,6 +21,8 @@ jobs:
             command: --latest
           - fixtures-name: test-date-order
             command: --latest
+          - fixtures-name: test-date-order-arg
+            command: --latest --date-order
     steps:
       - name: Checkout
         uses: actions/checkout@v2
