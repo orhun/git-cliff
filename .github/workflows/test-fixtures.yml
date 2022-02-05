@@ -16,8 +16,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        fixtures-name:
-          - test-ignore-tags
+        include:
+          - fixtures-name: test-ignore-tags
+          - fixtures-name: test-topo-order
+            command: --latest
+          - fixtures-name: test-date-order
+            command: --latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
