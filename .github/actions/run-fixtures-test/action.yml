@@ -36,9 +36,6 @@ runs:
       run: |
         git init
         ./commit.sh
-      env:
-        GIT_AUTHOR_DATE: "2021-01-23 01:23:45"
-        GIT_COMMITTER_DATE: "2021-01-23 01:23:45"
       shell: bash
 
     - name: Generate a changelog
