@@ -13,6 +13,18 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Install toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        override: true
+
+    - name: Install git-cliff
+      run: |
+        cargo install --path git-cliff/
+      shell: bash
+
     - name: Set git config
       run: |
         git config --global user.name github-actions
@@ -32,7 +44,7 @@ runs:
     - name: Generate a changelog
       working-directory: ${{ inputs.fixtures-dir }}
       run: |
-        cargo run -- --config cliff.toml ${{ inputs.command }} > output.md
+        git cliff --config cliff.toml ${{ inputs.command }} > output.md
       shell: bash
 
     - name: Compare the output with the expected output
