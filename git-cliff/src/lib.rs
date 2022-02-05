@@ -107,9 +107,9 @@ pub fn run(mut args: Opt) -> Result<()> {
 				.expect("Incorrect config value for 'sort_commits'");
 		}
 	}
-	if !args.topo_order {
-		if let Some(topo_order) = config.git.topo_order {
-			args.topo_order = topo_order;
+	if !args.date_order {
+		if let Some(date_order) = config.git.date_order {
+			args.date_order = date_order;
 		}
 	}
 
@@ -118,7 +118,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		Repository::init(args.repository.unwrap_or(env::current_dir()?))?;
 
 	// Parse tags.
-	let mut tags = repository.tags(&config.git.tag_pattern, args.topo_order)?;
+	let mut tags = repository.tags(&config.git.tag_pattern, args.date_order)?;
 
 	// Skip tags.
 	let skip_regex = config.git.skip_tags.as_ref();

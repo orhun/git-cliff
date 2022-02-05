@@ -47,8 +47,8 @@ pub struct GitConfig {
 	#[serde(with = "serde_regex", default)]
 	/// Regex to ignore matched tags.
 	pub ignore_tags:           Option<Regex>,
-	/// Whether to sort tags topologically.
-	pub topo_order:            Option<bool>,
+	/// Whether to sort tags chronologically.
+	pub date_order:            Option<bool>,
 	/// Sorting of the commits inside sections.
 	pub sort_commits:          Option<String>,
 }

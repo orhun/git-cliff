@@ -91,9 +91,9 @@ pub struct Opt {
 	/// Processes the commits that do not belong to a tag.
 	#[clap(short, long, help_heading = Some("FLAGS"))]
 	pub unreleased:   bool,
-	/// Sorts the tags topologically.
+	/// Sorts the tags chronologically.
 	#[clap(long, help_heading = Some("FLAGS"))]
-	pub topo_order:   bool,
+	pub date_order:   bool,
 	/// Strips the given parts from the changelog.
 	#[clap(short, long, value_name = "PART", arg_enum)]
 	pub strip:        Option<Strip>,
