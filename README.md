@@ -197,7 +197,6 @@ Generate a changelog for a certain part of git history:
 
 ```sh
 # only takes the latest tag into account
-# (requires at least 2 tags)
 git cliff --latest
 
 # only takes the current tag into account
