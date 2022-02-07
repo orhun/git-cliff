@@ -24,7 +24,7 @@ body = """
     {% endfor %}
 {% endfor %}\n
 """
-# remove the leading and trailing whitespaces from the template
+# remove the leading and trailing whitespace from the template
 trim = true
 # changelog footer
 footer = """

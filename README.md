@@ -375,7 +375,7 @@ See [templating](#templating) for more detail.
 
 #### trim
 
-If set to `true`, leading and trailing whitespaces are removed from the [body](#body).
+If set to `true`, leading and trailing whitespace are removed from the [body](#body).
 
 It is useful for adding indentation to the template for readability, as shown [in the example](#changelog).
 
