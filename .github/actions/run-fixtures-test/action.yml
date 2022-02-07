@@ -27,8 +27,8 @@ runs:
 
     - name: Set git config
       run: |
-        git config --global user.name github-actions
-        git config --global user.email github-actions@github.com
+        git config user.name 'github-actions[bot]'
+        git config user.email 'github-actions[bot]@users.noreply.github.com'
       shell: bash
 
     - name: Create commits and tags
