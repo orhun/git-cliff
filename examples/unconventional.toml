@@ -3,7 +3,7 @@
 [changelog]
 # changelog header
 header = """
-# Changelog
+# Changelog\n
 All notable changes to this project will be documented in this file.\n
 """
 # template for the changelog body
