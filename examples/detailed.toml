@@ -3,7 +3,7 @@
 [changelog]
 # changelog header
 header = """
-# Changelog
+# Changelog\n
 All notable changes to this project will be documented in this file.\n
 """
 # template for the changelog body
@@ -27,7 +27,7 @@ body = """
     {% endfor %}
 {% endfor %}\n
 """
-# remove the leading and trailing whitespaces from the template
+# remove the leading and trailing whitespace from the template
 trim = true
 # changelog footer
 footer = """
