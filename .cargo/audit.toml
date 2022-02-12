@@ -1,0 +1,8 @@
+[advisories]
+ignore = [
+    "RUSTSEC-2020-0159", # `chrono` localtime_r segfault
+]
+
+[output]
+quiet = false
+deny = ["warnings"]
