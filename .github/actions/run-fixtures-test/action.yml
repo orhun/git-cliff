@@ -1,0 +1,50 @@
+name: Run a fixtures test
+description: Run a fixtures test
+
+inputs:
+  fixtures-dir:
+    description: Path to the fixtures directory
+    required: true
+  command:
+    description: The git-cliff command to run
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Install toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        override: true
+
+    - name: Install git-cliff
+      run: cargo install --path git-cliff/
+      shell: bash
+
+    - name: Set git config
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      shell: bash
+
+    - name: Create commits and tags
+      working-directory: ${{ inputs.fixtures-dir }}
+      run: |
+        git init
+        ./commit.sh
+      shell: bash
+
+    - name: Generate a changelog
+      working-directory: ${{ inputs.fixtures-dir }}
+      run: git cliff --config cliff.toml ${{ inputs.command }} > output.md
+      shell: bash
+
+    - name: Compare the output with the expected output
+      working-directory: ${{ inputs.fixtures-dir }}
+      run: |
+        cat output.md
+        diff --strip-trailing-cr output.md expected.md
+      shell: bash

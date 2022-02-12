@@ -59,7 +59,7 @@ fn generate_changelog() -> Result<()> {
 		tag_pattern:           None,
 		skip_tags:             None,
 		ignore_tags:           None,
-		topo_order:            None,
+		date_order:            None,
 		sort_commits:          None,
 		link_parsers:          Some(vec![
 			LinkParser {
