@@ -1328,4 +1328,4 @@ GNU General Public License ([v3.0](https://www.gnu.org/licenses/gpl.txt))
 
 ## Copyright
 
-Copyright © 2021, [git-cliff contributors](mailto:git-cliff@protonmail.com)
+Copyright © 2021-2022, [git-cliff contributors](mailto:git-cliff@protonmail.com)
