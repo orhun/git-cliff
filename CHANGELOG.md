@@ -2,6 +2,53 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2022-02-12
+
+### Bug Fixes
+
+- Only drop previous releases if skipped (#44)
+- Run clippy from nightly toolchain
+- Update tests about optional config values
+- Set the previous release when using `--unreleased` (#47)
+- Lower the priority of global configuration file (#51)
+- Update the download link of latest grcov release
+- Use the correct tar command for extracting grcov archive
+- Update grcov download command
+- Update custom error tests
+
+### Documentation
+
+- Update template contexts about link_parsers
+- Add minimal example
+- Update copyright years
+
+### Features
+
+- Add `link_parsers` for parsing/extracting links (#42)
+- Make the `git` section optional (#45)
+- Make the `changelog` section optional (#45)
+- [**breaking**] Use conventional commit body to check against commit parsers
+- [**breaking**] Replace --topo-order by --date-order (#58)
+
+### Miscellaneous Tasks
+
+- Update arg parsing to clap v3 (#49)
+- Upgrade dependencies
+- Bump the Rust version in Dockerfile
+- Run cargo-audit for checking vulnerabilities
+- Update the runner to macos-11
+
+### Refactor
+
+- Apply clippy suggestions
+- [**breaking**] Change the default value of `trim` to `true`
+- Unify serde and serde_derive using derive feature (#57)
+
+### Styling
+
+- Update the styling
+- Comply with MD022 and fix minor typos (#61)
+
 ## [0.5.0] - 2021-12-15
 
 ### Bug Fixes
