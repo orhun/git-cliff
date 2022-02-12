@@ -63,7 +63,7 @@ mod test {
 	#[test]
 	fn throw_parse_error() {
 		let actual_error = mock_function().unwrap_err();
-		let expected_error_kind = ErrorKind::InvalidFormat;
+		let expected_error_kind = ErrorKind::MissingType;
 		match actual_error {
 			Error::ParseError(e) => {
 				assert_eq!(expected_error_kind, e.kind());
