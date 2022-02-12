@@ -64,7 +64,7 @@ jobs:
             TOOLCHAIN: stable
             TARGET: i686-pc-windows-msvc
           - BUILD: macos
-            OS: macos-10.15
+            OS: macos-11
             TOOLCHAIN: stable
             TARGET: x86_64-apple-darwin
     steps:
@@ -112,7 +112,7 @@ jobs:
               > git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.TARGET }}.tar.gz.sha512
           fi
       - name: Sign the release
-        if: matrix.OS == 'ubuntu-20.04' || matrix.OS == 'macos-10.15'
+        if: matrix.OS == 'ubuntu-20.04' || matrix.OS == 'macos-11'
         run: |
           echo "${{ secrets.GPG_RELEASE_KEY }}" | base64 --decode > private.key
           echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --pinentry-mode=loopback \
