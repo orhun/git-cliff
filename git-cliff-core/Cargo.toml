@@ -11,16 +11,16 @@ edition = "2021"
 
 [dependencies]
 thiserror = "1.0.30"
-serde = { version = "1.0.130", features = ["derive"] }
-tera = "1.13.0"
+serde = { version = "1.0.136", features = ["derive"] }
+tera = "1.15.0"
 regex = "1.5.4"
 serde_regex = "1.1.0"
-indexmap = "1.7.0"
+indexmap = "1.8.0"
 toml = "0.5.8"
 glob = "0.3.0"
 
 [dependencies.git2]
-version = "0.13.23"
+version = "0.13.25"
 default-features = false
 
 [dependencies.config]
@@ -29,11 +29,11 @@ default-features = false
 features = ["toml", "yaml"]
 
 [dependencies.git-conventional]
-version = "0.11.0"
+version = "0.11.2"
 features = ["serde"]
 
 [dependencies.rust-embed]
-version = "6.2.0"
+version = "6.3.0"
 features = ["debug-embed"]
 
 [dev-dependencies]

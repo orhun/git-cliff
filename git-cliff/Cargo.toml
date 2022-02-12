@@ -20,15 +20,15 @@ path = "src/bin/completions.rs"
 pretty_env_logger = "0.4.0"
 log = "0.4.14"
 dirs-next = "2.0.0"
-clap_complete = "3.0"
+clap_complete = "3.0.6"
 
 [dependencies.git-cliff-core]
 version = "0.5.0" # managed by release.sh
 path = "../git-cliff-core"
 
 [dependencies.clap]
-version = "3.0"
+version = "3.0.14"
 features = ["derive", "env", "wrap_help"]
 
 [dev-dependencies]
-pretty_assertions = "1.0.0"
+pretty_assertions = "1.1.0"
