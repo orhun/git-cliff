@@ -121,6 +121,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 	let mut tags = repository.tags(&config.git.tag_pattern, args.date_order)?;
 
 	// Skip tags.
+	config.git.skip_tags = config.git.skip_tags.filter(|r| !r.as_str().is_empty());
 	let skip_regex = config.git.skip_tags.as_ref();
 	let ignore_regex = config.git.ignore_tags.as_ref();
 	tags = tags
