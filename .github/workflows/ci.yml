@@ -40,8 +40,15 @@ jobs:
           toolchain: nightly
           override: true
       - name: Checkout
+        if: github.event_name != 'pull_request'
         uses: actions/checkout@v2
         with:
+          fetch-depth: 0
+      - name: Checkout
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
       - name: Run tests
         run: |
