@@ -156,9 +156,9 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 	} else if args.latest || args.current {
 		if tags.len() < 2 {
-			let commits = repository.commits(None, None, None).unwrap();
+			let commits = repository.commits(None, None, None)?;
 			if let (Some(tag1), Some(tag2)) = (
-				Some(commits.last().unwrap().id().to_string()),
+				commits.last().map(|c| c.id().to_string()),
 				tags.get_index(0).map(|(k, _)| k),
 			) {
 				commit_range = Some(format!("{}..{}", tag1, tag2));
