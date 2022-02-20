@@ -15,7 +15,7 @@ cd "$(mktemp -d)"
 git init
 
 # Commit
-$FIXTURES_DIR/commit.sh
+"$FIXTURES_DIR/commit.sh"
 
 # Show results
 echo -e "\n---Run git-cliff---"
