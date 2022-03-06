@@ -307,6 +307,22 @@ See the [repository](https://github.com/orhun/git-cliff-action) for other [examp
 
 Also, see the [continuous deployment workflow](./.github/workflows/cd.yml) of this project which sets the release notes for GitHub releases using this action.
 
+There is another option of GitHub Actions: [setup-git-cliff](https://github.com/kenji-miyake/setup-git-cliff).
+
+```yml
+- name: Check out repository
+  uses: actions/checkout@v2
+
+- name: Set up git-cliff
+  uses: kenji-miyake/setup-git-cliff@v1
+
+- name: Run git-cliff
+  run: |
+    git cliff
+```
+
+See a practical example [here](https://github.com/autowarefoundation/autoware-github-actions/blob/v1/generate-changelog/action.yaml).
+
 ## GitLab CI/CD
 
 It is possible to generate changelogs using [GitLab CI/CD](https://docs.gitlab.com/ee/ci/).
