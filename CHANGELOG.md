@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.1] - 2022-03-13
+
+### Bug Fixes
+
+- Do not skip all tags when `skip_tags` is empty (#63)
+- Use root commit when --latest and there is only one tag (#59)
+- Use the correct branch for codecov (#65)
+- Fix `keepachangelog` config example (#66)
+
+### Documentation
+
+- Add another option of GitHub Actions (#64)
+- Document timestamp format of `Release` struct (#67)
+
+### Miscellaneous Tasks
+
+- Upgrade regex dependency to fix CVE-2022-24713
+- Upgrade dependencies
+
 ## [0.6.0] - 2022-02-12
 
 ### Bug Fixes
