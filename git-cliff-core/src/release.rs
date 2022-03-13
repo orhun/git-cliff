@@ -11,7 +11,7 @@ pub struct Release<'a> {
 	/// Commit ID of the tag.
 	#[serde(rename = "commit_id")]
 	pub commit_id: Option<String>,
-	/// Timestamp of the release.
+	/// Timestamp of the release in seconds, from epoch.
 	pub timestamp: i64,
 	/// Previous release.
 	pub previous:  Option<Box<Release<'a>>>,
