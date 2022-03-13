@@ -28,7 +28,7 @@ pub enum Sort {
     about,
     global_setting = AppSettings::DeriveDisplayOrder,
     rename_all_env = "screaming-snake",
-    help_heading = Some("OPTIONS"),
+    next_help_heading = Some("OPTIONS"),
     override_usage = "git-cliff [FLAGS] [OPTIONS] [--] [RANGE]",
     mut_arg("help", |arg| arg.help("Prints help information").help_heading("FLAGS")),
     mut_arg("version", |arg| arg.help("Prints version information").help_heading("FLAGS"))

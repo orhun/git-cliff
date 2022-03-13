@@ -85,11 +85,11 @@ pub struct LinkParser {
 impl Config {
 	/// Parses the config file and returns the values.
 	pub fn parse(path: &Path) -> Result<Config> {
-		let mut config = config::Config::default();
-		config
-			.merge(config::File::from(path))?
-			.merge(config::Environment::with_prefix("CLIFF").separator("_"))?;
-		Ok(config.try_into()?)
+		Ok(config::Config::builder()
+			.add_source(config::File::from(path))
+			.add_source(config::Environment::with_prefix("CLIFF").separator("_"))
+			.build()?
+			.try_deserialize()?)
 	}
 }
 

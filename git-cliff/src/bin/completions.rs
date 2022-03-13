@@ -1,6 +1,6 @@
 use clap::{
 	ArgEnum,
-	IntoApp,
+	CommandFactory,
 };
 use clap_complete::Shell;
 use git_cliff::args::Opt;
@@ -12,7 +12,7 @@ use std::env;
 /// See <https://doc.rust-lang.org/cargo/reference/environment-variables.html>
 fn main() -> Result<(), std::io::Error> {
 	let out_dir = env::var("OUT_DIR").expect("OUT_DIR is not set");
-	let mut app = Opt::into_app();
+	let mut app = Opt::command();
 	for &shell in Shell::value_variants() {
 		clap_complete::generate_to(
 			shell,
