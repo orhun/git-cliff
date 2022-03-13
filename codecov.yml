@@ -8,6 +8,6 @@ coverage:
         target: auto
         threshold: 5%
         branches:
-          - master
+          - main
         if_ci_failed: error
     patch: off
