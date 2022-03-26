@@ -21,6 +21,7 @@ pretty_env_logger = "0.4.0"
 log = "0.4.14"
 dirs-next = "2.0.0"
 clap_complete = "3.1.1"
+update-informer = "0.5.0"
 
 [dependencies.git-cliff-core]
 version = "0.6.1" # managed by release.sh

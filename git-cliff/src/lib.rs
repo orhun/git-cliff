@@ -29,9 +29,27 @@ use std::fs::{
 	File,
 };
 use std::io;
+use update_informer::registry::Crates;
+use update_informer::Check;
+
+/// Checks for a new version on crates.io
+fn check_new_version() {
+	let pkg_name = env!("CARGO_PKG_NAME");
+	let pkg_version = env!("CARGO_PKG_VERSION");
+	let informer = update_informer::new(Crates, pkg_name, pkg_version);
+	if let Some(new_version) = informer.check_version().ok().flatten() {
+		log::info!(
+			"A new version of {pkg_name} is available: v{pkg_version} -> \
+			 {new_version}",
+		);
+	}
+}
 
 /// Runs `git-cliff`.
 pub fn run(mut args: Opt) -> Result<()> {
+	// Check if there is a new version available.
+	check_new_version();
+
 	// Create the configuration file if init flag is given.
 	if args.init {
 		info!("Saving the configuration file to {:?}", DEFAULT_CONFIG);
