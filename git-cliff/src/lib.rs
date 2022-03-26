@@ -277,7 +277,14 @@ pub fn run(mut args: Opt) -> Result<()> {
 	if let Some(path) = args.prepend {
 		changelog.prepend(fs::read_to_string(&path)?, &mut File::create(path)?)
 	} else if let Some(path) = args.output {
-		changelog.generate(&mut File::create(path)?)
+		let mut output = File::create(path)?;
+		if args.context {
+			changelog.write_context(&mut output)
+		} else {
+			changelog.generate(&mut output)
+		}
+	} else if args.context {
+		changelog.write_context(&mut io::stdout())
 	} else {
 		changelog.generate(&mut io::stdout())
 	}

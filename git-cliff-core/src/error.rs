@@ -44,6 +44,9 @@ pub enum Error {
 	/// Errors that may occur when deserializing types from TOML format.
 	#[error("Cannot parse TOML: `{0}`")]
 	DeserializeError(#[from] toml::de::Error),
+	/// Errors that may occur while de/serializing JSON format.
+	#[error("Cannot de/serialize JSON: `{0}`")]
+	JsonError(#[from] serde_json::Error),
 }
 
 /// Result type of the core library.

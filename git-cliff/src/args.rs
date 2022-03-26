@@ -94,6 +94,9 @@ pub struct Opt {
 	/// Sorts the tags chronologically.
 	#[clap(long, help_heading = Some("FLAGS"))]
 	pub date_order:   bool,
+	/// Prints changelog context as JSON.
+	#[clap(long, help_heading = Some("FLAGS"))]
+	pub context:      bool,
 	/// Strips the given parts from the changelog.
 	#[clap(short, long, value_name = "PART", arg_enum)]
 	pub strip:        Option<Strip>,

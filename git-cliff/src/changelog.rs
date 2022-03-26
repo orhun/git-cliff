@@ -4,7 +4,10 @@ use git_cliff_core::error::{
 	Error,
 	Result,
 };
-use git_cliff_core::release::Release;
+use git_cliff_core::release::{
+	Release,
+	Releases,
+};
 use git_cliff_core::template::Template;
 use std::io::Write;
 
@@ -151,6 +154,13 @@ impl<'a> Changelog<'a> {
 		}
 		self.generate(out)?;
 		write!(out, "{}", changelog)?;
+		Ok(())
+	}
+
+	/// Prints the changelog context to the given output.
+	pub fn write_context<W: Write>(&self, out: &mut W) -> Result<()> {
+		let output = Releases(&self.releases).as_json()?;
+		writeln!(out, "{output}")?;
 		Ok(())
 	}
 }

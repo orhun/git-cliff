@@ -1,4 +1,5 @@
 use crate::commit::Commit;
+use crate::error::Result;
 
 /// Representation of a release.
 #[derive(Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -15,4 +16,14 @@ pub struct Release<'a> {
 	pub timestamp: i64,
 	/// Previous release.
 	pub previous:  Option<Box<Release<'a>>>,
+}
+
+/// Representation of a list of releases.
+pub struct Releases<'a>(pub &'a Vec<Release<'a>>);
+
+impl<'a> Releases<'a> {
+	/// Returns the list of releases as JSON.
+	pub fn as_json(&self) -> Result<String> {
+		Ok(serde_json::to_string(self.0)?)
+	}
 }

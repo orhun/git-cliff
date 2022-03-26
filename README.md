@@ -146,6 +146,7 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
     --current       Processes the commits that belong to the current tag
 -u, --unreleased    Processes the commits that do not belong to a tag
     --date-order    Sorts the tags chronologically
+    --context       Prints changelog context as JSON
 -h, --help          Prints help information
 -V, --version       Prints version information
 ```
@@ -258,6 +259,16 @@ Save the changelog file to the specified file:
 
 ```sh
 git cliff --output CHANGELOG.md
+```
+
+Print the changelog [context](#context) as JSON:
+
+```sh
+# print context to stdout
+git cliff --context
+
+# save context to a file
+git cliff --context --output context.json
 ```
 
 Prepend new changes to an existing changelog file:
