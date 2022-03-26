@@ -110,7 +110,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 	if args.prepend.is_some() {
 		config.changelog.footer = None;
-		if !(args.unreleased || args.latest) {
+		if !(args.unreleased || args.latest || args.range.is_some()) {
 			return Err(Error::ArgumentError(String::from(
 				"'-u' or '-l' is not specified",
 			)));
