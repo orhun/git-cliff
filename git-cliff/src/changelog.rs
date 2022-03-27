@@ -1,9 +1,6 @@
 use git_cliff_core::commit::Commit;
 use git_cliff_core::config::Config;
-use git_cliff_core::error::{
-	Error,
-	Result,
-};
+use git_cliff_core::error::Result;
 use git_cliff_core::release::{
 	Release,
 	Releases,
@@ -28,11 +25,6 @@ impl<'a> Changelog<'a> {
 			.as_deref()
 			.unwrap_or_default()
 			.to_string();
-		if template.is_empty() {
-			return Err(Error::ChangelogError(String::from(
-				"changelog body cannot be empty",
-			)));
-		}
 		if config.changelog.trim.unwrap_or(true) {
 			template = template
 				.lines()

@@ -83,13 +83,15 @@ pub fn run(mut args: Opt) -> Result<()> {
 	let mut config = if path.exists() {
 		Config::parse(&path)?
 	} else {
-		warn!(
-			"{:?} is not found, using the default configuration.",
-			args.config
-		);
+		if !args.context {
+			warn!(
+				"{:?} is not found, using the default configuration.",
+				args.config
+			);
+		}
 		EmbeddedConfig::parse()?
 	};
-	if config.changelog.body.is_none() {
+	if config.changelog.body.is_none() && !args.context {
 		warn!("Changelog body is not specified, using the default template.");
 		config.changelog.body = EmbeddedConfig::parse()?.changelog.body;
 	}
