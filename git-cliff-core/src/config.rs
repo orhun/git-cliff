@@ -1,6 +1,15 @@
 use crate::error::Result;
-use regex::Regex;
+use regex::{
+	Regex,
+	RegexBuilder,
+};
+use std::ffi::OsStr;
+use std::fs;
 use std::path::Path;
+
+/// Regex for matching the metadata in Cargo.toml
+const CARGO_METADATA_REGEX: &str =
+	r"^\[(?:workspace|package)\.metadata\.git\-cliff\.";
 
 /// Configuration values.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -85,8 +94,20 @@ pub struct LinkParser {
 impl Config {
 	/// Parses the config file and returns the values.
 	pub fn parse(path: &Path) -> Result<Config> {
-		Ok(config::Config::builder()
-			.add_source(config::File::from(path))
+		let config_builder = if path.file_name() == Some(OsStr::new("Cargo.toml")) {
+			let contents = fs::read_to_string(&path)?;
+			let metadata_regex = RegexBuilder::new(CARGO_METADATA_REGEX)
+				.multi_line(true)
+				.build()?;
+			let contents = metadata_regex.replace_all(&contents, "[");
+			config::Config::builder().add_source(config::File::from_str(
+				&contents,
+				config::FileFormat::Toml,
+			))
+		} else {
+			config::Config::builder().add_source(config::File::from(path))
+		};
+		Ok(config_builder
 			.add_source(config::Environment::with_prefix("CLIFF").separator("_"))
 			.build()?
 			.try_deserialize()?)

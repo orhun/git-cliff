@@ -47,6 +47,9 @@ pub enum Error {
 	/// Errors that may occur while de/serializing JSON format.
 	#[error("Cannot de/serialize JSON: `{0}`")]
 	JsonError(#[from] serde_json::Error),
+	/// Errors that may occur during parsing or compiling a regular expression.
+	#[error("Cannot parse/compile regex: `{0}`")]
+	RegexError(#[from] regex::Error),
 }
 
 /// Result type of the core library.
