@@ -16,12 +16,15 @@ edition = "2021"
 name = "git-cliff-completions"
 path = "src/bin/completions.rs"
 
+[features]
+# check for new versions
+default = ["update-informer"]
+
 [dependencies]
 pretty_env_logger = "0.4.0"
 log = "0.4.14"
 dirs-next = "2.0.0"
 clap_complete = "3.1.1"
-update-informer = "0.5.0"
 
 [dependencies.git-cliff-core]
 version = "0.6.1" # managed by release.sh
@@ -30,6 +33,10 @@ path = "../git-cliff-core"
 [dependencies.clap]
 version = "3.1.6"
 features = ["derive", "env", "wrap_help"]
+
+[dependencies.update-informer]
+version = "0.5.0"
+optional = true
 
 [dev-dependencies]
 pretty_assertions = "1.1.0"
