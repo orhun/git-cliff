@@ -37,7 +37,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2022-03-22
+          toolchain: nightly
           override: true
       - name: Checkout
         if: github.event_name != 'pull_request'
@@ -68,7 +68,7 @@ jobs:
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2022-03-22
+          toolchain: nightly
           profile: minimal
           components: clippy
           override: true
@@ -87,7 +87,7 @@ jobs:
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2022-03-22
+          toolchain: nightly
           profile: minimal
           components: rustfmt
           override: true
