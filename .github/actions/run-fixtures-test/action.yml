@@ -17,7 +17,7 @@ runs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: nightly-2022-03-22
+        toolchain: nightly
         override: true
 
     - name: Install git-cliff
