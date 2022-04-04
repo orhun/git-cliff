@@ -39,42 +39,63 @@ pub struct Opt {
 	pub verbose:      u8,
 	/// Sets the configuration file.
 	#[clap(
-		short,
-		long,
-		env,
-		value_name = "PATH",
-		default_value = DEFAULT_CONFIG,
-	)]
+        short,
+        long,
+        env = "GIT_CLIFF_CONFIG",
+        value_name = "PATH",
+        default_value = DEFAULT_CONFIG,
+)]
 	pub config:       PathBuf,
 	/// Sets the working directory.
-	#[clap(short, long, env, value_name = "PATH")]
+	#[clap(short, long, env = "GIT_CLIFF_WORKDIR", value_name = "PATH")]
 	pub workdir:      Option<PathBuf>,
 	/// Sets the git repository.
-	#[clap(short, long, env, value_name = "PATH")]
+	#[clap(short, long, env = "GIT_CLIFF_REPOSITORY", value_name = "PATH")]
 	pub repository:   Option<PathBuf>,
 	/// Sets the path to include related commits.
-	#[clap(long, env, value_name = "PATTERN", multiple_values = true)]
+	#[clap(
+		long,
+		env = "GIT_CLIFF_INCLUDE_PATH",
+		value_name = "PATTERN",
+		multiple_values = true
+	)]
 	pub include_path: Option<Vec<Pattern>>,
 	/// Sets the path to exclude related commits.
-	#[clap(long, env, value_name = "PATTERN", multiple_values = true)]
+	#[clap(
+		long,
+		env = "GIT_CLIFF_EXCLUDE_PATH",
+		value_name = "PATTERN",
+		multiple_values = true
+	)]
 	pub exclude_path: Option<Vec<Pattern>>,
 	/// Sets custom commit messages to include in the changelog.
-	#[clap(long, env, value_name = "MSG", multiple_values = true)]
+	#[clap(
+		long,
+		env = "GIT_CLIFF_WITH_COMMIT",
+		value_name = "MSG",
+		multiple_values = true
+	)]
 	pub with_commit:  Option<Vec<String>>,
 	/// Prepends entries to the given changelog file.
-	#[clap(short, long, env, value_name = "PATH")]
+	#[clap(short, long, env = "GIT_CLIFF_PREPEND", value_name = "PATH")]
 	pub prepend:      Option<PathBuf>,
 	/// Writes output to the given file.
-	#[clap(short, long, env, value_name = "PATH")]
+	#[clap(short, long, env = "GIT_CLIFF_OUTPUT", value_name = "PATH")]
 	pub output:       Option<PathBuf>,
 	/// Sets the tag for the latest version.
-	#[clap(short, long, env, value_name = "TAG", allow_hyphen_values = true)]
+	#[clap(
+		short,
+		long,
+		env = "GIT_CLIFF_TAG",
+		value_name = "TAG",
+		allow_hyphen_values = true
+	)]
 	pub tag:          Option<String>,
 	/// Sets the template for the changelog body.
 	#[clap(
 		short,
 		long,
-		env = "TEMPLATE",
+		env = "GIT_CLIFF_TEMPLATE",
 		value_name = "TEMPLATE",
 		allow_hyphen_values = true
 	)]
