@@ -38,13 +38,7 @@ pub struct Opt {
 	#[clap(short, long, parse(from_occurrences), alias = "debug", help_heading = Some("FLAGS"))]
 	pub verbose:      u8,
 	/// Sets the configuration file.
-	#[clap(
-        short,
-        long,
-        env = "GIT_CLIFF_CONFIG",
-        value_name = "PATH",
-        default_value = DEFAULT_CONFIG,
-)]
+	#[clap(short, long, env = "GIT_CLIFF_CONFIG", value_name = "PATH", default_value = DEFAULT_CONFIG)]
 	pub config:       PathBuf,
 	/// Sets the working directory.
 	#[clap(short, long, env = "GIT_CLIFF_WORKDIR", value_name = "PATH")]
