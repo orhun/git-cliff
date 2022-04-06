@@ -504,15 +504,22 @@ An array of commit preprocessors for manipulating the commit messages before par
 Examples:
 
 - `{ pattern = "foo", replace = "bar"}`
-  - Replace text
+  - Replace text.
 - `{ pattern = 'Merged PR #[0-9]: (.*)', replace = "$1"}`
-  - Remove prefix
+  - Remove prefix.
 - `{ pattern = "  +", replace = " "}`
-  - Replace multiple spaces with a single space
+  - Replace multiple spaces with a single space.
 - `{ pattern = "\\(#([0-9]+)\\)", replace = "([#${1}](https://github.com/orhun/git-cliff/issues/${1}))"}`
-  - Replace the issue number with the link
-- `{ pattern = "https://github.com/.*/issues/([0-9]+)", replace = "[Issue #${1}]"}`
-  - Replace the issue link with the number
+  - Replace the issue number with the link.
+- `{ pattern = "https://github.com/[^ ]/issues/([0-9]+)", replace = "[Issue #${1}]"}`
+  - Replace the issue link with the number.
+- `{ pattern = "Merge pull request #([0-9]+) from [^ ]+", replace = "PR # [${1}](https://github.com/orhun/git-cliff/pull/${1}):"}`
+  - Hyperlink PR references from merge commits.
+- `{ pattern = "https://github.com/orhun/git-cliff/commit/([a-f0-9]{7})[a-f0-9]*", replace = "commit # [${1}](${0})"}`
+  - Hyperlink commit links, with short commit hash as description.
+- `{ pattern = "([ \\n])(([a-f0-9]{7})[a-f0-9]*)", replace = "${1}commit # [${3}](https://github.com/orhun/git-cliff/commit/${2})"}`
+  - Hyperlink bare commit hashes like "abcd1234" in commit logs, with short commit hash as description.
+
 
 #### commit_parsers
 
