@@ -63,7 +63,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 
 	// Set the working directory.
-	if let Some(workdir) = args.workdir {
+	if let Some(ref workdir) = args.workdir {
 		args.config = workdir.join(args.config);
 		args.repository = match args.repository {
 			Some(repository) => Some(workdir.join(repository)),
@@ -124,7 +124,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 	}
 	if args.body.is_some() {
-		config.changelog.body = args.body;
+		config.changelog.body = args.body.clone();
 	}
 	if args.sort == Sort::Oldest {
 		if let Some(ref sort_commits) = config.git.sort_commits {
@@ -140,7 +140,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 
 	// Initialize the git repository.
 	let repository =
-		Repository::init(args.repository.unwrap_or(env::current_dir()?))?;
+		Repository::init(args.repository.clone().unwrap_or(env::current_dir()?))?;
 
 	// Parse tags.
 	let mut tags = repository.tags(&config.git.tag_pattern, args.date_order)?;
@@ -172,6 +172,10 @@ pub fn run(mut args: Opt) -> Result<()> {
 			skip || !ignore
 		})
 		.collect();
+
+	// Print debug information about configuration and arguments.
+	log::trace!("{:#?}", args);
+	log::trace!("{:#?}", config);
 
 	// Parse commits.
 	let mut commit_range = args.range;
