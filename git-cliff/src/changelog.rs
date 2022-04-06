@@ -163,6 +163,7 @@ mod test {
 	use git_cliff_core::config::{
 		ChangelogConfig,
 		CommitParser,
+		CommitPreprocessor,
 		GitConfig,
 	};
 	use git_cliff_core::regex::Regex;
@@ -190,6 +191,10 @@ mod test {
 			git:       GitConfig {
 				conventional_commits:  Some(true),
 				filter_unconventional: Some(false),
+				commit_preprocessors:  Some(vec![CommitPreprocessor {
+					pattern: Regex::new("<preprocess>").unwrap(),
+					replace: String::from("this commit is preprocessed"),
+				}]),
 				commit_parsers:        Some(vec![
 					CommitParser {
 						message:       Regex::new("feat*").ok(),
@@ -255,6 +260,10 @@ mod test {
 				Commit::new(
 					String::from("0jkl12"),
 					String::from("chore(app): do nothing"),
+				),
+				Commit::new(
+					String::from("qwerty"),
+					String::from("chore: <preprocess>"),
 				),
 			],
 			commit_id: Some(String::from("0bc123")),
@@ -340,6 +349,7 @@ mod test {
 
 			#### other
 			- support unconventional commits
+			- this commit is preprocessed
 
 			#### ui
 			- make good stuff

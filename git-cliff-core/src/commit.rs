@@ -1,5 +1,6 @@
 use crate::config::{
 	CommitParser,
+	CommitPreprocessor,
 	GitConfig,
 	LinkParser,
 };
@@ -73,6 +74,9 @@ impl Commit<'_> {
 	/// * extacts links and generates URLs
 	pub fn process(&self, config: &GitConfig) -> Result<Self> {
 		let mut commit = self.clone();
+		if let Some(preprocessors) = &config.commit_preprocessors {
+			commit = commit.preprocess(preprocessors);
+		}
 		if config.conventional_commits.unwrap_or(true) {
 			if config.filter_unconventional.unwrap_or(true) {
 				commit = commit.into_conventional()?;
@@ -101,6 +105,21 @@ impl Commit<'_> {
 			}
 			Err(e) => Err(AppError::ParseError(e)),
 		}
+	}
+
+	/// Preprocesses the commit using [`CommitPreprocessor`]s.
+	///
+	/// Modifies the commit [`message`] using regex.
+	///
+	/// [`message`]: Commit::message
+	pub fn preprocess(mut self, preprocessors: &[CommitPreprocessor]) -> Self {
+		preprocessors.iter().for_each(|preprocessor| {
+			self.message = preprocessor
+				.pattern
+				.replace_all(&self.message, &preprocessor.replace)
+				.to_string();
+		});
+		self
 	}
 
 	/// Parses the commit using [`CommitParser`]s.

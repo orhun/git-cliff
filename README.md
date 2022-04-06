@@ -62,6 +62,7 @@
   - [git](#git)
     - [conventional_commits](#conventional_commits)
     - [filter_unconventional](#filter_unconventional)
+    - [commit_preprocessors](#commit_preprocessors)
     - [commit_parsers](#commit_parsers)
     - [filter_commits](#filter_commits)
     - [tag_pattern](#tag_pattern)
@@ -495,6 +496,23 @@ To include any type of commit in the changelog without parsing:
 conventional_commits = false
 filter_unconventional = false
 ```
+
+#### commit_preprocessors
+
+An array of commit preprocessors for manipulating the commit messages before parsing/grouping them. These regex-based preprocessors can be used for removing or selecting certain parts of the commit message/body to be used in the following processes.
+
+Examples:
+
+- `{ pattern = "foo", replace = "bar"}`
+  - Replace text
+- `{ pattern = 'Merged PR #[0-9]: (.*)', replace = "$1"}`
+  - Remove prefix
+- `{ pattern = "  +", replace = " "}`
+  - Replace multiple spaces with a single space
+- `{ pattern = "\\(#([0-9]+)\\)", replace = "([#${1}](https://github.com/orhun/git-cliff/issues/${1}))"}`
+  - Replace the issue number with the link
+- `{ pattern = "https://github.com/.*/issues/([0-9]+)", replace = "[Issue #${1}]"}`
+  - Replace the issue link with the number
 
 #### commit_parsers
 

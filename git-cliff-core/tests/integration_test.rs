@@ -2,6 +2,7 @@ use git_cliff_core::commit::Commit;
 use git_cliff_core::config::{
 	ChangelogConfig,
 	CommitParser,
+	CommitPreprocessor,
 	GitConfig,
 	LinkParser,
 };
@@ -39,6 +40,10 @@ fn generate_changelog() -> Result<()> {
 	let git_config = GitConfig {
 		conventional_commits:  Some(true),
 		filter_unconventional: Some(true),
+		commit_preprocessors:  Some(vec![CommitPreprocessor {
+			pattern: Regex::new(r#"\(fixes (#[1-9]+)\)"#).unwrap(),
+			replace: String::from("[closes Issue${1}]"),
+		}]),
 		commit_parsers:        Some(vec![
 			CommitParser {
 				message:       Regex::new("^feat").ok(),
@@ -105,6 +110,10 @@ fn generate_changelog() -> Result<()> {
 					String::from("hjkl12"),
 					String::from("chore: do boring stuff"),
 				),
+				Commit::new(
+					String::from("1234"),
+					String::from("fix: support preprocessing (fixes #99)"),
+				),
 			]
 			.iter()
 			.filter_map(|c| c.process(&git_config).ok())
@@ -155,6 +164,7 @@ fn generate_changelog() -> Result<()> {
 
 ### fix bugs
 - fix abc
+- support preprocessing [closes Issue#99]
 
 ### shiny features
 - add xyz

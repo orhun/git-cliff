@@ -42,6 +42,8 @@ pub struct GitConfig {
 	pub conventional_commits:  Option<bool>,
 	/// Whether to filter out unconventional commits.
 	pub filter_unconventional: Option<bool>,
+	/// Git commit preprocessors.
+	pub commit_preprocessors:  Option<Vec<CommitPreprocessor>>,
 	/// Git commit parsers.
 	pub commit_parsers:        Option<Vec<CommitParser>>,
 	/// Link parsers.
@@ -77,6 +79,16 @@ pub struct CommitParser {
 	pub default_scope: Option<String>,
 	/// Whether to skip this commit group.
 	pub skip:          Option<bool>,
+}
+
+/// Preprocessor for modifying commit messages.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct CommitPreprocessor {
+	/// Regex for matching a text to replace.
+	#[serde(with = "serde_regex")]
+	pub pattern: Regex,
+	/// Replacement text.
+	pub replace: String,
 }
 
 /// Parser for extracting links in commits.

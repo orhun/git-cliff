@@ -25,6 +25,7 @@ jobs:
             command: --latest --date-order
           - fixtures-name: test-latest-with-one-tag
             command: --latest
+          - fixtures-name: test-commit-preprocessors
     steps:
       - name: Checkout
         uses: actions/checkout@v2
