@@ -90,9 +90,10 @@ jobs:
       - name: Prepare release assets
         shell: bash
         run: |
-          mkdir -p release/completions/
+          mkdir -p release/{man,completions}
           cp {LICENSE,README.md,CHANGELOG.md} release/
           OUT_DIR=release/completions/ cargo run --release --bin git-cliff-completions
+          OUT_DIR=release/man/ cargo run --release --bin git-cliff-mangen
           if [ "${{ matrix.OS }}" = "windows-2019" ]; then
             cp target/${{ matrix.TARGET }}/release/git-cliff.exe release/
           else
