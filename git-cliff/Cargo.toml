@@ -16,6 +16,10 @@ edition = "2021"
 name = "git-cliff-completions"
 path = "src/bin/completions.rs"
 
+[[bin]]
+name = "git-cliff-mangen"
+path = "src/bin/mangen.rs"
+
 [features]
 # check for new versions
 default = ["update-informer"]
@@ -25,6 +29,7 @@ pretty_env_logger = "0.4.0"
 log = "0.4.14"
 dirs-next = "2.0.0"
 clap_complete = "3.1.1"
+clap_mangen = "0.1.2"
 
 [dependencies.git-cliff-core]
 version = "0.6.1" # managed by release.sh
