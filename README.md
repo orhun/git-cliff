@@ -310,7 +310,7 @@ Also, you can build the image yourself using `docker build -t git-cliff .` comma
 
 ### git-cliff-action
 
-It is possible to generate changelogs using [GitHub Actions](https://docs.github.com/en/actions) via [git-cliff-action](https://github.com/orhun/git-cliff-action).
+It is possible to generate changelogs using [GitHub Actions](https://github.com/features/actions) via [git-cliff-action](https://github.com/orhun/git-cliff-action).
 
 ```yml
 - name: Generate a changelog
