@@ -1411,7 +1411,7 @@ All notable changes to this project will be documented in this file.
 - [relnotes](https://crates.io/crates/relnotes) - A tool to automatically generate release notes for your project.
 - [cocogitto](https://github.com/oknozor/cocogitto) - A set of CLI tools for the conventional commit
 and semver specifications.
-- [@favware/cliff-jumper](https://github.com/favware/cliff-jumper) - A NodeJS CLI tool that combines git-cliff and
+- [cliff-jumper](https://github.com/favware/cliff-jumper) - A NodeJS CLI tool that combines git-cliff and
   [conventional-recommended-bump](https://github.com/conventional-changelog/conventional-changelog/tree/master/packages/conventional-recommended-bump)
   to semantically bump a NodeJS package and generate a git-cliff powered changelog.
 
