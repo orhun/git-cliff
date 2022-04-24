@@ -1404,7 +1404,7 @@ All notable changes to this project will be documented in this file.
 
 </details>
 
-## Similar Projects
+## Similar/Related Projects
 
 - [git-journal](https://github.com/saschagrunert/git-journal) - The Git Commit Message and Changelog Generation Framework
 - [clog-cli](https://github.com/clog-tool/clog-cli) - Generate beautiful changelogs from your Git commit history
