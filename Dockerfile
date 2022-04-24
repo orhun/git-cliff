@@ -17,7 +17,7 @@ RUN apt-get update && \
 COPY . .
 COPY --from=cacher /app/target target
 COPY --from=cacher $CARGO_HOME $CARGO_HOME
-RUN cargo build --release --locked
+RUN cargo build --release --locked --no-default-features
 RUN rm -f target/release/deps/git_cliff*
 
 FROM debian:buster-slim as runner
