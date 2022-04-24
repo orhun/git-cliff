@@ -1,14 +1,14 @@
-FROM lukemathwalker/cargo-chef:0.1.33-rust-1.58-slim-buster as planner
+FROM lukemathwalker/cargo-chef:0.1.35-rust-1.60-slim-buster as planner
 WORKDIR app
 COPY . .
 RUN cargo chef prepare --recipe-path recipe.json
 
-FROM lukemathwalker/cargo-chef:0.1.33-rust-1.58-slim-buster as cacher
+FROM lukemathwalker/cargo-chef:0.1.35-rust-1.60-slim-buster as cacher
 WORKDIR app
 COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 
-FROM rust:1.58-slim-buster as builder
+FROM rust:1.60.0-slim-buster as builder
 WORKDIR app
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
