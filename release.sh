@@ -10,14 +10,14 @@ if [ -n "$1" ]; then
 	git add -A && git commit -m "chore(release): prepare for $1"
 	git show
 	# generate a changelog for the tag message
-	export TEMPLATE="\
+	export GIT_CLIFF_TEMPLATE="\
 	{% for group, commits in commits | group_by(attribute=\"group\") %}
 	{{ group | upper_first }}\
 	{% for commit in commits %}
 		- {% if commit.breaking %}(breaking) {% endif %}{{ commit.message | upper_first }} ({{ commit.id | truncate(length=7, end=\"\") }})\
 	{% endfor %}
 	{% endfor %}"
-	changelog=$(cargo run -- --unreleased --strip all)
+	changelog=$(cargo run -- --config examples/detailed.toml --unreleased --strip all)
 	# create a signed tag
 	# https://keyserver.ubuntu.com/pks/lookup?search=0x4A92FA17B6619297&op=vindex
 	git -c user.name="git-cliff" \
