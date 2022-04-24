@@ -2,19 +2,66 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.0] - 2022-04-24
+
+### Bug Fixes
+
+- Pin the Rust nightly version
+- Pin the Rust nightly version
+- Allow custom commit range while prepending ([#68](https://github.com/orhun/git-cliff/issues/68))
+- Remove redundant logging while using `--context` ([#71](https://github.com/orhun/git-cliff/issues/71))
+- Update expected changelog date
+
+### Documentation
+
+- Add more regex examples for commit_preprocessors
+- Update GitHub Actions reference link in README.md
+- Add `cliff-jumper` to similar projects ([#83](https://github.com/orhun/git-cliff/issues/83))
+- Update the title of projects section
+
+### Features
+
+- Show a message if a newer version is available ([#69](https://github.com/orhun/git-cliff/issues/69))
+- Add `--context` flag for outputting context ([#71](https://github.com/orhun/git-cliff/issues/71))
+- Support placing configuration inside Cargo.toml ([#46](https://github.com/orhun/git-cliff/issues/46))
+- [**breaking**] Prefix environment variables with `GIT_CLIFF_` ([#76](https://github.com/orhun/git-cliff/issues/76))
+- Print more debug information when `-vv` is used ([#79](https://github.com/orhun/git-cliff/issues/79))
+- Support preprocessing commit messages using regex ([#62](https://github.com/orhun/git-cliff/issues/62))
+- Add man page generation script ([#35](https://github.com/orhun/git-cliff/issues/35))
+
+### Miscellaneous Tasks
+
+- Return to nightly builds ([#73](https://github.com/orhun/git-cliff/issues/73))
+- Include man page in the release assets
+- Upgrade git-conventional dependency ([#82](https://github.com/orhun/git-cliff/issues/82))
+- Upgrade versions in Dockerfile
+- Build Docker images for arm64
+- Disable default features for the Docker image
+- Strip the binaries in Docker image
+- Upgrade dependencies
+
+### Refactor
+
+- Make update-informer opt-out via feature flag ([#69](https://github.com/orhun/git-cliff/issues/69))
+- Use implicit Result type in completions script
+
+### Styling
+
+- Update the changelog template for tag message
+
 ## [0.6.1] - 2022-03-13
 
 ### Bug Fixes
 
-- Do not skip all tags when `skip_tags` is empty (#63)
-- Use root commit when --latest and there is only one tag (#59)
-- Use the correct branch for codecov (#65)
-- Fix `keepachangelog` config example (#66)
+- Do not skip all tags when `skip_tags` is empty ([#63](https://github.com/orhun/git-cliff/issues/63))
+- Use root commit when --latest and there is only one tag ([#59](https://github.com/orhun/git-cliff/issues/59))
+- Use the correct branch for codecov ([#65](https://github.com/orhun/git-cliff/issues/65))
+- Fix `keepachangelog` config example ([#66](https://github.com/orhun/git-cliff/issues/66))
 
 ### Documentation
 
-- Add another option of GitHub Actions (#64)
-- Document timestamp format of `Release` struct (#67)
+- Add another option of GitHub Actions ([#64](https://github.com/orhun/git-cliff/issues/64))
+- Document timestamp format of `Release` struct ([#67](https://github.com/orhun/git-cliff/issues/67))
 
 ### Miscellaneous Tasks
 
@@ -25,11 +72,11 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Fixes
 
-- Only drop previous releases if skipped (#44)
+- Only drop previous releases if skipped ([#44](https://github.com/orhun/git-cliff/issues/44))
 - Run clippy from nightly toolchain
 - Update tests about optional config values
-- Set the previous release when using `--unreleased` (#47)
-- Lower the priority of global configuration file (#51)
+- Set the previous release when using `--unreleased` ([#47](https://github.com/orhun/git-cliff/issues/47))
+- Lower the priority of global configuration file ([#51](https://github.com/orhun/git-cliff/issues/51))
 - Update the download link of latest grcov release
 - Use the correct tar command for extracting grcov archive
 - Update grcov download command
@@ -43,15 +90,15 @@ All notable changes to this project will be documented in this file.
 
 ### Features
 
-- Add `link_parsers` for parsing/extracting links (#42)
-- Make the `git` section optional (#45)
-- Make the `changelog` section optional (#45)
+- Add `link_parsers` for parsing/extracting links ([#42](https://github.com/orhun/git-cliff/issues/42))
+- Make the `git` section optional ([#45](https://github.com/orhun/git-cliff/issues/45))
+- Make the `changelog` section optional ([#45](https://github.com/orhun/git-cliff/issues/45))
 - [**breaking**] Use conventional commit body to check against commit parsers
-- [**breaking**] Replace --topo-order by --date-order (#58)
+- [**breaking**] Replace --topo-order by --date-order ([#58](https://github.com/orhun/git-cliff/issues/58))
 
 ### Miscellaneous Tasks
 
-- Update arg parsing to clap v3 (#49)
+- Update arg parsing to clap v3 ([#49](https://github.com/orhun/git-cliff/issues/49))
 - Upgrade dependencies
 - Bump the Rust version in Dockerfile
 - Run cargo-audit for checking vulnerabilities
@@ -61,19 +108,19 @@ All notable changes to this project will be documented in this file.
 
 - Apply clippy suggestions
 - [**breaking**] Change the default value of `trim` to `true`
-- Unify serde and serde_derive using derive feature (#57)
+- Unify serde and serde_derive using derive feature ([#57](https://github.com/orhun/git-cliff/issues/57))
 
 ### Styling
 
 - Update the styling
-- Comply with MD022 and fix minor typos (#61)
+- Comply with MD022 and fix minor typos ([#61](https://github.com/orhun/git-cliff/issues/61))
 
 ## [0.5.0] - 2021-12-15
 
 ### Bug Fixes
 
 - Update log test about exclude path
-- Override the sort related config if args are present (#39)
+- Override the sort related config if args are present ([#39](https://github.com/orhun/git-cliff/issues/39))
 - Checkout the repository before running fixtures
 - Use the defined configuration file for fixtures
 - Update the multi line docker command
@@ -86,13 +133,13 @@ All notable changes to this project will be documented in this file.
 
 ### Features
 
-- Add `--topo-order` flag for sorting tags (#29)
-- Support specifying the sorting methods in config (#31)
+- Add `--topo-order` flag for sorting tags ([#29](https://github.com/orhun/git-cliff/issues/29))
+- Support specifying the sorting methods in config ([#31](https://github.com/orhun/git-cliff/issues/31))
 - Accept glob patterns for `--commit-path` argument
 - Support multiple values for `--commit-path` argument
 - Add `--exclude-path` argument for excluding related commits
-- Add `--current` flag for processing the current tag (#37)
-- Add `ignore_tags` option (#40)
+- Add `--current` flag for processing the current tag ([#37](https://github.com/orhun/git-cliff/issues/37))
+- Add `ignore_tags` option ([#40](https://github.com/orhun/git-cliff/issues/40))
 - Use more explanatory error messages about templates
 - Support having both conventional and unconventional commits in the changelog
 - Add `--with-commit` argument for including custom commit messages in changelog
@@ -121,11 +168,11 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Fixes
 
-- Add support for special characters in scopes (#26)
+- Add support for special characters in scopes ([#26](https://github.com/orhun/git-cliff/issues/26))
 
 ### Documentation
 
-- Add GitLab CI/CD section to README.md (#24)
+- Add GitLab CI/CD section to README.md ([#24](https://github.com/orhun/git-cliff/issues/24))
 - Update GitLab CI/CD section
 
 ### Miscellaneous Tasks
@@ -146,19 +193,19 @@ All notable changes to this project will be documented in this file.
 
 - Update lychee arguments to skip checking files
 - Remove tags from the base image names
-- Remove only the leading "v" from tags (#18)
+- Remove only the leading "v" from tags ([#18](https://github.com/orhun/git-cliff/issues/18))
 
 ### Documentation
 
-- Add scope-sorted example (#16)
+- Add scope-sorted example ([#16](https://github.com/orhun/git-cliff/issues/16))
 - Add raw/rendered output for scoped-sorted example
 - Add packaging status badge to installation section
-- Mention the signing key for binary releases (#17)
+- Mention the signing key for binary releases ([#17](https://github.com/orhun/git-cliff/issues/17))
 - Add "build from source" section to README.md
 
 ### Features
 
-- Add `--sort` argument for sorting commits (#15)
+- Add `--sort` argument for sorting commits ([#15](https://github.com/orhun/git-cliff/issues/15))
 
 ### Miscellaneous Tasks
 
@@ -181,7 +228,7 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Fixes
 
-- Fix default regexes and references in docs (#7)
+- Fix default regexes and references in docs ([#7](https://github.com/orhun/git-cliff/issues/7))
 
 ### Documentation
 
@@ -192,8 +239,8 @@ All notable changes to this project will be documented in this file.
 
 ### Features
 
-- Support parsing the missing scopes with `default_scope` (#8)
-- Support generating a changelog scoped to a directory (#11)
+- Support parsing the missing scopes with `default_scope` ([#8](https://github.com/orhun/git-cliff/issues/8))
+- Support generating a changelog scoped to a directory ([#11](https://github.com/orhun/git-cliff/issues/11))
 
 ### Miscellaneous Tasks
 
@@ -211,7 +258,7 @@ All notable changes to this project will be documented in this file.
 
 ### Miscellaneous Tasks
 
-- Bump `git-conventional` to `0.10.1` (fixes #6)
+- Bump `git-conventional` to `0.10.1` ([#6](https://github.com/orhun/git-cliff/issues/6))
 - Bump dependencies
 - Bump cargo-chef version in Dockerfile
 
@@ -224,7 +271,7 @@ All notable changes to this project will be documented in this file.
 
 ### Features
 
-- Add `breaking_description` to the template context (#4)
+- Add `breaking_description` to the template context ([#4](https://github.com/orhun/git-cliff/issues/4))
 
 ### Miscellaneous Tasks
 
@@ -268,7 +315,7 @@ All notable changes to this project will be documented in this file.
 
 - Embed the default configuration file into the binary
 - Add `--init` flag for creating the default config
-- Support a global location for configuration file (#2)
+- Support a global location for configuration file ([#2](https://github.com/orhun/git-cliff/issues/2))
 
 ### Miscellaneous Tasks
 
@@ -297,7 +344,7 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Fixes
 
-- Set the previous release when using `--latest` (#3)
+- Set the previous release when using `--latest` ([#3](https://github.com/orhun/git-cliff/issues/3))
 
 ### Documentation
 

@@ -1,6 +1,6 @@
 [package]
 name = "git-cliff"
-version = "0.6.1" # managed by release.sh
+version = "0.7.0" # managed by release.sh
 description = "A highly customizable changelog generator ⛰️"
 authors = ["git-cliff contributors <git-cliff@protonmail.com>"]
 license = "GPL-3.0"
@@ -32,7 +32,7 @@ clap_complete = "3.1.2"
 clap_mangen = "0.1.6"
 
 [dependencies.git-cliff-core]
-version = "0.6.1" # managed by release.sh
+version = "0.7.0" # managed by release.sh
 path = "../git-cliff-core"
 
 [dependencies.clap]
