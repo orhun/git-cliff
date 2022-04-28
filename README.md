@@ -197,6 +197,7 @@ git cliff
 Set a tag for the "unreleased" changes:
 
 ```sh
+# it doesn't have to be an existing tag
 git cliff --tag 1.0.0
 ```
 
