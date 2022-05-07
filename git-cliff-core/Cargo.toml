@@ -8,6 +8,7 @@ homepage = "https://github.com/orhun/git-cliff"
 repository = "https://github.com/orhun/git-cliff"
 keywords = ["changelog", "generator", "conventional", "commit"]
 edition = "2021"
+rust-version = "1.58.1"
 
 [dependencies]
 thiserror = "1.0.30"

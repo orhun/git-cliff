@@ -109,6 +109,8 @@
 cargo install git-cliff
 ```
 
+Minimum supported Rust version is `1.58.1`.
+
 ### Using pacman
 
 If you are using Arch Linux, **git-cliff** can be installed from the [community repository](https://archlinux.org/packages/community/x86_64/git-cliff/):
