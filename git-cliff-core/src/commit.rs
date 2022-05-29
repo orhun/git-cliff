@@ -36,7 +36,7 @@ pub struct Commit<'a> {
 }
 
 /// Object representing a link
-#[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Link {
 	/// Text of the link.
