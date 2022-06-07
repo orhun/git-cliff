@@ -86,9 +86,11 @@ pub struct CommitParser {
 pub struct CommitPreprocessor {
 	/// Regex for matching a text to replace.
 	#[serde(with = "serde_regex")]
-	pub pattern: Regex,
+	pub pattern:         Regex,
 	/// Replacement text.
-	pub replace: String,
+	pub replace:         Option<String>,
+	/// Command that will be run for replacing the commit message.
+	pub replace_command: Option<String>,
 }
 
 /// Parser for extracting links in commits.

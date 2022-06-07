@@ -6,6 +6,8 @@ pub use glob;
 /// Export `regex` crate.
 pub use regex;
 
+/// Command runner.
+pub mod command;
 /// Git commit.
 pub mod commit;
 /// Config file parser.

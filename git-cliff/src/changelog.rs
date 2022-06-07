@@ -192,8 +192,11 @@ mod test {
 				conventional_commits:  Some(true),
 				filter_unconventional: Some(false),
 				commit_preprocessors:  Some(vec![CommitPreprocessor {
-					pattern: Regex::new("<preprocess>").unwrap(),
-					replace: String::from("this commit is preprocessed"),
+					pattern:         Regex::new("<preprocess>").unwrap(),
+					replace:         Some(String::from(
+						"this commit is preprocessed",
+					)),
+					replace_command: None,
 				}]),
 				commit_parsers:        Some(vec![
 					CommitParser {

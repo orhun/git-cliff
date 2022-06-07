@@ -1,3 +1,4 @@
+use crate::command;
 use crate::config::{
 	CommitParser,
 	CommitPreprocessor,
@@ -75,7 +76,7 @@ impl Commit<'_> {
 	pub fn process(&self, config: &GitConfig) -> Result<Self> {
 		let mut commit = self.clone();
 		if let Some(preprocessors) = &config.commit_preprocessors {
-			commit = commit.preprocess(preprocessors);
+			commit = commit.preprocess(preprocessors)?;
 		}
 		if config.conventional_commits.unwrap_or(true) {
 			if config.filter_unconventional.unwrap_or(true) {
@@ -109,17 +110,31 @@ impl Commit<'_> {
 
 	/// Preprocesses the commit using [`CommitPreprocessor`]s.
 	///
-	/// Modifies the commit [`message`] using regex.
+	/// Modifies the commit [`message`] using regex or custom OS command.
 	///
 	/// [`message`]: Commit::message
-	pub fn preprocess(mut self, preprocessors: &[CommitPreprocessor]) -> Self {
-		preprocessors.iter().for_each(|preprocessor| {
-			self.message = preprocessor
-				.pattern
-				.replace_all(&self.message, &preprocessor.replace)
-				.to_string();
-		});
-		self
+	pub fn preprocess(
+		mut self,
+		preprocessors: &[CommitPreprocessor],
+	) -> Result<Self> {
+		preprocessors.iter().try_for_each(|preprocessor| {
+			if let Some(text) = &preprocessor.replace {
+				self.message = preprocessor
+					.pattern
+					.replace_all(&self.message, text)
+					.to_string();
+			} else if let Some(command) = &preprocessor.replace_command {
+				if preprocessor.pattern.is_match(&self.message) {
+					self.message = command::run(
+						command,
+						Some(self.message.to_string()),
+						vec![("COMMIT_SHA", &self.id)],
+					)?;
+				}
+			}
+			Ok::<(), AppError>(())
+		})?;
+		Ok(self)
 	}
 
 	/// Parses the commit using [`CommitParser`]s.

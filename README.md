@@ -523,6 +523,19 @@ Examples:
 - `{ pattern = "([ \\n])(([a-f0-9]{7})[a-f0-9]*)", replace = "${1}commit # [${3}](https://github.com/orhun/git-cliff/commit/${2})"}`
   - Hyperlink bare commit hashes like "abcd1234" in commit logs, with short commit hash as description.
 
+Custom OS commands can also be used for modifying the commit messages:
+
+- `{ pattern = "foo", replace_command = "pandoc -t commonmark"}`
+
+This is useful when you want to filter/encode messages using external commands. In the example above, [pandoc](https://pandoc.org/) is used to convert each commit message that matches the given `pattern` to the [CommonMark](https://commonmark.org/) format.
+
+A more fun example would be reversing the each commit message:
+
+- `{ pattern = '.*', replace_command = 'rev | xargs echo "reversed: $@"' }`
+
+`$COMMIT_SHA` environment variable is set during execution of the command so you can do fancier things like reading the commit itself:
+
+- `{ pattern = '.*', replace_command = 'git show -s --format=%B $COMMIT_SHA' }`
 
 #### commit_parsers
 
