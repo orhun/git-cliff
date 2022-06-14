@@ -51,6 +51,7 @@ fn generate_changelog() -> Result<()> {
 				body:          None,
 				group:         Some(String::from("shiny features")),
 				default_scope: None,
+				scope:		   None,
 				skip:          None,
 			},
 			CommitParser {
@@ -58,6 +59,7 @@ fn generate_changelog() -> Result<()> {
 				body:          None,
 				group:         Some(String::from("fix bugs")),
 				default_scope: None,
+				scope:		   None,
 				skip:          None,
 			},
 		]),

@@ -204,6 +204,7 @@ mod test {
 						body:          None,
 						group:         Some(String::from("New features")),
 						default_scope: Some(String::from("other")),
+						scope:         None,
 						skip:          None,
 					},
 					CommitParser {
@@ -211,6 +212,7 @@ mod test {
 						body:          None,
 						group:         Some(String::from("Bug Fixes")),
 						default_scope: None,
+						scope:		   None,
 						skip:          None,
 					},
 					CommitParser {
@@ -218,6 +220,7 @@ mod test {
 						body:          None,
 						group:         None,
 						default_scope: None,
+						scope:         None,
 						skip:          Some(true),
 					},
 					CommitParser {
@@ -225,6 +228,7 @@ mod test {
 						body:          None,
 						group:         Some(String::from("Other")),
 						default_scope: Some(String::from("other")),
+						scope:         None,
 						skip:          None,
 					},
 				]),

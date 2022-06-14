@@ -75,8 +75,10 @@ pub struct CommitParser {
 	pub body:          Option<Regex>,
 	/// Group of the commit.
 	pub group:         Option<String>,
-	/// Scope of the commit.
+	/// Default scope of the commit.
 	pub default_scope: Option<String>,
+	/// scope of the commit for overriding default one
+	pub scope: Option<String>,
 	/// Whether to skip this commit group.
 	pub skip:          Option<bool>,
 }
