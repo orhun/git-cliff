@@ -22,20 +22,21 @@ use serde::ser::{
 #[serde(rename_all = "camelCase")]
 pub struct Commit<'a> {
 	/// Commit ID.
-	pub id:      String,
+	pub id:            String,
 	/// Commit message including title, description and summary.
-	pub message: String,
+	pub message:       String,
 	/// Conventional commit.
 	#[serde(skip_deserializing)]
-	pub conv:    Option<ConventionalCommit<'a>>,
+	pub conv:          Option<ConventionalCommit<'a>>,
 	/// Commit group based on a commit parser or its conventional type.
-	pub group:   Option<String>,
-	/// Default commit scope based on(inherited from) conventional type or a commit parser.
-	pub default_scope:   Option<String>,
+	pub group:         Option<String>,
+	/// Default commit scope based on(inherited from) conventional type or a
+	/// commit parser.
+	pub default_scope: Option<String>,
 	/// commit scope for overriding default one
-	pub scope: Option<String>,
+	pub scope:         Option<String>,
 	/// A list of links found in the commit
-	pub links:   Vec<Link>,
+	pub links:         Vec<Link>,
 }
 
 /// Object representing a link
@@ -240,13 +241,23 @@ impl Serialize for Commit<'_> {
 				commit.serialize_field("breaking", &conv.breaking())?;
 				commit.serialize_field(
 					"scope",
-					&self.scope.as_deref().or_else(|| conv.scope().map(|v| v.as_str())).or_else(|| self.default_scope.as_deref())
+					&self
+						.scope
+						.as_deref()
+						.or_else(|| conv.scope().map(|v| v.as_str()))
+						.or(self.default_scope.as_deref()),
 				)?;
 			}
 			None => {
 				commit.serialize_field("message", &self.message)?;
 				commit.serialize_field("group", &self.group)?;
-				commit.serialize_field("scope", &self.scope.as_deref().or_else(|| self.default_scope.as_deref()))?;
+				commit.serialize_field(
+					"scope",
+					&self
+						.scope
+						.as_deref()
+						.or(self.default_scope.as_deref()),
+				)?;
 			}
 		}
 		commit.serialize_field("links", &self.links)?;
@@ -286,7 +297,7 @@ mod test {
 					body:          None,
 					group:         Some(String::from("test_group")),
 					default_scope: Some(String::from("test_scope")),
-					scope: 		   None,
+					scope:         None,
 					skip:          None,
 				}],
 				false,

@@ -212,7 +212,7 @@ mod test {
 						body:          None,
 						group:         Some(String::from("Bug Fixes")),
 						default_scope: None,
-						scope:		   None,
+						scope:         None,
 						skip:          None,
 					},
 					CommitParser {
