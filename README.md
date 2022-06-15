@@ -553,7 +553,8 @@ Examples:
   - Skip processing the commit if the commit message (description) starts with "revert".
 - `{ message = "^doc", group = "Documentation", default_scope = "other"},`
   - If the commit starts with "doc", group the commit as "Documentation" and set the default scope to "other". (e.g. `docs: xyz` will be processed as `docs(other): xyz`)
-
+- `{ message = "(www)", scope = "Application"}`
+  - If the commit contains "(www)", override the scope with "Application". Scoping order is: scope specification, conventional commit's scope and default scope.
 #### filter_commits
 
 If set to `true`, commits that are not matched by [commit parsers](#commit_parsers) are filtered out.
