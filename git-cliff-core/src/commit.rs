@@ -30,10 +30,10 @@ pub struct Commit<'a> {
 	pub conv:          Option<ConventionalCommit<'a>>,
 	/// Commit group based on a commit parser or its conventional type.
 	pub group:         Option<String>,
-	/// Default commit scope based on(inherited from) conventional type or a
+	/// Default commit scope based on (inherited from) conventional type or a
 	/// commit parser.
 	pub default_scope: Option<String>,
-	/// commit scope for overriding default one
+	/// Commit scope for overriding the default one.
 	pub scope:         Option<String>,
 	/// A list of links found in the commit
 	pub links:         Vec<Link>,
