@@ -253,10 +253,7 @@ impl Serialize for Commit<'_> {
 				commit.serialize_field("group", &self.group)?;
 				commit.serialize_field(
 					"scope",
-					&self
-						.scope
-						.as_deref()
-						.or(self.default_scope.as_deref()),
+					&self.scope.as_deref().or(self.default_scope.as_deref()),
 				)?;
 			}
 		}
