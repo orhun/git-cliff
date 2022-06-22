@@ -62,6 +62,14 @@ fn generate_changelog() -> Result<()> {
 				scope:         None,
 				skip:          None,
 			},
+			CommitParser {
+				message:       Regex::new("^test").ok(),
+				body:          None,
+				group:         None,
+				default_scope: None,
+				scope:         Some(String::from("tests")),
+				skip:          None,
+			},
 		]),
 		filter_commits:        Some(true),
 		tag_pattern:           None,
@@ -112,6 +120,10 @@ fn generate_changelog() -> Result<()> {
 				Commit::new(
 					String::from("hjkl12"),
 					String::from("chore: do boring stuff"),
+				),
+				Commit::new(
+					String::from("hjkl13"),
+					String::from("test(x): test some stuff"),
 				),
 				Commit::new(
 					String::from("1234"),
@@ -175,6 +187,9 @@ fn generate_changelog() -> Result<()> {
 - *(random-scope)* add random feature ([#123](https://github.com/123) [NixOS/nixpkgs/issues/136814](https://github.com/NixOS/nixpkgs/issues/136814) )
 - *(big-feature)* this is a breaking change
   - **BREAKING**: this is a breaking change
+
+### test
+- *(tests)* test some stuff
 
 ## Release v1.0.0
 
