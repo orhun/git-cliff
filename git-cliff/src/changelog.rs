@@ -204,6 +204,7 @@ mod test {
 						body:          None,
 						group:         Some(String::from("New features")),
 						default_scope: Some(String::from("other")),
+						scope:         None,
 						skip:          None,
 					},
 					CommitParser {
@@ -211,6 +212,7 @@ mod test {
 						body:          None,
 						group:         Some(String::from("Bug Fixes")),
 						default_scope: None,
+						scope:         None,
 						skip:          None,
 					},
 					CommitParser {
@@ -218,13 +220,23 @@ mod test {
 						body:          None,
 						group:         None,
 						default_scope: None,
+						scope:         None,
 						skip:          Some(true),
+					},
+					CommitParser {
+						message:       Regex::new("doc:").ok(),
+						body:          None,
+						group:         Some(String::from("Documentation")),
+						default_scope: None,
+						scope:         Some(String::from("documentation")),
+						skip:          None,
 					},
 					CommitParser {
 						message:       Regex::new(".*").ok(),
 						body:          None,
 						group:         Some(String::from("Other")),
 						default_scope: Some(String::from("other")),
+						scope:         None,
 						skip:          None,
 					},
 				]),
@@ -259,6 +271,10 @@ mod test {
 				Commit::new(
 					String::from("0w3rty"),
 					String::from("fix(ui): fix more stuff"),
+				),
+				Commit::new(
+					String::from("qw3rty"),
+					String::from("doc: update docs"),
 				),
 				Commit::new(
 					String::from("0jkl12"),
@@ -338,6 +354,10 @@ mod test {
 			### Bug Fixes
 			#### ui
 			- fix more stuff
+
+			### Documentation
+			#### documentation
+			- update docs
 
 			### New features
 			#### app

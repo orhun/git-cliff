@@ -22,18 +22,21 @@ use serde::ser::{
 #[serde(rename_all = "camelCase")]
 pub struct Commit<'a> {
 	/// Commit ID.
-	pub id:      String,
+	pub id:            String,
 	/// Commit message including title, description and summary.
-	pub message: String,
+	pub message:       String,
 	/// Conventional commit.
 	#[serde(skip_deserializing)]
-	pub conv:    Option<ConventionalCommit<'a>>,
+	pub conv:          Option<ConventionalCommit<'a>>,
 	/// Commit group based on a commit parser or its conventional type.
-	pub group:   Option<String>,
-	/// Commit scope based on conventional type or a commit parser.
-	pub scope:   Option<String>,
+	pub group:         Option<String>,
+	/// Default commit scope based on (inherited from) conventional type or a
+	/// commit parser.
+	pub default_scope: Option<String>,
+	/// Commit scope for overriding the default one.
+	pub scope:         Option<String>,
 	/// A list of links found in the commit
-	pub links:   Vec<Link>,
+	pub links:         Vec<Link>,
 }
 
 /// Object representing a link
@@ -63,6 +66,7 @@ impl Commit<'_> {
 			message,
 			conv: None,
 			group: None,
+			default_scope: None,
 			scope: None,
 			links: vec![],
 		}
@@ -159,7 +163,8 @@ impl Commit<'_> {
 				if regex.is_match(&text) {
 					if parser.skip != Some(true) {
 						self.group = parser.group.as_ref().cloned();
-						self.scope = parser.default_scope.as_ref().cloned();
+						self.scope = parser.scope.as_ref().cloned();
+						self.default_scope = parser.default_scope.as_ref().cloned();
 						return Ok(self);
 					} else {
 						return Err(AppError::GroupError(String::from(
@@ -236,13 +241,20 @@ impl Serialize for Commit<'_> {
 				commit.serialize_field("breaking", &conv.breaking())?;
 				commit.serialize_field(
 					"scope",
-					&conv.scope().map(|v| v.as_str()).or(self.scope.as_deref()),
+					&self
+						.scope
+						.as_deref()
+						.or_else(|| conv.scope().map(|v| v.as_str()))
+						.or(self.default_scope.as_deref()),
 				)?;
 			}
 			None => {
 				commit.serialize_field("message", &self.message)?;
 				commit.serialize_field("group", &self.group)?;
-				commit.serialize_field("scope", &self.scope)?;
+				commit.serialize_field(
+					"scope",
+					&self.scope.as_deref().or(self.default_scope.as_deref()),
+				)?;
 			}
 		}
 		commit.serialize_field("links", &self.links)?;
@@ -282,13 +294,14 @@ mod test {
 					body:          None,
 					group:         Some(String::from("test_group")),
 					default_scope: Some(String::from("test_scope")),
+					scope:         None,
 					skip:          None,
 				}],
 				false,
 			)
 			.unwrap();
 		assert_eq!(Some(String::from("test_group")), commit.group);
-		assert_eq!(Some(String::from("test_scope")), commit.scope);
+		assert_eq!(Some(String::from("test_scope")), commit.default_scope);
 	}
 
 	#[test]
