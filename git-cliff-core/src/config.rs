@@ -77,7 +77,7 @@ pub struct CommitParser {
 	pub group:         Option<String>,
 	/// Default scope of the commit.
 	pub default_scope: Option<String>,
-	/// scope of the commit for overriding default one
+	/// Commit scope for overriding the default scope.
 	pub scope:         Option<String>,
 	/// Whether to skip this commit group.
 	pub skip:          Option<bool>,
