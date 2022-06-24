@@ -49,6 +49,24 @@ pub struct Link {
 	pub href: String,
 }
 
+/// A conventional commit footer.
+#[derive(Debug, Clone, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
+struct Footer<'a> {
+	/// Token of the footer.
+	///
+	/// This is the part of the footer preceding the separator. For example, for
+	/// the `Signed-off-by: <user.name>` footer, this would be `Signed-off-by`.
+	token:     &'a str,
+	/// The separator between the footer token and its value.
+	///
+	/// This is typically either `:` or `#`.
+	separator: &'a str,
+	/// The value of the footer.
+	value:     &'a str,
+	/// A flag to signal that the footer describes a breaking change.
+	breaking:  bool,
+}
+
 impl<'a> From<&GitCommit<'a>> for Commit<'a> {
 	fn from(commit: &GitCommit<'a>) -> Self {
 		Self::new(
@@ -208,6 +226,16 @@ impl Commit<'_> {
 		}
 		Ok(self)
 	}
+
+	/// Returns an iterator over this commit's [`Footer`]s, if this is a
+	/// conventional commit.
+	///
+	/// If this commit is not conventional, the returned iterator will be empty.
+	fn footers(&self) -> impl Iterator<Item = Footer<'_>> {
+		self.conv
+			.iter()
+			.flat_map(|conv| conv.footers().iter().map(Footer::from))
+	}
 }
 
 impl Serialize for Commit<'_> {
@@ -215,21 +243,28 @@ impl Serialize for Commit<'_> {
 	where
 		S: Serializer,
 	{
+		/// A wrapper to serialize commit footers from an iterator using
+		/// `Serializer::collect_seq` without having to
+		struct SerializeFooters<'a>(&'a Commit<'a>);
+		impl Serialize for SerializeFooters<'_> {
+			fn serialize<S>(
+				&self,
+				serializer: S,
+			) -> std::result::Result<S::Ok, S::Error>
+			where
+				S: Serializer,
+			{
+				serializer.collect_seq(self.0.footers())
+			}
+		}
+
 		let mut commit = serializer.serialize_struct("Commit", 9)?;
 		commit.serialize_field("id", &self.id)?;
 		match &self.conv {
 			Some(conv) => {
 				commit.serialize_field("message", conv.description())?;
 				commit.serialize_field("body", &conv.body())?;
-				commit.serialize_field(
-					"footers",
-					&conv
-						.footers()
-						.to_vec()
-						.iter()
-						.map(|f| f.value())
-						.collect::<Vec<&str>>(),
-				)?;
+				commit.serialize_field("footers", &SerializeFooters(self))?;
 				commit.serialize_field(
 					"group",
 					self.group.as_ref().unwrap_or(&conv.type_().to_string()),
@@ -260,6 +295,17 @@ impl Serialize for Commit<'_> {
 		commit.serialize_field("links", &self.links)?;
 		commit.serialize_field("conventional", &self.conv.is_some())?;
 		commit.end()
+	}
+}
+
+impl<'a> From<&'a git_conventional::Footer<'a>> for Footer<'a> {
+	fn from(footer: &'a git_conventional::Footer<'a>) -> Self {
+		Self {
+			token:     footer.token().as_str(),
+			separator: footer.separator().as_str(),
+			value:     footer.value(),
+			breaking:  footer.breaking(),
+		}
 	}
 }
 
@@ -302,6 +348,58 @@ mod test {
 			.unwrap();
 		assert_eq!(Some(String::from("test_group")), commit.group);
 		assert_eq!(Some(String::from("test_scope")), commit.default_scope);
+	}
+
+	#[test]
+	fn conventional_footers() {
+		let cfg = crate::config::GitConfig {
+			conventional_commits: Some(true),
+			..Default::default()
+		};
+		let test_cases = vec![
+			(
+				Commit::new(
+					String::from("123123"),
+					String::from(
+						"test(commit): add test\n\nSigned-off-by: Test User \
+						 <test@example.com>",
+					),
+				),
+				vec![Footer {
+					token:     "Signed-off-by",
+					separator: ":",
+					value:     "Test User <test@example.com>",
+					breaking:  false,
+				}],
+			),
+			(
+				Commit::new(
+					String::from("123124"),
+					String::from(
+						"fix(commit): break stuff\n\nBREAKING CHANGE: This commit \
+						 breaks stuff\nSigned-off-by: Test User <test@example.com>",
+					),
+				),
+				vec![
+					Footer {
+						token:     "BREAKING CHANGE",
+						separator: ":",
+						value:     "This commit breaks stuff",
+						breaking:  true,
+					},
+					Footer {
+						token:     "Signed-off-by",
+						separator: ":",
+						value:     "Test User <test@example.com>",
+						breaking:  false,
+					},
+				],
+			),
+		];
+		for (commit, footers) in &test_cases {
+			let commit = commit.process(&cfg).expect("commit should process");
+			assert_eq!(&commit.footers().collect::<Vec<_>>(), footers);
+		}
 	}
 
 	#[test]
