@@ -669,7 +669,14 @@ following context is generated to use for templating:
       "scope": "[scope]",
       "message": "<description>",
       "body": "[body]",
-      "footers": ["[footer]", "[footer]"],
+      "footers": [
+        {
+          "token": "<name of the footer, such as 'Signed-off-by'>",
+          "separator": "<the separator between the token and value, such as ':'>",
+          "value": "<the value following the separator",
+          "breaking": false
+        }
+      ],
       "breaking_description": "<description>",
       "breaking": false,
       "conventional": true,
@@ -683,6 +690,31 @@ following context is generated to use for templating:
   }
 }
 ```
+
+##### Footers
+
+A conventional commit's body may end with any number of structured key-value
+pairs known as [_footers_]. These consist of a string token naming the footer, a
+separator (which is either `: ` or ` #`), and a value, similar to [the git
+trailers convention][trailers]. For example:
+
+- `Signed-off-by: User Name <user.email@example.com>`
+- `Reviewed-by: User Name <user.email@example.com>`
+- `Fixes #1234`
+- `BREAKING CHANGE: breaking change description`
+
+When a conventional commit contains footers, the footers are passed to the
+template in a `footers` array in the commit object. Each footer is represented
+by an object with the following fields:
+
+- `"token"`, the name of the footer (preceeding the separator character)
+- `separator`, the footer's separator string (either `: ` or ` #`)
+- `value`, the value following the separator character
+- `breaking`, which is `true` if this is a `BREAKING CHANGE:` footer, and
+  `false` otherwise
+
+[_footers_]: https://www.conventionalcommits.org/en/v1.0.0/#specification
+[trailers]: https://git-scm.com/docs/git-interpret-trailers)
 
 ##### Breaking Changes
 
@@ -701,6 +733,9 @@ BREAKING CHANGE: this is a breaking change
 ```
 
 `breaking_description` is set to the explanation of the breaking change. This description is expected to be present in the `BREAKING CHANGE` footer. However, if it's not provided, the `message` is expected to describe the breaking change.
+
+If the `BREAKING CHANGE:` footer is present, the footer will also be included in
+`commit.footers`.
 
 #### Non-Conventional Commits
 
