@@ -67,6 +67,17 @@ struct Footer<'a> {
 	breaking:  bool,
 }
 
+impl<'a> From<&'a git_conventional::Footer<'a>> for Footer<'a> {
+	fn from(footer: &'a git_conventional::Footer<'a>) -> Self {
+		Self {
+			token:     footer.token().as_str(),
+			separator: footer.separator().as_str(),
+			value:     footer.value(),
+			breaking:  footer.breaking(),
+		}
+	}
+}
+
 impl<'a> From<&GitCommit<'a>> for Commit<'a> {
 	fn from(commit: &GitCommit<'a>) -> Self {
 		Self::new(
@@ -244,7 +255,8 @@ impl Serialize for Commit<'_> {
 		S: Serializer,
 	{
 		/// A wrapper to serialize commit footers from an iterator using
-		/// `Serializer::collect_seq` without having to
+		/// `Serializer::collect_seq` without having to allocate in order to
+		/// `collect` the footers  into a new to `Vec`.
 		struct SerializeFooters<'a>(&'a Commit<'a>);
 		impl Serialize for SerializeFooters<'_> {
 			fn serialize<S>(
@@ -295,17 +307,6 @@ impl Serialize for Commit<'_> {
 		commit.serialize_field("links", &self.links)?;
 		commit.serialize_field("conventional", &self.conv.is_some())?;
 		commit.end()
-	}
-}
-
-impl<'a> From<&'a git_conventional::Footer<'a>> for Footer<'a> {
-	fn from(footer: &'a git_conventional::Footer<'a>) -> Self {
-		Self {
-			token:     footer.token().as_str(),
-			separator: footer.separator().as_str(),
-			value:     footer.value(),
-			breaking:  footer.breaking(),
-		}
 	}
 }
 
