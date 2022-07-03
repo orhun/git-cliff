@@ -56,37 +56,33 @@ impl Repository {
 			.filter_map(|id| self.inner.find_commit(id).ok())
 			.collect();
 		if include_path.is_some() || exclude_path.is_some() {
-			commits = commits
-				.into_iter()
-				.filter(|commit| {
-					if let Ok(prev_commit) = commit.parent(0) {
-						if let Ok(diff) = self.inner.diff_tree_to_tree(
-							commit.tree().ok().as_ref(),
-							prev_commit.tree().ok().as_ref(),
-							None,
-						) {
-							return diff
-								.deltas()
-								.filter_map(|delta| delta.new_file().path())
-								.any(|new_file_path| {
-									if let Some(include_path) = &include_path {
-										include_path.iter().any(|glob| {
-											glob.matches_path(new_file_path)
-										})
-									} else if let Some(exclude_path) = &exclude_path
-									{
-										!exclude_path.iter().any(|glob| {
-											glob.matches_path(new_file_path)
-										})
-									} else {
-										false
-									}
-								});
-						}
+			commits.retain(|commit| {
+				if let Ok(prev_commit) = commit.parent(0) {
+					if let Ok(diff) = self.inner.diff_tree_to_tree(
+						commit.tree().ok().as_ref(),
+						prev_commit.tree().ok().as_ref(),
+						None,
+					) {
+						return diff
+							.deltas()
+							.filter_map(|delta| delta.new_file().path())
+							.any(|new_file_path| {
+								if let Some(include_path) = &include_path {
+									include_path
+										.iter()
+										.any(|glob| glob.matches_path(new_file_path))
+								} else if let Some(exclude_path) = &exclude_path {
+									!exclude_path
+										.iter()
+										.any(|glob| glob.matches_path(new_file_path))
+								} else {
+									false
+								}
+							});
 					}
-					false
-				})
-				.collect()
+				}
+				false
+			});
 		}
 		Ok(commits)
 	}
