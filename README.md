@@ -581,7 +581,7 @@ While `skip_tags` drop commits from the changelog, `ignore_tags` include ignored
 
 #### date_order
 
-If set to `true`, tags are processed in topological order instead of chronological.
+If set to `true`, tags are processed in chronological order instead of topological.
 
 This can also be achieved by using the `--date-order` command line flag.
 
