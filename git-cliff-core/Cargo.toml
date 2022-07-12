@@ -11,18 +11,18 @@ edition = "2021"
 rust-version = "1.58.1"
 
 [dependencies]
-thiserror = "1.0.30"
-serde = { version = "1.0.136", features = ["derive"] }
-serde_json = "1.0.78"
+thiserror = "1.0.31"
+serde = { version = "1.0.139", features = ["derive"] }
+serde_json = "1.0.82"
 tera = "1.16.0"
-regex = "1.5.5"
+regex = "1.6.0"
 serde_regex = "1.1.0"
-indexmap = "1.8.1"
+indexmap = "1.9.1"
 toml = "0.5.9"
 glob = "0.3.0"
 
 [dependencies.git2]
-version = "0.14.2"
+version = "0.14.4"
 default-features = false
 
 [dependencies.config]
