@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.1] - 2022-07-12
+
+### Bug Fixes
+
+- Set fail-fast strategy to false
+
+### Miscellaneous Tasks
+
+- Update windows runners to windows-2022
+
 ## [0.8.0] - 2022-07-12
 
 ### Bug Fixes
