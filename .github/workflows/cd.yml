@@ -40,6 +40,7 @@ jobs:
     needs: generate-changelog
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         build: [linux-gnu, linux-musl, win-gnu, win-msvc, win32-msvc, macos]
         include:
