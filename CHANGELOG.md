@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.0] - 2022-07-12
+
+### Bug Fixes
+
+- Update lychee arguments to skip checking protonmail
+
+### Documentation
+
+- Clarify that `--tag` argument can be an unexisting tag
+- Switch chronological and topological ([#99](https://github.com/orhun/git-cliff/issues/99))
+
+### Features
+
+- Support external commands for commit preprocessors ([#86](https://github.com/orhun/git-cliff/issues/86))
+- Support changing commit scope with `commit_parsers` ([#94](https://github.com/orhun/git-cliff/issues/94))
+- [**breaking**] Pass footer token and separator to template ([#97](https://github.com/orhun/git-cliff/issues/97))
+
+### Miscellaneous Tasks
+
+- Set MSRV to 1.58.1 ([#87](https://github.com/orhun/git-cliff/issues/87))
+- Update tera to 1.16.0 ([#70](https://github.com/orhun/git-cliff/issues/70))
+- Disable building arm64 docker images temporarily
+- Upgrade dependencies
+
+### Refactor
+
+- Apply clippy suggestions
+- Apply clippy suggestions
+
 ## [0.7.0] - 2022-04-24
 
 ### Bug Fixes
