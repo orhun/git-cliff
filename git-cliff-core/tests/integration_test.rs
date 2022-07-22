@@ -40,6 +40,7 @@ fn generate_changelog() -> Result<()> {
 	let git_config = GitConfig {
 		conventional_commits:  Some(true),
 		filter_unconventional: Some(true),
+		split_commits:         Some(false),
 		commit_preprocessors:  Some(vec![CommitPreprocessor {
 			pattern:         Regex::new(r#"\(fixes (#[1-9]+)\)"#).unwrap(),
 			replace:         Some(String::from("[closes Issue${1}]")),

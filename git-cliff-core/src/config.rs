@@ -42,6 +42,9 @@ pub struct GitConfig {
 	pub conventional_commits:  Option<bool>,
 	/// Whether to filter out unconventional commits.
 	pub filter_unconventional: Option<bool>,
+	/// Whether to split commits by line, processing each line as an individual commit.
+	pub split_commits: Option<bool>,
+
 	/// Git commit preprocessors.
 	pub commit_preprocessors:  Option<Vec<CommitPreprocessor>>,
 	/// Git commit parsers.
