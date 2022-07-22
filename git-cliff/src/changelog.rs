@@ -50,6 +50,18 @@ impl<'a> Changelog<'a> {
 			release.commits = release
 				.commits
 				.iter()
+				.cloned()
+				.flat_map(|commit| {
+					if self.config.git.split_commits.unwrap_or(true) {
+						commit.message.lines().map(|line| {
+							let mut c = commit.clone();
+							c.message = line.to_string();
+							c
+						}).collect()
+					} else {
+						vec![commit]
+					}
+				})
 				.filter_map(|commit| match commit.process(&self.config.git) {
 					Ok(commit) => Some(commit),
 					Err(e) => {
@@ -190,7 +202,8 @@ mod test {
 			},
 			git:       GitConfig {
 				conventional_commits:  Some(true),
-				filter_unconventional: Some(false),
+				filter_unconventional: Some(true),
+				split_commits: 		   Some(false),
 				commit_preprocessors:  Some(vec![CommitPreprocessor {
 					pattern:         Regex::new("<preprocess>").unwrap(),
 					replace:         Some(String::from(
@@ -255,6 +268,226 @@ mod test {
 				Commit::new(
 					String::from("0bc123"),
 					String::from("feat(app): add cool features"),
+				),
+				Commit::new(
+					String::from("000000"),
+					String::from("support unconventional commits"),
+				),
+				Commit::new(
+					String::from("0bc123"),
+					String::from("feat: support unscoped commits"),
+				),
+				Commit::new(
+					String::from("0werty"),
+					String::from("style(ui): make good stuff"),
+				),
+				Commit::new(
+					String::from("0w3rty"),
+					String::from("fix(ui): fix more stuff"),
+				),
+				Commit::new(
+					String::from("qw3rty"),
+					String::from("doc: update docs"),
+				),
+				Commit::new(
+					String::from("0jkl12"),
+					String::from("chore(app): do nothing"),
+				),
+				Commit::new(
+					String::from("qwerty"),
+					String::from("chore: <preprocess>"),
+				),
+			],
+			commit_id: Some(String::from("0bc123")),
+			timestamp: 50000000,
+			previous:  None,
+		};
+		let releases = vec![
+			test_release.clone(),
+			Release {
+				version: Some(String::from("v3.0.0")),
+				commits: vec![Commit::new(
+					String::from("n0thin"),
+					String::from("feat(xyz): skip commit"),
+				)],
+				..Release::default()
+			},
+			Release {
+				version:   None,
+				commits:   vec![
+					Commit::new(
+						String::from("abc123"),
+						String::from("feat(app): add xyz"),
+					),
+					Commit::new(
+						String::from("abc124"),
+						String::from("docs(app): document zyx"),
+					),
+					Commit::new(String::from("def789"), String::from("merge #4")),
+					Commit::new(
+						String::from("qwerty"),
+						String::from("fix(app): fix abc"),
+					),
+					Commit::new(
+						String::from("hjkl12"),
+						String::from("chore(ui): do boring stuff"),
+					),
+				],
+				commit_id: None,
+				timestamp: 1000,
+				previous:  Some(Box::new(test_release)),
+			},
+		];
+		let changelog = Changelog::new(releases, &config)?;
+		let mut out = Vec::new();
+		changelog.generate(&mut out)?;
+		assert_eq!(
+			String::from(
+				r#"# Changelog
+			## Unreleased
+
+			### Bug Fixes
+			#### app
+			- fix abc
+
+			### New features
+			#### app
+			- add xyz
+
+			### Other
+			#### app
+			- document zyx
+
+			#### ui
+			- do boring stuff
+
+			## Release [v1.0.0] - 1971-08-02
+			(0bc123)
+
+			### Bug Fixes
+			#### ui
+			- fix more stuff
+
+			### Documentation
+			#### documentation
+			- update docs
+
+			### New features
+			#### app
+			- add cool features
+			- even more feature
+			- feature #3
+
+			#### other
+			- support unscoped commits
+
+			### Other
+			#### app
+			- do nothing
+
+			#### other
+			- this commit is preprocessed
+
+			#### ui
+			- make good stuff
+			------------"#
+			)
+			.replace("			", ""),
+			str::from_utf8(&out).unwrap()
+		);
+		Ok(())
+	}
+
+	#[test]
+	fn changelog_generator_split_commits() -> Result<()> {
+		let config = Config {
+			changelog: ChangelogConfig {
+				header: Some(String::from("# Changelog")),
+				body:   Some(String::from(
+					r#"{% if version %}
+				## Release [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+				({{ commit_id }}){% else %}
+				## Unreleased{% endif %}
+				{% for group, commits in commits | group_by(attribute="group") %}
+				### {{ group }}{% for group, commits in commits | group_by(attribute="scope") %}
+				#### {{ group }}{% for commit in commits %}
+				- {{ commit.message }}{% endfor %}
+				{% endfor %}{% endfor %}"#,
+				)),
+				footer: Some(String::from("------------")),
+				trim:   Some(true),
+			},
+			git:       GitConfig {
+				conventional_commits:  Some(true),
+				filter_unconventional: Some(true),
+				split_commits: 		   Some(true),
+				commit_preprocessors:  Some(vec![CommitPreprocessor {
+					pattern:         Regex::new("<preprocess>").unwrap(),
+					replace:         Some(String::from(
+						"this commit is preprocessed",
+					)),
+					replace_command: None,
+				}]),
+				commit_parsers:        Some(vec![
+					CommitParser {
+						message:       Regex::new("feat*").ok(),
+						body:          None,
+						group:         Some(String::from("New features")),
+						default_scope: Some(String::from("other")),
+						scope:         None,
+						skip:          None,
+					},
+					CommitParser {
+						message:       Regex::new("fix*").ok(),
+						body:          None,
+						group:         Some(String::from("Bug Fixes")),
+						default_scope: None,
+						scope:         None,
+						skip:          None,
+					},
+					CommitParser {
+						message:       Regex::new("merge*").ok(),
+						body:          None,
+						group:         None,
+						default_scope: None,
+						scope:         None,
+						skip:          Some(true),
+					},
+					CommitParser {
+						message:       Regex::new("doc:").ok(),
+						body:          None,
+						group:         Some(String::from("Documentation")),
+						default_scope: None,
+						scope:         Some(String::from("documentation")),
+						skip:          None,
+					},
+					CommitParser {
+						message:       Regex::new(".*").ok(),
+						body:          None,
+						group:         Some(String::from("Other")),
+						default_scope: Some(String::from("other")),
+						scope:         None,
+						skip:          None,
+					},
+				]),
+				filter_commits:        Some(false),
+				tag_pattern:           None,
+				skip_tags:             Regex::new("v3.*").ok(),
+				ignore_tags:           None,
+				date_order:            Some(false),
+				sort_commits:          Some(String::from("oldest")),
+				link_parsers:          None,
+			},
+		};
+		let test_release = Release {
+			version:   Some(String::from("v1.0.0")),
+			commits:   vec![
+				Commit::new(
+					String::from("0bc123"),
+					String::from("feat(app): add cool features
+feat(app): even more features
+feat(app): feature #3
+"),
 				),
 				Commit::new(
 					String::from("000000"),
