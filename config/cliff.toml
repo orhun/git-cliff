@@ -33,7 +33,7 @@ footer = """
 conventional_commits = true
 # filter out the commits that are not conventional
 filter_unconventional = true
-# processing each line of a commit as an individual commit
+# process each line of a commit as an individual commit
 split_commits = false
 # regex for preprocessing the commit messages
 commit_preprocessors = [
