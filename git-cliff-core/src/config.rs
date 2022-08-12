@@ -42,29 +42,30 @@ pub struct GitConfig {
 	pub conventional_commits:  Option<bool>,
 	/// Whether to filter out unconventional commits.
 	pub filter_unconventional: Option<bool>,
-	/// Whether to split commits by line, processing each line as an individual commit.
-	pub split_commits: Option<bool>,
+	/// Whether to split commits by line, processing each line as an individual
+	/// commit.
+	pub split_commits:         Option<bool>,
 
 	/// Git commit preprocessors.
-	pub commit_preprocessors:  Option<Vec<CommitPreprocessor>>,
+	pub commit_preprocessors: Option<Vec<CommitPreprocessor>>,
 	/// Git commit parsers.
-	pub commit_parsers:        Option<Vec<CommitParser>>,
+	pub commit_parsers:       Option<Vec<CommitParser>>,
 	/// Link parsers.
-	pub link_parsers:          Option<Vec<LinkParser>>,
+	pub link_parsers:         Option<Vec<LinkParser>>,
 	/// Whether to filter out commits.
-	pub filter_commits:        Option<bool>,
+	pub filter_commits:       Option<bool>,
 	/// Blob pattern for git tags.
-	pub tag_pattern:           Option<String>,
+	pub tag_pattern:          Option<String>,
 	#[serde(with = "serde_regex", default)]
 	/// Regex to skip matched tags.
-	pub skip_tags:             Option<Regex>,
+	pub skip_tags:            Option<Regex>,
 	#[serde(with = "serde_regex", default)]
 	/// Regex to ignore matched tags.
-	pub ignore_tags:           Option<Regex>,
+	pub ignore_tags:          Option<Regex>,
 	/// Whether to sort tags chronologically.
-	pub date_order:            Option<bool>,
+	pub date_order:           Option<bool>,
 	/// Sorting of the commits inside sections.
-	pub sort_commits:          Option<String>,
+	pub sort_commits:         Option<String>,
 }
 
 /// Parser for grouping commits.

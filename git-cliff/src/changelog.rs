@@ -53,11 +53,15 @@ impl<'a> Changelog<'a> {
 				.cloned()
 				.flat_map(|commit| {
 					if self.config.git.split_commits.unwrap_or(true) {
-						commit.message.lines().map(|line| {
-							let mut c = commit.clone();
-							c.message = line.to_string();
-							c
-						}).collect()
+						commit
+							.message
+							.lines()
+							.map(|line| {
+								let mut c = commit.clone();
+								c.message = line.to_string();
+								c
+							})
+							.collect()
 					} else {
 						vec![commit]
 					}
@@ -203,7 +207,7 @@ mod test {
 			git:       GitConfig {
 				conventional_commits:  Some(true),
 				filter_unconventional: Some(true),
-				split_commits: 		   Some(false),
+				split_commits:         Some(false),
 				commit_preprocessors:  Some(vec![CommitPreprocessor {
 					pattern:         Regex::new("<preprocess>").unwrap(),
 					replace:         Some(String::from(
@@ -420,7 +424,7 @@ mod test {
 			git:       GitConfig {
 				conventional_commits:  Some(true),
 				filter_unconventional: Some(true),
-				split_commits: 		   Some(true),
+				split_commits:         Some(true),
 				commit_preprocessors:  Some(vec![CommitPreprocessor {
 					pattern:         Regex::new("<preprocess>").unwrap(),
 					replace:         Some(String::from(
@@ -484,10 +488,12 @@ mod test {
 			commits:   vec![
 				Commit::new(
 					String::from("0bc123"),
-					String::from("feat(app): add cool features
+					String::from(
+						"feat(app): add cool features
 feat(app): even more features
 feat(app): feature #3
-"),
+",
+					),
 				),
 				Commit::new(
 					String::from("000000"),
