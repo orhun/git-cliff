@@ -52,7 +52,7 @@ impl<'a> Changelog<'a> {
 				.iter()
 				.cloned()
 				.flat_map(|commit| {
-					if self.config.git.split_commits.unwrap_or(true) {
+					if self.config.git.split_commits.unwrap_or(false) {
 						commit
 							.message
 							.lines()
