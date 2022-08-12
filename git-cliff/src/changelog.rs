@@ -50,6 +50,22 @@ impl<'a> Changelog<'a> {
 			release.commits = release
 				.commits
 				.iter()
+				.cloned()
+				.flat_map(|commit| {
+					if self.config.git.split_commits.unwrap_or(false) {
+						commit
+							.message
+							.lines()
+							.map(|line| {
+								let mut c = commit.clone();
+								c.message = line.to_string();
+								c
+							})
+							.collect()
+					} else {
+						vec![commit]
+					}
+				})
 				.filter_map(|commit| match commit.process(&self.config.git) {
 					Ok(commit) => Some(commit),
 					Err(e) => {
@@ -169,8 +185,8 @@ mod test {
 	use git_cliff_core::regex::Regex;
 	use pretty_assertions::assert_eq;
 	use std::str;
-	#[test]
-	fn changelog_generator() -> Result<()> {
+
+	fn get_test_data() -> (Config, Vec<Release<'static>>) {
 		let config = Config {
 			changelog: ChangelogConfig {
 				header: Some(String::from("# Changelog")),
@@ -191,6 +207,7 @@ mod test {
 			git:       GitConfig {
 				conventional_commits:  Some(true),
 				filter_unconventional: Some(false),
+				split_commits:         Some(false),
 				commit_preprocessors:  Some(vec![CommitPreprocessor {
 					pattern:         Regex::new("<preprocess>").unwrap(),
 					replace:         Some(String::from(
@@ -208,7 +225,7 @@ mod test {
 						skip:          None,
 					},
 					CommitParser {
-						message:       Regex::new("fix*").ok(),
+						message:       Regex::new("^fix*").ok(),
 						body:          None,
 						group:         Some(String::from("Bug Fixes")),
 						default_scope: None,
@@ -325,6 +342,12 @@ mod test {
 				previous:  Some(Box::new(test_release)),
 			},
 		];
+		(config, releases)
+	}
+
+	#[test]
+	fn changelog_generator() -> Result<()> {
+		let (config, releases) = get_test_data();
 		let changelog = Changelog::new(releases, &config)?;
 		let mut out = Vec::new();
 		changelog.generate(&mut out)?;
@@ -373,6 +396,110 @@ mod test {
 			#### other
 			- support unconventional commits
 			- this commit is preprocessed
+
+			#### ui
+			- make good stuff
+			------------"#
+			)
+			.replace("			", ""),
+			str::from_utf8(&out).unwrap()
+		);
+		Ok(())
+	}
+
+	#[test]
+	fn changelog_generator_split_commits() -> Result<()> {
+		let (mut config, mut releases) = get_test_data();
+		config.git.split_commits = Some(true);
+		config.git.filter_unconventional = Some(false);
+		releases[0].commits.push(Commit::new(
+			String::from("0bc123"),
+			String::from(
+				"feat(app): add some more cool features
+feat(app): even more features
+feat(app): feature #3
+",
+			),
+		));
+		releases[0].commits.push(Commit::new(
+			String::from("003934"),
+			String::from(
+				"feat: add awesome stuff
+fix(backend): fix awesome stuff
+style: make awesome stuff look better
+",
+			),
+		));
+		releases[2].commits.push(Commit::new(
+			String::from("123abc"),
+			String::from(
+				"chore(deps): bump some deps
+chore(deps): bump some more deps
+chore(deps): fix broken deps
+",
+			),
+		));
+		let changelog = Changelog::new(releases, &config)?;
+		let mut out = Vec::new();
+		changelog.generate(&mut out)?;
+		assert_eq!(
+			String::from(
+				r#"# Changelog
+			## Unreleased
+
+			### Bug Fixes
+			#### app
+			- fix abc
+
+			### New features
+			#### app
+			- add xyz
+
+			### Other
+			#### app
+			- document zyx
+
+			#### deps
+			- bump some deps
+			- bump some more deps
+			- fix broken deps
+
+			#### ui
+			- do boring stuff
+
+			## Release [v1.0.0] - 1971-08-02
+			(0bc123)
+
+			### Bug Fixes
+			#### backend
+			- fix awesome stuff
+
+			#### ui
+			- fix more stuff
+
+			### Documentation
+			#### documentation
+			- update docs
+
+			### New features
+			#### app
+			- add cool features
+			- add some more cool features
+			- even more features
+			- feature #3
+
+			#### other
+			- support unscoped commits
+			- add awesome stuff
+
+			### Other
+			#### app
+			- do nothing
+
+			#### other
+			- support unconventional commits
+			- this commit is preprocessed
+			- make awesome stuff look better
 
 			#### ui
 			- make good stuff

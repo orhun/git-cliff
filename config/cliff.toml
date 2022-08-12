@@ -33,6 +33,8 @@ footer = """
 conventional_commits = true
 # filter out the commits that are not conventional
 filter_unconventional = true
+# process each line of a commit as an individual commit
+split_commits = false
 # regex for preprocessing the commit messages
 commit_preprocessors = [
     { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](https://github.com/orhun/git-cliff/issues/${2}))"},

@@ -62,6 +62,7 @@
   - [git](#git)
     - [conventional_commits](#conventional_commits)
     - [filter_unconventional](#filter_unconventional)
+    - [split_commits](#split_commits)
     - [commit_preprocessors](#commit_preprocessors)
     - [commit_parsers](#commit_parsers)
     - [filter_commits](#filter_commits)
@@ -76,6 +77,7 @@
 - [Templating](#templating)
   - [Context](#context)
     - [Conventional Commits](#conventional-commits)
+      - [Footers](#footers)
       - [Breaking Changes](#breaking-changes)
     - [Non-Conventional Commits](#non-conventional-commits)
   - [Syntax](#syntax)
@@ -86,7 +88,7 @@
     - [Scoped (Sorted)](#scoped-sorted)
     - [Keep a Changelog](#keep-a-changelog)
     - [Unconventional](#unconventional)
-- [Similar Projects](#similar-projects)
+- [Similar/Related Projects](#similarrelated-projects)
 - [License](#license)
 - [Copyright](#copyright)
 
@@ -432,6 +434,7 @@ This section contains the parsing and git related configuration options.
 [git]
 conventional_commits = true
 filter_unconventional = true
+split_commits = false
 commit_parsers = [
     { message = "^feat", group = "Features"},
     { message = "^fix", group = "Bug Fixes"},
@@ -499,6 +502,27 @@ To include any type of commit in the changelog without parsing:
 conventional_commits = false
 filter_unconventional = false
 ```
+
+#### split_commits
+
+> This flag violates "conventional commits". It should remain off by default if conventional commits is to be respected.
+
+If set to `true`, each line of a commit is processed individually, as if it were its own commit message. This may cause
+a commit to appear multiple times in a changelog, once for each match.
+
+```toml
+conventional_commits = true
+filter_unconventional = true
+split_commits = true
+commit_parsers = [
+    { message = "^feat", group = "Features"},
+]
+```
+
+With the configuration above, lines are parsed as conventional commits and unconventional lines are omitted.
+
+If `filter_unconventional = false`, every line will be processes as an unconventional commit, resulting in each line of
+a commit being treated as a changelog entry.
 
 #### commit_preprocessors
 
