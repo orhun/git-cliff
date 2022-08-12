@@ -505,6 +505,8 @@ filter_unconventional = false
 
 #### split_commits
 
+> This flag violates "conventional commits". It should remain off by default if conventional commits is to be respected.
+
 If set to `true`, each line of a commit is processed individually, as if it were its own commit message. This may cause
 a commit to appear multiple times in a changelog, once for each match.
 
