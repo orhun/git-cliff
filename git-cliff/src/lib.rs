@@ -261,10 +261,8 @@ pub fn run(mut args: Opt) -> Result<()> {
 	// Add custom commit messages to the latest release.
 	if let Some(custom_commits) = args.with_commit {
 		if let Some(latest_release) = releases.iter_mut().last() {
-			custom_commits.iter().for_each(|commit_message| {
-				latest_release
-					.commits
-					.push(Commit::new(String::new(), commit_message.to_string()))
+			custom_commits.into_iter().for_each(|message| {
+				latest_release.commits.push(Commit::from(message))
 			});
 		}
 	}

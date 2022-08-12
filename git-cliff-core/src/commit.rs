@@ -11,11 +11,20 @@ use crate::error::{
 };
 use git2::Commit as GitCommit;
 use git_conventional::Commit as ConventionalCommit;
+use lazy_regex::{
+	lazy_regex,
+	Lazy,
+	Regex,
+};
 use serde::ser::{
 	Serialize,
 	SerializeStruct,
 	Serializer,
 };
+
+/// Regular expression for matching SHA1 and a following commit message
+/// separated by a whitespace.
+static SHA1_REGEX: Lazy<Regex> = lazy_regex!(r#"^\b([a-f0-9]{40})\b (.*)$"#);
 
 /// Common commit object that is parsed from a repository.
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
@@ -75,6 +84,20 @@ impl<'a> From<&'a git_conventional::Footer<'a>> for Footer<'a> {
 			value:     footer.value(),
 			breaking:  footer.breaking(),
 		}
+	}
+}
+
+impl<'a> From<String> for Commit<'a> {
+	fn from(s: String) -> Self {
+		if let Some(captures) = SHA1_REGEX.captures(&s) {
+			if let (Some(id), Some(message)) = (
+				captures.get(1).map(|v| v.as_str()),
+				captures.get(2).map(|v| v.as_str()),
+			) {
+				return Commit::new(id.to_string(), message.to_string());
+			}
+		}
+		Commit::new(String::new(), s)
 	}
 }
 
@@ -453,5 +476,38 @@ mod test {
 			commit.links
 		);
 		Ok(())
+	}
+
+	#[test]
+	fn parse_commit() {
+		assert_eq!(
+			Commit::new(String::new(), String::from("test: no sha1 given")),
+			Commit::from(String::from("test: no sha1 given"))
+		);
+		assert_eq!(
+			Commit::new(
+				String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
+				String::from("feat: do something")
+			),
+			Commit::from(String::from(
+				"8f55e69eba6e6ce811ace32bd84cc82215673cb6 feat: do something"
+			))
+		);
+		assert_eq!(
+			Commit::new(
+				String::from("3bdd0e690c4cd5bd00e5201cc8ef3ce3fb235853"),
+				String::from("chore: do something")
+			),
+			Commit::from(String::from(
+				"3bdd0e690c4cd5bd00e5201cc8ef3ce3fb235853 chore: do something"
+			))
+		);
+		assert_eq!(
+			Commit::new(
+				String::new(),
+				String::from("thisisinvalidsha1 style: add formatting")
+			),
+			Commit::from(String::from("thisisinvalidsha1 style: add formatting"))
+		);
 	}
 }
