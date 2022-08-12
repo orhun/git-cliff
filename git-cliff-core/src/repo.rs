@@ -147,8 +147,7 @@ mod test {
 				.output()?
 				.stdout
 				.as_ref(),
-		)
-		.unwrap()
+		)?
 		.trim_matches('\'')
 		.to_string())
 	}
@@ -160,8 +159,7 @@ mod test {
 				.output()?
 				.stdout
 				.as_ref(),
-		)
-		.unwrap()
+		)?
 		.trim()
 		.to_string())
 	}
@@ -171,11 +169,12 @@ mod test {
 		let repository = Repository::init(
 			PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 				.parent()
-				.unwrap()
+				.expect("parent directory not found")
 				.to_path_buf(),
 		)?;
 		let commits = repository.commits(None, None, None)?;
-		let last_commit = AppCommit::from(&commits.first().unwrap().clone());
+		let last_commit =
+			AppCommit::from(&commits.first().expect("no commits found").clone());
 		assert_eq!(get_last_commit_hash()?, last_commit.id);
 		if let Err(e) = last_commit.into_conventional() {
 			match e {
@@ -188,7 +187,7 @@ mod test {
 			}
 		}
 		let tags = repository.tags(&None, false)?;
-		assert_eq!(&get_last_tag()?, tags.last().unwrap().1);
+		assert_eq!(&get_last_tag()?, tags.last().expect("no tags found").1);
 		Ok(())
 	}
 }

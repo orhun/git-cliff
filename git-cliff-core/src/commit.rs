@@ -315,7 +315,7 @@ mod test {
 	use super::*;
 	use regex::Regex;
 	#[test]
-	fn conventional_commit() {
+	fn conventional_commit() -> Result<()> {
 		let test_cases = vec![
 			(
 				Commit::new(
@@ -332,23 +332,20 @@ mod test {
 		for (commit, is_conventional) in &test_cases {
 			assert_eq!(is_conventional, &commit.clone().into_conventional().is_ok())
 		}
-		let commit = test_cases[0]
-			.0
-			.clone()
-			.parse(
-				&[CommitParser {
-					message:       Regex::new("test*").ok(),
-					body:          None,
-					group:         Some(String::from("test_group")),
-					default_scope: Some(String::from("test_scope")),
-					scope:         None,
-					skip:          None,
-				}],
-				false,
-			)
-			.unwrap();
+		let commit = test_cases[0].0.clone().parse(
+			&[CommitParser {
+				message:       Regex::new("test*").ok(),
+				body:          None,
+				group:         Some(String::from("test_group")),
+				default_scope: Some(String::from("test_scope")),
+				scope:         None,
+				skip:          None,
+			}],
+			false,
+		)?;
 		assert_eq!(Some(String::from("test_group")), commit.group);
 		assert_eq!(Some(String::from("test_scope")), commit.default_scope);
+		Ok(())
 	}
 
 	#[test]
@@ -404,7 +401,7 @@ mod test {
 	}
 
 	#[test]
-	fn parse_link() {
+	fn parse_link() -> Result<()> {
 		let test_cases = vec![
 			(
 				Commit::new(
@@ -430,20 +427,18 @@ mod test {
 			String::from("123123"),
 			String::from("test(commit): add test\n\nImlement RFC456\n\nFixes: #455"),
 		);
-		let commit = commit
-			.parse_links(&[
-				LinkParser {
-					pattern: Regex::new("RFC(\\d+)").unwrap(),
-					href:    String::from("rfc://$1"),
-					text:    None,
-				},
-				LinkParser {
-					pattern: Regex::new("#(\\d+)").unwrap(),
-					href:    String::from("https://github.com/$1"),
-					text:    None,
-				},
-			])
-			.unwrap();
+		let commit = commit.parse_links(&[
+			LinkParser {
+				pattern: Regex::new("RFC(\\d+)")?,
+				href:    String::from("rfc://$1"),
+				text:    None,
+			},
+			LinkParser {
+				pattern: Regex::new("#(\\d+)")?,
+				href:    String::from("https://github.com/$1"),
+				text:    None,
+			},
+		])?;
 		assert_eq!(
 			vec![
 				Link {
@@ -457,5 +452,6 @@ mod test {
 			],
 			commit.links
 		);
+		Ok(())
 	}
 }

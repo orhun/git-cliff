@@ -144,13 +144,13 @@ mod test {
 	fn parse_config() -> Result<()> {
 		let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 			.parent()
-			.unwrap()
+			.expect("parent directory not found")
 			.to_path_buf()
 			.join("config")
 			.join(crate::DEFAULT_CONFIG);
 		env::set_var("CLIFF_CHANGELOG_FOOTER", "test");
 		let config = Config::parse(&path)?;
-		assert_eq!("test", config.changelog.footer.unwrap());
+		assert_eq!(Some(String::from("test")), config.changelog.footer);
 		Ok(())
 	}
 }
