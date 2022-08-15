@@ -87,8 +87,8 @@ pub struct Signature {
 impl<'a> From<CommitSignature<'a>> for Signature {
 	fn from(signature: CommitSignature<'a>) -> Self {
 		Self {
-			name:      signature.name().map(|v| v.to_string()),
-			email:     signature.email().map(|v| v.to_string()),
+			name:      signature.name().map(String::from),
+			email:     signature.email().map(String::from),
 			timestamp: signature.when().seconds(),
 		}
 	}
