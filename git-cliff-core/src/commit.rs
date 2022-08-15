@@ -9,8 +9,14 @@ use crate::error::{
 	Error as AppError,
 	Result,
 };
-use git2::Commit as GitCommit;
-use git_conventional::Commit as ConventionalCommit;
+use git2::{
+	Commit as GitCommit,
+	Signature as CommitSignature,
+};
+use git_conventional::{
+	Commit as ConventionalCommit,
+	Footer as ConventionalFooter,
+};
 use lazy_regex::{
 	lazy_regex,
 	Lazy,
@@ -25,28 +31,6 @@ use serde::ser::{
 /// Regular expression for matching SHA1 and a following commit message
 /// separated by a whitespace.
 static SHA1_REGEX: Lazy<Regex> = lazy_regex!(r#"^\b([a-f0-9]{40})\b (.*)$"#);
-
-/// Common commit object that is parsed from a repository.
-#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Commit<'a> {
-	/// Commit ID.
-	pub id:            String,
-	/// Commit message including title, description and summary.
-	pub message:       String,
-	/// Conventional commit.
-	#[serde(skip_deserializing)]
-	pub conv:          Option<ConventionalCommit<'a>>,
-	/// Commit group based on a commit parser or its conventional type.
-	pub group:         Option<String>,
-	/// Default commit scope based on (inherited from) conventional type or a
-	/// commit parser.
-	pub default_scope: Option<String>,
-	/// Commit scope for overriding the default one.
-	pub scope:         Option<String>,
-	/// A list of links found in the commit
-	pub links:         Vec<Link>,
-}
 
 /// Object representing a link
 #[derive(Debug, Clone, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
@@ -76,8 +60,8 @@ struct Footer<'a> {
 	breaking:  bool,
 }
 
-impl<'a> From<&'a git_conventional::Footer<'a>> for Footer<'a> {
-	fn from(footer: &'a git_conventional::Footer<'a>) -> Self {
+impl<'a> From<&'a ConventionalFooter<'a>> for Footer<'a> {
+	fn from(footer: &'a ConventionalFooter<'a>) -> Self {
 		Self {
 			token:     footer.token().as_str(),
 			separator: footer.separator().as_str(),
@@ -87,26 +71,86 @@ impl<'a> From<&'a git_conventional::Footer<'a>> for Footer<'a> {
 	}
 }
 
+/// Commit signature that indicates authorship.
+#[derive(
+	Debug, Default, Clone, Eq, PartialEq, serde::Deserialize, serde::Serialize,
+)]
+pub struct Signature {
+	/// Name on the signature.
+	name:      Option<String>,
+	/// Email on the signature.
+	email:     Option<String>,
+	/// Time of the signature.
+	timestamp: i64,
+}
+
+impl<'a> From<CommitSignature<'a>> for Signature {
+	fn from(signature: CommitSignature<'a>) -> Self {
+		Self {
+			name:      signature.name().map(|v| v.to_string()),
+			email:     signature.email().map(|v| v.to_string()),
+			timestamp: signature.when().seconds(),
+		}
+	}
+}
+
+/// Common commit object that is parsed from a repository.
+#[derive(Debug, Default, Clone, PartialEq, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Commit<'a> {
+	/// Commit ID.
+	pub id:            String,
+	/// Commit message including title, description and summary.
+	pub message:       String,
+	/// Conventional commit.
+	#[serde(skip_deserializing)]
+	pub conv:          Option<ConventionalCommit<'a>>,
+	/// Commit group based on a commit parser or its conventional type.
+	pub group:         Option<String>,
+	/// Default commit scope based on (inherited from) conventional type or a
+	/// commit parser.
+	pub default_scope: Option<String>,
+	/// Commit scope for overriding the default one.
+	pub scope:         Option<String>,
+	/// A list of links found in the commit
+	pub links:         Vec<Link>,
+	/// Commit author.
+	pub author:        Signature,
+	/// Committer.
+	pub committer:     Signature,
+}
+
 impl<'a> From<String> for Commit<'a> {
-	fn from(s: String) -> Self {
-		if let Some(captures) = SHA1_REGEX.captures(&s) {
+	fn from(message: String) -> Self {
+		if let Some(captures) = SHA1_REGEX.captures(&message) {
 			if let (Some(id), Some(message)) = (
 				captures.get(1).map(|v| v.as_str()),
 				captures.get(2).map(|v| v.as_str()),
 			) {
-				return Commit::new(id.to_string(), message.to_string());
+				return Commit {
+					id: id.to_string(),
+					message: message.to_string(),
+					..Default::default()
+				};
 			}
 		}
-		Commit::new(String::new(), s)
+		Commit {
+			id: String::new(),
+			message,
+			..Default::default()
+		}
 	}
 }
 
 impl<'a> From<&GitCommit<'a>> for Commit<'a> {
 	fn from(commit: &GitCommit<'a>) -> Self {
-		Self::new(
-			commit.id().to_string(),
-			commit.message().unwrap_or_default().to_string(),
-		)
+		Commit {
+			id: commit.id().to_string(),
+			message: commit.message().unwrap_or_default().to_string(),
+			author: commit.author().into(),
+			committer: commit.committer().into(),
+			..Default::default()
+		}
 	}
 }
 
@@ -116,11 +160,7 @@ impl Commit<'_> {
 		Self {
 			id,
 			message,
-			conv: None,
-			group: None,
-			default_scope: None,
-			scope: None,
-			links: vec![],
+			..Default::default()
 		}
 	}
 
@@ -328,6 +368,8 @@ impl Serialize for Commit<'_> {
 			}
 		}
 		commit.serialize_field("links", &self.links)?;
+		commit.serialize_field("author", &self.author)?;
+		commit.serialize_field("committer", &self.committer)?;
 		commit.serialize_field("conventional", &self.conv.is_some())?;
 		commit.end()
 	}

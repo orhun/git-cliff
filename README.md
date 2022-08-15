@@ -79,6 +79,7 @@
     - [Conventional Commits](#conventional-commits)
       - [Footers](#footers)
       - [Breaking Changes](#breaking-changes)
+      - [Committer vs Author](#committer-vs-author)
     - [Non-Conventional Commits](#non-conventional-commits)
   - [Syntax](#syntax)
   - [Examples](#examples-1)
@@ -706,7 +707,17 @@ following context is generated to use for templating:
       "breaking_description": "<description>",
       "breaking": false,
       "conventional": true,
-      "links": [{"text": "(set by link_parsers)", "href": "(set by link_parsers)"}]
+      "links": [{"text": "(set by link_parsers)", "href": "(set by link_parsers)"}],
+      "author": {
+        "name": "User Name",
+        "email": "user.email@example.com",
+        "timestamp": 1660330071
+      },
+      "committer": {
+        "name": "User Name",
+        "email": "user.email@example.com",
+        "timestamp": 1660330071
+      },
     }
   ],
   "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210 (release commit)",
@@ -756,6 +767,12 @@ BREAKING CHANGE: this is a breaking change
 If the `BREAKING CHANGE:` footer is present, the footer will also be included in
 `commit.footers`.
 
+##### Committer vs Author
+
+From [Git docs](https://git-scm.com/book/en/v2/Git-Basics-Viewing-the-Commit-History):
+
+> You may be wondering what the difference is between author and committer. The author is the person who originally wrote the work, whereas the committer is the person who last applied the work. So, if you send in a patch to a project and one of the core members applies the patch, both of you get credit — you as the author, and the core member as the committer.
+
 #### Non-Conventional Commits
 
 > conventional_commits = **false**
@@ -772,7 +789,17 @@ If [conventional_commits](#conventional_commits) is set to `false`, then some of
       "scope": "(overrided by commit_parsers)",
       "message": "(full commit message including description, footers, etc.)",
       "conventional": false,
-      "links": [{"text": "(set by link_parsers)", "href": "(set by link_parsers)"}]
+      "links": [{"text": "(set by link_parsers)", "href": "(set by link_parsers)"}],
+      "author": {
+        "name": "User Name",
+        "email": "user.email@example.com",
+        "timestamp": 1660330071
+      },
+      "committer": {
+        "name": "User Name",
+        "email": "user.email@example.com",
+        "timestamp": 1660330071
+      },
     }
   ],
   "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210 (release commit)",
