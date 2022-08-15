@@ -842,6 +842,8 @@ Examples are based on the following Git history:
 * a78bc36 Initial commit
 ```
 
+Test repository can be found [here](https://github.com/orhun/git-cliff-readme-example).
+
 See [examples](./examples/) directory for example configuration files.
 
 If you have a custom configuration file that you are using for your project(s), consider sharing it with us by [submitting a pull request](./CONTRIBUTING.md)!
