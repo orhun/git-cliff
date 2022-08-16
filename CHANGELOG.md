@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.0] - 2022-08-16
+
+### Documentation
+
+- Add test repository link to README.md
+
+### Features
+
+- Support splitting commits by lines ([#101](https://github.com/orhun/git-cliff/issues/101))
+- Support setting commit SHA while using `--with-commit`
+- Add commit author and committer to the context ([#100](https://github.com/orhun/git-cliff/issues/100))
+
+### Miscellaneous Tasks
+
+- Use an alternative method to fetch registry
+- Enable building arm64 docker images
+- Update the description on Docker Hub on push
+- Disable updating the description on Docker Hub
+- Add GitHub Sponsors option for funding
+- Upgrade dependencies
+- Update MSRV to 1.60.0
+- Upgrade versions in Dockerfile
+- Enable strip option for release profile
+
+### Refactor
+
+- Run clippy for tests
+- Use a more concise conversion for string
+
 ## [0.8.1] - 2022-07-12
 
 ### Bug Fixes
