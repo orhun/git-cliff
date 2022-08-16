@@ -23,7 +23,6 @@ COPY --from=cacher /app/target target
 COPY --from=cacher $CARGO_HOME $CARGO_HOME
 RUN cargo build --release --locked --no-default-features
 RUN rm -f target/release/deps/git_cliff*
-RUN strip target/release/git-cliff
 
 FROM debian:buster-slim as runner
 WORKDIR app

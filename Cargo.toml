@@ -19,6 +19,7 @@ debug = false
 panic = "unwind"
 lto = true
 codegen-units = 1
+strip = true
 
 [profile.bench]
 opt-level = 3
