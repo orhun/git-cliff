@@ -29,7 +29,7 @@ default = ["update-informer"]
 pretty_env_logger = "0.4.0"
 log = "0.4.17"
 dirs-next = "2.0.0"
-clap_complete = "3.2.3"
+clap_complete = "3.2.4"
 clap_mangen = "0.1.10"
 
 [dependencies.git-cliff-core]
@@ -37,7 +37,7 @@ version = "0.8.1" # managed by release.sh
 path = "../git-cliff-core"
 
 [dependencies.clap]
-version = "3.2.10"
+version = "3.2.17"
 features = ["derive", "env", "wrap_help"]
 
 [dependencies.update-informer]

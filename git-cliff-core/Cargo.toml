@@ -11,10 +11,10 @@ edition = "2021"
 rust-version = "1.58.1"
 
 [dependencies]
-thiserror = "1.0.31"
-serde = { version = "1.0.139", features = ["derive"] }
-serde_json = "1.0.82"
-tera = "1.16.0"
+thiserror = "1.0.32"
+serde = { version = "1.0.143", features = ["derive"] }
+serde_json = "1.0.83"
+tera = "1.17.0"
 regex = "1.6.0"
 serde_regex = "1.1.0"
 indexmap = "1.9.1"
@@ -23,16 +23,16 @@ glob = "0.3.0"
 lazy-regex = "2.3.0"
 
 [dependencies.git2]
-version = "0.14.4"
+version = "0.15.0"
 default-features = false
 
 [dependencies.config]
-version = "0.13.1"
+version = "0.13.2"
 default-features = false
 features = ["toml", "yaml"]
 
 [dependencies.git-conventional]
-version = "0.11.3"
+version = "0.12.0"
 features = ["serde"]
 
 [dependencies.rust-embed]
