@@ -68,7 +68,7 @@ mod test {
 
 	#[test]
 	fn throw_parse_error() {
-		let actual_error = mock_function().unwrap_err();
+		let actual_error = mock_function().expect_err("expected error");
 		let expected_error_kind = ErrorKind::MissingType;
 		match actual_error {
 			Error::ParseError(e) => {

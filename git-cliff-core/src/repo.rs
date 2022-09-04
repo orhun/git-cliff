@@ -143,7 +143,7 @@ mod test {
 	fn get_last_commit_hash() -> Result<String> {
 		Ok(str::from_utf8(
 			Command::new("git")
-				.args(&["log", "--pretty=format:'%H'", "-n", "1"])
+				.args(["log", "--pretty=format:'%H'", "-n", "1"])
 				.output()?
 				.stdout
 				.as_ref(),
@@ -155,7 +155,7 @@ mod test {
 	fn get_last_tag() -> Result<String> {
 		Ok(str::from_utf8(
 			Command::new("git")
-				.args(&["describe", "--abbrev=0"])
+				.args(["describe", "--abbrev=0"])
 				.output()?
 				.stdout
 				.as_ref(),

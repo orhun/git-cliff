@@ -22,14 +22,14 @@ pub fn run(
 ) -> Result<String> {
 	let mut child = if cfg!(target_os = "windows") {
 		Command::new("cmd")
-			.args(&["/C", command])
+			.args(["/C", command])
 			.stdin(Stdio::piped())
 			.stdout(Stdio::piped())
 			.spawn()
 	} else {
 		Command::new("sh")
 			.envs(envs)
-			.args(&["-c", command])
+			.args(["-c", command])
 			.stdin(Stdio::piped())
 			.stdout(Stdio::piped())
 			.spawn()

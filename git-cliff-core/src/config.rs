@@ -115,7 +115,7 @@ impl Config {
 	/// Parses the config file and returns the values.
 	pub fn parse(path: &Path) -> Result<Config> {
 		let config_builder = if path.file_name() == Some(OsStr::new("Cargo.toml")) {
-			let contents = fs::read_to_string(&path)?;
+			let contents = fs::read_to_string(path)?;
 			let metadata_regex = RegexBuilder::new(CARGO_METADATA_REGEX)
 				.multi_line(true)
 				.build()?;
