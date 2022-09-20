@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.1] - 2022-09-20
+
+### Bug Fixes
+
+- Configure git safe.directory for Docker image ([#108](https://github.com/orhun/git-cliff/issues/108))
+
+### Miscellaneous Tasks
+
+- Remove ansi_term dependency for fixing RUSTSEC-2021-0139
+- Upgrade dependencies
+
+### Refactor
+
+- Apply clippy suggestions
+
+### Styling
+
+- Update styling for with-commit example
+
 ## [0.9.0] - 2022-08-16
 
 ### Documentation
