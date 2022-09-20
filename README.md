@@ -312,7 +312,7 @@ Or you can use the image from the [GitHub Package Registry](https://github.com/o
 docker run -t -v "$(pwd)/.git":/app/ docker.pkg.github.com/orhun/git-cliff/git-cliff:latest
 ```
 
-Also, you can build the image yourself using `docker build -t git-cliff .` command.
+Also, you can build the image yourself using `DOCKER_BUILDKIT=1 docker build -t git-cliff .` command.
 
 ## GitHub Actions
 
