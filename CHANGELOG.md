@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.2] - 2022-09-24
+
+### Bug Fixes
+
+- Remove custom user creation from the Dockerfile ([#109](https://github.com/orhun/git-cliff/issues/109))
+
+### Miscellaneous Tasks
+
+- Remove cargo-audit config
+- Switch to cargo-tarpaulin for measuring code coverage ([#110](https://github.com/orhun/git-cliff/issues/110))
+- Upgrade dependencies
+
 ## [0.9.1] - 2022-09-20
 
 ### Bug Fixes
