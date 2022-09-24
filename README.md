@@ -43,6 +43,7 @@
 - [Installation](#installation)
   - [From crates.io](#from-cratesio)
   - [Using pacman](#using-pacman)
+  - [From MacPorts](#from-macports)
   - [Binary releases](#binary-releases)
   - [Build from source](#build-from-source)
 - [Usage](#usage)
@@ -121,6 +122,16 @@ If you are using Arch Linux, **git-cliff** can be installed from the [community 
 ```sh
 pacman -S git-cliff
 ```
+
+### From MacPorts
+
+On macOS, **git-cliff** can be installed via [MacPorts](https://www.macports.org):
+
+```sh
+sudo port install git-cliff
+```
+
+[Port page](https://ports.macports.org/port/git-cliff/)
 
 ### Binary releases
 
