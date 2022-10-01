@@ -458,6 +458,7 @@ commit_parsers = [
     { message = "^style", group = "Styling"},
     { message = "^test", group = "Testing"},
 ]
+protect_breaking_commits = false
 filter_commits = false
 tag_pattern = "v[0-9]*"
 skip_tags = "v0.1.0-beta.1"
@@ -593,6 +594,12 @@ Examples:
   - If the commit starts with "doc", group the commit as "Documentation" and set the default scope to "other". (e.g. `docs: xyz` will be processed as `docs(other): xyz`)
 - `{ message = "(www)", scope = "Application"}`
   - If the commit contains "(www)", override the scope with "Application". Scoping order is: scope specification, conventional commit's scope and default scope.
+
+#### protect_breaking_commits
+
+If set to `true`, any breaking changes will be protected against being skipped
+due to any commit parser.
+
 #### filter_commits
 
 If set to `true`, commits that are not matched by [commit parsers](#commit_parsers) are filtered out.
@@ -777,6 +784,8 @@ BREAKING CHANGE: this is a breaking change
 
 If the `BREAKING CHANGE:` footer is present, the footer will also be included in
 `commit.footers`.
+
+Breaking changes will be skipped if [`protect_breaking_commits`](#protect_breaking_commits) is set to `true`, even when matched by a skipping [commit_parser](#commit_parsers).
 
 ##### Committer vs Author
 

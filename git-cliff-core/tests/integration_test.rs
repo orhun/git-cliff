@@ -38,15 +38,15 @@ fn generate_changelog() -> Result<()> {
 		trim:   None,
 	};
 	let git_config = GitConfig {
-		conventional_commits:  Some(true),
-		filter_unconventional: Some(true),
-		split_commits:         Some(false),
-		commit_preprocessors:  Some(vec![CommitPreprocessor {
+		conventional_commits:     Some(true),
+		filter_unconventional:    Some(true),
+		split_commits:            Some(false),
+		commit_preprocessors:     Some(vec![CommitPreprocessor {
 			pattern:         Regex::new(r#"\(fixes (#[1-9]+)\)"#).unwrap(),
 			replace:         Some(String::from("[closes Issue${1}]")),
 			replace_command: None,
 		}]),
-		commit_parsers:        Some(vec![
+		commit_parsers:           Some(vec![
 			CommitParser {
 				message:       Regex::new("^feat").ok(),
 				body:          None,
@@ -72,13 +72,14 @@ fn generate_changelog() -> Result<()> {
 				skip:          None,
 			},
 		]),
-		filter_commits:        Some(true),
-		tag_pattern:           None,
-		skip_tags:             None,
-		ignore_tags:           None,
-		date_order:            None,
-		sort_commits:          None,
-		link_parsers:          Some(vec![
+		protect_breaking_commits: None,
+		filter_commits:           Some(true),
+		tag_pattern:              None,
+		skip_tags:                None,
+		ignore_tags:              None,
+		date_order:               None,
+		sort_commits:             None,
+		link_parsers:             Some(vec![
 			LinkParser {
 				pattern: Regex::new("#(\\d+)").unwrap(),
 				href:    String::from("https://github.com/$1"),

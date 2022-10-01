@@ -49,6 +49,8 @@ commit_parsers = [
     { body = ".*security", group = "Security"},
     { body = ".*", group = "Other (unconventional)"},
 ]
+# protect breaking changes from being skipped due to matching a skipping commit_parser
+protect_breaking_commits = false
 # filter out the commits that are not matched by commit parsers
 filter_commits = false
 # glob pattern for matching git tags

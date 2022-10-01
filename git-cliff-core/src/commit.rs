@@ -182,8 +182,11 @@ impl Commit<'_> {
 			}
 		}
 		if let Some(parsers) = &config.commit_parsers {
-			commit =
-				commit.parse(parsers, config.filter_commits.unwrap_or(false))?;
+			commit = commit.parse(
+				parsers,
+				config.protect_breaking_commits.unwrap_or(false),
+				config.filter_commits.unwrap_or(false),
+			)?;
 		}
 		if let Some(parsers) = &config.link_parsers {
 			commit = commit.parse_links(parsers)?;
@@ -233,13 +236,29 @@ impl Commit<'_> {
 		Ok(self)
 	}
 
+	/// States if the commit is skipped in the provided `CommitParser`.
+	///
+	/// Returns `false` if `protect_breaking_commits` is enabled in the config
+	/// and the commit is breaking, or the parser's `skip` field is None or
+	/// `false`. Returns `true` otherwise.
+	fn skip_commit(&self, parser: &CommitParser, protect_breaking: bool) -> bool {
+		parser.skip.unwrap_or(false) &&
+			!(self.conv.as_ref().map(|c| c.breaking()).unwrap_or(false) &&
+				protect_breaking)
+	}
+
 	/// Parses the commit using [`CommitParser`]s.
 	///
 	/// Sets the [`group`] and [`scope`] of the commit.
 	///
 	/// [`group`]: Commit::group
 	/// [`scope`]: Commit::scope
-	pub fn parse(mut self, parsers: &[CommitParser], filter: bool) -> Result<Self> {
+	pub fn parse(
+		mut self,
+		parsers: &[CommitParser],
+		protect_breaking: bool,
+		filter: bool,
+	) -> Result<Self> {
 		for parser in parsers {
 			let mut regex_checks = Vec::new();
 			if let Some(message_regex) = parser.message.as_ref() {
@@ -253,15 +272,15 @@ impl Commit<'_> {
 			}
 			for (regex, text) in regex_checks {
 				if regex.is_match(&text) {
-					if parser.skip != Some(true) {
+					if self.skip_commit(parser, protect_breaking) {
+						return Err(AppError::GroupError(String::from(
+							"Skipping commit",
+						)));
+					} else {
 						self.group = parser.group.as_ref().cloned();
 						self.scope = parser.scope.as_ref().cloned();
 						self.default_scope = parser.default_scope.as_ref().cloned();
 						return Ok(self);
-					} else {
-						return Err(AppError::GroupError(String::from(
-							"Skipping commit",
-						)));
 					}
 				}
 			}
@@ -406,6 +425,7 @@ mod test {
 				scope:         None,
 				skip:          None,
 			}],
+			false,
 			false,
 		)?;
 		assert_eq!(Some(String::from("test_group")), commit.group);
