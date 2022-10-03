@@ -69,6 +69,8 @@ pub struct GitConfig {
 	pub date_order:               Option<bool>,
 	/// Sorting of the commits inside sections.
 	pub sort_commits:             Option<String>,
+	/// Limit the number of commits included in the changelog.
+	pub limit_commits:            Option<usize>,
 }
 
 /// Parser for grouping commits.

@@ -91,6 +91,7 @@ fn generate_changelog() -> Result<()> {
 				text:    Some(String::from("$1")),
 			},
 		]),
+		limit_commits:            None,
 	};
 
 	let releases = vec![
