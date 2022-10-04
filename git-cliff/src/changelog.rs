@@ -205,17 +205,25 @@ mod test {
 				trim:   Some(true),
 			},
 			git:       GitConfig {
-				conventional_commits:  Some(true),
-				filter_unconventional: Some(false),
-				split_commits:         Some(false),
-				commit_preprocessors:  Some(vec![CommitPreprocessor {
+				conventional_commits:     Some(true),
+				filter_unconventional:    Some(false),
+				split_commits:            Some(false),
+				commit_preprocessors:     Some(vec![CommitPreprocessor {
 					pattern:         Regex::new("<preprocess>").unwrap(),
 					replace:         Some(String::from(
 						"this commit is preprocessed",
 					)),
 					replace_command: None,
 				}]),
-				commit_parsers:        Some(vec![
+				commit_parsers:           Some(vec![
+					CommitParser {
+						message:       Regex::new(r".*merge.*").ok(),
+						body:          None,
+						group:         None,
+						default_scope: None,
+						scope:         None,
+						skip:          Some(true),
+					},
 					CommitParser {
 						message:       Regex::new("feat*").ok(),
 						body:          None,
@@ -231,14 +239,6 @@ mod test {
 						default_scope: None,
 						scope:         None,
 						skip:          None,
-					},
-					CommitParser {
-						message:       Regex::new("merge*").ok(),
-						body:          None,
-						group:         None,
-						default_scope: None,
-						scope:         None,
-						skip:          Some(true),
 					},
 					CommitParser {
 						message:       Regex::new("doc:").ok(),
@@ -257,13 +257,14 @@ mod test {
 						skip:          None,
 					},
 				]),
-				filter_commits:        Some(false),
-				tag_pattern:           None,
-				skip_tags:             Regex::new("v3.*").ok(),
-				ignore_tags:           None,
-				date_order:            Some(false),
-				sort_commits:          Some(String::from("oldest")),
-				link_parsers:          None,
+				protect_breaking_commits: None,
+				filter_commits:           Some(false),
+				tag_pattern:              None,
+				skip_tags:                Regex::new("v3.*").ok(),
+				ignore_tags:              None,
+				date_order:               Some(false),
+				sort_commits:             Some(String::from("oldest")),
+				link_parsers:             None,
 			},
 		};
 		let test_release = Release {
@@ -301,6 +302,10 @@ mod test {
 					String::from("qwerty"),
 					String::from("chore: <preprocess>"),
 				),
+				Commit::new(
+					String::from("qwertz"),
+					String::from("feat!: support breaking commits"),
+				),
 			],
 			commit_id: Some(String::from("0bc123")),
 			timestamp: 50000000,
@@ -328,6 +333,10 @@ mod test {
 						String::from("docs(app): document zyx"),
 					),
 					Commit::new(String::from("def789"), String::from("merge #4")),
+					Commit::new(
+						String::from("dev063"),
+						String::from("feat(app)!: merge #5"),
+					),
 					Commit::new(
 						String::from("qwerty"),
 						String::from("fix(app): fix abc"),
@@ -388,6 +397,7 @@ mod test {
 
 			#### other
 			- support unscoped commits
+			- support breaking commits
 
 			### Other
 			#### app
@@ -412,6 +422,7 @@ mod test {
 		let (mut config, mut releases) = get_test_data();
 		config.git.split_commits = Some(true);
 		config.git.filter_unconventional = Some(false);
+		config.git.protect_breaking_commits = Some(true);
 		releases[0].commits.push(Commit::new(
 			String::from("0bc123"),
 			String::from(
@@ -467,6 +478,10 @@ chore(deps): fix broken deps
 			#### ui
 			- do boring stuff
 
+			### feat
+			#### app
+			- merge #5
+
 			## Release [v1.0.0] - 1971-08-02
 			(0bc123)
 
@@ -490,6 +505,7 @@ chore(deps): fix broken deps
 
 			#### other
 			- support unscoped commits
+			- support breaking commits
 			- add awesome stuff
 
 			### Other
