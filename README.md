@@ -469,6 +469,7 @@ link_parsers = [
     { pattern = "#(\\d+)", href = "https://github.com/orhun/git-cliff/issues/$1"},
     { pattern = "RFC(\\d+)", text = "ietf-rfc$1", href = "https://datatracker.ietf.org/doc/html/rfc$1"},
 ]
+limit_commits = 42
 ```
 
 #### conventional_commits
@@ -651,6 +652,12 @@ Examples:
   - Extract all GitLab issues and PRs and generate URLs linking to them. The link text will be the matching pattern.
 - `{ pattern = "RFC(\\d+)", text = "ietf-rfc$1", href = "https://datatracker.ietf.org/doc/html/rfc$1"}`,
   - Extract mentions of IETF RFCs and generate URLs linking to them. It also rewrites the text as "ietf-rfc...".
+
+#### limit_commits
+
+`limit_commits` is a **optional** positive integer number that limits the number of included commits in the generated changelog.
+
+`limit_commits` is not part of the default configuration.
 
 ## Project Integration
 
@@ -1015,6 +1022,38 @@ All notable changes to this project will be documented in this file.
 
 ### Fix
 - Rename help argument due to conflict
+
+</details>
+
+#### [Limited Commits](./examples/limitedcommits.toml)
+
+<details>
+  <summary>Raw Output</summary>
+
+```
+## [unreleased]
+### Feat
+- Support multiple file formats
+- Use cache while fetching pages
+
+## [1.0.1] - 2021-07-18
+### Chore
+- Add release script
+```
+
+</details>
+
+<details>
+  <summary>Rendered Output</summary>
+
+## [unreleased]
+### Feat
+- Support multiple file formats
+- Use cache while fetching pages
+
+## [1.0.1] - 2021-07-18
+### Chore
+- Add release script
 
 </details>
 

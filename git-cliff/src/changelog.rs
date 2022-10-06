@@ -265,6 +265,7 @@ mod test {
 				date_order:               Some(false),
 				sort_commits:             Some(String::from("oldest")),
 				link_parsers:             None,
+				limit_commits:            None,
 			},
 		};
 		let test_release = Release {

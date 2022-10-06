@@ -66,3 +66,5 @@ ignore_tags = ""
 date_order = false
 # sort the commits inside sections by oldest/newest order
 sort_commits = "oldest"
+# limit the number of commits included in the changelog.
+# limit_commits = 42

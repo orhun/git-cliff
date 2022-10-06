@@ -217,8 +217,11 @@ pub fn run(mut args: Opt) -> Result<()> {
 			}
 		}
 	}
-	let commits =
+	let mut commits =
 		repository.commits(commit_range, args.include_path, args.exclude_path)?;
+	if let Some(commit_limit_value) = config.git.limit_commits {
+		commits = commits.drain(..commit_limit_value).collect();
+	}
 
 	// Update tags.
 	if let Some(tag) = args.tag {
