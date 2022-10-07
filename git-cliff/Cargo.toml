@@ -16,10 +16,12 @@ rust-version = "1.60.0"
 [[bin]]
 name = "git-cliff-completions"
 path = "src/bin/completions.rs"
+required-features = []
 
 [[bin]]
 name = "git-cliff-mangen"
 path = "src/bin/mangen.rs"
+required-features = []
 
 [features]
 # check for new versions
