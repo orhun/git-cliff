@@ -434,6 +434,7 @@ dependencies = [
  "log",
  "pretty_assertions",
  "pretty_env_logger",
+ "regex",
  "update-informer",
 ]
 

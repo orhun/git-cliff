@@ -14,7 +14,10 @@ use args::{
 use changelog::Changelog;
 use clap::ArgEnum;
 use git_cliff_core::commit::Commit;
-use git_cliff_core::config::Config;
+use git_cliff_core::config::{
+	CommitPreprocessor,
+	Config,
+};
 use git_cliff_core::embed::EmbeddedConfig;
 use git_cliff_core::error::{
 	Error,
@@ -99,6 +102,12 @@ pub fn run(mut args: Opt) -> Result<()> {
 	if config.changelog.body.is_none() && !args.context {
 		warn!("Changelog body is not specified, using the default template.");
 		config.changelog.body = EmbeddedConfig::parse()?.changelog.body;
+	}
+
+	// Add custom git_cliff_core::config::LinkParser for github issues & pull
+	// requests
+	if let Some(ref url) = args.github_repository_url {
+		add_github_link_preprocessors(&mut config, url.clone())?;
 	}
 
 	// Update the configuration based on command line arguments and vice versa.
@@ -300,4 +309,24 @@ pub fn run(mut args: Opt) -> Result<()> {
 	} else {
 		changelog.generate(&mut io::stdout())
 	}
+}
+
+fn add_github_link_preprocessors(
+	config: &mut Config,
+	repository_url: String,
+) -> Result<()> {
+	let github_commit_preprocessor = CommitPreprocessor {
+		pattern:         regex::Regex::new("#(\\d+)")?,
+		replace:         Some(format!(
+			"[#${{1}}](https://{repository_url}/issues/${{1}})"
+		)),
+		replace_command: None,
+	};
+	if let Some(v) = config.git.commit_preprocessors.as_mut() {
+		v.push(github_commit_preprocessor);
+	} else {
+		config.git.commit_preprocessors =
+			Some([github_commit_preprocessor].into_iter().collect());
+	}
+	Ok(())
 }

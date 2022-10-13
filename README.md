@@ -173,18 +173,20 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
 **Options:**
 
 ```
--c, --config <PATH>                Sets the configuration file [env: GIT_CLIFF_CONFIG=] [default: cliff.toml]
--w, --workdir <PATH>               Sets the working directory [env: GIT_CLIFF_WORKDIR=]
--r, --repository <PATH>            Sets the git repository [env: GIT_CLIFF_REPOSITORY=]
-    --include-path <PATTERN>...    Sets the path to include related commits [env: GIT_CLIFF_INCLUDE_PATH=]
-    --exclude-path <PATTERN>...    Sets the path to exclude related commits [env: GIT_CLIFF_EXCLUDE_PATH=]
-    --with-commit <MSG>...         Sets custom commit messages to include in the changelog [env: GIT_CLIFF_WITH_COMMIT=]
--p, --prepend <PATH>               Prepends entries to the given changelog file [env: GIT_CLIFF_PREPEND=]
--o, --output <PATH>                Writes output to the given file [env: GIT_CLIFF_OUTPUT=]
--t, --tag <TAG>                    Sets the tag for the latest version [env: GIT_CLIFF_TAG=]
--b, --body <TEMPLATE>              Sets the template for the changelog body [env: GIT_CLIFF_TEMPLATE=]
--s, --strip <PART>                 Strips the given parts from the changelog [possible values: header, footer, all]
-    --sort <SORT>                  Sets sorting of the commits inside sections [default: oldest] [possible values: oldest, newest]
+-c, --config <PATH>                               Sets the configuration file [env: GIT_CLIFF_CONFIG=] [default: cliff.toml]
+-w, --workdir <PATH>                              Sets the working directory [env: GIT_CLIFF_WORKDIR=]
+-r, --repository <PATH>                           Sets the git repository [env: GIT_CLIFF_REPOSITORY=]
+    --include-path <PATTERN>...                   Sets the path to include related commits [env: GIT_CLIFF_INCLUDE_PATH=]
+    --exclude-path <PATTERN>...                   Sets the path to exclude related commits [env: GIT_CLIFF_EXCLUDE_PATH=]
+    --with-commit <MSG>...                        Sets custom commit messages to include in the changelog [env: GIT_CLIFF_WITH_COMMIT=]
+-p, --prepend <PATH>                              Prepends entries to the given changelog file [env: GIT_CLIFF_PREPEND=]
+-o, --output <PATH>                               Writes output to the given file [env: GIT_CLIFF_OUTPUT=]
+-t, --tag <TAG>                                   Sets the tag for the latest version [env: GIT_CLIFF_TAG=]
+-b, --body <TEMPLATE>                             Sets the template for the changelog body [env: GIT_CLIFF_TEMPLATE=]
+-s, --strip <PART>                                Strips the given parts from the changelog [possible values: header, footer, all]
+--sort <SORT>                                     Sets sorting of the commits inside sections [default: oldest] [possible values: oldest, newest]
+--github-repository-url <GITHUB_REPOSITORY_URL>   Adds [CommitPreprocessor] steps for github issues (#i) & pull requests (@i) [env: GIT_CLIFF_GITHUB_REPOSITORY_URL=]
+
 ```
 
 **Args:**
@@ -308,6 +310,32 @@ git cliff --body $template --strip footer
 ```
 
 Also, see the [release script](./release.sh) of this project which sets the changelog as a message of an annotated tag.
+
+Add commit preprocessors to create markdown links for github issues & pull requests:
+
+Assuming we have a git commit like ...
+
+```sh
+feat: #2 adds a new feature as suggested by #1
+```
+
+```sh
+git-cliff --github-repository-url github.com/example-repo
+```
+
+Will generate the following changelog entry for the above commit:
+
+- [#2](https://github.com/example-repo/pull/1) adds a new feature as suggested by [#1](https://github.com/example-repo/issues/1)
+
+<details>
+  <summary>Raw Output</summary>
+
+```
+- [#2](https://github.com/example-repo/pull/1) adds a new feature as suggested by [#1](https://github.com/example-repo/issues/1)
+```
+
+</details>
+
 
 ## Docker
 
