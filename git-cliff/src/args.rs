@@ -107,7 +107,7 @@ pub struct Opt {
 	#[clap(short, long, help_heading = Some("FLAGS"))]
 	pub unreleased:   bool,
 	/// Sorts the tags chronologically.
-	#[clap(long, help_heading = Some("FLAGS"))]
+	#[clap(short, long, help_heading = Some("FLAGS"))]
 	pub date_order:   bool,
 	/// Prints changelog context as JSON.
 	#[clap(long, help_heading = Some("FLAGS"))]

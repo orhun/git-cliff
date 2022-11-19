@@ -164,7 +164,7 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
 -l, --latest        Processes the commits starting from the latest tag
     --current       Processes the commits that belong to the current tag
 -u, --unreleased    Processes the commits that do not belong to a tag
-    --date-order    Sorts the tags chronologically
+-d, --date-order    Sorts the tags chronologically
     --context       Prints changelog context as JSON
 -h, --help          Prints help information
 -V, --version       Prints version information
