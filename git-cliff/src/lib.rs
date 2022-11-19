@@ -202,7 +202,15 @@ pub fn run(mut args: Opt) -> Result<()> {
 							.find(|(_, (_, v))| v == &tag)
 							.map(|(i, _)| i)
 					}) {
-					tag_index = current_tag_index - 1;
+					match current_tag_index.checked_sub(1) {
+						Some(i) => tag_index = i,
+						None => {
+							return Err(Error::ChangelogError(String::from(
+								"No suitable tags found. Maybe run with \
+								 '--date-order'?",
+							)));
+						}
+					}
 				} else {
 					return Err(Error::ChangelogError(String::from(
 						"No tag exists for the current commit",
