@@ -19,7 +19,7 @@
         <img src="https://img.shields.io/github/workflow/status/orhun/git-cliff/Continuous%20Deployment?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=GitHub%20Actions&logoColor=BEC5C9&label=deploy">
     </a>
     <a href="https://hub.docker.com/r/orhunp/git-cliff">
-        <img src="https://img.shields.io/docker/cloud/build/orhunp/git-cliff?style=flat&labelColor=1C2C2E&color=BEC5C9&label=docker&logo=Docker&logoColor=BEC5C9">
+        <img src="https://img.shields.io/github/workflow/status/orhun/git-cliff/Docker%20Automated%20Builds?style=flat&labelColor=1C2C2E&color=BEC5C9&label=docker&logo=Docker&logoColor=BEC5C9">
     </a>
     <a href="https://docs.rs/git-cliff-core/">
         <img src="https://img.shields.io/docsrs/git-cliff-core?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=Rust&logoColor=BEC5C9E">
