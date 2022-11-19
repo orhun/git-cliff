@@ -4,6 +4,10 @@ members = [
     "git-cliff",
 ]
 
+[workspace.dependencies]
+regex = "1.6.0"
+glob = "0.3.0"
+
 [profile.dev]
 opt-level = 0
 debug = true

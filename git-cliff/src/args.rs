@@ -3,8 +3,8 @@ use clap::{
 	ArgEnum,
 	Parser,
 };
-use git_cliff_core::glob::Pattern;
 use git_cliff_core::DEFAULT_CONFIG;
+use glob::Pattern;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, Copy, ArgEnum)]

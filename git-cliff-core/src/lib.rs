@@ -1,11 +1,6 @@
 //! A highly customizable changelog generator
 #![warn(missing_docs, clippy::unwrap_used)]
 
-/// Export `glob` crate.
-pub use glob;
-/// Export `regex` crate.
-pub use regex;
-
 /// Command runner.
 pub mod command;
 /// Git commit.

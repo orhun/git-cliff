@@ -182,8 +182,8 @@ mod test {
 		CommitPreprocessor,
 		GitConfig,
 	};
-	use git_cliff_core::regex::Regex;
 	use pretty_assertions::assert_eq;
+	use regex::Regex;
 	use std::str;
 
 	fn get_test_data() -> (Config, Vec<Release<'static>>) {

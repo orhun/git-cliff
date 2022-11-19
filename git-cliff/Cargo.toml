@@ -26,6 +26,8 @@ path = "src/bin/mangen.rs"
 default = ["update-informer"]
 
 [dependencies]
+glob.workspace = true
+regex.workspace = true
 pretty_env_logger = "0.4.0"
 log = "0.4.17"
 dirs-next = "2.0.0"
