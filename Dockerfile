@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4.3-labs
-FROM lukemathwalker/cargo-chef:0.1.39-rust-1.63.0-slim-buster as chef
+FROM lukemathwalker/cargo-chef:0.1.47-rust-1.65.0-buster chef
 WORKDIR app
 
 FROM chef AS planner
