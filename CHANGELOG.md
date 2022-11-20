@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.0] - 2022-11-20
+
+### Bug Fixes
+
+- Warn against invalid tag range for `--current` flag ([#124](https://github.com/orhun/git-cliff/issues/124))
+- Use an alternative method to fetch registry
+- Fix syntax error in Dockerfile
+
+### Documentation
+
+- Add MacPorts install info ([#111](https://github.com/orhun/git-cliff/issues/111))
+- Update badge URL for Docker builds
+
+### Features
+
+- Do not skip breaking changes if configured ([#114](https://github.com/orhun/git-cliff/issues/114))
+- Changelog for the last n commits ([#116](https://github.com/orhun/git-cliff/issues/116))
+- Add a short variant `-d` for specifying `--date-order` flag
+
+### Miscellaneous Tasks
+
+- Update versions in Dockerfile
+- Upgrade core dependencies
+
+### Refactor
+
+- Improve cargo-chef caching in Dockerfile
+- Utilize workspace dependencies
+
 ## [0.9.2] - 2022-09-24
 
 ### Bug Fixes
