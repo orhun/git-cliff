@@ -8,6 +8,7 @@ RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef AS builder
 COPY --from=planner /app/recipe.json recipe.json
+ENV CARGO_NET_GIT_FETCH_WITH_CLI=true
 RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
 RUN cargo build --release --locked --no-default-features
