@@ -1,5 +1,4 @@
 use clap::{
-	AppSettings,
 	ValueEnum,
 	Parser,
 };
@@ -26,7 +25,6 @@ pub enum Sort {
     version,
     author,
     about,
-    global_setting = AppSettings::DeriveDisplayOrder,
     rename_all_env = "screaming-snake",
     next_help_heading = Some("OPTIONS"),
     override_usage = "git-cliff [FLAGS] [OPTIONS] [--] [RANGE]",
@@ -35,7 +33,7 @@ pub enum Sort {
 )]
 pub struct Opt {
 	/// Increases the logging verbosity.
-	#[arg(short, long, parse(from_occurrences), alias = "debug", help_heading = Some("FLAGS"))]
+	#[arg(short, long, action = ArgAction::SetTrue, alias = "debug", help_heading = Some("FLAGS"))]
 	pub verbose:      u8,
 	/// Sets the configuration file.
 	#[arg(short, long, env = "GIT_CLIFF_CONFIG", value_name = "PATH", default_value = DEFAULT_CONFIG)]
@@ -50,24 +48,21 @@ pub struct Opt {
 	#[arg(
 		long,
 		env = "GIT_CLIFF_INCLUDE_PATH",
-		value_name = "PATTERN",
-		multiple_values = true
+		value_name = "PATTERN",num_args = 1..
 	)]
 	pub include_path: Option<Vec<Pattern>>,
 	/// Sets the path to exclude related commits.
 	#[arg(
 		long,
 		env = "GIT_CLIFF_EXCLUDE_PATH",
-		value_name = "PATTERN",
-		multiple_values = true
+		value_name = "PATTERN",num_args = 1..
 	)]
 	pub exclude_path: Option<Vec<Pattern>>,
 	/// Sets custom commit messages to include in the changelog.
 	#[arg(
 		long,
 		env = "GIT_CLIFF_WITH_COMMIT",
-		value_name = "MSG",
-		multiple_values = true
+		value_name = "MSG",num_args = 1..
 	)]
 	pub with_commit:  Option<Vec<String>>,
 	/// Prepends entries to the given changelog file.
