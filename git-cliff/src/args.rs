@@ -1,20 +1,20 @@
 use clap::{
 	AppSettings,
-	ArgEnum,
+	ValueEnum,
 	Parser,
 };
 use git_cliff_core::DEFAULT_CONFIG;
 use glob::Pattern;
 use std::path::PathBuf;
 
-#[derive(Debug, Clone, Copy, ArgEnum)]
+#[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum Strip {
 	Header,
 	Footer,
 	All,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 pub enum Sort {
 	Oldest,
 	Newest,
@@ -113,12 +113,12 @@ pub struct Opt {
 	#[arg(long, help_heading = Some("FLAGS"))]
 	pub context:      bool,
 	/// Strips the given parts from the changelog.
-	#[arg(short, long, value_name = "PART", arg_enum)]
+	#[arg(short, long, value_name = "PART", value_enum)]
 	pub strip:        Option<Strip>,
 	/// Sets sorting of the commits inside sections.
 	#[arg(
 		long,
-		arg_enum,
+		value_enum,
 		default_value_t = Sort::Oldest
 	)]
 	pub sort:         Sort,
