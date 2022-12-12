@@ -22,6 +22,6 @@ fn main() -> Result<()> {
 			&out_dir,
 		)?;
 	}
-	println!("Completion scripts are generated in {:?}", out_dir);
+	println!("Completion scripts are generated in {out_dir:?}");
 	Ok(())
 }

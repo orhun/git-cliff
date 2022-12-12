@@ -181,7 +181,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 	let mut commit_range = args.range;
 	if args.unreleased {
 		if let Some(last_tag) = tags.last().map(|(k, _)| k) {
-			commit_range = Some(format!("{}..HEAD", last_tag));
+			commit_range = Some(format!("{last_tag}..HEAD"));
 		}
 	} else if args.latest || args.current {
 		if tags.len() < 2 {
@@ -190,7 +190,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 				commits.last().map(|c| c.id().to_string()),
 				tags.get_index(0).map(|(k, _)| k),
 			) {
-				commit_range = Some(format!("{}..{}", tag1, tag2));
+				commit_range = Some(format!("{tag1}..{tag2}"));
 			}
 		} else {
 			let mut tag_index = tags.len() - 2;
@@ -221,7 +221,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 				tags.get_index(tag_index).map(|(k, _)| k),
 				tags.get_index(tag_index + 1).map(|(k, _)| k),
 			) {
-				commit_range = Some(format!("{}..{}", tag1, tag2));
+				commit_range = Some(format!("{tag1}..{tag2}"));
 			}
 		}
 	}

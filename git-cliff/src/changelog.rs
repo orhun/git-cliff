@@ -139,13 +139,13 @@ impl<'a> Changelog<'a> {
 	pub fn generate<W: Write>(&self, out: &mut W) -> Result<()> {
 		debug!("Generating changelog...");
 		if let Some(header) = &self.config.changelog.header {
-			write!(out, "{}", header)?;
+			write!(out, "{header}")?;
 		}
 		for release in &self.releases {
 			write!(out, "{}", self.template.render(release)?)?;
 		}
 		if let Some(footer) = &self.config.changelog.footer {
-			write!(out, "{}", footer)?;
+			write!(out, "{footer}")?;
 		}
 		Ok(())
 	}
@@ -161,7 +161,7 @@ impl<'a> Changelog<'a> {
 			changelog = changelog.replacen(header, "", 1);
 		}
 		self.generate(out)?;
-		write!(out, "{}", changelog)?;
+		write!(out, "{changelog}")?;
 		Ok(())
 	}
 
