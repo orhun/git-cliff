@@ -1,4 +1,5 @@
 use clap::{
+	ArgSettings,
 	ValueEnum,
 	Parser,
 };
@@ -33,7 +34,7 @@ pub enum Sort {
 )]
 pub struct Opt {
 	/// Increases the logging verbosity.
-	#[arg(short, long, action = ArgAction::SetTrue, alias = "debug", help_heading = Some("FLAGS"))]
+	#[arg(short, long,action = ArgAction::Count, alias = "debug", help_heading = Some("FLAGS"))]
 	pub verbose:      u8,
 	/// Sets the configuration file.
 	#[arg(short, long, env = "GIT_CLIFF_CONFIG", value_name = "PATH", default_value = DEFAULT_CONFIG)]
