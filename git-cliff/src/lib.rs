@@ -12,7 +12,7 @@ use args::{
 	Strip,
 };
 use changelog::Changelog;
-use clap::ArgEnum;
+use clap::ValueEnum;
 use git_cliff_core::commit::Commit;
 use git_cliff_core::config::Config;
 use git_cliff_core::embed::EmbeddedConfig;
@@ -128,7 +128,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 	if args.sort == Sort::Oldest {
 		if let Some(ref sort_commits) = config.git.sort_commits {
-			args.sort = Sort::from_str(sort_commits, true)
+			args.sort = Sort::value_parser(sort_commits, true)
 				.expect("Incorrect config value for 'sort_commits'");
 		}
 	}
