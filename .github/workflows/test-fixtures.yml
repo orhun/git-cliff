@@ -25,10 +25,15 @@ jobs:
             command: --latest --topo-order
           - fixtures-name: test-latest-with-one-tag
             command: --latest
+          - fixtures-name: test-commit-footers
           - fixtures-name: test-commit-preprocessors
+          - fixtures-name: test-custom-scope
+          - fixtures-name: test-limit-commits
+          - fixtures-name: test-skip-breaking-changes
+          - fixtures-name: test-split-commits
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Run a fixtures test
         uses: ./.github/actions/run-fixtures-test
