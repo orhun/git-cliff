@@ -103,7 +103,7 @@ impl Repository {
 	pub fn tags(
 		&self,
 		pattern: &Option<String>,
-		date_order: bool,
+		topo_order: bool,
 	) -> Result<IndexMap<String, String>> {
 		let mut tags: Vec<(Commit, String)> = Vec::new();
 		let tag_names = self.inner.tag_names(pattern.as_deref())?;
@@ -121,7 +121,7 @@ impl Repository {
 				}
 			}
 		}
-		if date_order {
+		if !topo_order {
 			tags.sort_by(|a, b| a.0.time().seconds().cmp(&b.0.time().seconds()));
 		}
 		Ok(tags

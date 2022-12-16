@@ -70,7 +70,7 @@
     - [tag_pattern](#tag_pattern)
     - [skip_tags](#skip_tags)
     - [ignore_tags](#ignore_tags)
-    - [date_order](#date_order)
+    - [topo_order](#topo_order)
     - [sort_commits](#sort_commits)
     - [link_parsers](#link_parsers)
 - [Project Integration](#project-integration)
@@ -164,7 +164,7 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
 -l, --latest        Processes the commits starting from the latest tag
     --current       Processes the commits that belong to the current tag
 -u, --unreleased    Processes the commits that do not belong to a tag
--d, --date-order    Sorts the tags chronologically
+    --topo-order    Sorts the tags topologically
     --context       Prints changelog context as JSON
 -h, --help          Prints help information
 -V, --version       Prints version information
@@ -270,11 +270,11 @@ git cliff --sort oldest
 git cliff --sort newest
 ```
 
-Sort the tags in chronological order:
+Sort the tags in topological order:
 
 ```sh
-# Process in chronological order instead of topological.
-git cliff --date-order
+# Process in topological order instead of chronological.
+git cliff --topo-order
 ```
 
 Save the changelog file to the specified file:
@@ -463,7 +463,7 @@ filter_commits = false
 tag_pattern = "v[0-9]*"
 skip_tags = "v0.1.0-beta.1"
 ignore_tags = ""
-date_order = false
+topo_order = false
 sort_commits = "oldest"
 link_parsers = [
     { pattern = "#(\\d+)", href = "https://github.com/orhun/git-cliff/issues/$1"},
@@ -625,11 +625,11 @@ A regex for ignore processing the matched tags.
 
 While `skip_tags` drop commits from the changelog, `ignore_tags` include ignored commits into the next tag.
 
-#### date_order
+#### topo_order
 
-If set to `true`, tags are processed in chronological order instead of topological.
+If set to `true`, tags are processed in topological order instead of chronological.
 
-This can also be achieved by using the `--date-order` command line flag.
+This can also be achieved by using the `--topo-order` command line flag.
 
 #### sort_commits
 

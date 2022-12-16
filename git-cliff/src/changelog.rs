@@ -262,7 +262,7 @@ mod test {
 				tag_pattern:              None,
 				skip_tags:                Regex::new("v3.*").ok(),
 				ignore_tags:              None,
-				date_order:               Some(false),
+				topo_order:               Some(false),
 				sort_commits:             Some(String::from("oldest")),
 				link_parsers:             None,
 				limit_commits:            None,
