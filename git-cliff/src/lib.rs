@@ -292,19 +292,21 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 	}
 
-	// Generate changelog.
+	// Generate output.
 	let changelog = Changelog::new(releases, &config)?;
+	if args.context {
+		return changelog.write_context(&mut io::stdout());
+	}
 	if let Some(path) = args.prepend {
-		changelog.prepend(fs::read_to_string(&path)?, &mut File::create(path)?)
-	} else if let Some(path) = args.output {
+		changelog.prepend(fs::read_to_string(&path)?, &mut File::create(path)?)?;
+	}
+	if let Some(path) = args.output {
 		let mut output = File::create(path)?;
 		if args.context {
 			changelog.write_context(&mut output)
 		} else {
 			changelog.generate(&mut output)
 		}
-	} else if args.context {
-		changelog.write_context(&mut io::stdout())
 	} else {
 		changelog.generate(&mut io::stdout())
 	}
