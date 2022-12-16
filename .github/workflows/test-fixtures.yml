@@ -21,8 +21,8 @@ jobs:
             command: --latest
           - fixtures-name: test-date-order
             command: --latest
-          - fixtures-name: test-date-order-arg
-            command: --latest --date-order
+          - fixtures-name: test-topo-order-arg
+            command: --latest --topo-order
           - fixtures-name: test-latest-with-one-tag
             command: --latest
           - fixtures-name: test-commit-preprocessors

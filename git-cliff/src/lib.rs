@@ -132,9 +132,9 @@ pub fn run(mut args: Opt) -> Result<()> {
 				.expect("Incorrect config value for 'sort_commits'");
 		}
 	}
-	if !args.date_order {
-		if let Some(date_order) = config.git.date_order {
-			args.date_order = date_order;
+	if !args.topo_order {
+		if let Some(topo_order) = config.git.topo_order {
+			args.topo_order = topo_order;
 		}
 	}
 
@@ -143,7 +143,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		Repository::init(args.repository.clone().unwrap_or(env::current_dir()?))?;
 
 	// Parse tags.
-	let mut tags = repository.tags(&config.git.tag_pattern, args.date_order)?;
+	let mut tags = repository.tags(&config.git.tag_pattern, args.topo_order)?;
 
 	// Skip tags.
 	config.git.skip_tags = config.git.skip_tags.filter(|r| !r.as_str().is_empty());
@@ -207,7 +207,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 						None => {
 							return Err(Error::ChangelogError(String::from(
 								"No suitable tags found. Maybe run with \
-								 '--date-order'?",
+								 '--topo-order'?",
 							)));
 						}
 					}

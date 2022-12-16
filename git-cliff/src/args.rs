@@ -106,9 +106,9 @@ pub struct Opt {
 	/// Processes the commits that do not belong to a tag.
 	#[clap(short, long, help_heading = Some("FLAGS"))]
 	pub unreleased:   bool,
-	/// Sorts the tags chronologically.
-	#[clap(short, long, help_heading = Some("FLAGS"))]
-	pub date_order:   bool,
+	/// Sorts the tags topologically.
+	#[clap(long, help_heading = Some("FLAGS"))]
+	pub topo_order:   bool,
 	/// Prints changelog context as JSON.
 	#[clap(long, help_heading = Some("FLAGS"))]
 	pub context:      bool,
