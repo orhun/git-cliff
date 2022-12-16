@@ -19,4 +19,4 @@ git init
 
 # Show results
 echo -e "\n---Run git-cliff---"
-cargo run --manifest-path "$SCRIPT_DIR/../../Cargo.toml" -- --config "$FIXTURES_DIR/cliff.toml" "$@"
+cargo run --manifest-path "$SCRIPT_DIR/../../Cargo.toml" -- --config "$FIXTURES_DIR/cliff.toml" "${@:2}"
