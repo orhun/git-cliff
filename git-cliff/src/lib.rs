@@ -29,6 +29,10 @@ use std::fs::{
 	File,
 };
 use std::io;
+use std::time::{
+	SystemTime,
+	UNIX_EPOCH,
+};
 
 /// Checks for a new version on crates.io
 #[cfg(feature = "update-informer")]
@@ -232,14 +236,14 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 
 	// Update tags.
-	if let Some(tag) = args.tag {
+	if let Some(ref tag) = args.tag {
 		if let Some(commit_id) = commits.first().map(|c| c.id().to_string()) {
 			match tags.get(&commit_id) {
 				Some(tag) => {
 					warn!("There is already a tag ({}) for {}", tag, commit_id)
 				}
 				None => {
-					tags.insert(commit_id, tag);
+					tags.insert(commit_id, tag.to_string());
 				}
 			}
 		}
@@ -260,7 +264,14 @@ pub fn run(mut args: Opt) -> Result<()> {
 		if let Some(tag) = tags.get(&commit_id) {
 			releases[release_index].version = Some(tag.to_string());
 			releases[release_index].commit_id = Some(commit_id);
-			releases[release_index].timestamp = git_commit.time().seconds();
+			releases[release_index].timestamp = if args.tag.as_deref() == Some(tag) {
+				SystemTime::now()
+					.duration_since(UNIX_EPOCH)?
+					.as_secs()
+					.try_into()?
+			} else {
+				git_commit.time().seconds()
+			};
 			previous_release.previous = None;
 			releases[release_index].previous = Some(Box::new(previous_release));
 			previous_release = releases[release_index].clone();

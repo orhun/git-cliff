@@ -50,6 +50,12 @@ pub enum Error {
 	/// Errors that may occur during parsing or compiling a regular expression.
 	#[error("Cannot parse/compile regex: `{0}`")]
 	RegexError(#[from] regex::Error),
+	/// Error that may occur due to system time related anomalies.
+	#[error("System time error: `{0}`")]
+	SystemTimeError(#[from] std::time::SystemTimeError),
+	/// Error that may occur while parsing integers.
+	#[error("Failed to parse integer: `{0}`")]
+	IntParseError(#[from] std::num::TryFromIntError),
 }
 
 /// Result type of the core library.
