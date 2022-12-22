@@ -6,7 +6,9 @@ if [ -n "$1" ]; then
 	msg="# managed by release.sh"
 	sed "s/^version = .* $msg$/version = \"${1#v}\" $msg/" -i git-cliff*/Cargo.toml
 	# update the changelog
+	sed "s/\s+\#\s(.*)\s\#\sreplace issue numbers/\\t\1/g" -E -i config/cliff.toml
 	cargo run -- --tag "$1" > CHANGELOG.md
+	git restore config/cliff.toml
 	git add -A && git commit -m "chore(release): prepare for $1"
 	git show
 	# generate a changelog for the tag message
