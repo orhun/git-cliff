@@ -40,8 +40,8 @@ jobs:
           echo "$r" >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
 
-  publish-github:
-    name: Publish on GitHub
+  publish-binaries:
+    name: Publish binaries
     needs: generate-changelog
     runs-on: ${{ matrix.os }}
     strategy:
@@ -139,9 +139,49 @@ jobs:
           release_name: "Release v${{ env.RELEASE_VERSION }}"
           body: "${{ needs.generate-changelog.outputs.release_body }}"
 
+  publish-deb:
+    name: Publish Debian package
+    needs: generate-changelog
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set the release version
+        shell: bash
+        run: echo "RELEASE_VERSION=${GITHUB_REF:11}" >> $GITHUB_ENV
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-unknown-linux-gnu
+          override: true
+      - name: Install cargo-deb
+        run: cargo install cargo-deb
+      - name: Build Debian package
+        run: |
+          # https://github.com/kornelski/cargo-deb/pull/62
+          sed "/readme = (.*)/d" -E -i git-cliff/Cargo.toml
+          cargo-deb --strip --manifest-path git-cliff/Cargo.toml -v -o git-cliff-${{ env.RELEASE_VERSION }}.deb
+      - name: Sign the package
+        run: |
+          echo "${{ secrets.GPG_RELEASE_KEY }}" | base64 --decode > private.key
+          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --pinentry-mode=loopback \
+            --passphrase-fd 0 --import private.key
+          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --pinentry-mode=loopback \
+            --passphrase-fd 0 --detach-sign \
+            git-cliff-${{ env.RELEASE_VERSION }}.deb
+      - name: Upload the release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: git-cliff-${{ env.RELEASE_VERSION }}.deb
+          tag: ${{ github.ref }}
+          release_name: "Release v${{ env.RELEASE_VERSION }}"
+          body: "${{ needs.generate-changelog.outputs.release_body }}"
+
   publish-crates-io:
     name: Publish on crates.io
-    needs: publish-github
+    needs: publish-binaries
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
