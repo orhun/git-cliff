@@ -33,7 +33,9 @@ jobs:
           r="${r//'%'/'%25'}"
           r="${r//$'\n'/'%0A'}"
           r="${r//$'\r'/'%0D'}"
-          echo "::set-output name=release_body::$r"
+          echo 'RELEASE_BODY<<EOF' >> $GITHUB_ENV
+          echo "$r" >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
 
   publish-github:
     name: Publish on GitHub
