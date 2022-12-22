@@ -22,7 +22,7 @@ jobs:
           profile: minimal
           override: true
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Check
         uses: actions-rs/cargo@v1
         with:
@@ -41,12 +41,12 @@ jobs:
           override: true
       - name: Checkout
         if: github.event_name != 'pull_request'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Checkout
         if: github.event_name == 'pull_request'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
@@ -79,7 +79,7 @@ jobs:
           components: clippy
           override: true
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Check the lints
         uses: actions-rs/cargo@v1
         with:
@@ -98,7 +98,7 @@ jobs:
           components: rustfmt
           override: true
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Check the formatting
         uses: actions-rs/cargo@v1
         with:
@@ -110,7 +110,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Check the links
         uses: lycheeverse/lychee-action@v1
         with:
@@ -123,7 +123,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Run cargo-audit
         uses: actions-rs/audit-check@v1
         with:
