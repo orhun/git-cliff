@@ -766,7 +766,7 @@ For example:
 
 When a conventional commit contains footers, the footers are passed to the template in a `footers` array in the commit object. Each footer is represented by an object with the following fields:
 
-- `"token"`, the name of the footer (preceeding the separator character)
+- `token`, the name of the footer (preceeding the separator character)
 - `separator`, the footer's separator string (either `: ` or ` #`)
 - `value`, the value following the separator character
 - `breaking`, which is `true` if this is a `BREAKING CHANGE:` footer, and `false` otherwise
