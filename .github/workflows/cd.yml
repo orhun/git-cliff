@@ -97,11 +97,12 @@ jobs:
           cp {LICENSE,README.md,CHANGELOG.md} release/
           OUT_DIR=release/completions/ cargo run --release --bin git-cliff-completions
           OUT_DIR=release/man/ cargo run --release --bin git-cliff-mangen
-          if [ "${{ matrix.OS }}" = "windows-2022" ]; then
-            cp target/${{ matrix.TARGET }}/release/git-cliff.exe release/
-          else
-            cp target/${{ matrix.TARGET }}/release/git-cliff release/
-          fi
+          for bin in 'git-cliff' 'git-cliff-completions' 'git-cliff-mangen'; do
+            if [ "${{ matrix.OS }}" = "windows-2022" ]; then
+              bin="${bin}.exe"
+            fi
+            cp "target/${{ matrix.TARGET }}/release/${bin}" release/
+          done
           mv release/ git-cliff-${{ env.RELEASE_VERSION }}/
       - name: Create release artifacts
         shell: bash
