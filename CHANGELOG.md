@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0] - 2022-12-25
+
+### Bug Fixes
+
+- Fix test fixture failures
+
+### Documentation
+
+- Fix GitHub badges in README.md
+
+### Features
+
+- [**breaking**] Replace `--date-order` by `--topo-order`
+- Allow running with `--prepend` and `--output` ([#120](https://github.com/orhun/git-cliff/issues/120))
+- [**breaking**] Use current time for `--tag` argument ([#107](https://github.com/orhun/git-cliff/issues/107))
+- Include completions and mangen in binary releases ([#115](https://github.com/orhun/git-cliff/issues/115))
+- Publish Debian package via release workflow ([#113](https://github.com/orhun/git-cliff/issues/113))
+
+### Miscellaneous Tasks
+
+- Run all test fixtures
+- Remove deprecated set-output usage
+- Update actions/checkout to v3
+- Comment out custom commit preprocessor ([#112](https://github.com/orhun/git-cliff/issues/112))
+
+### Refactor
+
+- Apply clippy suggestions
+
+### Styling
+
+- Update README.md about the styling of footer field
+
 ## [0.10.0] - 2022-11-20
 
 ### Bug Fixes
