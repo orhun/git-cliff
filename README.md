@@ -333,7 +333,7 @@ It is possible to generate changelogs using [GitHub Actions](https://github.com/
 
 ```yml
 - name: Generate a changelog
-  uses: orhun/git-cliff-action@v1
+  uses: orhun/git-cliff-action@v2
   with:
     config: cliff.toml
     args: --verbose

@@ -20,7 +20,7 @@ jobs:
         shell: bash
         run: sed -E -i "s/\s+\#\s(.*)\s\#\sreplace issue numbers/\\t\1/g" config/cliff.toml
       - name: Generate a changelog
-        uses: orhun/git-cliff-action@v1
+        uses: orhun/git-cliff-action@v2
         id: git-cliff
         with:
           config: config/cliff.toml
