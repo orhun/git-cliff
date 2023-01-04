@@ -515,9 +515,9 @@ dependencies = [
 
 [[package]]
 name = "git-conventional"
-version = "0.12.0"
+version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46fafd6f99ae00698345d947293759d48d487f3ce8bdd3a686b097fa7a0ce9a0"
+checksum = "c2033e90bdceee1540826d126c95461a90b9411624f110feab6fcd5149790231"
 dependencies = [
  "doc-comment",
  "nom",
