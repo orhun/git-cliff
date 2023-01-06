@@ -233,6 +233,8 @@ jobs:
           IFS="-" read -r build_target <<< "${{ matrix.build.NAME }}"
           export node_os="${build_target[1]}"
           export node_arch="${build_target[2]}"
+          echo "[$node_os]"
+          echo "[$node_arch]"
           export version="${{ env.RELEASE_VERSION }}"
           bin="git-cliff"
           mkdir -p "git-cliff-$os-$arch/bin"
