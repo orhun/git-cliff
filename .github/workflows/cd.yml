@@ -231,8 +231,8 @@ jobs:
         run: |
           cd packaging/npm
           IFS="-" read -r build_target <<< "${{ matrix.build.NAME }}"
-          export os="${build_target[1]}"
-          export arch="${build_target[2]}"
+          export node_os="${build_target[1]}"
+          export node_arch="${build_target[2]}"
           export version="${{ env.RELEASE_VERSION }}"
           bin="git-cliff"
           mkdir -p "git-cliff-$os-$arch/bin"
