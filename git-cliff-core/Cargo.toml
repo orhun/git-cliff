@@ -1,6 +1,6 @@
 [package]
 name = "git-cliff-core"
-version = "1.0.8" # managed by release.sh
+version = "1.0.9" # managed by release.sh
 description = "Core library of git-cliff"
 authors = ["git-cliff contributors <git-cliff@protonmail.com>"]
 license = "GPL-3.0"
