@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.7] - 2023-01-06
+
+### Miscellaneous Tasks
+
+- Add debug log for generated manifest
+
 ## [1.0.6] - 2023-01-06
 
 ### Bug Fixes

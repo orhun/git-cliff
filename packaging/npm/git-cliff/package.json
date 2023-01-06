@@ -1,6 +1,6 @@
 {
   "name": "git-cliff",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "A highly customizable Changelog Generator that follows Conventional Commit specifications ⛰️",
   "bin": "lib/index.js",
   "scripts": {
@@ -30,12 +30,12 @@
   },
   "homepage": "https://github.com/orhun/git-cliff#readme",
   "optionalDependencies": {
-    "git-cliff-linux-x64": "1.0.6",
-    "git-cliff-linux-arm64": "1.0.6",
-    "git-cliff-darwin-x64": "1.0.6",
-    "git-cliff-darwin-arm64": "1.0.6",
-    "git-cliff-windows-x64": "1.0.6",
-    "git-cliff-windows-arm64": "1.0.6"
+    "git-cliff-linux-x64": "1.0.7",
+    "git-cliff-linux-arm64": "1.0.7",
+    "git-cliff-darwin-x64": "1.0.7",
+    "git-cliff-darwin-arm64": "1.0.7",
+    "git-cliff-windows-x64": "1.0.7",
+    "git-cliff-windows-arm64": "1.0.7"
   },
   "devDependencies": {
     "@types/node": "^18.11.18",
