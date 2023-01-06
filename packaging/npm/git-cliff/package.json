@@ -29,14 +29,6 @@
     "url": "https://github.com/orhun/git-cliff/issues"
   },
   "homepage": "https://github.com/orhun/git-cliff#readme",
-  "optionalDependencies": {
-    "git-cliff-linux-x64": "*",
-    "git-cliff-linux-arm64": "*",
-    "git-cliff-darwin-x64": "*",
-    "git-cliff-darwin-arm64": "*",
-    "git-cliff-windows-x64": "*",
-    "git-cliff-windows-arm64": "*"
-  },
   "devDependencies": {
     "@types/node": "^18.11.18",
     "@typescript-eslint/eslint-plugin": "^5.48.0",
