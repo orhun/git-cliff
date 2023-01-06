@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.4] - 2023-01-06
+
+### Bug Fixes
+
+- Use cp instead of install
+
 ## [1.0.3] - 2023-01-06
 
 ### Bug Fixes
