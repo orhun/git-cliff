@@ -230,9 +230,9 @@ jobs:
         shell: bash
         run: |
           cd packaging/npm
-          IFS="-" read -ar build_target <<< "${{ matrix.build.NAME }}"
-          export os="${build_target[0]}"
-          export arch="${build_target[1]}"
+          IFS="-" read -r build_target <<< "${{ matrix.build.NAME }}"
+          export os="${build_target[1]}"
+          export arch="${build_target[2]}"
           export version="${{ env.RELEASE_VERSION }}"
           echo "${build_target[@]}"
           bin="git-cliff"
