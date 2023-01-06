@@ -53,72 +53,84 @@ jobs:
               OS: ubuntu-20.04,
               TOOLCHAIN: stable,
               TARGET: x86_64-unknown-linux-gnu,
+              NPM_PUBLISH: true,
             }
           - {
               NAME: linux-x64-musl,
               OS: ubuntu-20.04,
               TOOLCHAIN: stable,
               TARGET: x86_64-unknown-linux-musl,
+              NPM_PUBLISH: false,
             }
           - {
               NAME: linux-x86-glibc,
               OS: ubuntu-20.04,
               TOOLCHAIN: stable,
               TARGET: i686-unknown-linux-gnu,
+              NPM_PUBLISH: false,
             }
           - {
               NAME: linux-x86-musl,
               OS: ubuntu-20.04,
               TOOLCHAIN: stable,
               TARGET: i686-unknown-linux-musl,
+              NPM_PUBLISH: false,
             }
           - {
               NAME: linux-arm64-glibc,
               OS: ubuntu-20.04,
               TOOLCHAIN: stable,
               TARGET: aarch64-unknown-linux-gnu,
+              NPM_PUBLISH: true,
             }
           - {
               NAME: linux-arm64-musl,
               OS: ubuntu-20.04,
               TOOLCHAIN: stable,
               TARGET: aarch64-unknown-linux-musl,
+              NPM_PUBLISH: false,
             }
           - {
-              NAME: windows-x64-mingw,
+              NAME: win32-x64-mingw,
               OS: windows-2022,
               TOOLCHAIN: stable,
               TARGET: x86_64-pc-windows-gnu,
+              NPM_PUBLISH: false,
             }
           - {
-              NAME: windows-x64-msvc,
+              NAME: win32-x64-msvc,
               OS: windows-2022,
               TOOLCHAIN: stable,
               TARGET: x86_64-pc-windows-msvc,
+              NPM_PUBLISH: true,
             }
           - {
-              NAME: windows-x86-msvc,
+              NAME: win32-x86-msvc,
               OS: windows-2022,
               TOOLCHAIN: stable,
               TARGET: i686-pc-windows-msvc,
+              NPM_PUBLISH: false,
             }
           - {
-              NAME: windows-arm64-msvc,
+              NAME: win32-arm64-msvc,
               OS: windows-2022,
               TOOLCHAIN: stable,
               TARGET: aarch64-pc-windows-msvc,
+              NPM_PUBLISH: true,
             }
           - {
               NAME: darwin-x64,
               OS: macos-11,
               TOOLCHAIN: stable,
               TARGET: x86_64-apple-darwin,
+              NPM_PUBLISH: true,
             }
           - {
               NAME: darwin-arm64,
               OS: macos-11,
               TOOLCHAIN: stable,
               TARGET: aarch64-apple-darwin,
+              NPM_PUBLISH: true,
             }
     steps:
       - name: Checkout
@@ -188,7 +200,7 @@ jobs:
           echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --pinentry-mode=loopback \
             --passphrase-fd 0 --detach-sign \
             git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}.tar.gz
-      - name: Upload the release
+      - name: Publish to GitHub
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -198,6 +210,56 @@ jobs:
           tag: ${{ github.ref }}
           release_name: "Release v${{ env.RELEASE_VERSION }}"
           body: "${{ needs.generate-changelog.outputs.release_body }}"
+      - name: Install node
+        if: matrix.build.NPM_PUBLISH == true
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+          registry-url: "https://registry.npmjs.org"
+      - name: Publish to NPM
+        if: matrix.build.NPM_PUBLISH == true
+        shell: bash
+        run: |
+          cd npm
+          node_os=$(echo "${{ matrix.build.NAME }}" | cut -d '-' -f1)
+          export node_os
+          node_arch=$(echo "${{ matrix.build.NAME }}" | cut -d '-' -f2)
+          export node_arch
+          export version="${{ env.RELEASE_VERSION }}"
+          bin="git-cliff"
+          mkdir -p "git-cliff-${node_os}-${node_arch}/bin"
+          envsubst < package.json.tmpl > "git-cliff-${node_os}-${node_arch}/package.json"
+          if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
+            bin="${bin}.exe"
+          fi
+          cp "../target/${{ matrix.build.TARGET }}/release/${bin}" "git-cliff-${node_os}-${node_arch}/bin"
+          cp ../README.md "git-cliff-${node_os}-${node_arch}"
+          cd "git-cliff-${node_os}-${node_arch}"
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-npm:
+    name: Publish the base package to NPM
+    needs: publish-binaries
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+          registry-url: "https://registry.npmjs.org"
+      - name: Publish the package
+        shell: bash
+        run: |
+          cd npm/git-cliff
+          yarn install
+          yarn build
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-deb:
     name: Publish Debian package
