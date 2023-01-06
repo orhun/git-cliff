@@ -230,13 +230,14 @@ jobs:
         shell: bash
         run: |
           cd packaging/npm
-          export node_os=$(echo "${{ matrix.build.NAME }}" | cut -d '-' -f1)
-          export node_arch=$(echo "${{ matrix.build.NAME }}" | cut -d '-' -f2)
+          node_os=$(echo "${{ matrix.build.NAME }}" | cut -d '-' -f1)
+          export node_os
+          node_arch=$(echo "${{ matrix.build.NAME }}" | cut -d '-' -f2)
+          export node_arch
           export version="${{ env.RELEASE_VERSION }}"
           bin="git-cliff"
           mkdir -p "git-cliff-$os-$arch/bin"
           envsubst < package.json.tmpl > "git-cliff-$os-$arch/package.json"
-          cat "git-cliff-$os-$arch/package.json"
           if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
             bin="${bin}.exe"
           fi
