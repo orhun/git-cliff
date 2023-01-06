@@ -236,8 +236,8 @@ jobs:
           if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
             bin="${bin}.exe"
           fi
-          install -Dm 755 "../../target/${{ matrix.build.TARGET }}/release/${bin}" -t "git-cliff-$os-$arch/bin"
-          install -Dm 644 ../../README.md -t "git-cliff-$os-$arch"
+          cp "../../target/${{ matrix.build.TARGET }}/release/${bin}" "git-cliff-$os-$arch/bin"
+          cp ../../README.md -t "git-cliff-$os-$arch"
           cd "git-cliff-$os-$arch"
           npm publish --dry-run
         # env:
