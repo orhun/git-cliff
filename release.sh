@@ -4,7 +4,9 @@
 if [ -n "$1" ]; then
 	# update the version
 	msg="# managed by release.sh"
-	sed "s/^version = .* $msg$/version = \"${1#v}\" $msg/" -i git-cliff*/Cargo.toml
+	sed -E -i "s/^version = .* $msg$/version = \"${1#v}\" $msg/" git-cliff*/Cargo.toml
+	sed -E -i "s/\"version\": \".+\"/\"version\": \"${1#v}\"/" packaging/npm/git-cliff/package.json
+	sed -E -i "s/\"(git-cliff-.+)\": \".+\"/\"\1\": \"${1#v}\"/g" packaging/npm/git-cliff/package.json
 	# update the changelog
 	sed "s/\s+\#\s(.*)\s\#\sreplace issue numbers/\\t\1/g" -E -i config/cliff.toml
 	cargo run -- --tag "$1" > CHANGELOG.md
