@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.5] - 2023-01-06
+
+### Miscellaneous Tasks
+
+- Update NPM versions in release script
+- Debug NPM publish step
+
 ## [1.0.4] - 2023-01-06
 
 ### Bug Fixes
