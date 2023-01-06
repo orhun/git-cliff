@@ -168,7 +168,8 @@ jobs:
       - name: Emulate build
         shell: bash
         run: |
-          touch "target/${{ matrix.build.TARGET }}/release/git-cliff"
+          mkdir -p "target/${{ matrix.build.TARGET }}/release"
+          echo "hey" > "target/${{ matrix.build.TARGET }}/release/git-cliff"
       - name: Prepare release assets
         shell: bash
         run: |
