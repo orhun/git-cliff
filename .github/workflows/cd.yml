@@ -238,6 +238,32 @@ jobs:
         # env:
         #   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+  publish-npm:
+    name: Publish base package on NPM
+    needs: publish-binaries
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set the release version
+        run: echo "RELEASE_VERSION=${GITHUB_REF:11}" >> $GITHUB_ENV
+      - name: Install node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+          registry-url: "https://registry.npmjs.org"
+      - name: Publish the package
+        shell: bash
+        run: |
+          cd packaging/npm/git-cliff
+          yarn install
+          yarn build
+          sed -E -i "s/\"version\": \".+\"/\"version\": \"${{ env.RELEASE_VERSION }}\"/" package.json
+          sed -E -i "s/\"(git-cliff-.+)\": \".+\"/\"\1\": \"${{ env.RELEASE_VERSION }}\"/g" package.json
+          npm publish --dry-run
+        # env:
+        #   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
   publish-deb:
     name: Publish Debian package
     needs: generate-changelog
