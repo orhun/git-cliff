@@ -234,10 +234,10 @@ jobs:
           export os="${build_target[1]}"
           export arch="${build_target[2]}"
           export version="${{ env.RELEASE_VERSION }}"
-          echo "${build_target[@]}"
           bin="git-cliff"
           mkdir -p "git-cliff-$os-$arch/bin"
           envsubst < package.json.tmpl > "git-cliff-$os-$arch/package.json"
+          cat "git-cliff-$os-$arch/package.json"
           if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
             bin="${bin}.exe"
           fi
