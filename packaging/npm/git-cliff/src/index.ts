@@ -32,7 +32,8 @@ function getExePath() {
   */
 function runGitCliff() {
   const args = process.argv.slice(2)
-  spawnSync(getExePath(), args, { stdio: "inherit" })
+  const processResult = spawnSync(getExePath(), args, { stdio: "inherit" })
+  process.exit(processResult.status ?? 0)
 }
 
 runGitCliff()
