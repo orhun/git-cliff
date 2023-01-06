@@ -169,7 +169,11 @@ jobs:
         shell: bash
         run: |
           mkdir -p "target/${{ matrix.build.TARGET }}/release"
-          echo "hey" > "target/${{ matrix.build.TARGET }}/release/git-cliff"
+          if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
+            echo "hey" > "target/${{ matrix.build.TARGET }}/release/git-cliff.exe"
+          else
+            echo "hey" > "target/${{ matrix.build.TARGET }}/release/git-cliff"
+          fi
       - name: Prepare release assets
         shell: bash
         run: |
@@ -230,6 +234,7 @@ jobs:
           export os="${build_target[0]}"
           export arch="${build_target[1]}"
           export version="${{ env.RELEASE_VERSION }}"
+          echo "${build_target[@]}"
           bin="git-cliff"
           mkdir -p "git-cliff-$os-$arch/bin"
           envsubst < package.json.tmpl > "git-cliff-$os-$arch/package.json"
@@ -237,7 +242,7 @@ jobs:
             bin="${bin}.exe"
           fi
           cp "../../target/${{ matrix.build.TARGET }}/release/${bin}" "git-cliff-$os-$arch/bin"
-          cp ../../README.md -t "git-cliff-$os-$arch"
+          cp ../../README.md "git-cliff-$os-$arch"
           cd "git-cliff-$os-$arch"
           npm publish --dry-run
         # env:
@@ -263,8 +268,6 @@ jobs:
           cd packaging/npm/git-cliff
           yarn install
           yarn build
-          sed -E -i "s/\"version\": \".+\"/\"version\": \"${{ env.RELEASE_VERSION }}\"/" package.json
-          sed -E -i "s/\"(git-cliff-.+)\": \".+\"/\"\1\": \"${{ env.RELEASE_VERSION }}\"/g" package.json
           npm publish --dry-run
         # env:
         #   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
