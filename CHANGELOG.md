@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.6] - 2023-01-06
+
+### Bug Fixes
+
+- Fix splitting os and arch
+
 ## [1.0.5] - 2023-01-06
 
 ### Miscellaneous Tasks
