@@ -152,30 +152,34 @@ jobs:
           toolchain: ${{ matrix.build.TOOLCHAIN }}
           target: ${{ matrix.build.TARGET }}
           override: true
-      - name: Build (linux/macos)
-        if: matrix.build.OS != 'windows-2022'
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: true
-          command: build
-          args: --release --locked --target ${{ matrix.build.TARGET }}
-      - name: Build (windows)
-        if: matrix.build.OS == 'windows-2022'
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --no-default-features --release --locked --target ${{ matrix.build.TARGET }}
+      # - name: Build (linux/macos)
+      #   if: matrix.build.OS != 'windows-2022'
+      #   uses: actions-rs/cargo@v1
+      #   with:
+      #     use-cross: true
+      #     command: build
+      #     args: --release --locked --target ${{ matrix.build.TARGET }}
+      # - name: Build (windows)
+      #   if: matrix.build.OS == 'windows-2022'
+      #   uses: actions-rs/cargo@v1
+      #   with:
+      #     command: build
+      #     args: --no-default-features --release --locked --target ${{ matrix.build.TARGET }}
+      - name: Emulate build
+        shell: bash
+        run: |
+          touch "target/${{ matrix.build.TARGET }}/release/git-cliff"
       - name: Prepare release assets
         shell: bash
         run: |
           mkdir -p release/{man,completions}
           cp {LICENSE,README.md,CHANGELOG.md} release/
-          OUT_DIR=release/completions/ cargo run --release --bin git-cliff-completions
-          OUT_DIR=release/man/ cargo run --release --bin git-cliff-mangen
-          for bin in 'git-cliff' 'git-cliff-completions' 'git-cliff-mangen'; do
-            if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
-              bin="${bin}.exe"
-            fi
+          # OUT_DIR=release/completions/ cargo run --release --bin git-cliff-completions
+          # OUT_DIR=release/man/ cargo run --release --bin git-cliff-mangen
+          for bin in 'git-cliff'; do
+            # if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
+            #   bin="${bin}.exe"
+            # fi
             cp "target/${{ matrix.build.TARGET }}/release/${bin}" release/
           done
           mv release/ git-cliff-${{ env.RELEASE_VERSION }}/
@@ -211,13 +215,13 @@ jobs:
           release_name: "Release v${{ env.RELEASE_VERSION }}"
           body: "${{ needs.generate-changelog.outputs.release_body }}"
       - name: Install node
-        if: matrix.build.NPM_PUBLISH == 'true'
+        if: matrix.build.NPM_PUBLISH == true
         uses: actions/setup-node@v3
         with:
           node-version: "16"
           registry-url: "https://registry.npmjs.org"
       - name: Publish to NPM
-        if: matrix.build.NPM_PUBLISH == 'true'
+        if: matrix.build.NPM_PUBLISH == true
         shell: bash
         run: |
           cd packaging/npm
