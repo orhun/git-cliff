@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.12] - 2023-01-06
+
+### Miscellaneous Tasks
+
+- Apply shellcheck suggestion
+
 ## [1.0.10] - 2023-01-06
 
 ### Bug Fixes
@@ -12,12 +18,14 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Fixes
 
+- Optional dependencies are not added to git-cliff
 - Debug env
 
 ## [1.0.8] - 2023-01-06
 
 ### Bug Fixes
 
+- Process doesnt return status code
 - Fix env substition
 
 ## [1.0.7] - 2023-01-06
