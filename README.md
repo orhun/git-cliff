@@ -175,7 +175,7 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
 ```
 -c, --config <PATH>                Sets the configuration file [env: GIT_CLIFF_CONFIG=] [default: cliff.toml]
 -w, --workdir <PATH>               Sets the working directory [env: GIT_CLIFF_WORKDIR=]
--r, --repository <PATH>            Sets the git repository [env: GIT_CLIFF_REPOSITORY=]
+-r, --repository <PATH>...         Sets the git repository [env: GIT_CLIFF_REPOSITORY=]
     --include-path <PATTERN>...    Sets the path to include related commits [env: GIT_CLIFF_INCLUDE_PATH=]
     --exclude-path <PATTERN>...    Sets the path to exclude related commits [env: GIT_CLIFF_EXCLUDE_PATH=]
     --with-commit <MSG>...         Sets custom commit messages to include in the changelog [env: GIT_CLIFF_WITH_COMMIT=]
@@ -243,6 +243,13 @@ Generate a changelog scoped to a specific directory (useful for monorepos):
 ```sh
 git cliff --include-path "**/*.toml" --include-path "*.md"
 git cliff --exclude-path ".github/*"
+```
+
+Generate a changelog for multiple git repositories:
+
+```sh
+# merges the commit history
+git cliff --repository path1 path2
 ```
 
 Generate a changelog that includes yet unexisting commit messages:
