@@ -10,7 +10,7 @@ jobs:
     name: Generate changelog
     runs-on: ubuntu-20.04
     outputs:
-      release_body: ${{ steps.release.outputs.release_body }}
+      release_body: ${{ steps.release.outputs.RELEASE_BODY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
