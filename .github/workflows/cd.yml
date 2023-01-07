@@ -39,6 +39,8 @@ jobs:
           echo 'RELEASE_BODY<<EOF' >> $GITHUB_ENV
           echo "$r" >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
+      - name: Print changelog
+        run: echo ${{ steps.release.outputs.RELEASE_BODY }}
 
   publish-binaries:
     name: Publish binaries
@@ -218,7 +220,7 @@ jobs:
           overwrite: true
           tag: ${{ github.ref }}
           release_name: "Release v${{ env.RELEASE_VERSION }}"
-          body: "some release"
+          body: "${{ needs.generate-changelog.outputs.release_body }}"
       - name: Install node
         if: matrix.build.NPM_PUBLISH == true
         uses: actions/setup-node@v3
