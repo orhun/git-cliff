@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.14] - 2023-01-07
+
+### Testing
+
+- Set release text manually
+
 ## [1.0.13] - 2023-01-07
 
 ### Bug Fixes
