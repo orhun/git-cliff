@@ -218,7 +218,7 @@ jobs:
           overwrite: true
           tag: ${{ github.ref }}
           release_name: "Release v${{ env.RELEASE_VERSION }}"
-          body: "${{ needs.generate-changelog.outputs.release_body }}"
+          body: "some release"
       - name: Install node
         if: matrix.build.NPM_PUBLISH == true
         uses: actions/setup-node@v3
