@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.13] - 2023-01-07
+
+### Bug Fixes
+
+- Set release body
+
 ## [1.0.12] - 2023-01-06
 
 ### Miscellaneous Tasks
