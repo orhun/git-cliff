@@ -123,6 +123,25 @@ If you are using Arch Linux, **git-cliff** can be installed from the [community 
 pacman -S git-cliff
 ```
 
+### From NPM
+
+[git-cliff](https://www.npmjs.com/package/git-cliff) can be installed from NPM:
+
+```sh
+yarn add -D git-cliff
+```
+
+or
+
+```sh
+npm install git-cliff --save-dev
+```
+
+You can also use `git-cliff` directly with `npx`:
+```sh
+npx git-cliff
+```
+
 ### From MacPorts
 
 On macOS, **git-cliff** can be installed via [MacPorts](https://www.macports.org):
