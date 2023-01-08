@@ -13,21 +13,21 @@ rust-version = "1.60.0"
 [dependencies]
 glob.workspace = true
 regex.workspace = true
-thiserror = "1.0.37"
-serde = { version = "1.0.147", features = ["derive"] }
-serde_json = "1.0.88"
+thiserror = "1.0.38"
+serde = { version = "1.0.152", features = ["derive"] }
+serde_json = "1.0.91"
 tera = "1.17.1"
 serde_regex = "1.1.0"
 indexmap = "1.9.2"
-toml = "0.5.9"
-lazy-regex = "2.3.1"
+toml = "0.5.10"
+lazy-regex = "2.4.1"
 
 [dependencies.git2]
 version = "0.15.0"
 default-features = false
 
 [dependencies.config]
-version = "0.13.2"
+version = "0.13.3"
 default-features = false
 features = ["toml", "yaml"]
 
