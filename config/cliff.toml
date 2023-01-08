@@ -1,4 +1,5 @@
-# configuration file for git-cliff (0.1.0)
+# configuration file for git-cliff
+# see https://github.com/orhun/git-cliff#configuration-file
 
 [changelog]
 # changelog header
