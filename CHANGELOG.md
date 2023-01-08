@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2023-01-08
+
+### Documentation
+
+- Disable Liquid parsing in README.md by using raw blocks
+- Update copyright years
+
+### Features
+
+- Support generating changelog for multiple git repositories ([#13](https://github.com/orhun/git-cliff/issues/13))
+
+### Miscellaneous Tasks
+
+- Bump git-cliff-action to v2
+- Add Jekyll theme configuration for GitHub pages
+- Add Jekyll configuration to .dockerignore
+- Bump `git-conventional` dependency ([#130](https://github.com/orhun/git-cliff/issues/130))
+- Publish binaries for more platforms/architectures
+- Upgrade dependencies
+- Update the description in the default config
+- Improve the release script with additional messages
+
+### Refactor
+
+- Use the git-cliff-action output for GitHub release body
+
 ## [1.0.0] - 2022-12-25
 
 ### Bug Fixes
