@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.20] - 2023-01-09
+
+### Bug Fixes
+
+- Specify more tokens
+
 ## [1.0.19] - 2023-01-09
 
 ### Bug Fixes
