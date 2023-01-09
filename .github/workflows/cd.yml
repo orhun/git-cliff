@@ -232,7 +232,7 @@ jobs:
           cp "../../target/${{ matrix.build.TARGET }}/release/${bin}" "git-cliff-$os-$arch/bin"
           cp ../../README.md "git-cliff-$os-$arch"
           cd "git-cliff-$os-$arch"
-          npm publish
+          yarn publish --registry https://npm.pkg.github.com --verbose
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -249,14 +249,14 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "16"
-          registry-url: "https://registry.npmjs.org"
+          registry-url: "https://npm.pkg.github.com"
       - name: Publish the package
         shell: bash
         run: |
           cd packaging/npm/git-cliff
           yarn install
           yarn build
-          npm publish
+          yarn publish --registry https://npm.pkg.github.com --verbose
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
