@@ -126,23 +126,24 @@ pacman -S git-cliff
 
 ### From NPM
 
-[git-cliff](https://www.npmjs.com/package/git-cliff) can be installed from NPM:
+
+You can install and run [git-cliff](https://www.npmjs.com/package/git-cliff) with a single command:
 
 ```sh
-yarn add -D git-cliff
+npx git-cliff@latest
 ```
 
-or:
+Also, if you want to add `git-cliff` to your project:
 
 ```sh
+# with yarn
+yarn add -D git-cliff
+
+# with npm
 npm install git-cliff --save-dev
 ```
 
-You can also use `git-cliff` directly with `npx`:
-
-```sh
-npx git-cliff
-```
+Afterwards, you can run `git-cliff` via `npm exec git-cliff` or `npx git-cliff@latest`.
 
 ### From MacPorts
 
