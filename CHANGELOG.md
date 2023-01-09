@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.27] - 2023-01-09
+
+### Testing
+
+- Last attempt of npm publish
+
 ## [1.0.26] - 2023-01-09
 
 ### Bug Fixes
