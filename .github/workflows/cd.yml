@@ -227,12 +227,12 @@ jobs:
           cp ../../README.md "git-cliff-$os-$arch"
           cd "git-cliff-$os-$arch"
           cat << EOF > ~/.npmrc
-          //npm.pkg.github.com/:_authToken=${NPM_TOKEN}
+          registry=https://npm.pkg.github.com
           EOF
           chmod 0600 ~/.npmrc
           npm publish --access public
         env:
-          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish-npm:
     name: Publish base package on NPM
@@ -250,12 +250,12 @@ jobs:
           yarn install
           yarn build
           cat << EOF > ~/.npmrc
-          //npm.pkg.github.com/:_authToken=${NPM_TOKEN}
+          registry=https://npm.pkg.github.com
           EOF
           chmod 0600 ~/.npmrc
           npm publish --access public
         env:
-          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # publish-deb:
   #   name: Publish Debian package
