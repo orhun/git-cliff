@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.18] - 2023-01-09
+
+### Features
+
+- Publish on GitHub NPM registry
+
 ## [1.0.17] - 2023-01-07
 
 ### Refactor
