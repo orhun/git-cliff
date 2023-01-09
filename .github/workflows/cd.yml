@@ -232,6 +232,10 @@ jobs:
           cp "../../target/${{ matrix.build.TARGET }}/release/${bin}" "git-cliff-$os-$arch/bin"
           cp ../../README.md "git-cliff-$os-$arch"
           cd "git-cliff-$os-$arch"
+          cat << EOF > ~/.npmrc
+          //npm.pkg.github.com/:_authToken=${NPM_TOKEN}
+          EOF
+          chmod 0600 ~/.npmrc
           yarn publish --registry https://npm.pkg.github.com --verbose
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -258,6 +262,10 @@ jobs:
           cd packaging/npm/git-cliff
           yarn install
           yarn build
+          cat << EOF > ~/.npmrc
+          //npm.pkg.github.com/:_authToken=${NPM_TOKEN}
+          EOF
+          chmod 0600 ~/.npmrc
           yarn publish --registry https://npm.pkg.github.com --verbose
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
