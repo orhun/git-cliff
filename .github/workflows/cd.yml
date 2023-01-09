@@ -209,20 +209,25 @@ jobs:
         shell: bash
         run: |
           cd npm
+          bin="git-cliff"
           node_os=$(echo "${{ matrix.build.NAME }}" | cut -d '-' -f1)
           export node_os
           node_arch=$(echo "${{ matrix.build.NAME }}" | cut -d '-' -f2)
           export node_arch
           export version="${{ env.RELEASE_VERSION }}"
-          bin="git-cliff"
-          mkdir -p "git-cliff-${node_os}-${node_arch}/bin"
-          envsubst < package.json.tmpl > "git-cliff-${node_os}-${node_arch}/package.json"
+          if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
+            export node_pkg="${bin}-windows-${node_arch}"
+          else
+            export node_pkg="${bin}-${node_os}-${node_arch}"
+          fi
+          mkdir -p "${node_pkg}/bin"
+          envsubst < package.json.tmpl > "${node_pkg}/package.json"
           if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
             bin="${bin}.exe"
           fi
-          cp "../target/${{ matrix.build.TARGET }}/release/${bin}" "git-cliff-${node_os}-${node_arch}/bin"
-          cp ../README.md "git-cliff-${node_os}-${node_arch}"
-          cd "git-cliff-${node_os}-${node_arch}"
+          cp "../target/${{ matrix.build.TARGET }}/release/${bin}" "${node_pkg}/bin"
+          cp ../README.md "${node_pkg}"
+          cd "${node_pkg}"
           npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
