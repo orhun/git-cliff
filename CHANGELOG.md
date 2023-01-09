@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.19] - 2023-01-09
+
+### Bug Fixes
+
+- Specify registry explicitly
+
 ## [1.0.18] - 2023-01-09
 
 ### Features

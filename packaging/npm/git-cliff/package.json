@@ -1,6 +1,6 @@
 {
   "name": "git-cliff",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "description": "A highly customizable Changelog Generator that follows Conventional Commit specifications ⛰️",
   "bin": "lib/index.js",
   "scripts": {
@@ -37,12 +37,12 @@
     "typescript": "^4.9.4"
   },
   "optionalDependencies": {
-    "git-cliff-linux-x64": "1.0.18",
-    "git-cliff-linux-arm64": "1.0.18",
-    "git-cliff-darwin-x64": "1.0.18",
-    "git-cliff-darwin-arm64": "1.0.18",
-    "git-cliff-windows-x64": "1.0.18",
-    "git-cliff-windows-arm64": "1.0.18"
+    "git-cliff-linux-x64": "1.0.19",
+    "git-cliff-linux-arm64": "1.0.19",
+    "git-cliff-darwin-x64": "1.0.19",
+    "git-cliff-darwin-arm64": "1.0.19",
+    "git-cliff-windows-x64": "1.0.19",
+    "git-cliff-windows-arm64": "1.0.19"
   },
   "eslintConfig": {
     "extends": [
