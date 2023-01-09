@@ -212,7 +212,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "16"
-          registry-url: "https://registry.npmjs.org"
+          registry-url: "https://npm.pkg.github.com"
       - name: Publish to NPM
         if: matrix.build.NPM_PUBLISH == true
         shell: bash
@@ -232,9 +232,9 @@ jobs:
           cp "../../target/${{ matrix.build.TARGET }}/release/${bin}" "git-cliff-$os-$arch/bin"
           cp ../../README.md "git-cliff-$os-$arch"
           cd "git-cliff-$os-$arch"
-          npm publish --dry-run
-        # env:
-        #   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish-npm:
     name: Publish base package on NPM
@@ -256,9 +256,9 @@ jobs:
           cd packaging/npm/git-cliff
           yarn install
           yarn build
-          npm publish --dry-run
-        # env:
-        #   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # publish-deb:
   #   name: Publish Debian package
