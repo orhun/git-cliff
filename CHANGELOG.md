@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1-rc.2] - 2023-01-09
+
+### Bug Fixes
+
+- Rename the NPM binary package for Windows
+
+### Miscellaneous Tasks
+
+- Add more keywords to the base NPM package
+- Add README.md to the base NPM package
+
 ## [1.1.1-rc.1] - 2023-01-09
 
 ### Miscellaneous Tasks
