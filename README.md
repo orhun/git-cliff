@@ -43,6 +43,7 @@
 - [Installation](#installation)
   - [From crates.io](#from-cratesio)
   - [Using pacman](#using-pacman)
+  - [From NPM](#from-npm)
   - [From MacPorts](#from-macports)
   - [Binary releases](#binary-releases)
   - [Build from source](#build-from-source)
@@ -131,13 +132,14 @@ pacman -S git-cliff
 yarn add -D git-cliff
 ```
 
-or
+or:
 
 ```sh
 npm install git-cliff --save-dev
 ```
 
 You can also use `git-cliff` directly with `npx`:
+
 ```sh
 npx git-cliff
 ```
