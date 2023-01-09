@@ -297,7 +297,6 @@ jobs:
 
   publish-crates-io:
     name: Publish on crates.io
-    needs: publish-binaries
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
