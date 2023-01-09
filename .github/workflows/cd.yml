@@ -235,7 +235,7 @@ jobs:
           cp "../target/${{ matrix.build.TARGET }}/release/${bin}" "git-cliff-${node_os}-${node_arch}/bin"
           cp ../README.md "git-cliff-${node_os}-${node_arch}"
           cd "git-cliff-${node_os}-${node_arch}"
-          npm publish
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -257,7 +257,7 @@ jobs:
           cd npm/git-cliff
           yarn install
           yarn build
-          npm publish
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
