@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1-rc.3] - 2023-01-09
+
+### Bug Fixes
+
+- Fix the variable declaration for NPM package OS
+
+### Miscellaneous Tasks
+
+- Parallelize releasing on crates.io
+
 ## [1.1.1-rc.2] - 2023-01-09
 
 ### Bug Fixes
