@@ -236,7 +236,7 @@ jobs:
           //npm.pkg.github.com/:_authToken=${NPM_TOKEN}
           EOF
           chmod 0600 ~/.npmrc
-          yarn publish --registry https://npm.pkg.github.com --verbose
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -266,7 +266,7 @@ jobs:
           //npm.pkg.github.com/:_authToken=${NPM_TOKEN}
           EOF
           chmod 0600 ~/.npmrc
-          yarn publish --registry https://npm.pkg.github.com --verbose
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
