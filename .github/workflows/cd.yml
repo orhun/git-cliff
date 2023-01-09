@@ -245,6 +245,7 @@ jobs:
           cd npm/git-cliff
           yarn install
           yarn build
+          cp ../../README.md .
           npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
