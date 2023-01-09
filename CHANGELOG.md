@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.24] - 2023-01-09
+
+### Miscellaneous Tasks
+
+- Update npm config
+
 ## [1.0.23] - 2023-01-09
 
 ### Bug Fixes
