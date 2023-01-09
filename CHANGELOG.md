@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.26] - 2023-01-09
+
+### Bug Fixes
+
+- Update npm config
+
 ## [1.0.25] - 2023-01-09
 
 ### Bug Fixes
