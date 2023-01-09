@@ -44,8 +44,14 @@ pub struct Opt {
 	#[clap(short, long, env = "GIT_CLIFF_WORKDIR", value_name = "PATH")]
 	pub workdir:      Option<PathBuf>,
 	/// Sets the git repository.
-	#[clap(short, long, env = "GIT_CLIFF_REPOSITORY", value_name = "PATH")]
-	pub repository:   Option<PathBuf>,
+	#[clap(
+		short,
+		long,
+		env = "GIT_CLIFF_REPOSITORY",
+		value_name = "PATH",
+		multiple_values = true
+	)]
+	pub repository:   Option<Vec<PathBuf>>,
 	/// Sets the path to include related commits.
 	#[clap(
 		long,
