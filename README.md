@@ -43,6 +43,7 @@
 - [Installation](#installation)
   - [From crates.io](#from-cratesio)
   - [Using pacman](#using-pacman)
+  - [From NPM](#from-npm)
   - [From MacPorts](#from-macports)
   - [Binary releases](#binary-releases)
   - [Build from source](#build-from-source)
@@ -121,6 +122,26 @@ If you are using Arch Linux, **git-cliff** can be installed from the [community 
 
 ```sh
 pacman -S git-cliff
+```
+
+### From NPM
+
+[git-cliff](https://www.npmjs.com/package/git-cliff) can be installed from NPM:
+
+```sh
+yarn add -D git-cliff
+```
+
+or:
+
+```sh
+npm install git-cliff --save-dev
+```
+
+You can also use `git-cliff` directly with `npx`:
+
+```sh
+npx git-cliff
 ```
 
 ### From MacPorts
