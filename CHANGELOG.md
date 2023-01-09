@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.22] - 2023-01-09
+
+### Bug Fixes
+
+- Use npm publish instead of yarn publish
+
 ## [1.0.21] - 2023-01-09
 
 ### Miscellaneous Tasks
