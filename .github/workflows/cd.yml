@@ -235,6 +235,8 @@ jobs:
           yarn publish --registry https://npm.pkg.github.com --verbose
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish-npm:
     name: Publish base package on NPM
@@ -259,6 +261,8 @@ jobs:
           yarn publish --registry https://npm.pkg.github.com --verbose
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # publish-deb:
   #   name: Publish Debian package
