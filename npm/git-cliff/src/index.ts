@@ -12,8 +12,7 @@ import { spawnSync } from "child_process"
   */
 function getExePath() {
   const arch = process.arch;
-  const os = process.platform;
-
+  let os = process.platform;
   let extension = '';
   if (['win32', 'cygwin'].includes(process.platform)) {
     os = 'windows';
