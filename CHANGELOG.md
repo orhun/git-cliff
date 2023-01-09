@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1-rc.1] - 2023-01-09
+
+### Miscellaneous Tasks
+
+- Package `git-cliff` for npm ([#133](https://github.com/orhun/git-cliff/issues/133))
+
 ## [1.1.0] - 2023-01-08
 
 ### Documentation
