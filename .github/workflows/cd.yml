@@ -231,6 +231,7 @@ jobs:
           //npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}
           EOF
           chmod 0600 ~/.npmrc
+          npm adduser --registry=https://npm.pkg.github.com/
           npm publish --registry=https://npm.pkg.github.com/ --userconfig=./.npmrc
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -255,6 +256,7 @@ jobs:
           //npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}
           EOF
           chmod 0600 ~/.npmrc
+          npm adduser --registry=https://npm.pkg.github.com/
           npm publish --registry=https://npm.pkg.github.com/ --userconfig=./.npmrc
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
