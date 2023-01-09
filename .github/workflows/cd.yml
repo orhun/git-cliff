@@ -227,11 +227,11 @@ jobs:
           cp ../../README.md "git-cliff-$os-$arch"
           cd "git-cliff-$os-$arch"
           cat << EOF > ~/.npmrc
-          registry=https://npm.pkg.github.com
-          //npm.pkg.github.com:_authToken=${{ secrets.GITHUB_TOKEN }}
+          registry="https://npm.pkg.github.com/"
+          //npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}
           EOF
           chmod 0600 ~/.npmrc
-          npm publish --access public
+          npm publish --registry=https://npm.pkg.github.com/ --userconfig=./.npmrc
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -251,11 +251,11 @@ jobs:
           yarn install
           yarn build
           cat << EOF > ~/.npmrc
-          registry=https://npm.pkg.github.com
-          //npm.pkg.github.com:_authToken=${{ secrets.GITHUB_TOKEN }}
+          registry="https://npm.pkg.github.com/"
+          //npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}
           EOF
           chmod 0600 ~/.npmrc
-          npm publish --access public
+          npm publish --registry=https://npm.pkg.github.com/ --userconfig=./.npmrc
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
