@@ -59,11 +59,11 @@ pub struct GitConfig {
 	pub filter_commits:           Option<bool>,
 	/// Blob pattern for git tags.
 	pub tag_pattern:              Option<String>,
-	#[serde(with = "serde_regex", default)]
 	/// Regex to skip matched tags.
-	pub skip_tags:                Option<Regex>,
 	#[serde(with = "serde_regex", default)]
+	pub skip_tags:                Option<Regex>,
 	/// Regex to ignore matched tags.
+	#[serde(with = "serde_regex", default)]
 	pub ignore_tags:              Option<Regex>,
 	/// Whether to sort tags topologically.
 	pub topo_order:               Option<bool>,
