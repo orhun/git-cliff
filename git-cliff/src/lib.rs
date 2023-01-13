@@ -60,11 +60,10 @@ fn check_new_version() {
 /// repository individually.
 fn process_repository<'a>(
 	repository: &'static Repository,
-	mut config: Config,
+	config: Config,
 	args: &Opt,
 ) -> Result<Vec<Release<'a>>> {
 	let mut tags = repository.tags(&config.git.tag_pattern, args.topo_order)?;
-	config.git.skip_tags = config.git.skip_tags.filter(|r| !r.as_str().is_empty());
 	let skip_regex = config.git.skip_tags.as_ref();
 	let ignore_regex = config.git.ignore_tags.as_ref();
 	tags = tags
@@ -317,6 +316,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 			args.topo_order = topo_order;
 		}
 	}
+	config.git.skip_tags = config.git.skip_tags.filter(|r| !r.as_str().is_empty());
 
 	// Process the repository.
 	let repositories = args.repository.clone().unwrap_or(vec![env::current_dir()?]);
