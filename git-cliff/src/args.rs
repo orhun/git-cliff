@@ -29,10 +29,28 @@ pub enum Sort {
     rename_all_env = "screaming-snake",
     next_help_heading = Some("OPTIONS"),
     override_usage = "git-cliff [FLAGS] [OPTIONS] [--] [RANGE]",
-    mut_arg("help", |arg| arg.help("Prints help information").help_heading("FLAGS")),
-    mut_arg("version", |arg| arg.help("Prints version information").help_heading("FLAGS"))
+	disable_help_flag = true,
+	disable_version_flag = true,
 )]
 pub struct Opt {
+	#[arg(
+		short,
+		long,
+		action = ArgAction::Help,
+		global = true,
+		help = "Prints help information",
+		help_heading = "FLAGS"
+	)]
+	pub help:         Option<bool>,
+	#[arg(
+		short = 'V',
+		long,
+		action = ArgAction::Version,
+		global = true,
+		help = "Prints version information",
+		help_heading = "FLAGS"
+	)]
+	pub version:      Option<bool>,
 	/// Increases the logging verbosity.
 	#[arg(short, long, action = ArgAction::Count, alias = "debug", help_heading = Some("FLAGS"))]
 	pub verbose:      u8,
@@ -130,4 +148,15 @@ pub struct Opt {
 	/// Sets the commit range to process.
 	#[arg(value_name = "RANGE", help_heading = Some("ARGS"))]
 	pub range:        Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use clap::CommandFactory;
+
+	#[test]
+	fn verify_cli() {
+		Opt::command().debug_assert()
+	}
 }
