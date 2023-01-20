@@ -5,7 +5,6 @@ use crate::error::{
 use git2::{
 	Commit,
 	DescribeOptions,
-	Oid,
 	Repository as GitRepository,
 	Sort,
 };
@@ -123,15 +122,7 @@ impl Repository {
 			}
 		}
 		if !topo_order {
-			let mut revwalk = self.inner.revwalk()?;
-			revwalk.set_sorting(Sort::TIME | Sort::TOPOLOGICAL)?;
-			revwalk.push_head()?;
-			let oids: Vec<Oid> = revwalk.filter_map(|id| id.ok()).collect();
-			tags.sort_by(|a, b| {
-				oids.iter()
-					.position(|v| v == &b.0.id())
-					.cmp(&oids.iter().position(|v| v == &a.0.id()))
-			});
+			tags.sort_by(|a, b| a.0.time().seconds().cmp(&b.0.time().seconds()));
 		}
 		Ok(tags
 			.into_iter()
