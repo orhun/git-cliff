@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.2] - 2023-01-20
+
+### Bug Fixes
+
+- Do not skip all tags when `skip_tags` is empty ([#136](https://github.com/orhun/git-cliff/issues/136))
+- Allow saving context to a file ([#138](https://github.com/orhun/git-cliff/issues/138))
+- Derive the tag order from commits instead of timestamp ([#139](https://github.com/orhun/git-cliff/issues/139))
+
+### Miscellaneous Tasks
+
+- Add metadata for cargo-binstall
+- Upgrade core dependencies
+- Update versions in Dockerfile
+
+### Styling
+
+- Update the derives in config module
+
+### Revert
+
+- Use timestamp for deriving the tag order ([#139](https://github.com/orhun/git-cliff/issues/139))
+
 ## [1.1.1] - 2023-01-09
 
 ### Documentation
