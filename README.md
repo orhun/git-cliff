@@ -526,7 +526,7 @@ e.g. `feat(parser): add ability to parse arrays`
 
 #### filter_unconventional
 
-If set to `true`, commits that are not conventional are excluded. This option can be used to generate changelogs with conventional and unconvential commits mixed together. For example:
+If set to `true`, commits that are not conventional are excluded. This option can be used to generate changelogs with conventional and unconventional commits mixed together. For example:
 
 ```toml
 conventional_commits = true
@@ -800,7 +800,7 @@ For example:
 
 When a conventional commit contains footers, the footers are passed to the template in a `footers` array in the commit object. Each footer is represented by an object with the following fields:
 
-- `token`, the name of the footer (preceeding the separator character)
+- `token`, the name of the footer (preceding the separator character)
 - `separator`, the footer's separator string (either `: ` or ` #`)
 - `value`, the value following the separator character
 - `breaking`, which is `true` if this is a `BREAKING CHANGE:` footer, and `false` otherwise
