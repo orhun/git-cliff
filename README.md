@@ -603,7 +603,7 @@ Custom OS commands can also be used for modifying the commit messages:
 
 This is useful when you want to filter/encode messages using external commands. In the example above, [pandoc](https://pandoc.org/) is used to convert each commit message that matches the given `pattern` to the [CommonMark](https://commonmark.org/) format.
 
-A more fun example would be reversing the each commit message:
+A more fun example would be reversing each commit message:
 
 - `{ pattern = '.*', replace_command = 'rev | xargs echo "reversed: $@"' }`
 
