@@ -31,7 +31,7 @@ regex.workspace = true
 pretty_env_logger = "0.4.0"
 log = "0.4.17"
 dirs-next = "2.0.0"
-clap_complete = "4.1.0"
+clap_complete = "4.1.1"
 clap_mangen = "0.2.7"
 
 [dependencies.git-cliff-core]
@@ -39,7 +39,7 @@ version = "1.1.1" # managed by release.sh
 path = "../git-cliff-core"
 
 [dependencies.clap]
-version = "4.1.1"
+version = "4.1.4"
 features = ["derive", "env", "wrap_help"]
 
 [dependencies.update-informer]
