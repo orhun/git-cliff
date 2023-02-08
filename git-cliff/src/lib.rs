@@ -148,7 +148,9 @@ fn process_repository<'a>(
 		args.exclude_path.clone(),
 	)?;
 	if let Some(commit_limit_value) = config.git.limit_commits {
-		commits = commits.drain(..commit_limit_value).collect();
+		commits = commits
+			.drain(..commits.len().min(commit_limit_value))
+			.collect();
 	}
 
 	// Update tags.
@@ -333,7 +335,12 @@ pub fn run(mut args: Opt) -> Result<()> {
 	// Generate output.
 	let changelog = Changelog::new(releases, &config)?;
 	if args.context {
-		return changelog.write_context(&mut io::stdout());
+		return if let Some(path) = args.output {
+			let mut output = File::create(path)?;
+			changelog.write_context(&mut output)
+		} else {
+			changelog.write_context(&mut io::stdout())
+		};
 	}
 	if let Some(path) = args.prepend {
 		changelog.prepend(fs::read_to_string(&path)?, &mut File::create(path)?)?;

@@ -1,6 +1,6 @@
 [package]
 name = "git-cliff"
-version = "1.1.1" # managed by release.sh
+version = "1.1.2" # managed by release.sh
 description = "A highly customizable changelog generator ⛰️"
 authors = ["git-cliff contributors <git-cliff@protonmail.com>"]
 license = "GPL-3.0"
@@ -35,7 +35,7 @@ clap_complete = "4.1.1"
 clap_mangen = "0.2.7"
 
 [dependencies.git-cliff-core]
-version = "1.1.1" # managed by release.sh
+version = "1.1.2" # managed by release.sh
 path = "../git-cliff-core"
 
 [dependencies.clap]
@@ -48,3 +48,9 @@ optional = true
 
 [dev-dependencies]
 pretty_assertions = "1.2.1"
+
+# metadata for cargo-binstall to get the right artifacts
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/v{ version }/{ name }-{ version }-{ target }{ archive-suffix }"
+bin-dir = "{ name }-{ version }/{ bin }{ binary-ext }"
+pkg-fmt = "tgz"

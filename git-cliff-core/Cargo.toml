@@ -1,6 +1,6 @@
 [package]
 name = "git-cliff-core"
-version = "1.1.1" # managed by release.sh
+version = "1.1.2" # managed by release.sh
 description = "Core library of git-cliff"
 authors = ["git-cliff contributors <git-cliff@protonmail.com>"]
 license = "GPL-3.0"
@@ -19,11 +19,11 @@ serde_json = "1.0.91"
 tera = "1.17.1"
 serde_regex = "1.1.0"
 indexmap = "1.9.2"
-toml = "0.5.10"
+toml = "0.5.11"
 lazy-regex = "2.4.1"
 
 [dependencies.git2]
-version = "0.15.0"
+version = "0.16.0"
 default-features = false
 
 [dependencies.config]
