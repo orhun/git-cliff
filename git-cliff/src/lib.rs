@@ -12,7 +12,7 @@ use args::{
 	Strip,
 };
 use changelog::Changelog;
-use clap::ArgEnum;
+use clap::ValueEnum;
 use git_cliff_core::commit::Commit;
 use git_cliff_core::config::Config;
 use git_cliff_core::embed::EmbeddedConfig;

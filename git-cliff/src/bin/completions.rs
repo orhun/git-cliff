@@ -1,6 +1,6 @@
 use clap::{
-	ArgEnum,
 	CommandFactory,
+	ValueEnum,
 };
 use clap_complete::Shell;
 use git_cliff::args::Opt;
