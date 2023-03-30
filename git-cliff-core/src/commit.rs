@@ -77,11 +77,11 @@ impl<'a> From<&'a ConventionalFooter<'a>> for Footer<'a> {
 )]
 pub struct Signature {
 	/// Name on the signature.
-	name:      Option<String>,
+	pub name:      Option<String>,
 	/// Email on the signature.
-	email:     Option<String>,
+	pub email:     Option<String>,
 	/// Time of the signature.
-	timestamp: i64,
+	pub timestamp: i64,
 }
 
 impl<'a> From<CommitSignature<'a>> for Signature {
