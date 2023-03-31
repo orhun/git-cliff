@@ -11,6 +11,9 @@ use std::path::Path;
 const CARGO_METADATA_REGEX: &str =
 	r"^\[(?:workspace|package)\.metadata\.git\-cliff\.";
 
+/// Regex for matching the metadata in pyproject.toml
+const PYPROJECT_METADATA_REGEX: &str = r"^\[(?:tool)\.git\-cliff\.";
+
 /// Configuration values.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Config {
@@ -119,11 +122,19 @@ pub struct LinkParser {
 impl Config {
 	/// Parses the config file and returns the values.
 	pub fn parse(path: &Path) -> Result<Config> {
-		let config_builder = if path.file_name() == Some(OsStr::new("Cargo.toml")) {
+		let config_builder = if path.file_name() == Some(OsStr::new("Cargo.toml")) ||
+			path.file_name() == Some(OsStr::new("pyproject.toml"))
+		{
 			let contents = fs::read_to_string(path)?;
-			let metadata_regex = RegexBuilder::new(CARGO_METADATA_REGEX)
-				.multi_line(true)
-				.build()?;
+			let metadata_regex = RegexBuilder::new(
+				if path.file_name() == Some(OsStr::new("Cargo.toml")) {
+					CARGO_METADATA_REGEX
+				} else {
+					PYPROJECT_METADATA_REGEX
+				},
+			)
+			.multi_line(true)
+			.build()?;
 			let contents = metadata_regex.replace_all(&contents, "[");
 			config::Config::builder().add_source(config::File::from_str(
 				&contents,
