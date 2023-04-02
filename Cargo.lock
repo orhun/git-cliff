@@ -486,6 +486,7 @@ dependencies = [
  "glob",
  "indexmap",
  "lazy-regex",
+ "log",
  "pretty_assertions",
  "regex",
  "rust-embed",

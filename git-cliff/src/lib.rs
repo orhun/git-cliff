@@ -1,7 +1,5 @@
 /// Command-line argument parser.
 pub mod args;
-/// Changelog generator.
-pub mod changelog;
 
 #[macro_use]
 extern crate log;
@@ -11,8 +9,8 @@ use args::{
 	Sort,
 	Strip,
 };
-use changelog::Changelog;
 use clap::ValueEnum;
+use git_cliff_core::changelog::Changelog;
 use git_cliff_core::commit::Commit;
 use git_cliff_core::config::Config;
 use git_cliff_core::embed::EmbeddedConfig;

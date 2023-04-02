@@ -1,11 +1,11 @@
-use git_cliff_core::commit::Commit;
-use git_cliff_core::config::Config;
-use git_cliff_core::error::Result;
-use git_cliff_core::release::{
+use crate::commit::Commit;
+use crate::config::Config;
+use crate::error::Result;
+use crate::release::{
 	Release,
 	Releases,
 };
-use git_cliff_core::template::Template;
+use crate::template::Template;
 use std::io::Write;
 
 /// Changelog generator.
@@ -176,7 +176,7 @@ impl<'a> Changelog<'a> {
 #[cfg(test)]
 mod test {
 	use super::*;
-	use git_cliff_core::config::{
+	use crate::config::{
 		ChangelogConfig,
 		CommitParser,
 		CommitPreprocessor,
