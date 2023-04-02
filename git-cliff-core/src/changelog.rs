@@ -209,7 +209,8 @@ mod test {
 				filter_unconventional:    Some(false),
 				split_commits:            Some(false),
 				commit_preprocessors:     Some(vec![CommitPreprocessor {
-					pattern:         Regex::new("<preprocess>").unwrap(),
+					pattern:         Regex::new("<preprocess>")
+						.expect("failed to compile regex"),
 					replace:         Some(String::from(
 						"this commit is preprocessed",
 					)),
@@ -429,7 +430,7 @@ mod test {
 			------------"#
 			)
 			.replace("			", ""),
-			str::from_utf8(&out).unwrap()
+			str::from_utf8(&out).unwrap_or_default()
 		);
 		Ok(())
 	}
@@ -543,7 +544,7 @@ chore(deps): fix broken deps
 			------------"#
 			)
 			.replace("			", ""),
-			str::from_utf8(&out).unwrap()
+			str::from_utf8(&out).unwrap_or_default()
 		);
 		Ok(())
 	}
