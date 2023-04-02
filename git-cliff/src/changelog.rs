@@ -249,6 +249,14 @@ mod test {
 						skip:          None,
 					},
 					CommitParser {
+						message:       Regex::new(r#"match\((.*)\):.*"#).ok(),
+						body:          None,
+						group:         Some(String::from("Matched ($1)")),
+						default_scope: None,
+						scope:         None,
+						skip:          None,
+					},
+					CommitParser {
 						message:       Regex::new(".*").ok(),
 						body:          None,
 						group:         Some(String::from("Other")),
@@ -306,6 +314,10 @@ mod test {
 				Commit::new(
 					String::from("qwertz"),
 					String::from("feat!: support breaking commits"),
+				),
+				Commit::new(
+					String::from("qwert0"),
+					String::from("match(group): support regex-replace for groups"),
 				),
 			],
 			commit_id: Some(String::from("0bc123")),
@@ -391,6 +403,10 @@ mod test {
 			### Documentation
 			#### documentation
 			- update docs
+
+			### Matched (group)
+			#### group
+			- support regex-replace for groups
 
 			### New features
 			#### app
@@ -496,6 +512,10 @@ chore(deps): fix broken deps
 			### Documentation
 			#### documentation
 			- update docs
+
+			### Matched (group)
+			#### group
+			- support regex-replace for groups
 
 			### New features
 			#### app

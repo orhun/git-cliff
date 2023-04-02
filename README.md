@@ -622,6 +622,8 @@ Examples:
   - Group the commit as "Features" if the commit message (description) starts with "feat".
 - `{ body = ".*security", group = "Security"}`
   - Group the commit as "Security" if the commit body contains "security".
+- `{ message = '^fix\((.*)\)', group = 'Fix (${1})' }`
+  - Use the matched scope value from the commit message in the group name.
 - `{ message = ".*deprecated", body = ".*deprecated", group = "Deprecation"}`
   - Group the commit as "Deprecation" if the commit body and message contains "deprecated".
 - `{ message = "^revert", skip = true}`
