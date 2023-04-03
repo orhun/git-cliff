@@ -1,7 +1,6 @@
 # Directories
 /.git/
 /.github/
-/target/
 /npm/
 
 # Files
