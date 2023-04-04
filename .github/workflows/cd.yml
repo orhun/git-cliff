@@ -8,7 +8,7 @@ on:
 jobs:
   generate-changelog:
     name: Generate changelog
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       release_body: ${{ steps.git-cliff.outputs.content }}
     steps:
@@ -38,42 +38,42 @@ jobs:
         build:
           - {
               NAME: linux-x64-glibc,
-              OS: ubuntu-20.04,
+              OS: ubuntu-22.04,
               TOOLCHAIN: stable,
               TARGET: x86_64-unknown-linux-gnu,
               NPM_PUBLISH: true,
             }
           - {
               NAME: linux-x64-musl,
-              OS: ubuntu-20.04,
+              OS: ubuntu-22.04,
               TOOLCHAIN: stable,
               TARGET: x86_64-unknown-linux-musl,
               NPM_PUBLISH: false,
             }
           - {
               NAME: linux-x86-glibc,
-              OS: ubuntu-20.04,
+              OS: ubuntu-22.04,
               TOOLCHAIN: stable,
               TARGET: i686-unknown-linux-gnu,
               NPM_PUBLISH: false,
             }
           - {
               NAME: linux-x86-musl,
-              OS: ubuntu-20.04,
+              OS: ubuntu-22.04,
               TOOLCHAIN: stable,
               TARGET: i686-unknown-linux-musl,
               NPM_PUBLISH: false,
             }
           - {
               NAME: linux-arm64-glibc,
-              OS: ubuntu-20.04,
+              OS: ubuntu-22.04,
               TOOLCHAIN: stable,
               TARGET: aarch64-unknown-linux-gnu,
               NPM_PUBLISH: true,
             }
           - {
               NAME: linux-arm64-musl,
-              OS: ubuntu-20.04,
+              OS: ubuntu-22.04,
               TOOLCHAIN: stable,
               TARGET: aarch64-unknown-linux-musl,
               NPM_PUBLISH: false,
@@ -108,14 +108,14 @@ jobs:
             }
           - {
               NAME: darwin-x64,
-              OS: macos-11,
+              OS: macos-12,
               TOOLCHAIN: stable,
               TARGET: x86_64-apple-darwin,
               NPM_PUBLISH: true,
             }
           - {
               NAME: darwin-arm64,
-              OS: macos-11,
+              OS: macos-12,
               TOOLCHAIN: stable,
               TARGET: aarch64-apple-darwin,
               NPM_PUBLISH: true,
@@ -180,7 +180,7 @@ jobs:
               > git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}.tar.gz.sha512
           fi
       - name: Sign the release
-        if: matrix.build.OS == 'ubuntu-20.04' || matrix.build.OS == 'macos-11'
+        if: matrix.build.OS == 'ubuntu-22.04' || matrix.build.OS == 'macos-12'
         run: |
           echo "${{ secrets.GPG_RELEASE_KEY }}" | base64 --decode > private.key
           echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --pinentry-mode=loopback \
@@ -235,7 +235,7 @@ jobs:
   publish-npm:
     name: Publish the base package to NPM
     needs: publish-binaries
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -258,7 +258,7 @@ jobs:
   publish-deb:
     name: Publish Debian package
     needs: generate-changelog
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -297,7 +297,7 @@ jobs:
 
   publish-crates-io:
     name: Publish on crates.io
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
