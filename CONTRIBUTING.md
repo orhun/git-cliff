@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for considering contributing to [git-cliff](https://github.com/orhun/git-cliff/)!
+Thank you for considering contributing to [git-cliff](https://github.com/orhun/git-cliff)!
 
 When contributing, please first discuss the change you wish to make via [issue](https://github.com/orhun/git-cliff/issues),
 [email](mailto:orhunparmaksiz@gmail.com), or any other method with the owners of this repository before making a change.
@@ -17,8 +17,8 @@ Note that we have a [Code of Conduct](./CODE_OF_CONDUCT.md), please follow it in
 git clone https://github.com/{username}/git-cliff && cd git-cliff
 ```
 
-3. Make sure that you have [Rust](https://www.rust-lang.org/) `1.53.0-nightly` or later installed and build the project.
-   
+3. Make sure that you have [Rust](https://www.rust-lang.org/) `1.60.0` or later installed and build the project.
+
 ```sh
 cargo build
 ```
