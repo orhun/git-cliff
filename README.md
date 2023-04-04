@@ -39,7 +39,8 @@
 <details>
   <summary>Table of Contents</summary>
 
-- [About](#about)
+<!-- vim-markdown-toc GFM -->
+
 - [Installation](#installation)
   - [From crates.io](#from-cratesio)
   - [Using pacman](#using-pacman)
@@ -67,6 +68,7 @@
     - [split_commits](#split_commits)
     - [commit_preprocessors](#commit_preprocessors)
     - [commit_parsers](#commit_parsers)
+    - [protect_breaking_commits](#protect_breaking_commits)
     - [filter_commits](#filter_commits)
     - [tag_pattern](#tag_pattern)
     - [skip_tags](#skip_tags)
@@ -74,6 +76,7 @@
     - [topo_order](#topo_order)
     - [sort_commits](#sort_commits)
     - [link_parsers](#link_parsers)
+    - [limit_commits](#limit_commits)
 - [Project Integration](#project-integration)
   - [Rust](#rust)
   - [Python](#python)
@@ -86,16 +89,12 @@
     - [Non-Conventional Commits](#non-conventional-commits)
   - [Syntax](#syntax)
   - [Examples](#examples-1)
-    - [Basic](#basic)
-    - [Detailed](#detailed)
-    - [Scoped](#scoped)
-    - [Scoped (Sorted)](#scoped-sorted)
-    - [Keep a Changelog](#keep-a-changelog)
-    - [Unconventional](#unconventional)
 - [In The Media](#in-the-media)
 - [Similar/Related Projects](#similarrelated-projects)
 - [License](#license)
 - [Copyright](#copyright)
+
+<!-- vim-markdown-toc -->
 
 </details>
 
@@ -127,7 +126,6 @@ pacman -S git-cliff
 ```
 
 ### From NPM
-
 
 You can install and run [git-cliff](https://www.npmjs.com/package/git-cliff) with a single command:
 
@@ -165,7 +163,7 @@ See the available binaries for different operating systems/architectures from th
 
 ### Build from source
 
-* Linux dependencies: [zlib](https://zlib.net/)
+- Linux dependencies: [zlib](https://zlib.net/)
 
 ```sh
 # binary will be located at `target/release/git-cliff`
@@ -791,7 +789,9 @@ following context is generated to use for templating:
       "breaking_description": "<description>",
       "breaking": false,
       "conventional": true,
-      "links": [{"text": "(set by link_parsers)", "href": "(set by link_parsers)"}],
+      "links": [
+        { "text": "(set by link_parsers)", "href": "(set by link_parsers)" }
+      ],
       "author": {
         "name": "User Name",
         "email": "user.email@example.com",
@@ -801,7 +801,7 @@ following context is generated to use for templating:
         "name": "User Name",
         "email": "user.email@example.com",
         "timestamp": 1660330071
-      },
+      }
     }
   ],
   "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210 (release commit)",
@@ -875,7 +875,9 @@ If [conventional_commits](#conventional_commits) is set to `false`, then some of
       "scope": "(overrided by commit_parsers)",
       "message": "(full commit message including description, footers, etc.)",
       "conventional": false,
-      "links": [{"text": "(set by link_parsers)", "href": "(set by link_parsers)"}],
+      "links": [
+        { "text": "(set by link_parsers)", "href": "(set by link_parsers)" }
+      ],
       "author": {
         "name": "User Name",
         "email": "user.email@example.com",
@@ -885,7 +887,7 @@ If [conventional_commits](#conventional_commits) is set to `false`, then some of
         "name": "User Name",
         "email": "user.email@example.com",
         "timestamp": 1660330071
-      },
+      }
     }
   ],
   "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210 (release commit)",
@@ -929,8 +931,7 @@ See [EXAMPLES.md](EXAMPLES.md).
 - [git-journal](https://github.com/saschagrunert/git-journal) - The Git Commit Message and Changelog Generation Framework
 - [clog-cli](https://github.com/clog-tool/clog-cli) - Generate beautiful changelogs from your Git commit history
 - [relnotes](https://crates.io/crates/relnotes) - A tool to automatically generate release notes for your project.
-- [cocogitto](https://github.com/oknozor/cocogitto) - A set of CLI tools for the conventional commit
-and semver specifications.
+- [cocogitto](https://github.com/oknozor/cocogitto) - A set of CLI tools for the conventional commit and semver specifications.
 - [cliff-jumper](https://github.com/favware/cliff-jumper) - A NodeJS CLI tool that combines git-cliff and
   [conventional-recommended-bump](https://github.com/conventional-changelog/conventional-changelog/tree/master/packages/conventional-recommended-bump)
   to semantically bump a NodeJS package and generate a git-cliff powered changelog.
