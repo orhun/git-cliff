@@ -935,6 +935,7 @@ See [EXAMPLES.md](EXAMPLES.md).
 - [cliff-jumper](https://github.com/favware/cliff-jumper) - A NodeJS CLI tool that combines git-cliff and
   [conventional-recommended-bump](https://github.com/conventional-changelog/conventional-changelog/tree/master/packages/conventional-recommended-bump)
   to semantically bump a NodeJS package and generate a git-cliff powered changelog.
+- [release-plz](https://github.com/MarcoIeni/release-plz) - Release Rust packages from CI.
 
 ## License
 
