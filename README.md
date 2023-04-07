@@ -22,11 +22,14 @@
         <img src="https://img.shields.io/github/actions/workflow/status/orhun/git-cliff/docker.yml?style=flat&labelColor=1C2C2E&color=BEC5C9&label=docker&logo=Docker&logoColor=BEC5C9">
     </a>
     <a href="https://docs.rs/git-cliff-core/">
-        <img src="https://img.shields.io/docsrs/git-cliff-core?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=Rust&logoColor=BEC5C9E">
+        <img src="https://img.shields.io/docsrs/git-cliff-core?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=Rust&logoColor=BEC5C9">
     </a>
     <br>
     <a href="https://matrix.to/#/#git-cliff:matrix.org">
-        <img src="https://img.shields.io/matrix/git-cliff:matrix.org?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=matrix&logoColor=BEC5C9E&label=join%20matrix">
+        <img src="https://img.shields.io/matrix/git-cliff:matrix.org?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=matrix&logoColor=BEC5C9&label=join%20matrix">
+    </a>
+    <a href="https://discord.gg/W3mAwMDWH4">
+        <img src="https://img.shields.io/discord/1093977388892819553?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=discord&logoColor=BEC5C9&label=join%20discord">
     </a>
 </p>
 
