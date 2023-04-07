@@ -135,11 +135,10 @@ jobs:
               --allow-unauthenticated musl-tools
           fi
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.build.TOOLCHAIN }}
-          target: ${{ matrix.build.TARGET }}
-          override: true
+          targets: ${{ matrix.build.TARGET }}
       - name: Build (linux/macos)
         if: matrix.build.OS != 'windows-2022'
         uses: actions-rs/cargo@v1
@@ -266,11 +265,9 @@ jobs:
         shell: bash
         run: echo "RELEASE_VERSION=${GITHUB_REF:11}" >> $GITHUB_ENV
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          target: x86_64-unknown-linux-gnu
-          override: true
+          targets: x86_64-unknown-linux-gnu
       - name: Install cargo-deb
         run: cargo install cargo-deb
       - name: Build Debian package
@@ -304,11 +301,9 @@ jobs:
       - name: Set the release version
         run: echo "RELEASE_VERSION=${GITHUB_REF:11}" >> $GITHUB_ENV
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          target: x86_64-unknown-linux-gnu
-          override: true
+          targets: x86_64-unknown-linux-gnu
       - name: Prepare for the crates.io release
         run: |
           mkdir git-cliff-core/config/

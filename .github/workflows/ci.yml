@@ -16,11 +16,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
+        uses: dtolnay/rust-toolchain@stable
       - name: Checkout
         uses: actions/checkout@v3
       - name: Check
@@ -34,11 +30,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
+        uses: dtolnay/rust-toolchain@nightly
       - name: Checkout
         if: github.event_name != 'pull_request'
         uses: actions/checkout@v3
@@ -72,12 +64,9 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          toolchain: nightly
-          profile: minimal
           components: clippy
-          override: true
       - name: Checkout
         uses: actions/checkout@v3
       - name: Check the lints
@@ -91,12 +80,9 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          toolchain: nightly
-          profile: minimal
           components: rustfmt
-          override: true
       - name: Checkout
         uses: actions/checkout@v3
       - name: Check the formatting
