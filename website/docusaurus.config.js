@@ -123,8 +123,8 @@ const config = {
                 href: "https://github.com/orhun/git-cliff",
               },
               {
-                label: "Sponsor",
-                href: "https://github.com/sponsors/orhun",
+                label: "Twitter",
+                href: "https://twitter.com/git_cliff",
               },
             ],
           },
