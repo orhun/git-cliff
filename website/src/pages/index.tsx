@@ -1,0 +1,87 @@
+import React from "react";
+import clsx from "clsx";
+import Link from "@docusaurus/Link";
+import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
+import Layout from "@theme/Layout";
+import HomepageFeatures from "@site/src/components/HomepageFeatures";
+import Head from "@docusaurus/Head";
+import styles from "./index.module.css";
+
+function HomepageHeader() {
+  const { siteConfig } = useDocusaurusContext();
+  return (
+    <header className={clsx("hero hero--primary", styles.heroBanner)}>
+      <div className="container">
+        <div className={styles.animContainer}>
+          <img src="/img/git-cliff.png" />
+          <h1>
+            <div className={clsx("hero__title", styles.titleText)}>
+              <span>git-</span>
+              <span>cliff</span>
+            </div>
+          </h1>
+          <p className="hero__subtitle">{siteConfig.tagline}</p>
+          <div className={styles.buttons}>
+            <Link className="button button--secondary button--lg" to="/docs/">
+              Get Started
+            </Link>
+          </div>
+          <img src="/img/demo.png" />
+        </div>
+      </div>
+    </header>
+  );
+}
+
+export default function Home(): JSX.Element {
+  const { siteConfig } = useDocusaurusContext();
+  return (
+    <Layout
+      title={`${siteConfig.tagline}`}
+      description={`${siteConfig.tagline}`}
+    >
+      <HomepageHeader />
+      <main>
+        <Head>
+          <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+          <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+          <meta property="og:type" content="website" />
+          <meta property="og:url" content={`${siteConfig.url}`} />
+          <meta property="og:title" content={`${siteConfig.title}`} />
+          <meta property="og:description" content={`${siteConfig.tagline}`} />
+          <meta property="og:image" content="/img/git-cliff-social-card.jpg" />
+          <meta name="description" content={`${siteConfig.tagline}`} />
+          <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0"
+          />
+          <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="/favicon/apple-touch-icon.png"
+          />
+          <link
+            rel="icon"
+            type="image/png"
+            sizes="32x32"
+            href="/favicon/favicon-32x32.png"
+          />
+          <link
+            rel="icon"
+            type="image/png"
+            sizes="16x16"
+            href="/favicon/favicon-16x16.png"
+          />
+          <link rel="manifest" href="/favicon/site.webmanifest" />
+          <script
+            async
+            defer
+            data-website-id="f75484b0-d2a4-4a0c-a560-cb58080e2f2e"
+            src="https://umami.orhun.dev/umami.js"
+          ></script>
+        </Head>
+        <HomepageFeatures />
+      </main>
+    </Layout>
+  );
+}
