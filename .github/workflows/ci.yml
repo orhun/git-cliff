@@ -102,7 +102,7 @@ jobs:
         with:
           args: >
             --exclude "%7Busername%7D|file:///|https://datatracker.ietf.org|protonmail"
-              -v *.md website/docs/* website/blog/*
+              -v *.md docs/docs/* docs/blog/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
