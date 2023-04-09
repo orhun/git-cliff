@@ -2,7 +2,7 @@
 /.git/
 /.github/
 /npm/
-/docs/
+/website/
 
 # Files
 .editorconfig
