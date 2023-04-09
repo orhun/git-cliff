@@ -33,15 +33,23 @@
     </a>
 </p>
 
-## About
+<h4 align="center">
+  <a href="https://git-cliff.org/docs">Documentation</a> |
+  <a href="https://git-cliff.org">Website</a>
+</h4>
 
-**git-cliff** can generate [changelog](https://en.wikipedia.org/wiki/Changelog) files from the [Git](https://git-scm.com/) history by utilizing [conventional commits](#conventional_commits) as well as regex-powered [custom parsers](#commit_parsers). The [changelog template](#templating) can be customized with a [configuration file](#configuration-file) to match the desired format.
+**git-cliff** can generate [changelog](https://en.wikipedia.org/wiki/Changelog) files from the [Git](https://git-scm.com/) history by utilizing [conventional commits](https://git-cliff.org/docs/configuration#conventional_commits) as well as regex-powered [custom parsers](https://git-cliff.org/docs/configuration#commit_parsers). The [changelog template](https://git-cliff.org/docs/category/templating) can be customized with a [configuration file](https://git-cliff.org/docs/configuration) to match the desired format.
 
 ![preview](https://user-images.githubusercontent.com/24392180/128637997-5713ba25-d8f3-40c7-8ba8-ea7f333ead88.png)
 
 ## Documentation
 
-Learn how to use **git-cliff** in the [documentation](https://git-cliff.org).
+Learn how to use **git-cliff** from the [documentation](https://git-cliff.org/docs).
+
+- [Installation](https://git-cliff.org/docs/installation/)
+- [Usage](https://git-cliff.org/docs/usage/examples)
+- [Configuration](https://git-cliff.org/docs/configuration)
+- [Templating](https://git-cliff.org/docs/category/templating)
 
 ## In The Media
 
