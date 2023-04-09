@@ -1,0 +1,8 @@
+{
+  "label": "Templating",
+  "position": 5,
+  "link": {
+    "type": "generated-index",
+    "description": "A template is a text where variables and expressions get replaced with values when it is rendered."
+  }
+}
