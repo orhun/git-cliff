@@ -53,7 +53,7 @@ Learn how to use **git-cliff** from the [documentation](https://git-cliff.org/do
 
 ## In The Media
 
-- `git-cliff` was featured in [Console #141 - The Open Source Newsletter](https://console.substack.com/p/console-141)
+- **git-cliff** was featured in [Console #141 - The Open Source Newsletter](https://console.substack.com/p/console-141)
 
 ## Similar/Related Projects
 
