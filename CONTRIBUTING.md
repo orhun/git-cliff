@@ -31,12 +31,9 @@ cargo build
 cargo test
 ```
 
-7. Make sure [rustfmt](https://github.com/rust-lang/rustfmt) and [clippy](https://github.com/rust-lang/rust-clippy) don't complain about your changes.
+6. Make sure [rustfmt](https://github.com/rust-lang/rustfmt) and [clippy](https://github.com/rust-lang/rust-clippy) don't complain about your changes.
 
-```sh
-cargo fmt --all -- --check --verbose
-cargo clippy --verbose -- -D warnings
-```
+We use the `nightly` channel for `rustfmt` so please set the appropriate settings for your editor/IDE for that.
 
 ## Create a Pull Request
 
