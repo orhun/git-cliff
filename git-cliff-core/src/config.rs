@@ -29,13 +29,15 @@ pub struct Config {
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ChangelogConfig {
 	/// Changelog header.
-	pub header: Option<String>,
+	pub header:         Option<String>,
 	/// Changelog body, template.
-	pub body:   Option<String>,
+	pub body:           Option<String>,
 	/// Changelog footer.
-	pub footer: Option<String>,
+	pub footer:         Option<String>,
 	/// Trim the template.
-	pub trim:   Option<bool>,
+	pub trim:           Option<bool>,
+	/// Changelog postrocessors.
+	pub postprocessors: Option<Vec<TextProcessor>>,
 }
 
 /// Git configuration
@@ -50,7 +52,7 @@ pub struct GitConfig {
 	pub split_commits:         Option<bool>,
 
 	/// Git commit preprocessors.
-	pub commit_preprocessors:     Option<Vec<CommitPreprocessor>>,
+	pub commit_preprocessors:     Option<Vec<TextProcessor>>,
 	/// Git commit parsers.
 	pub commit_parsers:           Option<Vec<CommitParser>>,
 	/// Whether to protect all breaking changes from being skipped by a commit
@@ -95,9 +97,9 @@ pub struct CommitParser {
 	pub skip:          Option<bool>,
 }
 
-/// Preprocessor for modifying commit messages.
+/// TextProcessor, e.g. for modifying commit messages.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct CommitPreprocessor {
+pub struct TextProcessor {
 	/// Regex for matching a text to replace.
 	#[serde(with = "serde_regex")]
 	pub pattern:         Regex,
