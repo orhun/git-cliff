@@ -243,6 +243,10 @@ A regex for ignore processing the matched tags.
 
 While `skip_tags` drop commits from the changelog, `ignore_tags` include ignored commits into the next tag.
 
+### ignore_commits
+
+A regex for ignore processing the matched commits.
+
 ### topo_order
 
 If set to `true`, tags are processed in topological order instead of chronological.

@@ -63,14 +63,14 @@ fn process_repository<'a>(
 ) -> Result<Vec<Release<'a>>> {
 	let mut tags = repository.tags(&config.git.tag_pattern, args.topo_order)?;
 	let skip_regex = config.git.skip_tags.as_ref();
-	let ignore_regex = config.git.ignore_tags.as_ref();
+	let ignore_tags_regex = config.git.ignore_tags.as_ref();
 	tags = tags
 		.into_iter()
 		.filter(|(_, name)| {
 			// Keep skip tags to drop commits in the later stage.
 			let skip = skip_regex.map(|r| r.is_match(name)).unwrap_or_default();
 
-			let ignore = ignore_regex
+			let ignore = ignore_tags_regex
 				.map(|r| {
 					if r.as_str().trim().is_empty() {
 						return false;
@@ -145,6 +145,17 @@ fn process_repository<'a>(
 		args.include_path.clone(),
 		args.exclude_path.clone(),
 	)?;
+
+	let ignore_commits_regex = config.git.ignore_commits.as_ref();
+	if let Some(ignore_commits_regex) = ignore_commits_regex {
+		commits.retain(|commit| {
+			commit
+				.message()
+				.map(|commit| !ignore_commits_regex.is_match(commit))
+				.unwrap_or(true)
+		});
+	}
+
 	if let Some(commit_limit_value) = config.git.limit_commits {
 		commits = commits
 			.drain(..commits.len().min(commit_limit_value))

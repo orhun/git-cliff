@@ -40,6 +40,7 @@ pub struct ChangelogConfig {
 
 /// Git configuration
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct GitConfig {
 	/// Whether to enable parsing conventional commits.
 	pub conventional_commits:  Option<bool>,
@@ -62,6 +63,9 @@ pub struct GitConfig {
 	pub filter_commits:           Option<bool>,
 	/// Blob pattern for git tags.
 	pub tag_pattern:              Option<String>,
+	/// Regex to ignore commits.
+	#[serde(with = "serde_regex", default)]
+	pub ignore_commits:           Option<Regex>,
 	/// Regex to skip matched tags.
 	#[serde(with = "serde_regex", default)]
 	pub skip_tags:                Option<Regex>,
