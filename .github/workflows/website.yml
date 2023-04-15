@@ -23,8 +23,29 @@ env:
   NODE_OPTIONS: --max-old-space-size=6144
 
 jobs:
+  test-deploy:
+    name: Test deployment
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          cache: yarn
+          cache-dependency-path: ./website/package-lock.json
+      - name: Install dependencies
+        working-directory: ./website
+        run: yarn install --frozen-lockfile --non-interactive
+      - name: Build
+        working-directory: ./website
+        run: yarn build
+
   deploy:
     name: Deploy website
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-22.04
     environment:
       name: github-pages
@@ -45,14 +66,11 @@ jobs:
         working-directory: ./website
         run: yarn build
       - name: Setup Pages
-        if: github.event_name != 'pull_request'
         uses: actions/configure-pages@v1
       - name: Upload artifact
-        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v1
         with:
           path: website/build
       - name: Deploy to GitHub Pages
-        if: github.event_name != 'pull_request'
         id: deployment
         uses: actions/deploy-pages@v1
