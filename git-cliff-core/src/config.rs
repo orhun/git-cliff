@@ -144,7 +144,9 @@ impl Config {
 			config::Config::builder().add_source(config::File::from(path))
 		};
 		Ok(config_builder
-			.add_source(config::Environment::with_prefix("CLIFF").separator("_"))
+			.add_source(
+				config::Environment::with_prefix("CLIFF_GIT").separator("__"),
+			)
 			.build()?
 			.try_deserialize()?)
 	}
@@ -164,7 +166,7 @@ mod test {
 			.to_path_buf()
 			.join("config")
 			.join(crate::DEFAULT_CONFIG);
-		env::set_var("CLIFF_CHANGELOG_FOOTER", "test");
+		env::set_var("CLIFF_GIT__CHANGELOG__FOOTER", "test");
 		let config = Config::parse(&path)?;
 		assert_eq!(Some(String::from("test")), config.changelog.footer);
 		Ok(())
