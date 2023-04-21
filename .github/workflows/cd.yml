@@ -42,6 +42,7 @@ jobs:
               TOOLCHAIN: stable,
               TARGET: x86_64-unknown-linux-gnu,
               NPM_PUBLISH: true,
+              PYPI_PUBLISH: true,
             }
           - {
               NAME: linux-x64-musl,
@@ -49,6 +50,7 @@ jobs:
               TOOLCHAIN: stable,
               TARGET: x86_64-unknown-linux-musl,
               NPM_PUBLISH: false,
+              PYPI_PUBLISH: true,
             }
           - {
               NAME: linux-x86-glibc,
@@ -56,6 +58,7 @@ jobs:
               TOOLCHAIN: stable,
               TARGET: i686-unknown-linux-gnu,
               NPM_PUBLISH: false,
+              PYPI_PUBLISH: true,
             }
           - {
               NAME: linux-x86-musl,
@@ -63,6 +66,7 @@ jobs:
               TOOLCHAIN: stable,
               TARGET: i686-unknown-linux-musl,
               NPM_PUBLISH: false,
+              PYPI_PUBLISH: true,
             }
           - {
               NAME: linux-arm64-glibc,
@@ -70,6 +74,7 @@ jobs:
               TOOLCHAIN: stable,
               TARGET: aarch64-unknown-linux-gnu,
               NPM_PUBLISH: true,
+              PYPI_PUBLISH: true,
             }
           - {
               NAME: linux-arm64-musl,
@@ -77,6 +82,7 @@ jobs:
               TOOLCHAIN: stable,
               TARGET: aarch64-unknown-linux-musl,
               NPM_PUBLISH: false,
+              PYPI_PUBLISH: true,
             }
           - {
               NAME: win32-x64-mingw,
@@ -84,6 +90,7 @@ jobs:
               TOOLCHAIN: stable,
               TARGET: x86_64-pc-windows-gnu,
               NPM_PUBLISH: false,
+              PYPI_PUBLISH: true,
             }
           - {
               NAME: win32-x64-msvc,
@@ -91,6 +98,7 @@ jobs:
               TOOLCHAIN: stable,
               TARGET: x86_64-pc-windows-msvc,
               NPM_PUBLISH: true,
+              PYPI_PUBLISH: true,
             }
           - {
               NAME: win32-x86-msvc,
@@ -98,6 +106,7 @@ jobs:
               TOOLCHAIN: stable,
               TARGET: i686-pc-windows-msvc,
               NPM_PUBLISH: false,
+              PYPI_PUBLISH: true,
             }
           - {
               NAME: win32-arm64-msvc,
@@ -105,6 +114,7 @@ jobs:
               TOOLCHAIN: stable,
               TARGET: aarch64-pc-windows-msvc,
               NPM_PUBLISH: true,
+              PYPI_PUBLISH: true,
             }
           - {
               NAME: darwin-x64,
@@ -112,6 +122,7 @@ jobs:
               TOOLCHAIN: stable,
               TARGET: x86_64-apple-darwin,
               NPM_PUBLISH: true,
+              PYPI_PUBLISH: true,
             }
           - {
               NAME: darwin-arm64,
@@ -119,6 +130,7 @@ jobs:
               TOOLCHAIN: stable,
               TARGET: aarch64-apple-darwin,
               NPM_PUBLISH: true,
+              PYPI_PUBLISH: true,
             }
     steps:
       - name: Checkout
@@ -230,6 +242,41 @@ jobs:
           npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Build wheels (linux)
+        if: matrix.build.PYPI_PUBLISH == true && matrix.build.NAME.startsWith('linux-')
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.build.TARGET }}
+          args: --manifest-path git-cliff/Cargo.toml --release --out dist
+          sccache: 'true'
+          manylinux: auto
+      - name: Build wheels (macos)
+        if: matrix.build.PYPI_PUBLISH == true && matrix.build.OS.startsWith('macos-')
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.build.TARGET }}
+          args: --manifest-path git-cliff/Cargo.toml --release --out dist
+          sccache: 'true'
+      - name: Build wheels (windows)
+        if: matrix.build.PYPI_PUBLISH == true && matrix.build.OS.startsWith('windows-')
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.build.TARGET }}
+          args: --manifest-path git-cliff/Cargo.toml --release --out dist
+          sccache: 'true'
+      - name: Build wheels (musl)
+        if: matrix.build.PYPI_PUBLISH == true && matrix.build.OS.endsWith('musl-')
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.build.TARGET }}
+          args: --manifest-path git-cliff/Cargo.toml --release --out dist
+          sccache: 'true'
+          manylinux: musllinux_1_2
+      - name: Upload wheels
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: dist
 
   publish-npm:
     name: Publish the base package to NPM
@@ -253,6 +300,39 @@ jobs:
           npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  pypi-sdist:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Move pyproject.toml to the right location
+        run: cp pypi/pyproject.toml .
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --manifest-path git-cliff/Cargo.toml --out dist
+      - name: Upload sdist
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: dist
+
+  publish-pypi:
+    name: Publish PyPI packaage
+    runs-on: ubuntu-22.04
+    needs: [pypi-sdist]
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: wheels
+      - name: Publish to PyPI
+        uses: PyO3/maturin-action@v1
+        env:
+          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        with:
+          command: upload
+          args: --skip-existing *
 
   publish-deb:
     name: Publish Debian package

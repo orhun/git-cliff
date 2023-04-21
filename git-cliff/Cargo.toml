@@ -54,3 +54,6 @@ pretty_assertions = "1.2.1"
 pkg-url = "{ repo }/releases/download/v{ version }/{ name }-{ version }-{ target }{ archive-suffix }"
 bin-dir = "{ name }-{ version }/{ bin }{ binary-ext }"
 pkg-fmt = "tgz"
+
+[package.metadata.maturin]
+name = "git-cliff"
