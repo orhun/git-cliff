@@ -279,7 +279,7 @@ Examples:
 
 ### Environment Configuration Overrides
 
-It's possible to use environment variable to override configuration elements. If an environment variable matches a configuration element the variable's value will be used instead of the element's.
+It's possible to use environment variables to override configuration elements. If an environment variable matches a configuration element the variable's value will be used instead of the element's.
 
 Examples:
 
