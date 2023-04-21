@@ -276,3 +276,27 @@ Examples:
 `limit_commits` is a **optional** positive integer number that limits the number of included commits in the generated changelog.
 
 `limit_commits` is not part of the default configuration.
+
+### Environment Configuration Overrides
+
+It's possible to override configuration elements environment variables. If an environment variable matches a configuration element the variable's value will be used instead of the value from the config file.
+
+Examples:
+
+To override the `footer` element:
+
+```bash
+export CLIFF_GIT__CHANGELOG__FOOTER="<!-- footer from env -->"
+```
+
+To override the `ignore_tags` element:
+
+```bash
+export CLIFF_GIT__GIT__IGNORE_TAGS="v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+"
+```
+
+If it's not clear from the examples the format of the variable name is:
+
+```
+[PREFIX]__[CONFIG SECTION]__[FIELD NAME]
+```
