@@ -286,13 +286,13 @@ Examples:
 To override the `footer` element:
 
 ```bash
-export CLIFF_GIT__CHANGELOG__FOOTER="<!-- footer from env -->"
+export GIT_CLIFF__CHANGELOG__FOOTER="<!-- footer from env -->"
 ```
 
 To override the `ignore_tags` element:
 
 ```bash
-export CLIFF_GIT__GIT__IGNORE_TAGS="v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+"
+export GIT_CLIFF__GIT__IGNORE_TAGS="v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+"
 ```
 
 If it's not clear from the examples the format of the variable name is:

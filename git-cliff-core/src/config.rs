@@ -145,7 +145,7 @@ impl Config {
 		};
 		Ok(config_builder
 			.add_source(
-				config::Environment::with_prefix("CLIFF_GIT").separator("__"),
+				config::Environment::with_prefix("GIT_CLIFF").separator("__"),
 			)
 			.build()?
 			.try_deserialize()?)
@@ -171,9 +171,9 @@ mod test {
 		const TAG_PATTERN_VALUE: &str = "*[0-9]*";
 		const IGNORE_TAGS_VALUE: &str = "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+";
 
-		env::set_var("CLIFF_GIT__CHANGELOG__FOOTER", FOOTER_VALUE);
-		env::set_var("CLIFF_GIT__GIT__TAG_PATTERN", TAG_PATTERN_VALUE);
-		env::set_var("CLIFF_GIT__GIT__IGNORE_TAGS", IGNORE_TAGS_VALUE);
+		env::set_var("GIT_CLIFF__CHANGELOG__FOOTER", FOOTER_VALUE);
+		env::set_var("GIT_CLIFF__GIT__TAG_PATTERN", TAG_PATTERN_VALUE);
+		env::set_var("GIT_CLIFF__GIT__IGNORE_TAGS", IGNORE_TAGS_VALUE);
 
 		let config = Config::parse(&path)?;
 
