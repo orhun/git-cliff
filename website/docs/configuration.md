@@ -281,6 +281,11 @@ Examples:
 
 It's possible to use environment variables to override configuration elements. If an environment variable matches a configuration element the variable's value will be used instead of the element's.
 
+Format:
+```
+[PREFIX]__[CONFIG SECTION]__[FIELD NAME]
+```
+
 Examples:
 
 To override the `footer` element:
@@ -293,10 +298,4 @@ To override the `ignore_tags` element:
 
 ```bash
 export GIT_CLIFF__GIT__IGNORE_TAGS="v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+"
-```
-
-If it's not clear from the examples the format of the variable name is:
-
-```
-[PREFIX]__[CONFIG SECTION]__[FIELD NAME]
 ```
