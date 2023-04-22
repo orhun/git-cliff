@@ -279,14 +279,15 @@ Examples:
 
 ### Environment Configuration Overrides
 
-It's possible to use environment variables to override configuration elements. If an environment variable matches a configuration element the variable's value will be used instead of the element's.
+It's possible to use environment variables to override configuration elements. If an environment variable matches a configuration element, the variable's value will be used instead of the element's.
 
 Format:
+
 ```
 [PREFIX]__[CONFIG SECTION]__[FIELD NAME]
 ```
 
-Examples:
+#### Examples
 
 To override the `footer` element:
 
