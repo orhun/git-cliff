@@ -344,13 +344,13 @@ Also, see the [release script](./release.sh) of this project which sets the chan
 The easiest way of running **git-cliff** (in the git root directory with [configuration file](#configuration-file) present) is to use the [available tags](https://hub.docker.com/repository/docker/orhunp/git-cliff/tags) from [Docker Hub](https://hub.docker.com/repository/docker/orhunp/git-cliff):
 
 ```sh
-docker run -t -v "$(pwd)/.git":/app/ orhunp/git-cliff:latest
+docker run -t -v "$(pwd)":/app/ orhunp/git-cliff:latest
 ```
 
 Or you can use the image from the [GitHub Package Registry](https://github.com/orhun/git-cliff/packages/841947):
 
 ```sh
-docker run -t -v "$(pwd)/.git":/app/ docker.pkg.github.com/orhun/git-cliff/git-cliff:latest
+docker run -t -v "$(pwd)":/app/ docker.pkg.github.com/orhun/git-cliff/git-cliff:latest
 ```
 
 Also, you can build the image yourself using `DOCKER_BUILDKIT=1 docker build -t git-cliff .` command.
