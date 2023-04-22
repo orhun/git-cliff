@@ -11,6 +11,9 @@ use std::path::Path;
 const CARGO_METADATA_REGEX: &str =
 	r"^\[(?:workspace|package)\.metadata\.git\-cliff\.";
 
+/// Regex for matching the metadata in pyproject.toml
+const PYPROJECT_METADATA_REGEX: &str = r"^\[(?:tool)\.git\-cliff\.";
+
 /// Configuration values.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Config {
@@ -119,11 +122,19 @@ pub struct LinkParser {
 impl Config {
 	/// Parses the config file and returns the values.
 	pub fn parse(path: &Path) -> Result<Config> {
-		let config_builder = if path.file_name() == Some(OsStr::new("Cargo.toml")) {
+		let config_builder = if path.file_name() == Some(OsStr::new("Cargo.toml")) ||
+			path.file_name() == Some(OsStr::new("pyproject.toml"))
+		{
 			let contents = fs::read_to_string(path)?;
-			let metadata_regex = RegexBuilder::new(CARGO_METADATA_REGEX)
-				.multi_line(true)
-				.build()?;
+			let metadata_regex = RegexBuilder::new(
+				if path.file_name() == Some(OsStr::new("Cargo.toml")) {
+					CARGO_METADATA_REGEX
+				} else {
+					PYPROJECT_METADATA_REGEX
+				},
+			)
+			.multi_line(true)
+			.build()?;
 			let contents = metadata_regex.replace_all(&contents, "[");
 			config::Config::builder().add_source(config::File::from_str(
 				&contents,
@@ -133,7 +144,9 @@ impl Config {
 			config::Config::builder().add_source(config::File::from(path))
 		};
 		Ok(config_builder
-			.add_source(config::Environment::with_prefix("CLIFF").separator("_"))
+			.add_source(
+				config::Environment::with_prefix("GIT_CLIFF").separator("__"),
+			)
 			.build()?
 			.try_deserialize()?)
 	}
@@ -153,9 +166,29 @@ mod test {
 			.to_path_buf()
 			.join("config")
 			.join(crate::DEFAULT_CONFIG);
-		env::set_var("CLIFF_CHANGELOG_FOOTER", "test");
+
+		const FOOTER_VALUE: &str = "test";
+		const TAG_PATTERN_VALUE: &str = "*[0-9]*";
+		const IGNORE_TAGS_VALUE: &str = "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+";
+
+		env::set_var("GIT_CLIFF__CHANGELOG__FOOTER", FOOTER_VALUE);
+		env::set_var("GIT_CLIFF__GIT__TAG_PATTERN", TAG_PATTERN_VALUE);
+		env::set_var("GIT_CLIFF__GIT__IGNORE_TAGS", IGNORE_TAGS_VALUE);
+
 		let config = Config::parse(&path)?;
-		assert_eq!(Some(String::from("test")), config.changelog.footer);
+
+		assert_eq!(Some(String::from(FOOTER_VALUE)), config.changelog.footer);
+		assert_eq!(
+			Some(String::from(TAG_PATTERN_VALUE)),
+			config.git.tag_pattern
+		);
+		assert_eq!(
+			Some(String::from(IGNORE_TAGS_VALUE)),
+			config
+				.git
+				.ignore_tags
+				.map(|ignore_tags| ignore_tags.to_string())
+		);
 		Ok(())
 	}
 }

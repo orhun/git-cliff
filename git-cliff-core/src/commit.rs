@@ -77,11 +77,11 @@ impl<'a> From<&'a ConventionalFooter<'a>> for Footer<'a> {
 )]
 pub struct Signature {
 	/// Name on the signature.
-	name:      Option<String>,
+	pub name:      Option<String>,
 	/// Email on the signature.
-	email:     Option<String>,
+	pub email:     Option<String>,
 	/// Time of the signature.
-	timestamp: i64,
+	pub timestamp: i64,
 }
 
 impl<'a> From<CommitSignature<'a>> for Signature {
@@ -277,7 +277,15 @@ impl Commit<'_> {
 							"Skipping commit",
 						)));
 					} else {
-						self.group = parser.group.as_ref().cloned();
+						self.group =
+							parser.group.as_ref().cloned().map(|mut group| {
+								for mat in regex.find_iter(&text) {
+									group = regex
+										.replace(mat.as_str(), group)
+										.to_string();
+								}
+								group
+							});
 						self.scope = parser.scope.as_ref().cloned();
 						self.default_scope = parser.default_scope.as_ref().cloned();
 						return Ok(self);

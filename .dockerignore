@@ -1,8 +1,8 @@
 # Directories
 /.git/
 /.github/
-/target/
 /npm/
+/website/
 
 # Files
 .editorconfig

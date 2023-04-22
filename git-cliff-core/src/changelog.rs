@@ -1,11 +1,11 @@
-use git_cliff_core::commit::Commit;
-use git_cliff_core::config::Config;
-use git_cliff_core::error::Result;
-use git_cliff_core::release::{
+use crate::commit::Commit;
+use crate::config::Config;
+use crate::error::Result;
+use crate::release::{
 	Release,
 	Releases,
 };
-use git_cliff_core::template::Template;
+use crate::template::Template;
 use std::io::Write;
 
 /// Changelog generator.
@@ -176,7 +176,7 @@ impl<'a> Changelog<'a> {
 #[cfg(test)]
 mod test {
 	use super::*;
-	use git_cliff_core::config::{
+	use crate::config::{
 		ChangelogConfig,
 		CommitParser,
 		CommitPreprocessor,
@@ -209,7 +209,8 @@ mod test {
 				filter_unconventional:    Some(false),
 				split_commits:            Some(false),
 				commit_preprocessors:     Some(vec![CommitPreprocessor {
-					pattern:         Regex::new("<preprocess>").unwrap(),
+					pattern:         Regex::new("<preprocess>")
+						.expect("failed to compile regex"),
 					replace:         Some(String::from(
 						"this commit is preprocessed",
 					)),
@@ -246,6 +247,14 @@ mod test {
 						group:         Some(String::from("Documentation")),
 						default_scope: None,
 						scope:         Some(String::from("documentation")),
+						skip:          None,
+					},
+					CommitParser {
+						message:       Regex::new(r#"match\((.*)\):.*"#).ok(),
+						body:          None,
+						group:         Some(String::from("Matched ($1)")),
+						default_scope: None,
+						scope:         None,
 						skip:          None,
 					},
 					CommitParser {
@@ -306,6 +315,10 @@ mod test {
 				Commit::new(
 					String::from("qwertz"),
 					String::from("feat!: support breaking commits"),
+				),
+				Commit::new(
+					String::from("qwert0"),
+					String::from("match(group): support regex-replace for groups"),
 				),
 			],
 			commit_id: Some(String::from("0bc123")),
@@ -392,6 +405,10 @@ mod test {
 			#### documentation
 			- update docs
 
+			### Matched (group)
+			#### group
+			- support regex-replace for groups
+
 			### New features
 			#### app
 			- add cool features
@@ -413,7 +430,7 @@ mod test {
 			------------"#
 			)
 			.replace("			", ""),
-			str::from_utf8(&out).unwrap()
+			str::from_utf8(&out).unwrap_or_default()
 		);
 		Ok(())
 	}
@@ -497,6 +514,10 @@ chore(deps): fix broken deps
 			#### documentation
 			- update docs
 
+			### Matched (group)
+			#### group
+			- support regex-replace for groups
+
 			### New features
 			#### app
 			- add cool features
@@ -523,7 +544,7 @@ chore(deps): fix broken deps
 			------------"#
 			)
 			.replace("			", ""),
-			str::from_utf8(&out).unwrap()
+			str::from_utf8(&out).unwrap_or_default()
 		);
 		Ok(())
 	}

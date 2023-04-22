@@ -1,31 +1,41 @@
 ---
-name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: 'bug'
-assignees: 'orhun'
-
+name: Bug report 🐛
+about: Report a bug to help us improve
+title: ""
+labels: "bug"
+assignees: "orhun"
 ---
 
 **Describe the bug**
-A clear and concise description of what the bug is.
 
-**To Reproduce**
+<!--- A clear and concise description of what the bug is. -->
+
+**To reproduce**
+
+<!---
 Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+1. Build with '...' arguments
+2. Run with '....' arguments
+4. Use '...' configuration options
+5. See the error
+-->
 
 **Expected behavior**
-A clear and concise description of what you expected to happen.
 
-**Screenshots/Logs**
-If applicable, add screenshots to help explain your problem.
+<!--- A clear and concise description of what you expected to happen. -->
 
-**System (please complete the following information):**
- - OS Information: [e.g. Arch GNU/Linux x86_64 5.4.8-arch1-1]
- - Project Version: [e.g. 0.1.0]
+**Screenshots / Logs**
+
+<!--- If applicable, add screenshots to help explain your problem. -->
+
+**Software information**
+
+<!--- Please fill in following fields -->
+
+- Operating system: <!--- e.g. Arch GNU/Linux x86_64 6.2.1-arch1-1 -->
+- Rust version: <!--- e.g. rustc 1.69.0-nightly (7281249a1 2023-02-27) -->
+- Project version: <!--- e.g. 0.1.0 -->
 
 **Additional context**
-Add any other context about the problem here.
+
+<!--- Add any other context about the problem here. -->

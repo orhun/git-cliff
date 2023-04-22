@@ -13,14 +13,10 @@ on:
 jobs:
   check:
     name: Check
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
+        uses: dtolnay/rust-toolchain@stable
       - name: Checkout
         uses: actions/checkout@v3
       - name: Check
@@ -31,14 +27,10 @@ jobs:
 
   test:
     name: Test suite
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
+        uses: dtolnay/rust-toolchain@nightly
       - name: Checkout
         if: github.event_name != 'pull_request'
         uses: actions/checkout@v3
@@ -69,15 +61,12 @@ jobs:
 
   clippy:
     name: Lints
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          toolchain: nightly
-          profile: minimal
           components: clippy
-          override: true
       - name: Checkout
         uses: actions/checkout@v3
       - name: Check the lints
@@ -88,15 +77,12 @@ jobs:
 
   rustfmt:
     name: Formatting
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          toolchain: nightly
-          profile: minimal
           components: rustfmt
-          override: true
       - name: Checkout
         uses: actions/checkout@v3
       - name: Check the formatting
@@ -107,20 +93,22 @@ jobs:
 
   lychee:
     name: Links
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Check the links
         uses: lycheeverse/lychee-action@v1
         with:
-          args: --exclude "%7Busername%7D|file:///|https://datatracker.ietf.org|protonmail" -v *.md
+          args: >
+            --exclude "%7Busername%7D|file:///|https://datatracker.ietf.org|protonmail"
+              -v *.md website/docs/* website/blog/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   audit:
     name: Audit check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3

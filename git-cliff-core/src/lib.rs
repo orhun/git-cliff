@@ -1,6 +1,8 @@
 //! A highly customizable changelog generator
 #![warn(missing_docs, clippy::unwrap_used)]
 
+/// Changelog generator.
+pub mod changelog;
 /// Command runner.
 pub mod command;
 /// Git commit.
@@ -17,6 +19,9 @@ pub mod release;
 pub mod repo;
 /// Template engine.
 pub mod template;
+
+#[macro_use]
+extern crate log;
 
 /// Default configuration file.
 pub const DEFAULT_CONFIG: &str = "cliff.toml";
