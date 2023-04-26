@@ -13,9 +13,7 @@ sed -E -i "s/^version = .* $msg$/version = \"${1#v}\" $msg/" git-cliff*/Cargo.to
 sed -E -i "s/\"version\": \".+\"/\"version\": \"${1#v}\"/" npm/git-cliff/package.json
 sed -E -i "s/\"(git-cliff-.+)\": \".+\"/\"\1\": \"${1#v}\"/g" npm/git-cliff/package.json
 # update the changelog
-sed -E -i "s/\s+\#\s(.*)\s\#\sreplace issue numbers/\\t\1/g" config/cliff.toml
-cargo run -- --tag "$1" >CHANGELOG.md
-git restore config/cliff.toml
+cargo run -- --config cliff.toml -tag "$1" >CHANGELOG.md
 git add -A && git commit -m "chore(release): prepare for $1"
 git show
 # generate a changelog for the tag message
