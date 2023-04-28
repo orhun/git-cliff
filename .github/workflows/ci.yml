@@ -1,12 +1,12 @@
 name: Continuous Integration
 
 on:
+  pull_request:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
+      - staging # for bors
+      - trying # for bors
   schedule:
     - cron: "0 0 * * 0"
 
