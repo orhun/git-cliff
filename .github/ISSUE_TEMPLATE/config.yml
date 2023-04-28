@@ -1,0 +1,7 @@
+contact_links:
+  - name: Discord Chat
+    url: https://discord.gg/W3mAwMDWH4
+    about: Ask questions and have discussions about git-cliff on Discord
+  - name: Matrix Chat
+    url: https://matrix.to/#/#git-cliff:matrix.org
+    about: Ask questions and have discussions about git-cliff on Matrix
