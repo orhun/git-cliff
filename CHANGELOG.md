@@ -2,888 +2,979 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2023-04-28
+
+### ⛰️  Features
+
+- *(args)* Update clap and clap extras to v4 ([#137](https://github.com/orhun/git-cliff/issues/137))
+- *(commit)* Make the fields of `Signature` public
+- *(config)* Add a custom configuration file for the repository
+- *(config)* Support placing configuration inside pyproject.toml ([#147](https://github.com/orhun/git-cliff/issues/147))
+- *(docker)* Generate SBOM/provenance for the Docker image
+- *(parser)* Support using regex group values ([#145](https://github.com/orhun/git-cliff/issues/145))
+
+### 🐛 Bug Fixes
+
+- *(ci)* Use MUSL build of cargo-tarpaulin
+- *(ci)* Update cargo-tarpaulin installation command for CI
+- *(config)* [**breaking**] Nested environment config overrides ([#157](https://github.com/orhun/git-cliff/issues/157))
+- *(config)* Set max of `limit_commits` to the number of commits ([#140](https://github.com/orhun/git-cliff/issues/140))
+- *(deploy)* Set the node cache dependency path
+- *(docker)* Remove target directory from .dockerignore
+- *(release)* Use the correct argument in release script
+- *(website)* Fix broken links
+
+### 🚜 Refactor
+
+- *(cd)* Remove unnecessary config update
+- *(ci)* Test the website deployment with a different job
+- *(lib)* [**breaking**] Move changelog module to git-cliff-core
+- *(test)* Handle errors for changelog module tests
+- *(website)* Update header location
+
+### 📚 Documentation
+
+- *(blog)* Add blog post about what's new in 1.2.0
+- *(blog)* Update the blog post style
+- *(config)* Update the sections
+- *(config)* Add comments to the default configuration file
+- *(contributing)* Mention the nightly requirement for rustfmt
+- *(contributing)* Update MSRV
+- *(examples)* Move examples to separate file
+- *(github)* Update the pull request template about GitHub labels
+- *(github)* Update pull request template
+- *(github)* Update issue templates
+- *(github)* Update funding options
+- *(github)* Add security policy
+- *(readme)* Update README.md about documentation website
+- *(readme)* Add tj-actions/git-cliff to the list of actions ([#152](https://github.com/orhun/git-cliff/issues/152))
+- *(readme)* Add discord badge
+- *(readme)* Add release-plz to related projects ([#151](https://github.com/orhun/git-cliff/issues/151))
+- *(readme)* Fix typos in README.md
+- *(readme)* Remove unneeded word in README.md ([#141](https://github.com/orhun/git-cliff/issues/141))
+- *(readme)* Add link to the Console #141 interview about git-cliff
+- *(website)* Add Twitter link to banner
+- *(website)* Move documentation to the website ([#153](https://github.com/orhun/git-cliff/issues/153))
+
+### 🎨 Styling
+
+- *(docs)* Fix the grammar for tj-actions
+- *(docs)* Update the formatting for python integration example
+- *(readme)* Update the style for project name
+- *(readme)* Apply formatting
+- *(website)* Update the style for environment variable section
+
+### 🧪 Testing
+
+- *(deploy)* Test the website deployment for pull requests
+
+### ⚙️ Miscellaneous Tasks
+
+- *(cargo)* Update MSRV to 1.64.0
+- *(cd)* Temporarily switch back to action-rs/toolchain
+- *(ci)* Switch to dtolnay/rust-toolchain action
+- *(ci)* Update runner images
+- *(deps)* Bump actions/configure-pages from 1 to 3
+- *(deps)* Bump actions/deploy-pages from 1 to 2
+- *(deps)* Upgrade transitive dependencies
+- *(deps)* Update clap dependencies
+- *(deps)* Upgrade workspace dependencies
+- *(deps)* Upgrade core dependencies
+- *(docker)* Update versions in Dockerfile
+- *(docker)* Bump the action versions in docker workflow
+- *(docker)* Bump build-push-action to v4
+- *(editorconfig)* Fix editorconfig syntax
+- *(editorconfig)* Update editorconfig for better code readability
+- *(examples)* Remove EXAMPLES.md
+- *(github)* Integrate Dependabot
+- *(github)* Integrate bors
+- *(github)* Add contact links for issues
+- *(website)* Add workflow file for deploying the website
+- *(website)* Move website to website folder
+- *(website)* Move website to docs for GitHub pages deployment
+
 ## [1.1.2] - 2023-01-20
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Do not skip all tags when `skip_tags` is empty ([#136](https://github.com/orhun/git-cliff/issues/136))
-- Allow saving context to a file ([#138](https://github.com/orhun/git-cliff/issues/138))
-- Derive the tag order from commits instead of timestamp ([#139](https://github.com/orhun/git-cliff/issues/139))
+- *(changelog)* Allow saving context to a file ([#138](https://github.com/orhun/git-cliff/issues/138))
+- *(changelog)* Do not skip all tags when `skip_tags` is empty ([#136](https://github.com/orhun/git-cliff/issues/136))
+- *(git)* Derive the tag order from commits instead of timestamp ([#139](https://github.com/orhun/git-cliff/issues/139))
 
-### Miscellaneous Tasks
+### 🎨 Styling
 
-- Add metadata for cargo-binstall
-- Upgrade core dependencies
-- Update versions in Dockerfile
+- *(fmt)* Update the derives in config module
 
-### Styling
+### ⚙️ Miscellaneous Tasks
 
-- Update the derives in config module
+- *(cargo)* Add metadata for cargo-binstall
+- *(deps)* Upgrade core dependencies
+- *(docker)* Update versions in Dockerfile
 
 ### Revert
 
-- Use timestamp for deriving the tag order ([#139](https://github.com/orhun/git-cliff/issues/139))
+- *(git)* Use timestamp for deriving the tag order ([#139](https://github.com/orhun/git-cliff/issues/139))
 
 ## [1.1.1] - 2023-01-09
 
-### Documentation
+### 📚 Documentation
 
-- Update README.md about the NPM package
+- *(readme)* Update README.md about the NPM package
 
 ## [1.1.1-rc.4] - 2023-01-09
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Fix the type casting in base NPM package
+- *(npm)* Fix the type casting in base NPM package
 
 ## [1.1.1-rc.3] - 2023-01-09
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Fix the variable declaration for NPM package OS
+- *(npm)* Fix the variable declaration for NPM package OS
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Parallelize releasing on crates.io
+- *(cd)* Parallelize releasing on crates.io
 
 ## [1.1.1-rc.2] - 2023-01-09
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Rename the NPM binary package for Windows
+- *(npm)* Rename the NPM binary package for Windows
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Add more keywords to the base NPM package
-- Add README.md to the base NPM package
+- *(cd)* Add README.md to the base NPM package
+- *(npm)* Add more keywords to the base NPM package
 
 ## [1.1.1-rc.1] - 2023-01-09
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Package `git-cliff` for npm ([#133](https://github.com/orhun/git-cliff/issues/133))
+- *(npm)* Package `git-cliff` for npm ([#133](https://github.com/orhun/git-cliff/issues/133))
 
 ## [1.1.0] - 2023-01-08
 
-### Documentation
+### ⛰️  Features
 
-- Disable Liquid parsing in README.md by using raw blocks
-- Update copyright years
+- *(git)* Support generating changelog for multiple git repositories ([#13](https://github.com/orhun/git-cliff/issues/13))
 
-### Features
+### 🚜 Refactor
 
-- Support generating changelog for multiple git repositories ([#13](https://github.com/orhun/git-cliff/issues/13))
+- *(cd)* Use the git-cliff-action output for GitHub release body
 
-### Miscellaneous Tasks
+### 📚 Documentation
 
-- Bump git-cliff-action to v2
-- Add Jekyll theme configuration for GitHub pages
-- Add Jekyll configuration to .dockerignore
-- Bump `git-conventional` dependency ([#130](https://github.com/orhun/git-cliff/issues/130))
-- Publish binaries for more platforms/architectures
-- Upgrade dependencies
-- Update the description in the default config
-- Improve the release script with additional messages
+- *(readme)* Update copyright years
+- *(readme)* Disable Liquid parsing in README.md by using raw blocks
 
-### Refactor
+### ⚙️ Miscellaneous Tasks
 
-- Use the git-cliff-action output for GitHub release body
+- *(cd)* Publish binaries for more platforms/architectures
+- *(cd)* Bump git-cliff-action to v2
+- *(config)* Update the description in the default config
+- *(deps)* Upgrade dependencies
+- *(deps)* Bump `git-conventional` dependency ([#130](https://github.com/orhun/git-cliff/issues/130))
+- *(docker)* Add Jekyll configuration to .dockerignore
+- *(github)* Add Jekyll theme configuration for GitHub pages
+- *(release)* Improve the release script with additional messages
 
 ## [1.0.0] - 2022-12-25
 
-### Bug Fixes
+### ⛰️  Features
 
-- Fix test fixture failures
+- *(cd)* Publish Debian package via release workflow ([#113](https://github.com/orhun/git-cliff/issues/113))
+- *(cd)* Include completions and mangen in binary releases ([#115](https://github.com/orhun/git-cliff/issues/115))
+- *(changelog)* [**breaking**] Use current time for `--tag` argument ([#107](https://github.com/orhun/git-cliff/issues/107))
+- *(changelog)* Allow running with `--prepend` and `--output` ([#120](https://github.com/orhun/git-cliff/issues/120))
+- *(changelog, config)* [**breaking**] Replace `--date-order` by `--topo-order`
 
-### Documentation
+### 🐛 Bug Fixes
 
-- Fix GitHub badges in README.md
+- *(fixtures)* Fix test fixture failures
 
-### Features
+### 🚜 Refactor
 
-- [**breaking**] Replace `--date-order` by `--topo-order`
-- Allow running with `--prepend` and `--output` ([#120](https://github.com/orhun/git-cliff/issues/120))
-- [**breaking**] Use current time for `--tag` argument ([#107](https://github.com/orhun/git-cliff/issues/107))
-- Include completions and mangen in binary releases ([#115](https://github.com/orhun/git-cliff/issues/115))
-- Publish Debian package via release workflow ([#113](https://github.com/orhun/git-cliff/issues/113))
+- *(clippy)* Apply clippy suggestions
 
-### Miscellaneous Tasks
+### 📚 Documentation
 
-- Run all test fixtures
-- Remove deprecated set-output usage
-- Update actions/checkout to v3
-- Comment out custom commit preprocessor ([#112](https://github.com/orhun/git-cliff/issues/112))
+- *(readme)* Fix GitHub badges in README.md
 
-### Refactor
+### 🎨 Styling
 
-- Apply clippy suggestions
+- *(readme)* Update README.md about the styling of footer field
 
-### Styling
+### ⚙️ Miscellaneous Tasks
 
-- Update README.md about the styling of footer field
+- *(cd)* Remove deprecated set-output usage
+- *(ci)* Update actions/checkout to v3
+- *(config)* Comment out custom commit preprocessor ([#112](https://github.com/orhun/git-cliff/issues/112))
+- *(fixtures)* Run all test fixtures
 
 ## [0.10.0] - 2022-11-20
 
-### Bug Fixes
+### ⛰️  Features
 
-- Warn against invalid tag range for `--current` flag ([#124](https://github.com/orhun/git-cliff/issues/124))
-- Use an alternative method to fetch registry
-- Fix syntax error in Dockerfile
+- *(args)* Add a short variant `-d` for specifying `--date-order` flag
+- *(changelog)* Do not skip breaking changes if configured ([#114](https://github.com/orhun/git-cliff/issues/114))
+- *(config)* Changelog for the last n commits ([#116](https://github.com/orhun/git-cliff/issues/116))
 
-### Documentation
+### 🐛 Bug Fixes
 
-- Add MacPorts install info ([#111](https://github.com/orhun/git-cliff/issues/111))
-- Update badge URL for Docker builds
+- *(changelog)* Warn against invalid tag range for `--current` flag ([#124](https://github.com/orhun/git-cliff/issues/124))
+- *(docker)* Fix syntax error in Dockerfile
+- *(docker)* Use an alternative method to fetch registry
 
-### Features
+### 🚜 Refactor
 
-- Do not skip breaking changes if configured ([#114](https://github.com/orhun/git-cliff/issues/114))
-- Changelog for the last n commits ([#116](https://github.com/orhun/git-cliff/issues/116))
-- Add a short variant `-d` for specifying `--date-order` flag
+- *(deps)* Utilize workspace dependencies
+- *(docker)* Improve cargo-chef caching in Dockerfile
 
-### Miscellaneous Tasks
+### 📚 Documentation
 
-- Update versions in Dockerfile
-- Upgrade core dependencies
+- *(readme)* Update badge URL for Docker builds
+- *(readme)* Add MacPorts install info ([#111](https://github.com/orhun/git-cliff/issues/111))
 
-### Refactor
+### ⚙️ Miscellaneous Tasks
 
-- Improve cargo-chef caching in Dockerfile
-- Utilize workspace dependencies
+- *(deps)* Upgrade core dependencies
+- *(docker)* Update versions in Dockerfile
 
 ## [0.9.2] - 2022-09-24
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Remove custom user creation from the Dockerfile ([#109](https://github.com/orhun/git-cliff/issues/109))
+- *(docker)* Remove custom user creation from the Dockerfile ([#109](https://github.com/orhun/git-cliff/issues/109))
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Remove cargo-audit config
-- Switch to cargo-tarpaulin for measuring code coverage ([#110](https://github.com/orhun/git-cliff/issues/110))
-- Upgrade dependencies
+- *(audit)* Remove cargo-audit config
+- *(ci)* Switch to cargo-tarpaulin for measuring code coverage ([#110](https://github.com/orhun/git-cliff/issues/110))
+- *(deps)* Upgrade dependencies
 
 ## [0.9.1] - 2022-09-20
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Configure git safe.directory for Docker image ([#108](https://github.com/orhun/git-cliff/issues/108))
+- *(docker)* Configure git safe.directory for Docker image ([#108](https://github.com/orhun/git-cliff/issues/108))
 
-### Miscellaneous Tasks
+### 🚜 Refactor
 
-- Remove ansi_term dependency for fixing RUSTSEC-2021-0139
-- Upgrade dependencies
+- *(clippy)* Apply clippy suggestions
 
-### Refactor
+### 🎨 Styling
 
-- Apply clippy suggestions
+- *(readme)* Update styling for with-commit example
 
-### Styling
+### ⚙️ Miscellaneous Tasks
 
-- Update styling for with-commit example
+- *(deps)* Upgrade dependencies
+- *(deps)* Remove ansi_term dependency for fixing RUSTSEC-2021-0139
 
 ## [0.9.0] - 2022-08-16
 
-### Documentation
+### ⛰️  Features
 
-- Add test repository link to README.md
+- *(changelog)* Support setting commit SHA while using `--with-commit`
+- *(changelog)* Support splitting commits by lines ([#101](https://github.com/orhun/git-cliff/issues/101))
+- *(commit)* Add commit author and committer to the context ([#100](https://github.com/orhun/git-cliff/issues/100))
 
-### Features
+### 🚜 Refactor
 
-- Support splitting commits by lines ([#101](https://github.com/orhun/git-cliff/issues/101))
-- Support setting commit SHA while using `--with-commit`
-- Add commit author and committer to the context ([#100](https://github.com/orhun/git-cliff/issues/100))
+- *(clippy)* Run clippy for tests
+- *(commit)* Use a more concise conversion for string
 
-### Miscellaneous Tasks
+### 📚 Documentation
 
-- Use an alternative method to fetch registry
-- Enable building arm64 docker images
-- Update the description on Docker Hub on push
-- Disable updating the description on Docker Hub
-- Add GitHub Sponsors option for funding
-- Upgrade dependencies
-- Update MSRV to 1.60.0
-- Upgrade versions in Dockerfile
-- Enable strip option for release profile
+- *(readme)* Add test repository link to README.md
 
-### Refactor
+### ⚙️ Miscellaneous Tasks
 
-- Run clippy for tests
-- Use a more concise conversion for string
+- *(build)* Enable strip option for release profile
+- *(deps)* Upgrade dependencies
+- *(docker)* Upgrade versions in Dockerfile
+- *(docker)* Disable updating the description on Docker Hub
+- *(docker)* Update the description on Docker Hub on push
+- *(docker)* Enable building arm64 docker images
+- *(docker)* Use an alternative method to fetch registry
+- *(funding)* Add GitHub Sponsors option for funding
+- *(project)* Update MSRV to 1.60.0
 
 ## [0.8.1] - 2022-07-12
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Set fail-fast strategy to false
+- *(cd)* Set fail-fast strategy to false
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Update windows runners to windows-2022
+- *(cd)* Update windows runners to windows-2022
 
 ## [0.8.0] - 2022-07-12
 
-### Bug Fixes
+### ⛰️  Features
 
-- Update lychee arguments to skip checking protonmail
+- *(changelog)* Support external commands for commit preprocessors ([#86](https://github.com/orhun/git-cliff/issues/86))
+- *(commit)* [**breaking**] Pass footer token and separator to template ([#97](https://github.com/orhun/git-cliff/issues/97))
+- *(config)* Support changing commit scope with `commit_parsers` ([#94](https://github.com/orhun/git-cliff/issues/94))
 
-### Documentation
+### 🐛 Bug Fixes
 
-- Clarify that `--tag` argument can be an unexisting tag
-- Switch chronological and topological ([#99](https://github.com/orhun/git-cliff/issues/99))
+- *(ci)* Update lychee arguments to skip checking protonmail
 
-### Features
+### 🚜 Refactor
 
-- Support external commands for commit preprocessors ([#86](https://github.com/orhun/git-cliff/issues/86))
-- Support changing commit scope with `commit_parsers` ([#94](https://github.com/orhun/git-cliff/issues/94))
-- [**breaking**] Pass footer token and separator to template ([#97](https://github.com/orhun/git-cliff/issues/97))
+- *(clippy)* Apply clippy suggestions
+- *(clippy)* Apply clippy suggestions
 
-### Miscellaneous Tasks
+### 📚 Documentation
 
-- Set MSRV to 1.58.1 ([#87](https://github.com/orhun/git-cliff/issues/87))
-- Update tera to 1.16.0 ([#70](https://github.com/orhun/git-cliff/issues/70))
-- Disable building arm64 docker images temporarily
-- Upgrade dependencies
+- *(readme)* Switch chronological and topological ([#99](https://github.com/orhun/git-cliff/issues/99))
+- *(readme)* Clarify that `--tag` argument can be an unexisting tag
 
-### Refactor
+### ⚙️ Miscellaneous Tasks
 
-- Apply clippy suggestions
-- Apply clippy suggestions
+- *(deps)* Upgrade dependencies
+- *(deps)* Update tera to 1.16.0 ([#70](https://github.com/orhun/git-cliff/issues/70))
+- *(docker)* Disable building arm64 docker images temporarily
+- *(project)* Set MSRV to 1.58.1 ([#87](https://github.com/orhun/git-cliff/issues/87))
 
 ## [0.7.0] - 2022-04-24
 
-### Bug Fixes
+### ⛰️  Features
 
-- Pin the Rust nightly version
-- Pin the Rust nightly version
-- Allow custom commit range while prepending ([#68](https://github.com/orhun/git-cliff/issues/68))
-- Remove redundant logging while using `--context` ([#71](https://github.com/orhun/git-cliff/issues/71))
-- Update expected changelog date
+- *(args)* [**breaking**] Prefix environment variables with `GIT_CLIFF_` ([#76](https://github.com/orhun/git-cliff/issues/76))
+- *(args)* Add `--context` flag for outputting context ([#71](https://github.com/orhun/git-cliff/issues/71))
+- *(cli)* Show a message if a newer version is available ([#69](https://github.com/orhun/git-cliff/issues/69))
+- *(config)* Support placing configuration inside Cargo.toml ([#46](https://github.com/orhun/git-cliff/issues/46))
+- *(git)* Support preprocessing commit messages using regex ([#62](https://github.com/orhun/git-cliff/issues/62))
+- *(log)* Print more debug information when `-vv` is used ([#79](https://github.com/orhun/git-cliff/issues/79))
+- *(man)* Add man page generation script ([#35](https://github.com/orhun/git-cliff/issues/35))
 
-### Documentation
+### 🐛 Bug Fixes
 
-- Add more regex examples for commit_preprocessors
-- Update GitHub Actions reference link in README.md
-- Add `cliff-jumper` to similar projects ([#83](https://github.com/orhun/git-cliff/issues/83))
-- Update the title of projects section
+- *(build)* Pin the Rust nightly version
+- *(changelog)* Allow custom commit range while prepending ([#68](https://github.com/orhun/git-cliff/issues/68))
+- *(ci)* Pin the Rust nightly version
+- *(fixtures)* Update expected changelog date
+- *(log)* Remove redundant logging while using `--context` ([#71](https://github.com/orhun/git-cliff/issues/71))
 
-### Features
+### 🚜 Refactor
 
-- Show a message if a newer version is available ([#69](https://github.com/orhun/git-cliff/issues/69))
-- Add `--context` flag for outputting context ([#71](https://github.com/orhun/git-cliff/issues/71))
-- Support placing configuration inside Cargo.toml ([#46](https://github.com/orhun/git-cliff/issues/46))
-- [**breaking**] Prefix environment variables with `GIT_CLIFF_` ([#76](https://github.com/orhun/git-cliff/issues/76))
-- Print more debug information when `-vv` is used ([#79](https://github.com/orhun/git-cliff/issues/79))
-- Support preprocessing commit messages using regex ([#62](https://github.com/orhun/git-cliff/issues/62))
-- Add man page generation script ([#35](https://github.com/orhun/git-cliff/issues/35))
+- *(cli)* Make update-informer opt-out via feature flag ([#69](https://github.com/orhun/git-cliff/issues/69))
+- *(completions)* Use implicit Result type in completions script
 
-### Miscellaneous Tasks
+### 📚 Documentation
 
-- Return to nightly builds ([#73](https://github.com/orhun/git-cliff/issues/73))
-- Include man page in the release assets
-- Upgrade git-conventional dependency ([#82](https://github.com/orhun/git-cliff/issues/82))
-- Upgrade versions in Dockerfile
-- Build Docker images for arm64
-- Disable default features for the Docker image
-- Strip the binaries in Docker image
-- Upgrade dependencies
+- *(readme)* Update the title of projects section
+- *(readme)* Add `cliff-jumper` to similar projects ([#83](https://github.com/orhun/git-cliff/issues/83))
+- *(readme)* Update GitHub Actions reference link in README.md
+- *(readme)* Add more regex examples for commit_preprocessors
 
-### Refactor
+### 🎨 Styling
 
-- Make update-informer opt-out via feature flag ([#69](https://github.com/orhun/git-cliff/issues/69))
-- Use implicit Result type in completions script
+- *(release)* Update the changelog template for tag message
 
-### Styling
+### ⚙️ Miscellaneous Tasks
 
-- Update the changelog template for tag message
+- *(cd)* Include man page in the release assets
+- *(ci)* Return to nightly builds ([#73](https://github.com/orhun/git-cliff/issues/73))
+- *(deps)* Upgrade dependencies
+- *(deps)* Upgrade git-conventional dependency ([#82](https://github.com/orhun/git-cliff/issues/82))
+- *(docker)* Strip the binaries in Docker image
+- *(docker)* Disable default features for the Docker image
+- *(docker)* Build Docker images for arm64
+- *(docker)* Upgrade versions in Dockerfile
 
 ## [0.6.1] - 2022-03-13
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Do not skip all tags when `skip_tags` is empty ([#63](https://github.com/orhun/git-cliff/issues/63))
-- Use root commit when --latest and there is only one tag ([#59](https://github.com/orhun/git-cliff/issues/59))
-- Use the correct branch for codecov ([#65](https://github.com/orhun/git-cliff/issues/65))
-- Fix `keepachangelog` config example ([#66](https://github.com/orhun/git-cliff/issues/66))
+- *(changelog)* Use root commit when --latest and there is only one tag ([#59](https://github.com/orhun/git-cliff/issues/59))
+- *(changelog)* Do not skip all tags when `skip_tags` is empty ([#63](https://github.com/orhun/git-cliff/issues/63))
+- *(example)* Fix `keepachangelog` config example ([#66](https://github.com/orhun/git-cliff/issues/66))
+- *(project)* Use the correct branch for codecov ([#65](https://github.com/orhun/git-cliff/issues/65))
 
-### Documentation
+### 📚 Documentation
 
-- Add another option of GitHub Actions ([#64](https://github.com/orhun/git-cliff/issues/64))
-- Document timestamp format of `Release` struct ([#67](https://github.com/orhun/git-cliff/issues/67))
+- *(core)* Document timestamp format of `Release` struct ([#67](https://github.com/orhun/git-cliff/issues/67))
+- *(readme)* Add another option of GitHub Actions ([#64](https://github.com/orhun/git-cliff/issues/64))
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Upgrade regex dependency to fix CVE-2022-24713
-- Upgrade dependencies
+- *(deps)* Upgrade dependencies
+- *(deps)* Upgrade regex dependency to fix CVE-2022-24713
 
 ## [0.6.0] - 2022-02-12
 
-### Bug Fixes
+### ⛰️  Features
 
-- Only drop previous releases if skipped ([#44](https://github.com/orhun/git-cliff/issues/44))
-- Run clippy from nightly toolchain
-- Update tests about optional config values
-- Set the previous release when using `--unreleased` ([#47](https://github.com/orhun/git-cliff/issues/47))
-- Lower the priority of global configuration file ([#51](https://github.com/orhun/git-cliff/issues/51))
-- Update the download link of latest grcov release
-- Use the correct tar command for extracting grcov archive
-- Update grcov download command
-- Update custom error tests
+- *(changelog)* [**breaking**] Use conventional commit body to check against commit parsers
+- *(changelog)* Add `link_parsers` for parsing/extracting links ([#42](https://github.com/orhun/git-cliff/issues/42))
+- *(changelog, config)* [**breaking**] Replace --topo-order by --date-order ([#58](https://github.com/orhun/git-cliff/issues/58))
+- *(config)* Make the `changelog` section optional ([#45](https://github.com/orhun/git-cliff/issues/45))
+- *(config)* Make the `git` section optional ([#45](https://github.com/orhun/git-cliff/issues/45))
 
-### Documentation
+### 🐛 Bug Fixes
 
-- Update template contexts about link_parsers
-- Add minimal example
-- Update copyright years
+- *(changelog)* Set the previous release when using `--unreleased` ([#47](https://github.com/orhun/git-cliff/issues/47))
+- *(changelog)* Only drop previous releases if skipped ([#44](https://github.com/orhun/git-cliff/issues/44))
+- *(ci)* Update grcov download command
+- *(ci)* Use the correct tar command for extracting grcov archive
+- *(ci)* Update the download link of latest grcov release
+- *(ci)* Run clippy from nightly toolchain
+- *(config)* Lower the priority of global configuration file ([#51](https://github.com/orhun/git-cliff/issues/51))
+- *(test)* Update tests about optional config values
+- *(tests)* Update custom error tests
 
-### Features
+### 🚜 Refactor
 
-- Add `link_parsers` for parsing/extracting links ([#42](https://github.com/orhun/git-cliff/issues/42))
-- Make the `git` section optional ([#45](https://github.com/orhun/git-cliff/issues/45))
-- Make the `changelog` section optional ([#45](https://github.com/orhun/git-cliff/issues/45))
-- [**breaking**] Use conventional commit body to check against commit parsers
-- [**breaking**] Replace --topo-order by --date-order ([#58](https://github.com/orhun/git-cliff/issues/58))
+- *(clippy)* Apply clippy suggestions
+- *(config)* [**breaking**] Change the default value of `trim` to `true`
+- *(lib)* Unify serde and serde_derive using derive feature ([#57](https://github.com/orhun/git-cliff/issues/57))
 
-### Miscellaneous Tasks
+### 📚 Documentation
 
-- Update arg parsing to clap v3 ([#49](https://github.com/orhun/git-cliff/issues/49))
-- Upgrade dependencies
-- Bump the Rust version in Dockerfile
-- Run cargo-audit for checking vulnerabilities
-- Update the runner to macos-11
+- *(config)* Add minimal example
+- *(readme)* Update copyright years
+- *(readme)* Update template contexts about link_parsers
 
-### Refactor
+### 🎨 Styling
 
-- Apply clippy suggestions
-- [**breaking**] Change the default value of `trim` to `true`
-- Unify serde and serde_derive using derive feature ([#57](https://github.com/orhun/git-cliff/issues/57))
+- *(changelog)* Comply with MD022 and fix minor typos ([#61](https://github.com/orhun/git-cliff/issues/61))
+- *(readme)* Update the styling
 
-### Styling
+### ⚙️ Miscellaneous Tasks
 
-- Update the styling
-- Comply with MD022 and fix minor typos ([#61](https://github.com/orhun/git-cliff/issues/61))
+- *(args)* Update arg parsing to clap v3 ([#49](https://github.com/orhun/git-cliff/issues/49))
+- *(cd)* Update the runner to macos-11
+- *(ci)* Run cargo-audit for checking vulnerabilities
+- *(deps)* Upgrade dependencies
+- *(docker)* Bump the Rust version in Dockerfile
 
 ## [0.5.0] - 2021-12-15
 
-### Bug Fixes
+### ⛰️  Features
 
-- Update log test about exclude path
-- Override the sort related config if args are present ([#39](https://github.com/orhun/git-cliff/issues/39))
-- Checkout the repository before running fixtures
-- Use the defined configuration file for fixtures
-- Update the multi line docker command
-- Strip the carriage return on fixtures while comparing
-- Drop the skipped releases from 'previous' field
+- *(args)* Add `--with-commit` argument for including custom commit messages in changelog
+- *(args)* Add `--current` flag for processing the current tag ([#37](https://github.com/orhun/git-cliff/issues/37))
+- *(args)* Add `--exclude-path` argument for excluding related commits
+- *(args)* Support multiple values for `--commit-path` argument
+- *(args)* Accept glob patterns for `--commit-path` argument
+- *(changelog)* Support having both conventional and unconventional commits in the changelog
+- *(changelog)* Add `--topo-order` flag for sorting tags ([#29](https://github.com/orhun/git-cliff/issues/29))
+- *(config)* Add `ignore_tags` option ([#40](https://github.com/orhun/git-cliff/issues/40))
+- *(config)* Support specifying the sorting methods in config ([#31](https://github.com/orhun/git-cliff/issues/31))
+- *(template)* Use more explanatory error messages about templates
 
-### Documentation
+### 🐛 Bug Fixes
 
-- Update `--with-commit` example in README.md
+- *(args)* Override the sort related config if args are present ([#39](https://github.com/orhun/git-cliff/issues/39))
+- *(changelog)* Drop the skipped releases from 'previous' field
+- *(fixtures)* Strip the carriage return on fixtures while comparing
+- *(fixtures)* Update the multi line docker command
+- *(fixtures)* Use the defined configuration file for fixtures
+- *(fixtures)* Checkout the repository before running fixtures
+- *(tests)* Update log test about exclude path
 
-### Features
+### 🚜 Refactor
 
-- Add `--topo-order` flag for sorting tags ([#29](https://github.com/orhun/git-cliff/issues/29))
-- Support specifying the sorting methods in config ([#31](https://github.com/orhun/git-cliff/issues/31))
-- Accept glob patterns for `--commit-path` argument
-- Support multiple values for `--commit-path` argument
-- Add `--exclude-path` argument for excluding related commits
-- Add `--current` flag for processing the current tag ([#37](https://github.com/orhun/git-cliff/issues/37))
-- Add `ignore_tags` option ([#40](https://github.com/orhun/git-cliff/issues/40))
-- Use more explanatory error messages about templates
-- Support having both conventional and unconventional commits in the changelog
-- Add `--with-commit` argument for including custom commit messages in changelog
+- *(config)* Rename the config value for commit order
 
-### Miscellaneous Tasks
+### 📚 Documentation
 
-- Improve the workflow for test fixtures
-- Run test fixtures on ubuntu-latest
-- Indicate the breaking changes via default config
+- *(readme)* Update `--with-commit` example in README.md
 
-### Refactor
+### 🎨 Styling
 
-- Rename the config value for commit order
+- *(args)* [**breaking**] Rename `--commit-path` argument to `--include-path`
 
-### Styling
+### ⚙️ Miscellaneous Tasks
 
-- [**breaking**] Rename `--commit-path` argument to `--include-path`
+- *(config)* Indicate the breaking changes via default config
+- *(fixtures)* Run test fixtures on ubuntu-latest
+- *(fixtures)* Improve the workflow for test fixtures
 
 ## [0.4.2] - 2021-10-22
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Install the Rust toolchain explicitly for crates.io releases
+- *(cd)* Install the Rust toolchain explicitly for crates.io releases
 
 ## [0.4.1] - 2021-10-22
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Add support for special characters in scopes ([#26](https://github.com/orhun/git-cliff/issues/26))
+- *(changelog)* Add support for special characters in scopes ([#26](https://github.com/orhun/git-cliff/issues/26))
 
-### Documentation
+### 🚜 Refactor
 
-- Add GitLab CI/CD section to README.md ([#24](https://github.com/orhun/git-cliff/issues/24))
-- Update GitLab CI/CD section
+- *(git)* Use a better error message for invalid repo path
 
-### Miscellaneous Tasks
+### 📚 Documentation
 
-- Run CI workflows periodically
-- Remove unnecessary Cargo.lock entry from .gitignore
-- Upgrade dependencies
-- Migrate to Rust 2021 edition
-- Bump the Rust version in Dockerfile
+- *(readme)* Update GitLab CI/CD section
+- *(readme)* Add GitLab CI/CD section to README.md ([#24](https://github.com/orhun/git-cliff/issues/24))
 
-### Refactor
+### ⚙️ Miscellaneous Tasks
 
-- Use a better error message for invalid repo path
+- *(ci)* Run CI workflows periodically
+- *(deps)* Upgrade dependencies
+- *(docker)* Bump the Rust version in Dockerfile
+- *(project)* Migrate to Rust 2021 edition
+- *(project)* Remove unnecessary Cargo.lock entry from .gitignore
 
 ## [0.4.0] - 2021-10-01
 
-### Bug Fixes
+### ⛰️  Features
 
-- Update lychee arguments to skip checking files
-- Remove tags from the base image names
-- Remove only the leading "v" from tags ([#18](https://github.com/orhun/git-cliff/issues/18))
+- *(changelog)* Add `--sort` argument for sorting commits ([#15](https://github.com/orhun/git-cliff/issues/15))
 
-### Documentation
+### 🐛 Bug Fixes
 
-- Add scope-sorted example ([#16](https://github.com/orhun/git-cliff/issues/16))
-- Add raw/rendered output for scoped-sorted example
-- Add packaging status badge to installation section
-- Mention the signing key for binary releases ([#17](https://github.com/orhun/git-cliff/issues/17))
-- Add "build from source" section to README.md
+- *(ci)* Update lychee arguments to skip checking files
+- *(config)* Remove only the leading "v" from tags ([#18](https://github.com/orhun/git-cliff/issues/18))
+- *(docker)* Remove tags from the base image names
 
-### Features
+### 📚 Documentation
 
-- Add `--sort` argument for sorting commits ([#15](https://github.com/orhun/git-cliff/issues/15))
+- *(config)* Add scope-sorted example ([#16](https://github.com/orhun/git-cliff/issues/16))
+- *(readme)* Add "build from source" section to README.md
+- *(readme)* Mention the signing key for binary releases ([#17](https://github.com/orhun/git-cliff/issues/17))
+- *(readme)* Add packaging status badge to installation section
+- *(readme)* Add raw/rendered output for scoped-sorted example
 
-### Miscellaneous Tasks
+### 🎨 Styling
 
-- Set a version for the checkout action
-- Update the runner to ubuntu-20.04
-- Use cache for docker builds
-- Use docker meta for tagging for GHCR
-- Extend the tags for docker meta
-- Rename the GHCR package due to legacy reasons
-- Specify the latest tag explicitly
-- Use explicit image name for docker automated builds
-- Use docker.yml workflow for CI/CD
-- Upgrade dependencies
+- *(config)* Fix the newline issues in scoped-sorted example
 
-### Styling
+### ⚙️ Miscellaneous Tasks
 
-- Fix the newline issues in scoped-sorted example
+- *(deps)* Upgrade dependencies
+- *(docker)* Use docker.yml workflow for CI/CD
+- *(docker)* Use explicit image name for docker automated builds
+- *(docker)* Specify the latest tag explicitly
+- *(docker)* Rename the GHCR package due to legacy reasons
+- *(docker)* Extend the tags for docker meta
+- *(docker)* Use docker meta for tagging for GHCR
+- *(docker)* Use cache for docker builds
+- *(workflow)* Update the runner to ubuntu-20.04
+- *(workflow)* Set a version for the checkout action
 
 ## [0.3.0] - 2021-09-10
 
-### Bug Fixes
+### ⛰️  Features
 
-- Fix default regexes and references in docs ([#7](https://github.com/orhun/git-cliff/issues/7))
+- *(changelog)* Support generating a changelog scoped to a directory ([#11](https://github.com/orhun/git-cliff/issues/11))
+- *(changelog)* Support parsing the missing scopes with `default_scope` ([#8](https://github.com/orhun/git-cliff/issues/8))
 
-### Documentation
+### 🐛 Bug Fixes
 
-- Update installation instructions for Arch Linux
-- Add badge for joining the Matrix chat
-- Update example regexes
-- Update the default regex in scoped config example
+- *(config)* Fix default regexes and references in docs ([#7](https://github.com/orhun/git-cliff/issues/7))
 
-### Features
+### 📚 Documentation
 
-- Support parsing the missing scopes with `default_scope` ([#8](https://github.com/orhun/git-cliff/issues/8))
-- Support generating a changelog scoped to a directory ([#11](https://github.com/orhun/git-cliff/issues/11))
+- *(config)* Update the default regex in scoped config example
+- *(readme)* Update example regexes
+- *(readme)* Add badge for joining the Matrix chat
+- *(readme)* Update installation instructions for Arch Linux
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Upgrade dependencies
+- *(deps)* Upgrade dependencies
 
 ## [0.2.6] - 2021-09-04
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Pin the cargo-chef version in Dockerfile
+- *(docker)* Pin the cargo-chef version in Dockerfile
 
-### Documentation
+### 📚 Documentation
 
-- Update docker commands to only mount the .git directory
+- *(readme)* Update docker commands to only mount the .git directory
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Bump `git-conventional` to `0.10.1` ([#6](https://github.com/orhun/git-cliff/issues/6))
-- Bump dependencies
-- Bump cargo-chef version in Dockerfile
+- *(deps)* Bump dependencies
+- *(deps)* Bump `git-conventional` to `0.10.1` ([#6](https://github.com/orhun/git-cliff/issues/6))
+- *(docker)* Bump cargo-chef version in Dockerfile
 
 ## [0.2.5] - 2021-08-20
 
-### Documentation
+### ⛰️  Features
 
-- Mention breaking changes for templating
-- Update template examples to mention how to contribute
+- *(template)* Add `breaking_description` to the template context ([#4](https://github.com/orhun/git-cliff/issues/4))
 
-### Features
+### 📚 Documentation
 
-- Add `breaking_description` to the template context ([#4](https://github.com/orhun/git-cliff/issues/4))
+- *(readme)* Update template examples to mention how to contribute
+- *(readme)* Mention breaking changes for templating
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Show the committed changes before creating a tag
+- *(release)* Show the committed changes before creating a tag
 
 ## [0.2.4] - 2021-08-20
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Change the config file location for crates.io release
+- *(cd)* Change the config file location for crates.io release
 
 ## [0.2.3] - 2021-08-18
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Fetch the dependencies before copying the file to embed
+- *(cd)* Fetch the dependencies before copying the file to embed
 
 ## [0.2.2] - 2021-08-18
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Copy the config file into registry to resolve it for embed
+- *(cd)* Copy the config file into registry to resolve it for embed
 
 ## [0.2.1] - 2021-08-18
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Copy the configuration file to embed into package
+- *(cd)* Copy the configuration file to embed into package
 
 ## [0.2.0] - 2021-08-18
 
-### Bug Fixes
+### ⛰️  Features
 
-- Use custom error type for UTF-8 errors
+- *(config)* Support a global location for configuration file ([#2](https://github.com/orhun/git-cliff/issues/2))
+- *(config)* Add `--init` flag for creating the default config
+- *(config)* Embed the default configuration file into the binary
 
-### Documentation
+### 🐛 Bug Fixes
 
-- Update the doc comment of `prepend`
+- *(config)* Use custom error type for UTF-8 errors
 
-### Features
+### 🚜 Refactor
 
-- Embed the default configuration file into the binary
-- Add `--init` flag for creating the default config
-- Support a global location for configuration file ([#2](https://github.com/orhun/git-cliff/issues/2))
+- *(lib)* Update the log message for unprocessed tags
+- *(lib)* Create a constant for default configuration file
 
-### Miscellaneous Tasks
+### 📚 Documentation
 
-- Move `cliff.toml` to config/
+- *(changelog)* Update the doc comment of `prepend`
 
-### Refactor
+### 🎨 Styling
 
-- Create a constant for default configuration file
-- Update the log message for unprocessed tags
+- *(args)* Update the message of `--init` flag
 
-### Styling
+### ⚙️ Miscellaneous Tasks
 
-- Update the message of `--init` flag
+- *(config)* Move `cliff.toml` to config/
 
 ## [0.1.2] - 2021-08-14
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Use the correct name of completions binary
+- *(cd)* Use the correct name of completions binary
 
-### Documentation
+### 📚 Documentation
 
-- Update the example completion command
+- *(completions)* Update the example completion command
 
 ## [0.1.1] - 2021-08-14
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Set the previous release when using `--latest` ([#3](https://github.com/orhun/git-cliff/issues/3))
+- *(changelog)* Set the previous release when using `--latest` ([#3](https://github.com/orhun/git-cliff/issues/3))
 
-### Documentation
+### 📚 Documentation
 
-- Add installation instructions for the AUR
+- *(readme)* Add installation instructions for the AUR
 
-### Miscellaneous Tasks
+### ⚡ Performance
 
-- Rename the shell completions binary
-- Upgrade dependencies
+- *(changelog)* Optimize the release vector size
+- *(changelog)* Process only the last 'previous' release
 
-### Performance
+### ⚙️ Miscellaneous Tasks
 
-- Process only the last 'previous' release
-- Optimize the release vector size
+- *(deps)* Upgrade dependencies
+- *(project)* Rename the shell completions binary
 
 ## [0.1.0] - 2021-08-12
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Update the environment variable parsing settings
-- Use footers field as an array for the context
-- Sort the commits in topological order
-- Return error if there is not a latest tag to process
-- Update symbolic link to the default config
-- Remove symbolic link
-- Use 7 digits for short SHA
+- *(changelog)* Return error if there is not a latest tag to process
+- *(changelog)* Use footers field as an array for the context
+- *(config)* Update the environment variable parsing settings
+- *(example)* Remove symbolic link
+- *(example)* Update symbolic link to the default config
+- *(git)* Sort the commits in topological order
+- *(template)* Use 7 digits for short SHA
 
-### Documentation
+### 🚜 Refactor
 
-- Update README.md about usage
-- Update README.md about template and examples
-- Add examples for CLI usage
-- Add examples for templating
-- Update detailed template example
-- Add preview image to README.md
+- *(args)* Rename changelog argument to prepend
 
-### Miscellaneous Tasks
+### 📚 Documentation
 
-- Upgrade dependencies
-- Remove etc directory from .gitignore
-- Bump the rust version
-- Upgrade dependencies
+- *(readme)* Add preview image to README.md
+- *(readme)* Update detailed template example
+- *(readme)* Add examples for templating
+- *(readme)* Add examples for CLI usage
+- *(readme)* Update README.md about template and examples
+- *(readme)* Update README.md about usage
 
-### Refactor
+### 🎨 Styling
 
-- Rename changelog argument to prepend
+- *(readme)* Remove quotes from rendered output
+- *(readme)* Wrap table of contents into summary
+- *(readme)* Remove comments from template context
+- *(readme)* Update the comments in template context
+- *(readme)* Center the badges
 
-### Styling
+### 🧪 Testing
 
-- Center the badges
-- Update the comments in template context
-- Remove comments from template context
-- Wrap table of contents into summary
-- Remove quotes from rendered output
+- *(config)* Add tests
+- *(git)* Update repository tests about getting the latest tag
 
-### Testing
+### ⚙️ Miscellaneous Tasks
 
-- Add tests
-- Update repository tests about getting the latest tag
+- *(deps)* Upgrade dependencies
+- *(deps)* Upgrade dependencies
+- *(docker)* Bump the rust version
+- *(git)* Remove etc directory from .gitignore
 
 ## [0.1.0-rc.21] - 2021-07-01
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Wait for core library to update on crates.io before publish
+- *(cd)* Wait for core library to update on crates.io before publish
 
 ## [0.1.0-rc.20] - 2021-06-30
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Wait between publishing crates
+- *(cd)* Wait between publishing crates
 
 ## [0.1.0-rc.19] - 2021-06-30
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Generate changelog on a dedicated/different job
+- *(cd)* Generate changelog on a dedicated/different job
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Update project details
+- *(cargo)* Update project details
 
 ## [0.1.0-rc.18] - 2021-06-30
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Use a separate step for setting the changelog body
-- Fix the syntax of publish step arguments
+- *(cd)* Fix the syntax of publish step arguments
+- *(cd)* Use a separate step for setting the changelog body
 
 ## [0.1.0-rc.17] - 2021-06-29
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Publish the cargo workspace members seperately
+- *(cd)* Publish the cargo workspace members seperately
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Verify the created tag after creation
-- Indicate which versions are managed by the script
+- *(release)* Indicate which versions are managed by the script
+- *(release)* Verify the created tag after creation
 
 ## [0.1.0-rc.16] - 2021-06-29
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Update lychee arguments to exclude invalid links
+- *(ci)* Update lychee arguments to exclude invalid links
 
-### Documentation
+### 📚 Documentation
 
-- Add CONTRIBUTING.md
-- Add link to the signer key of the tag
-- Add RELEASE.md
+- *(contributing)* Add CONTRIBUTING.md
+- *(release)* Add RELEASE.md
+- *(release)* Add link to the signer key of the tag
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Enable crates.io releases
-- Set the new version in release script
+- *(cd)* Enable crates.io releases
+- *(release)* Set the new version in release script
 
 ## [0.1.0-rc.15] - 2021-06-23
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Use only one step for uploading releases
+- *(cd)* Use only one step for uploading releases
 
 ## [0.1.0-rc.14] - 2021-06-23
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Strip the changelog header before escaping
+- *(cd)* Strip the changelog header before escaping
 
 ## [0.1.0-rc.13] - 2021-06-23
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Use seperate steps for uploading releases
+- *(cd)* Use seperate steps for uploading releases
 
 ## [0.1.0-rc.12] - 2021-06-21
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Use printf to prevent field splitting the variable
-- Fix the character escape in release script
-- Return tags by their creation order
+- *(cd)* Use printf to prevent field splitting the variable
+- *(git)* Return tags by their creation order
+- *(release)* Fix the character escape in release script
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Update .editorconfig about shell scripts
-- Include the commit id in the custom template
+- *(project)* Update .editorconfig about shell scripts
+- *(release)* Include the commit id in the custom template
 
 ## [0.1.0-rc.11] - 2021-06-21
 
-### Miscellaneous Tasks
+### 🚜 Refactor
 
-- Remove the custom changelog template
+- *(error)* Use custom error message for GroupError
 
-### Refactor
+### ⚙️ Miscellaneous Tasks
 
-- Use custom error message for GroupError
+- *(cd)* Remove the custom changelog template
 
 ## [0.1.0-rc.10] - 2021-06-20
 
-### Styling
+### 🎨 Styling
 
-- Update the order of entries in config
+- *(config)* Update the order of entries in config
 
 ## [0.1.0-rc.8] - 2021-06-20
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Specify the committer email in release script
-- Double quote the environment variable
+- *(cd)* Double quote the environment variable
+- *(release)* Specify the committer email in release script
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Rename the docker automated builds action
+- *(docker)* Rename the docker automated builds action
 
 ## [0.1.0-rc.7] - 2021-06-20
 
-### Features
+### ⛰️  Features
 
-- Support setting the body template via args
+- *(changelog)* Support setting the body template via args
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Set a custom changelog for the tag message
-- Override the changelog template
+- *(cd)* Override the changelog template
+- *(release)* Set a custom changelog for the tag message
 
 ## [0.1.0-rc.6] - 2021-06-20
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Set the release body on linux
+- *(cd)* Set the release body on linux
 
 ## [0.1.0-rc.5] - 2021-06-19
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Update config to skip release commits
+- *(config)* Update config to skip release commits
 
 ## [0.1.0-rc.4] - 2021-06-19
 
 ### Revert
 
-- Chore(config): update template to include commit ids
+- *(uncategorized)* Chore(config): update template to include commit ids
 
 ## [0.1.0-rc.3] - 2021-06-19
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Strip the unreleased title from tag message
-- Update commit parsers to match the commit type
+- *(config)* Update commit parsers to match the commit type
+- *(release)* Strip the unreleased title from tag message
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Fix setting the release body
-- Update the skip_tags regex
-- Update template to include commit ids
+- *(cd)* Fix setting the release body
+- *(config)* Update template to include commit ids
+- *(config)* Update the skip_tags regex
 
 ## [0.1.0-rc.2] - 2021-06-19
 
-### Bug Fixes
+### ⛰️  Features
 
-- Use default tag_pattern for tests
+- *(args)* Add `--output` argument
 
-### Features
+### 🐛 Bug Fixes
 
-- Add `--output` argument
+- *(test)* Use default tag_pattern for tests
 
-### Miscellaneous Tasks
+### 🚜 Refactor
 
-- Add release title to the tag message
-- Set the release name explicitly
-- Remove user directive from Dockerfile
-- Set the changelog as release body
+- *(config)* Make tag_pattern optional
 
-### Refactor
+### ⚙️ Miscellaneous Tasks
 
-- Make tag_pattern optional
+- *(cd)* Set the changelog as release body
+- *(cd)* Set the release name explicitly
+- *(docker)* Remove user directive from Dockerfile
+- *(release)* Add release title to the tag message
 
 ## [0.1.0-rc.1] - 2021-06-16
 
-### Documentation
+### ⛰️  Features
 
-- Update the doc comment for completions script
-- Add usage section
+- *(args)* Add `--workdir` argument
+- *(logs)* Show the processsed commit message
 
-### Features
+### 🚜 Refactor
 
-- Add `--workdir` argument
-- Show the processsed commit message
+- *(args)* Update value names and description
+- *(args)* Update the value name for `--strip`
+- *(logs)* Improve logging
 
-### Miscellaneous Tasks
+### 📚 Documentation
 
-- Add release script
-- Update the release script about arguments
-- Strip the markdown format from tag message
+- *(bin)* Update the doc comment for completions script
+- *(readme)* Add usage section
 
-### Refactor
+### ⚙️ Miscellaneous Tasks
 
-- Update the value name for `--strip`
-- Improve logging
-- Update value names and description
+- *(project)* Update the release script about arguments
+- *(project)* Add release script
+- *(release)* Strip the markdown format from tag message
 
 ## [0.1.0-beta.4] - 2021-06-14
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Use bash while setting the release version
+- *(cd)* Use bash while setting the release version
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Add docker releases
+- *(cd)* Add docker releases
 
 ## [0.1.0-beta.3] - 2021-06-14
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Include configuration file in the binary releases
-- Specify the bash as shell
+- *(cd)* Specify the bash as shell
+- *(cd)* Include configuration file in the binary releases
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Set the release body text
+- *(cd)* Set the release body text
 
 ## [0.1.0-beta.2] - 2021-06-14
 
-### Bug Fixes
+### 🐛 Bug Fixes
 
-- Install musl-tools for musl builds
+- *(cd)* Install musl-tools for musl builds
 
-### Miscellaneous Tasks
+### ⚙️ Miscellaneous Tasks
 
-- Update config
+- *(config)* Update config
 
 <!-- generated by git-cliff -->
