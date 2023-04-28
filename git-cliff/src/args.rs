@@ -24,11 +24,19 @@ pub enum Sort {
 #[derive(Debug, Parser)]
 #[command(
     version,
-    author,
+    author = clap::crate_authors!("\n"),
     about,
     rename_all_env = "screaming-snake",
-    next_help_heading = Some("OPTIONS"),
+	help_template = "\
+{before-help}{name} {version}
+{author-with-newline}{about-with-newline}
+{usage-heading}
+  {usage}
+
+{all-args}{after-help}
+",
     override_usage = "git-cliff [FLAGS] [OPTIONS] [--] [RANGE]",
+    next_help_heading = Some("OPTIONS"),
 	disable_help_flag = true,
 	disable_version_flag = true,
 )]
