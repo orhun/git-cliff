@@ -116,3 +116,22 @@ jobs:
         uses: actions-rs/audit-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+
+  msrv:
+    name: Check Rust version
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Run cargo-msrv
+        shell: bash
+        run: |
+          curl -s 'https://api.github.com/repos/foresterre/cargo-msrv/releases' | \
+            jq -r "[.[] | select(.prerelease == false)][0].assets[] | \
+            select(.name | ascii_downcase | test(\"linux.*x86_64|x86_64.*linux\")).browser_download_url" | \
+            wget -qi -
+          tar -xvf cargo-msrv*.tar* -C  ~/.cargo/bin/ cargo-msrv
+          for package in $(cargo metadata --format-version 1 | jq -r ".workspace_members[]" | awk '{print $1}'); do
+            printf "Checking MSRV for $package..."
+            cargo msrv --output-format json --path "$package" verify | tail -n 1 | jq --exit-status '.success'
+          done
