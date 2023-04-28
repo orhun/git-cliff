@@ -10,6 +10,10 @@ keywords = ["changelog", "generator", "conventional", "commit"]
 edition = "2021"
 rust-version = "1.64.0"
 
+[features]
+default = ["repo"]
+repo = ["dep:git2"]
+
 [dependencies]
 glob.workspace = true
 regex.workspace = true
@@ -26,6 +30,7 @@ lazy-regex = "2.5.0"
 [dependencies.git2]
 version = "0.17.1"
 default-features = false
+optional = true
 
 [dependencies.config]
 version = "0.13.3"

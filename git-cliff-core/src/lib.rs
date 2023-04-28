@@ -15,6 +15,7 @@ pub mod embed;
 pub mod error;
 /// Common release type.
 pub mod release;
+#[cfg(feature = "repo")]
 /// Git repository.
 pub mod repo;
 /// Template engine.
