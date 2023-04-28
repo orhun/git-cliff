@@ -132,10 +132,11 @@ jobs:
               --allow-unauthenticated musl-tools
           fi
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@master
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.build.TOOLCHAIN }}
-          targets: ${{ matrix.build.TARGET }}
+          target: ${{ matrix.build.TARGET }}
+          override: true
       - name: Build (linux/macos)
         if: matrix.build.OS != 'windows-2022'
         uses: actions-rs/cargo@v1
