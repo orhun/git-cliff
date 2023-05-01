@@ -24,6 +24,11 @@ jobs:
         with:
           command: check
           args: --locked --verbose
+      - name: Check without default features
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --locked --no-default-features --verbose
 
   test:
     name: Test suite

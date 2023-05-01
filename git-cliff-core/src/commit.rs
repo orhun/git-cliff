@@ -9,6 +9,7 @@ use crate::error::{
 	Error as AppError,
 	Result,
 };
+#[cfg(feature = "repo")]
 use git2::{
 	Commit as GitCommit,
 	Signature as CommitSignature,
@@ -84,6 +85,7 @@ pub struct Signature {
 	pub timestamp: i64,
 }
 
+#[cfg(feature = "repo")]
 impl<'a> From<CommitSignature<'a>> for Signature {
 	fn from(signature: CommitSignature<'a>) -> Self {
 		Self {
@@ -142,6 +144,7 @@ impl<'a> From<String> for Commit<'a> {
 	}
 }
 
+#[cfg(feature = "repo")]
 impl<'a> From<&GitCommit<'a>> for Commit<'a> {
 	fn from(commit: &GitCommit<'a>) -> Self {
 		Commit {
