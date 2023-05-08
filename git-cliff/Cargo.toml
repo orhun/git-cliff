@@ -43,7 +43,7 @@ version = "4.2.7"
 features = ["derive", "env", "wrap_help", "cargo"]
 
 [dependencies.update-informer]
-version = "0.6.0"
+version = "1.0.0"
 optional = true
 
 [dev-dependencies]
