@@ -265,7 +265,7 @@ jobs:
           args: --manifest-path git-cliff/Cargo.toml --release --out dist
           sccache: 'true'
       - name: Build wheels (musl)
-        if: matrix.build.PYPI_PUBLISH == true && matrix.build.OS.endsWith('musl-')
+        if: matrix.build.PYPI_PUBLISH == true && matrix.build.OS.endsWith('musl')
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.build.TARGET }}
@@ -321,7 +321,7 @@ jobs:
   publish-pypi:
     name: Publish PyPI packaage
     runs-on: ubuntu-22.04
-    needs: [pypi-sdist]
+    needs: [pypi-sdist, publish-binaries]
     steps:
       - uses: actions/download-artifact@v3
         with:
