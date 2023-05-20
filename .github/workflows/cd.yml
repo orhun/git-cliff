@@ -243,7 +243,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Build wheels (linux)
-        if: matrix.build.PYPI_PUBLISH == true && matrix.build.NAME.startsWith('linux-')
+        if: matrix.build.PYPI_PUBLISH == true && startsWith(matrix.build.NAME, 'linux')
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.build.TARGET }}
@@ -253,14 +253,14 @@ jobs:
       - name: Build wheels (macos & windows)
         if: |
           matrix.build.PYPI_PUBLISH == true &&
-          (matrix.build.OS.startsWith('macos-') || matrix.build.OS.startsWith('windows-'))
+          (startsWith(matrix.build.OS, 'macos') || startsWith(matrix.build.OS, 'windows'))
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.build.TARGET }}
           args: --manifest-path git-cliff/Cargo.toml --release --out dist
           sccache: 'true'
       - name: Build wheels (musl)
-        if: matrix.build.PYPI_PUBLISH == true && matrix.build.OS.endsWith('musl')
+        if: matrix.build.PYPI_PUBLISH == true && endsWith(matrix.build.OS, 'musl')
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.build.TARGET }}
