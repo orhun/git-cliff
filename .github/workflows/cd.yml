@@ -250,15 +250,10 @@ jobs:
           args: --manifest-path git-cliff/Cargo.toml --release --out dist
           sccache: 'true'
           manylinux: auto
-      - name: Build wheels (macos)
-        if: matrix.build.PYPI_PUBLISH == true && matrix.build.OS.startsWith('macos-')
-        uses: PyO3/maturin-action@v1
-        with:
-          target: ${{ matrix.build.TARGET }}
-          args: --manifest-path git-cliff/Cargo.toml --release --out dist
-          sccache: 'true'
-      - name: Build wheels (windows)
-        if: matrix.build.PYPI_PUBLISH == true && matrix.build.OS.startsWith('windows-')
+      - name: Build wheels (macos & windows)
+        if: |
+          matrix.build.PYPI_PUBLISH == true &&
+          (matrix.build.OS.startsWith('macos-') || matrix.build.OS.startsWith('windows-'))
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.build.TARGET }}
@@ -319,7 +314,7 @@ jobs:
           path: dist
 
   publish-pypi:
-    name: Publish PyPI packaage
+    name: Publish PyPI package
     runs-on: ubuntu-22.04
     needs: [pypi-sdist, publish-binaries]
     steps:
@@ -329,7 +324,8 @@ jobs:
       - name: Publish to PyPI
         uses: PyO3/maturin-action@v1
         env:
-          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          MATURIN_PYPI_TOKEN: ${{ vars.USE_TESTPYPI == 'true' && secrets.TESTPYPI_API_TOKEN || secrets.PYPI_API_TOKEN }}
+          MATURIN_REPOSITORY: ${{ vars.USE_TESTPYPI == 'true' && 'testpypi' || 'pypi' }
         with:
           command: upload
           args: --skip-existing *
