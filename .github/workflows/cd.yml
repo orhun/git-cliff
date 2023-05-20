@@ -325,7 +325,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         env:
           MATURIN_PYPI_TOKEN: ${{ vars.USE_TESTPYPI == 'true' && secrets.TESTPYPI_API_TOKEN || secrets.PYPI_API_TOKEN }}
-          MATURIN_REPOSITORY: ${{ vars.USE_TESTPYPI == 'true' && 'testpypi' || 'pypi' }
+          MATURIN_REPOSITORY: ${{ vars.USE_TESTPYPI == 'true' && 'testpypi' || 'pypi' }}
         with:
           command: upload
           args: --skip-existing *
