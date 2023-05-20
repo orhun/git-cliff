@@ -15,3 +15,4 @@ classifiers = [
 
 [tool.maturin]
 bindings = "bin"
+manifest-path = "../git-cliff/Cargo.toml"

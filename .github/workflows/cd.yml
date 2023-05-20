@@ -242,33 +242,37 @@ jobs:
           npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Build wheels (linux)
+      - name: Build Python wheels (linux)
         if: matrix.build.PYPI_PUBLISH == true && startsWith(matrix.build.NAME, 'linux')
         uses: PyO3/maturin-action@v1
+        working-directory: pypi
         with:
           target: ${{ matrix.build.TARGET }}
-          args: --manifest-path git-cliff/Cargo.toml --release --out dist
+          args: --release --sdist --out dist
           sccache: 'true'
           manylinux: auto
-      - name: Build wheels (macos & windows)
+      - name: Build Python wheels (macos & windows)
         if: |
           matrix.build.PYPI_PUBLISH == true &&
           (startsWith(matrix.build.OS, 'macos') || startsWith(matrix.build.OS, 'windows'))
         uses: PyO3/maturin-action@v1
+        working-directory: pypi
         with:
           target: ${{ matrix.build.TARGET }}
-          args: --manifest-path git-cliff/Cargo.toml --release --out dist
+          args: --release --sdist --out dist
           sccache: 'true'
-      - name: Build wheels (musl)
+      - name: Build Python wheels (musl)
         if: matrix.build.PYPI_PUBLISH == true && endsWith(matrix.build.OS, 'musl')
         uses: PyO3/maturin-action@v1
+        working-directory: pypi
         with:
           target: ${{ matrix.build.TARGET }}
-          args: --manifest-path git-cliff/Cargo.toml --release --out dist
+          args: --release --sdist --out dist
           sccache: 'true'
           manylinux: musllinux_1_2
-      - name: Upload wheels
+      - name: Upload Python wheels
         uses: actions/upload-artifact@v3
+        working-directory: pypi
         with:
           name: wheels
           path: dist
@@ -296,27 +300,10 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-  pypi-sdist:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-      - name: Move pyproject.toml to the right location
-        run: cp pypi/pyproject.toml .
-      - name: Build sdist
-        uses: PyO3/maturin-action@v1
-        with:
-          command: sdist
-          args: --manifest-path git-cliff/Cargo.toml --out dist
-      - name: Upload sdist
-        uses: actions/upload-artifact@v3
-        with:
-          name: wheels
-          path: dist
-
   publish-pypi:
     name: Publish PyPI package
     runs-on: ubuntu-22.04
-    needs: [pypi-sdist, publish-binaries]
+    needs: publish-binaries
     steps:
       - uses: actions/download-artifact@v3
         with:
@@ -326,6 +313,7 @@ jobs:
         env:
           MATURIN_PYPI_TOKEN: ${{ vars.USE_TESTPYPI == 'true' && secrets.TESTPYPI_API_TOKEN || secrets.PYPI_API_TOKEN }}
           MATURIN_REPOSITORY: ${{ vars.USE_TESTPYPI == 'true' && 'testpypi' || 'pypi' }}
+        working-directory: pypi
         with:
           command: upload
           args: --skip-existing *
