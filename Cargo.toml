@@ -2,7 +2,7 @@
 members = ["git-cliff-core", "git-cliff"]
 
 [workspace.dependencies]
-regex = "1.8.1"
+regex = "1.8.2"
 glob = "0.3.1"
 log = "0.4.17"
 
