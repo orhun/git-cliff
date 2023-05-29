@@ -248,7 +248,7 @@ jobs:
         with:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
-          args: --release --sdist --out dist
+          args: --release --sdist --out wheels
           sccache: 'true'
           manylinux: auto
       - name: Build Python wheels (macos & windows)
@@ -259,7 +259,7 @@ jobs:
         with:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
-          args: --release --sdist --out dist
+          args: --release --sdist --out wheels
           sccache: 'true'
       - name: Build Python wheels (musl)
         if: matrix.build.PYPI_PUBLISH == true && endsWith(matrix.build.OS, 'musl')
@@ -267,7 +267,7 @@ jobs:
         with:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
-          args: --release --sdist --out dist
+          args: --release --sdist --out wheels
           sccache: 'true'
           manylinux: musllinux_1_2
       - name: Upload Python wheels
@@ -275,7 +275,7 @@ jobs:
         with:
           working-directory: pypi
           name: wheels
-          path: dist
+          path: pypi/wheels
 
   publish-npm:
     name: Publish the base package to NPM
@@ -307,6 +307,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v3
         with:
+          path: pypi/wheels
           name: wheels
       - name: Publish to PyPI
         uses: PyO3/maturin-action@v1
@@ -314,9 +315,8 @@ jobs:
           MATURIN_PYPI_TOKEN: ${{ vars.USE_TESTPYPI == 'true' && secrets.TESTPYPI_API_TOKEN || secrets.PYPI_API_TOKEN }}
           MATURIN_REPOSITORY: ${{ vars.USE_TESTPYPI == 'true' && 'testpypi' || 'pypi' }}
         with:
-          working-directory: pypi
           command: upload
-          args: --skip-existing *
+          args: --skip-existing pypi/wheels/*
 
   publish-deb:
     name: Publish Debian package
