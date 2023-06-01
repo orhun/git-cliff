@@ -148,20 +148,7 @@ impl<'a> Changelog<'a> {
 				self.config.changelog.postprocessors.as_ref()
 			{
 				for preprocessor in preprocessors {
-					if let Some(text) = &preprocessor.replace {
-						rendered = preprocessor
-							.pattern
-							.replace_all(&rendered, text)
-							.to_string();
-					} else if let Some(command) = &preprocessor.replace_command {
-						if preprocessor.pattern.is_match(&rendered) {
-							rendered = command::run(
-								command,
-								Some(rendered.to_string()),
-								vec![],
-							)?;
-						}
-					}
+					preprocessor.replace(&mut rendered, vec![])?;
 				}
 			}
 

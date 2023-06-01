@@ -36,7 +36,7 @@ pub struct ChangelogConfig {
 	pub footer:         Option<String>,
 	/// Trim the template.
 	pub trim:           Option<bool>,
-	/// Changelog postrocessors.
+	/// Changelog postprocessors.
 	pub postprocessors: Option<Vec<TextProcessor>>,
 }
 
@@ -107,6 +107,27 @@ pub struct TextProcessor {
 	pub replace:         Option<String>,
 	/// Command that will be run for replacing the commit message.
 	pub replace_command: Option<String>,
+}
+
+impl TextProcessor {
+	pub(crate) fn replace(
+		&self,
+		rendered: &mut String,
+		command_envs: Vec<(&str, &str)>,
+	) -> Result<()> {
+		if let Some(text) = &self.replace {
+			*rendered = self.pattern.replace_all(&rendered, text).to_string();
+		} else if let Some(command) = &self.replace_command {
+			if self.pattern.is_match(&rendered) {
+				*rendered = crate::command::run(
+					command,
+					Some(rendered.to_string()),
+					command_envs,
+				)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// Parser for extracting links in commits.
