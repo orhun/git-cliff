@@ -2,7 +2,7 @@
 name: Feature request ⛰️ 
 about: Make a suggestion for the project
 title: ""
-labels: "enhancement"
+labels: "feature/request"
 assignees: "orhun"
 ---
 

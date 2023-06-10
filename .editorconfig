@@ -3,11 +3,6 @@
 # top-most EditorConfig file
 root = true
 
-# 4 space indentation
-[*.rs]
-indent_style = tab
-indent_size = 4
-
-[*.sh]
-indent_style = tab
+[{*.sh,*.rs}]
+indent_style = space
 indent_size = 4

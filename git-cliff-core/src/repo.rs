@@ -179,6 +179,7 @@ mod test {
 		if let Err(e) = last_commit.into_conventional() {
 			match e {
 				Error::ParseError(e) => {
+					eprintln!("\nthe last commit is not conventional\n");
 					assert_eq!(ErrorKind::InvalidFormat, e.kind())
 				}
 				_ => {

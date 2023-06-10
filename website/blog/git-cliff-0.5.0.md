@@ -8,15 +8,17 @@ tags:
 ---
 In this post, I'm explaining the new features in the 0.5.0 release while giving insight into the different use-cases.
 
-<!-- more -->
+<center>
 
  <a href="https://github.com/orhun/git-cliff">
-    <img src="https://user-images.githubusercontent.com/24392180/146058022-494a7a28-34a9-473e-8c80-85fd7294783c.jpg" width="600"/>
+    <img src="https://user-images.githubusercontent.com/24392180/146058022-494a7a28-34a9-473e-8c80-85fd7294783c.jpg" />
 </a>
 
-[**git-cliff**](https://github.com/orhun/git-cliff) is a command-line tool (written in [Rust](https://www.rust-lang.org/)) that provides a highly customizable way to generate changelogs from git history. It supports using [custom regular expressions](/docs/configuration#commit_parsers) to alter changelogs which are mostly based on [conventional commits](/docs/configuration#conventional_commits). With a single [configuration file](/docs/configuration), a big variety of formats can be applied for a changelog, thanks to the Jinja2/Django-inspired [template engine](/docs/category/templating). More information and examples can be found in the [GitHub repository](https://github.com/orhun/git-cliff).
+</center>
 
-Today I released the new version (0.5.0) of `git-cliff`. There are a couple of major features that I believe are interesting and they can potentially help with different use cases. Also, it has been a while since I post something on my blog. Must be exciting, let's have a look!
+> [**git-cliff**](https://github.com/orhun/git-cliff) is a command-line tool (written in [Rust](https://www.rust-lang.org/)) that provides a highly customizable way to generate changelogs from git history. It supports using [custom regular expressions](/docs/configuration#commit_parsers) to alter changelogs which are mostly based on [conventional commits](/docs/configuration#conventional_commits). With a single [configuration file](/docs/configuration), a big variety of formats can be applied for a changelog, thanks to the Jinja2/Django-inspired [template engine](/docs/category/templating). More information and examples can be found in the [GitHub repository](https://github.com/orhun/git-cliff).
+
+Today I released the new version (0.5.0) of `git-cliff`. There are a couple of major features that I believe are interesting and they can potentially help with different use cases. Must be exciting, let's have a look!
 
 ## What's new?
 

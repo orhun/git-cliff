@@ -17,7 +17,7 @@ Note that we have a [Code of Conduct](./CODE_OF_CONDUCT.md), please follow it in
 git clone https://github.com/{username}/git-cliff && cd git-cliff
 ```
 
-3. Make sure that you have [Rust](https://www.rust-lang.org/) `1.60.0` or later installed and build the project.
+3. Make sure that you have [Rust](https://www.rust-lang.org/) `1.64.0` or later installed and build the project.
 
 ```sh
 cargo build

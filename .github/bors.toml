@@ -1,0 +1,13 @@
+status = [
+    "Check",
+    "Lints",
+    "Formatting",
+    "Test suite",
+    "Audit check",
+    "Links",
+    "Check Rust version",
+]
+delete_merged_branches = true
+update_base_for_deletes = true
+cut_body_after = "<details>"
+commit_title = "chore(pull): merge ${PR_REFS}"

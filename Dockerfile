@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4.3-labs
-FROM lukemathwalker/cargo-chef:0.1.51-rust-1.66.1-buster AS chef
+FROM lukemathwalker/cargo-chef:0.1.59-rust-1.69-buster AS chef
 WORKDIR app
 
 FROM chef AS planner
@@ -15,12 +15,26 @@ RUN cargo build --release --locked --no-default-features
 RUN rm -f target/release/deps/git_cliff*
 
 FROM debian:buster-slim as runner
+
+# Everything inside this container will be explicitly mounted by the end user,
+# so we can sidestep some Git security restrictions. This app recommends
+# mounting data to /app, but this *can* be changed externally and *will* be
+# changed when run by GitHub Actions, so we need to cover our bases.
+RUN echo '[safe]\n\tdirectory = *' > /etc/gitconfig
+
 COPY --from=builder /app/target/release/git-cliff /usr/local/bin
-WORKDIR git-home
-RUN cat <<'EOF' > entrypoint.sh
+WORKDIR app
+
+# Even if the repository as marked as safe, GitHub Actions and some other
+# environments insist on running the entrypoint as root inside the container
+# even when being run by a non priviledged user on their own files. Here we
+# check the ownership of the workdir (which may or may not be /app) and change
+# our effective user/group ID to match.
+RUN cat <<'EOF' > /usr/local/bin/entrypoint.sh
 #!/bin/sh
-cp -r /app /git-home/app
-cd /git-home/app
-exec git-cliff "$@"
+if [ "$(id -u)" -ne "$(stat -c '%u' .)" ]; then
+  eids="$(stat -c '--euid %u --egid %g' .)"
+fi
+exec ${eids:+setpriv --clear-groups $eids} git-cliff $@
 EOF
-ENTRYPOINT ["sh", "entrypoint.sh"]
+ENTRYPOINT ["sh", "/usr/local/bin/entrypoint.sh"]

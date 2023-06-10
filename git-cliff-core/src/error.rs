@@ -11,6 +11,7 @@ pub enum Error {
 	#[error("UTF-8 error: `{0}`")]
 	Utf8Error(#[from] std::str::Utf8Error),
 	/// Error variant that represents errors coming out of libgit2.
+	#[cfg(feature = "repo")]
 	#[error("Git error: `{0}`")]
 	GitError(#[from] git2::Error),
 	/// Error that may occur while parsing the config file.
