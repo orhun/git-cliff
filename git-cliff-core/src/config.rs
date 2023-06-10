@@ -1,3 +1,4 @@
+use crate::command;
 use crate::error::Result;
 use regex::{
 	Regex,
@@ -110,7 +111,8 @@ pub struct TextProcessor {
 }
 
 impl TextProcessor {
-	pub(crate) fn replace(
+	/// Replaces the text with using the given pattern or the command output.
+	pub fn replace(
 		&self,
 		rendered: &mut String,
 		command_envs: Vec<(&str, &str)>,
@@ -119,11 +121,8 @@ impl TextProcessor {
 			*rendered = self.pattern.replace_all(rendered, text).to_string();
 		} else if let Some(command) = &self.replace_command {
 			if self.pattern.is_match(rendered) {
-				*rendered = crate::command::run(
-					command,
-					Some(rendered.to_string()),
-					command_envs,
-				)?;
+				*rendered =
+					command::run(command, Some(rendered.to_string()), command_envs)?;
 			}
 		}
 		Ok(())

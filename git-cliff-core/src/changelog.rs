@@ -143,11 +143,11 @@ impl<'a> Changelog<'a> {
 		}
 		for release in &self.releases {
 			let mut rendered = self.template.render(release)?;
-			if let Some(preprocessors) =
+			if let Some(postprocessors) =
 				self.config.changelog.postprocessors.as_ref()
 			{
-				for preprocessor in preprocessors {
-					preprocessor.replace(&mut rendered, vec![])?;
+				for postprocessor in postprocessors {
+					postprocessor.replace(&mut rendered, vec![])?;
 				}
 			}
 
