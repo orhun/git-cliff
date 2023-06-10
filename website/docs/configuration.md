@@ -60,7 +60,7 @@ Footer text that will be added to the end of the changelog.
 ### postprocessors
 
 An array of commit postprocessors for manipulating the changelog before outputting.
-Can e.g. be used for replacing commit author with GitHub user names.
+Can e.g. be used for replacing commit author with GitHub usernames.
 Internally postprocessors and preprocessors are the same. See [commit_preprocessors](#commit_preprocessors) for more detail and examples, it uses the same syntax.
 
 ## `git`
