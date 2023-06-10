@@ -116,9 +116,9 @@ impl TextProcessor {
 		command_envs: Vec<(&str, &str)>,
 	) -> Result<()> {
 		if let Some(text) = &self.replace {
-			*rendered = self.pattern.replace_all(&rendered, text).to_string();
+			*rendered = self.pattern.replace_all(rendered, text).to_string();
 		} else if let Some(command) = &self.replace_command {
-			if self.pattern.is_match(&rendered) {
+			if self.pattern.is_match(rendered) {
 				*rendered = crate::command::run(
 					command,
 					Some(rendered.to_string()),

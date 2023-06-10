@@ -1,4 +1,3 @@
-use crate::command;
 use crate::config::{
 	CommitParser,
 	GitConfig,

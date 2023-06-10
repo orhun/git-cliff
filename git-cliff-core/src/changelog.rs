@@ -1,4 +1,3 @@
-use crate::command;
 use crate::commit::Commit;
 use crate::config::Config;
 use crate::error::Result;
