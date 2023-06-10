@@ -150,7 +150,6 @@ impl<'a> Changelog<'a> {
 					postprocessor.replace(&mut rendered, vec![])?;
 				}
 			}
-
 			write!(out, "{}", rendered)?;
 		}
 		if let Some(footer) = &self.config.changelog.footer {
