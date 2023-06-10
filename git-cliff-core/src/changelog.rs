@@ -264,6 +264,14 @@ mod test {
 						skip:          None,
 					},
 					CommitParser {
+						message:       Regex::new("docs:").ok(),
+						body:          None,
+						group:         Some(String::from("Documentation")),
+						default_scope: None,
+						scope:         Some(String::from("documentation")),
+						skip:          None,
+					},
+					CommitParser {
 						message:       Regex::new(r#"match\((.*)\):.*"#).ok(),
 						body:          None,
 						group:         Some(String::from("Matched ($1)")),
@@ -317,6 +325,10 @@ mod test {
 				Commit::new(
 					String::from("qw3rty"),
 					String::from("doc: update docs"),
+				),
+				Commit::new(
+					String::from("0bc123"),
+					String::from("docs: add some documentation"),
 				),
 				Commit::new(
 					String::from("0jkl12"),
@@ -418,6 +430,7 @@ mod test {
 			### Documentation
 			#### documentation
 			- update docs
+			- add some documentation
 
 			### Matched (group)
 			#### group
@@ -527,6 +540,7 @@ chore(deps): fix broken deps
 			### Documentation
 			#### documentation
 			- update docs
+			- add some documentation
 
 			### Matched (group)
 			#### group
