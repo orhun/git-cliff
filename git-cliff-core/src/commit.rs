@@ -1,9 +1,8 @@
-use crate::command;
 use crate::config::{
 	CommitParser,
-	CommitPreprocessor,
 	GitConfig,
 	LinkParser,
+	TextProcessor,
 };
 use crate::error::{
 	Error as AppError,
@@ -215,25 +214,10 @@ impl Commit<'_> {
 	/// Modifies the commit [`message`] using regex or custom OS command.
 	///
 	/// [`message`]: Commit::message
-	pub fn preprocess(
-		mut self,
-		preprocessors: &[CommitPreprocessor],
-	) -> Result<Self> {
+	pub fn preprocess(mut self, preprocessors: &[TextProcessor]) -> Result<Self> {
 		preprocessors.iter().try_for_each(|preprocessor| {
-			if let Some(text) = &preprocessor.replace {
-				self.message = preprocessor
-					.pattern
-					.replace_all(&self.message, text)
-					.to_string();
-			} else if let Some(command) = &preprocessor.replace_command {
-				if preprocessor.pattern.is_match(&self.message) {
-					self.message = command::run(
-						command,
-						Some(self.message.to_string()),
-						vec![("COMMIT_SHA", &self.id)],
-					)?;
-				}
-			}
+			preprocessor
+				.replace(&mut self.message, vec![("COMMIT_SHA", &self.id)])?;
 			Ok::<(), AppError>(())
 		})?;
 		Ok(self)

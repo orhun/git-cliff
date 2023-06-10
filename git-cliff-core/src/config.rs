@@ -1,3 +1,4 @@
+use crate::command;
 use crate::error::Result;
 use regex::{
 	Regex,
@@ -29,13 +30,15 @@ pub struct Config {
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ChangelogConfig {
 	/// Changelog header.
-	pub header: Option<String>,
+	pub header:         Option<String>,
 	/// Changelog body, template.
-	pub body:   Option<String>,
+	pub body:           Option<String>,
 	/// Changelog footer.
-	pub footer: Option<String>,
+	pub footer:         Option<String>,
 	/// Trim the template.
-	pub trim:   Option<bool>,
+	pub trim:           Option<bool>,
+	/// Changelog postprocessors.
+	pub postprocessors: Option<Vec<TextProcessor>>,
 }
 
 /// Git configuration
@@ -50,7 +53,7 @@ pub struct GitConfig {
 	pub split_commits:         Option<bool>,
 
 	/// Git commit preprocessors.
-	pub commit_preprocessors:     Option<Vec<CommitPreprocessor>>,
+	pub commit_preprocessors:     Option<Vec<TextProcessor>>,
 	/// Git commit parsers.
 	pub commit_parsers:           Option<Vec<CommitParser>>,
 	/// Whether to protect all breaking changes from being skipped by a commit
@@ -95,9 +98,9 @@ pub struct CommitParser {
 	pub skip:          Option<bool>,
 }
 
-/// Preprocessor for modifying commit messages.
+/// TextProcessor, e.g. for modifying commit messages.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct CommitPreprocessor {
+pub struct TextProcessor {
 	/// Regex for matching a text to replace.
 	#[serde(with = "serde_regex")]
 	pub pattern:         Regex,
@@ -105,6 +108,25 @@ pub struct CommitPreprocessor {
 	pub replace:         Option<String>,
 	/// Command that will be run for replacing the commit message.
 	pub replace_command: Option<String>,
+}
+
+impl TextProcessor {
+	/// Replaces the text with using the given pattern or the command output.
+	pub fn replace(
+		&self,
+		rendered: &mut String,
+		command_envs: Vec<(&str, &str)>,
+	) -> Result<()> {
+		if let Some(text) = &self.replace {
+			*rendered = self.pattern.replace_all(rendered, text).to_string();
+		} else if let Some(command) = &self.replace_command {
+			if self.pattern.is_match(rendered) {
+				*rendered =
+					command::run(command, Some(rendered.to_string()), command_envs)?;
+			}
+		}
+		Ok(())
+	}
 }
 
 /// Parser for extracting links in commits.
