@@ -196,10 +196,10 @@ fn process_repository<'a>(
 		}
 	}
 
-    if release_index > 1 {
-        previous_release.previous = None;
-        releases[release_index].previous = Some(Box::new(previous_release));
-    }
+	if release_index > 1 {
+		previous_release.previous = None;
+		releases[release_index].previous = Some(Box::new(previous_release));
+	}
 
 	// Add custom commit messages to the latest release.
 	if let Some(custom_commits) = &args.with_commit {
@@ -214,7 +214,7 @@ fn process_repository<'a>(
 
 	// Set the previous release if needed.
 	if args.latest || args.unreleased {
-        let sub = if args.latest { 2 } else { 1 };
+		let sub = if args.latest { 2 } else { 1 };
 		if let Some((commit_id, version)) =
 			tags.len().checked_sub(sub).and_then(|v| tags.get_index(v))
 		{
