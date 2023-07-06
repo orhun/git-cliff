@@ -47,7 +47,7 @@ version = "1.0.0"
 optional = true
 
 [dev-dependencies]
-pretty_assertions = "1.2.1"
+pretty_assertions = "1.4.0"
 
 # metadata for cargo-binstall to get the right artifacts
 [package.metadata.binstall]
