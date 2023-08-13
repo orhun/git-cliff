@@ -29,6 +29,6 @@ footer = """
 [git]
 # regex for preprocessing the commit messages
 commit_preprocessors = [
-    { pattern = '\(#([0-9]+)\)', replace = "([issue#${1}](https://github.com/orhun/git-cliff/issues/${1}))"},
-    { pattern = "  +", replace = " "}
+    { pattern = '\(#([0-9]+)\)', replace = "([issue#${1}](https://github.com/orhun/git-cliff/issues/${1}))" },
+    { pattern = "  +", replace = " " },
 ]

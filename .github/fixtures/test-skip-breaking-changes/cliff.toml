@@ -32,8 +32,8 @@ footer = """
 [git]
 # regex for parsing and grouping commits
 commit_parsers = [
-    { message = "^feat", group = "Features", default_scope = "app", skip = true},
-    { message = "^fix", group = "Bug Fixes", scope = "cli", skip = true},
+    { message = "^feat", group = "Features", default_scope = "app", skip = true },
+    { message = "^fix", group = "Bug Fixes", scope = "cli", skip = true },
 ]
 # protect breaking changes from being skipped
 protect_breaking_commits = true
