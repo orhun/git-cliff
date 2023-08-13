@@ -23,9 +23,12 @@ use lazy_regex::{
 	Regex,
 };
 use serde::ser::{
-	Serialize,
 	SerializeStruct,
 	Serializer,
+};
+use serde::{
+	Deserialize,
+	Serialize,
 };
 
 /// Regular expression for matching SHA1 and a following commit message
@@ -33,7 +36,7 @@ use serde::ser::{
 static SHA1_REGEX: Lazy<Regex> = lazy_regex!(r#"^\b([a-f0-9]{40})\b (.*)$"#);
 
 /// Object representing a link
-#[derive(Debug, Clone, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Link {
 	/// Text of the link.
@@ -43,7 +46,7 @@ pub struct Link {
 }
 
 /// A conventional commit footer.
-#[derive(Debug, Clone, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
 struct Footer<'a> {
 	/// Token of the footer.
 	///
@@ -72,9 +75,7 @@ impl<'a> From<&'a ConventionalFooter<'a>> for Footer<'a> {
 }
 
 /// Commit signature that indicates authorship.
-#[derive(
-	Debug, Default, Clone, Eq, PartialEq, serde::Deserialize, serde::Serialize,
-)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
 pub struct Signature {
 	/// Name on the signature.
 	pub name:      Option<String>,
@@ -96,7 +97,7 @@ impl<'a> From<CommitSignature<'a>> for Signature {
 }
 
 /// Common commit object that is parsed from a repository.
-#[derive(Debug, Default, Clone, PartialEq, serde::Deserialize)]
+#[derive(Debug, Default, Clone, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Commit<'a> {
 	/// Commit ID.

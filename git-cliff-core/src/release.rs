@@ -1,8 +1,12 @@
 use crate::commit::Commit;
 use crate::error::Result;
+use serde::{
+	Deserialize,
+	Serialize,
+};
 
 /// Representation of a release.
-#[derive(Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Release<'a> {
 	/// Release version, git tag.

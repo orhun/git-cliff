@@ -4,6 +4,10 @@ use regex::{
 	Regex,
 	RegexBuilder,
 };
+use serde::{
+	Deserialize,
+	Serialize,
+};
 use std::ffi::OsStr;
 use std::fs;
 use std::path::Path;
@@ -16,7 +20,7 @@ const CARGO_METADATA_REGEX: &str =
 const PYPROJECT_METADATA_REGEX: &str = r"^\[(?:tool)\.git\-cliff\.";
 
 /// Configuration values.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
 	/// Configuration values about changelog generation.
 	#[serde(default)]
@@ -27,7 +31,7 @@ pub struct Config {
 }
 
 /// Changelog configuration.
-#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ChangelogConfig {
 	/// Changelog header.
 	pub header:         Option<String>,
@@ -42,7 +46,7 @@ pub struct ChangelogConfig {
 }
 
 /// Git configuration
-#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct GitConfig {
 	/// Whether to enable parsing conventional commits.
 	pub conventional_commits:  Option<bool>,
@@ -80,7 +84,7 @@ pub struct GitConfig {
 }
 
 /// Parser for grouping commits.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CommitParser {
 	/// Regex for matching the commit message.
 	#[serde(with = "serde_regex", default)]
@@ -99,7 +103,7 @@ pub struct CommitParser {
 }
 
 /// TextProcessor, e.g. for modifying commit messages.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TextProcessor {
 	/// Regex for matching a text to replace.
 	#[serde(with = "serde_regex")]
@@ -130,7 +134,7 @@ impl TextProcessor {
 }
 
 /// Parser for extracting links in commits.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LinkParser {
 	/// Regex for finding links in the commit message.
 	#[serde(with = "serde_regex")]
