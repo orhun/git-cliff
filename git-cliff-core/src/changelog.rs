@@ -272,7 +272,7 @@ mod test {
 						skip:          None,
 					},
 					CommitParser {
-						message:       Regex::new(r#"match\((.*)\):.*"#).ok(),
+						message:       Regex::new(r"match\((.*)\):.*").ok(),
 						body:          None,
 						group:         Some(String::from("Matched ($1)")),
 						default_scope: None,
