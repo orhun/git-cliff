@@ -2,6 +2,7 @@
 /.git/
 /.github/
 /npm/
+/pypi/
 /website/
 
 # Files

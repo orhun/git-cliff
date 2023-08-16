@@ -1,0 +1,18 @@
+[build-system]
+requires = ["maturin>=0.14,<0.15"]
+build-backend = "maturin"
+
+[project]
+name = "git-cliff"
+requires-python = ">=3.7"
+classifiers = [
+    "Intended Audience :: Developers",
+    "Topic :: Software Development",
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+
+[tool.maturin]
+bindings = "bin"
+manifest-path = "../git-cliff/Cargo.toml"
