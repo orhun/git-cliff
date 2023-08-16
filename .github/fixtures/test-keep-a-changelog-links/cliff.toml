@@ -13,9 +13,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 # https://tera.netlify.app/docs/#introduction
 body = """
 {% if version %}\
-    ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+    {% if previous %}\
+      {% if previous.version %}\
+          ## [{{ version | trim_start_matches(pat="v") }}](https://github.com/dummy/dummy/compare/{{ previous.version }}...{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
+      {% else %}\
+          ## [{{ version | trim_start_matches(pat="v") }}](https://github.com/dummy/dummy/releases/tag/{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
+      {% endif %}\
+    {% endif %}\
 {% else %}\
-    ## [Unreleased]
+    {% if previous %}\
+      {% if previous.version %}\
+          ## [Unreleased](https://github.com/dummy/dummy/compare/{{ previous.version }}...HEAD)
+      {% else %}\
+          ## [Unreleased]
+      {% endif %}\
+    {% else %}\
+        ## [Unreleased]
+    {% endif %}\
 {% endif %}\
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | upper_first }}
@@ -63,3 +77,4 @@ ignore_tags = ""
 topo_order = false
 # sort the commits inside sections by oldest/newest order
 sort_commits = "oldest"
+

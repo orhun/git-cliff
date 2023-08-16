@@ -3,7 +3,7 @@
 ### Prerequisites
 
 - [Rust](https://www.rust-lang.org/) (nightly)
-  - Minimum supported Rust version is `1.60.0`.
+  - Minimum supported Rust version is `1.68.2`.
 - [zlib](https://zlib.net/) (Linux)
 
 ### Instructions

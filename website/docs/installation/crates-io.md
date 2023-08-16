@@ -6,4 +6,4 @@
 cargo install git-cliff
 ```
 
-Minimum supported Rust version is `1.60.0`.
+The minimum supported Rust version is `1.68.2`.

@@ -1,7 +1,12 @@
+use crate::command;
 use crate::error::Result;
 use regex::{
 	Regex,
 	RegexBuilder,
+};
+use serde::{
+	Deserialize,
+	Serialize,
 };
 use std::ffi::OsStr;
 use std::fs;
@@ -15,7 +20,7 @@ const CARGO_METADATA_REGEX: &str =
 const PYPROJECT_METADATA_REGEX: &str = r"^\[(?:tool)\.git\-cliff\.";
 
 /// Configuration values.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
 	/// Configuration values about changelog generation.
 	#[serde(default)]
@@ -26,20 +31,22 @@ pub struct Config {
 }
 
 /// Changelog configuration.
-#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ChangelogConfig {
 	/// Changelog header.
-	pub header: Option<String>,
+	pub header:         Option<String>,
 	/// Changelog body, template.
-	pub body:   Option<String>,
+	pub body:           Option<String>,
 	/// Changelog footer.
-	pub footer: Option<String>,
+	pub footer:         Option<String>,
 	/// Trim the template.
-	pub trim:   Option<bool>,
+	pub trim:           Option<bool>,
+	/// Changelog postprocessors.
+	pub postprocessors: Option<Vec<TextProcessor>>,
 }
 
 /// Git configuration
-#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct GitConfig {
 	/// Whether to enable parsing conventional commits.
 	pub conventional_commits:  Option<bool>,
@@ -50,7 +57,7 @@ pub struct GitConfig {
 	pub split_commits:         Option<bool>,
 
 	/// Git commit preprocessors.
-	pub commit_preprocessors:     Option<Vec<CommitPreprocessor>>,
+	pub commit_preprocessors:     Option<Vec<TextProcessor>>,
 	/// Git commit parsers.
 	pub commit_parsers:           Option<Vec<CommitParser>>,
 	/// Whether to protect all breaking changes from being skipped by a commit
@@ -77,7 +84,7 @@ pub struct GitConfig {
 }
 
 /// Parser for grouping commits.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CommitParser {
 	/// Regex for matching the commit message.
 	#[serde(with = "serde_regex", default)]
@@ -95,9 +102,9 @@ pub struct CommitParser {
 	pub skip:          Option<bool>,
 }
 
-/// Preprocessor for modifying commit messages.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct CommitPreprocessor {
+/// TextProcessor, e.g. for modifying commit messages.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TextProcessor {
 	/// Regex for matching a text to replace.
 	#[serde(with = "serde_regex")]
 	pub pattern:         Regex,
@@ -107,8 +114,27 @@ pub struct CommitPreprocessor {
 	pub replace_command: Option<String>,
 }
 
+impl TextProcessor {
+	/// Replaces the text with using the given pattern or the command output.
+	pub fn replace(
+		&self,
+		rendered: &mut String,
+		command_envs: Vec<(&str, &str)>,
+	) -> Result<()> {
+		if let Some(text) = &self.replace {
+			*rendered = self.pattern.replace_all(rendered, text).to_string();
+		} else if let Some(command) = &self.replace_command {
+			if self.pattern.is_match(rendered) {
+				*rendered =
+					command::run(command, Some(rendered.to_string()), command_envs)?;
+			}
+		}
+		Ok(())
+	}
+}
+
 /// Parser for extracting links in commits.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LinkParser {
 	/// Regex for finding links in the commit message.
 	#[serde(with = "serde_regex")]
@@ -144,7 +170,9 @@ impl Config {
 			config::Config::builder().add_source(config::File::from(path))
 		};
 		Ok(config_builder
-			.add_source(config::Environment::with_prefix("CLIFF").separator("_"))
+			.add_source(
+				config::Environment::with_prefix("GIT_CLIFF").separator("__"),
+			)
 			.build()?
 			.try_deserialize()?)
 	}
@@ -164,9 +192,29 @@ mod test {
 			.to_path_buf()
 			.join("config")
 			.join(crate::DEFAULT_CONFIG);
-		env::set_var("CLIFF_CHANGELOG_FOOTER", "test");
+
+		const FOOTER_VALUE: &str = "test";
+		const TAG_PATTERN_VALUE: &str = "*[0-9]*";
+		const IGNORE_TAGS_VALUE: &str = "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+";
+
+		env::set_var("GIT_CLIFF__CHANGELOG__FOOTER", FOOTER_VALUE);
+		env::set_var("GIT_CLIFF__GIT__TAG_PATTERN", TAG_PATTERN_VALUE);
+		env::set_var("GIT_CLIFF__GIT__IGNORE_TAGS", IGNORE_TAGS_VALUE);
+
 		let config = Config::parse(&path)?;
-		assert_eq!(Some(String::from("test")), config.changelog.footer);
+
+		assert_eq!(Some(String::from(FOOTER_VALUE)), config.changelog.footer);
+		assert_eq!(
+			Some(String::from(TAG_PATTERN_VALUE)),
+			config.git.tag_pattern
+		);
+		assert_eq!(
+			Some(String::from(IGNORE_TAGS_VALUE)),
+			config
+				.git
+				.ignore_tags
+				.map(|ignore_tags| ignore_tags.to_string())
+		);
 		Ok(())
 	}
 }

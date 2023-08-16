@@ -142,7 +142,15 @@ impl<'a> Changelog<'a> {
 			write!(out, "{header}")?;
 		}
 		for release in &self.releases {
-			write!(out, "{}", self.template.render(release)?)?;
+			let mut rendered = self.template.render(release)?;
+			if let Some(postprocessors) =
+				self.config.changelog.postprocessors.as_ref()
+			{
+				for postprocessor in postprocessors {
+					postprocessor.replace(&mut rendered, vec![])?;
+				}
+			}
+			write!(out, "{}", rendered)?;
 		}
 		if let Some(footer) = &self.config.changelog.footer {
 			write!(out, "{footer}")?;
@@ -179,8 +187,8 @@ mod test {
 	use crate::config::{
 		ChangelogConfig,
 		CommitParser,
-		CommitPreprocessor,
 		GitConfig,
+		TextProcessor,
 	};
 	use pretty_assertions::assert_eq;
 	use regex::Regex;
@@ -189,8 +197,8 @@ mod test {
 	fn get_test_data() -> (Config, Vec<Release<'static>>) {
 		let config = Config {
 			changelog: ChangelogConfig {
-				header: Some(String::from("# Changelog")),
-				body:   Some(String::from(
+				header:         Some(String::from("# Changelog")),
+				body:           Some(String::from(
 					r#"{% if version %}
 				## Release [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
 				({{ commit_id }}){% else %}
@@ -201,14 +209,20 @@ mod test {
 				- {{ commit.message }}{% endfor %}
 				{% endfor %}{% endfor %}"#,
 				)),
-				footer: Some(String::from("------------")),
-				trim:   Some(true),
+				footer:         Some(String::from("------------")),
+				trim:           Some(true),
+				postprocessors: Some(vec![TextProcessor {
+					pattern:         Regex::new("boring")
+						.expect("failed to compile regex"),
+					replace:         Some(String::from("exciting")),
+					replace_command: None,
+				}]),
 			},
 			git:       GitConfig {
 				conventional_commits:     Some(true),
 				filter_unconventional:    Some(false),
 				split_commits:            Some(false),
-				commit_preprocessors:     Some(vec![CommitPreprocessor {
+				commit_preprocessors:     Some(vec![TextProcessor {
 					pattern:         Regex::new("<preprocess>")
 						.expect("failed to compile regex"),
 					replace:         Some(String::from(
@@ -250,7 +264,15 @@ mod test {
 						skip:          None,
 					},
 					CommitParser {
-						message:       Regex::new(r#"match\((.*)\):.*"#).ok(),
+						message:       Regex::new("docs:").ok(),
+						body:          None,
+						group:         Some(String::from("Documentation")),
+						default_scope: None,
+						scope:         Some(String::from("documentation")),
+						skip:          None,
+					},
+					CommitParser {
+						message:       Regex::new(r"match\((.*)\):.*").ok(),
 						body:          None,
 						group:         Some(String::from("Matched ($1)")),
 						default_scope: None,
@@ -303,6 +325,10 @@ mod test {
 				Commit::new(
 					String::from("qw3rty"),
 					String::from("doc: update docs"),
+				),
+				Commit::new(
+					String::from("0bc123"),
+					String::from("docs: add some documentation"),
 				),
 				Commit::new(
 					String::from("0jkl12"),
@@ -392,7 +418,7 @@ mod test {
 			- document zyx
 
 			#### ui
-			- do boring stuff
+			- do exciting stuff
 
 			## Release [v1.0.0] - 1971-08-02
 			(0bc123)
@@ -404,6 +430,7 @@ mod test {
 			### Documentation
 			#### documentation
 			- update docs
+			- add some documentation
 
 			### Matched (group)
 			#### group
@@ -494,7 +521,7 @@ chore(deps): fix broken deps
 			- fix broken deps
 
 			#### ui
-			- do boring stuff
+			- do exciting stuff
 
 			### feat
 			#### app
@@ -513,6 +540,7 @@ chore(deps): fix broken deps
 			### Documentation
 			#### documentation
 			- update docs
+			- add some documentation
 
 			### Matched (group)
 			#### group

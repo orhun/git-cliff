@@ -1,14 +1,14 @@
-use crate::command;
 use crate::config::{
 	CommitParser,
-	CommitPreprocessor,
 	GitConfig,
 	LinkParser,
+	TextProcessor,
 };
 use crate::error::{
 	Error as AppError,
 	Result,
 };
+#[cfg(feature = "repo")]
 use git2::{
 	Commit as GitCommit,
 	Signature as CommitSignature,
@@ -23,9 +23,12 @@ use lazy_regex::{
 	Regex,
 };
 use serde::ser::{
-	Serialize,
 	SerializeStruct,
 	Serializer,
+};
+use serde::{
+	Deserialize,
+	Serialize,
 };
 
 /// Regular expression for matching SHA1 and a following commit message
@@ -33,7 +36,7 @@ use serde::ser::{
 static SHA1_REGEX: Lazy<Regex> = lazy_regex!(r#"^\b([a-f0-9]{40})\b (.*)$"#);
 
 /// Object representing a link
-#[derive(Debug, Clone, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Link {
 	/// Text of the link.
@@ -43,7 +46,7 @@ pub struct Link {
 }
 
 /// A conventional commit footer.
-#[derive(Debug, Clone, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
 struct Footer<'a> {
 	/// Token of the footer.
 	///
@@ -72,9 +75,7 @@ impl<'a> From<&'a ConventionalFooter<'a>> for Footer<'a> {
 }
 
 /// Commit signature that indicates authorship.
-#[derive(
-	Debug, Default, Clone, Eq, PartialEq, serde::Deserialize, serde::Serialize,
-)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
 pub struct Signature {
 	/// Name on the signature.
 	pub name:      Option<String>,
@@ -84,6 +85,7 @@ pub struct Signature {
 	pub timestamp: i64,
 }
 
+#[cfg(feature = "repo")]
 impl<'a> From<CommitSignature<'a>> for Signature {
 	fn from(signature: CommitSignature<'a>) -> Self {
 		Self {
@@ -95,7 +97,7 @@ impl<'a> From<CommitSignature<'a>> for Signature {
 }
 
 /// Common commit object that is parsed from a repository.
-#[derive(Debug, Default, Clone, PartialEq, serde::Deserialize)]
+#[derive(Debug, Default, Clone, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Commit<'a> {
 	/// Commit ID.
@@ -142,6 +144,7 @@ impl<'a> From<String> for Commit<'a> {
 	}
 }
 
+#[cfg(feature = "repo")]
 impl<'a> From<&GitCommit<'a>> for Commit<'a> {
 	fn from(commit: &GitCommit<'a>) -> Self {
 		Commit {
@@ -212,25 +215,10 @@ impl Commit<'_> {
 	/// Modifies the commit [`message`] using regex or custom OS command.
 	///
 	/// [`message`]: Commit::message
-	pub fn preprocess(
-		mut self,
-		preprocessors: &[CommitPreprocessor],
-	) -> Result<Self> {
+	pub fn preprocess(mut self, preprocessors: &[TextProcessor]) -> Result<Self> {
 		preprocessors.iter().try_for_each(|preprocessor| {
-			if let Some(text) = &preprocessor.replace {
-				self.message = preprocessor
-					.pattern
-					.replace_all(&self.message, text)
-					.to_string();
-			} else if let Some(command) = &preprocessor.replace_command {
-				if preprocessor.pattern.is_match(&self.message) {
-					self.message = command::run(
-						command,
-						Some(self.message.to_string()),
-						vec![("COMMIT_SHA", &self.id)],
-					)?;
-				}
-			}
+			preprocessor
+				.replace(&mut self.message, vec![("COMMIT_SHA", &self.id)])?;
 			Ok::<(), AppError>(())
 		})?;
 		Ok(self)

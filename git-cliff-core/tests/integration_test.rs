@@ -2,9 +2,9 @@ use git_cliff_core::commit::Commit;
 use git_cliff_core::config::{
 	ChangelogConfig,
 	CommitParser,
-	CommitPreprocessor,
 	GitConfig,
 	LinkParser,
+	TextProcessor,
 };
 use git_cliff_core::error::Result;
 use git_cliff_core::release::*;
@@ -16,8 +16,8 @@ use std::fmt::Write;
 #[test]
 fn generate_changelog() -> Result<()> {
 	let changelog_config = ChangelogConfig {
-		header: Some(String::from("this is a changelog")),
-		body:   Some(String::from(
+		header:         Some(String::from("this is a changelog")),
+		body:           Some(String::from(
 			r#"
 ## Release {{ version }}
 {% for group, commits in commits | group_by(attribute="group") %}
@@ -34,15 +34,16 @@ fn generate_changelog() -> Result<()> {
 {% endfor -%}
 {% endfor %}"#,
 		)),
-		footer: Some(String::from("eoc - end of changelog")),
-		trim:   None,
+		footer:         Some(String::from("eoc - end of changelog")),
+		trim:           None,
+		postprocessors: None,
 	};
 	let git_config = GitConfig {
 		conventional_commits:     Some(true),
 		filter_unconventional:    Some(true),
 		split_commits:            Some(false),
-		commit_preprocessors:     Some(vec![CommitPreprocessor {
-			pattern:         Regex::new(r#"\(fixes (#[1-9]+)\)"#).unwrap(),
+		commit_preprocessors:     Some(vec![TextProcessor {
+			pattern:         Regex::new(r"\(fixes (#[1-9]+)\)").unwrap(),
 			replace:         Some(String::from("[closes Issue${1}]")),
 			replace_command: None,
 		}]),

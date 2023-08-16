@@ -1,6 +1,6 @@
 [package]
 name = "git-cliff"
-version = "1.1.2" # managed by release.sh
+version = "1.2.0" # managed by release.sh
 description = "A highly customizable changelog generator ⛰️"
 authors = ["git-cliff contributors <git-cliff@protonmail.com>"]
 license = "GPL-3.0"
@@ -11,7 +11,7 @@ keywords = ["changelog", "generator", "conventional", "commit"]
 categories = ["command-line-utilities"]
 default-run = "git-cliff"
 edition = "2021"
-rust-version = "1.60.0"
+rust-version = "1.68.2"
 
 [[bin]]
 name = "git-cliff-completions"
@@ -29,25 +29,25 @@ default = ["update-informer"]
 glob.workspace = true
 regex.workspace = true
 log.workspace = true
-pretty_env_logger = "0.4.0"
+pretty_env_logger = "0.5.0"
 dirs-next = "2.0.0"
-clap_complete = "4.1.1"
-clap_mangen = "0.2.7"
+clap_complete = "4.3.2"
+clap_mangen = "0.2.12"
 
 [dependencies.git-cliff-core]
-version = "1.1.2" # managed by release.sh
+version = "1.2.0" # managed by release.sh
 path = "../git-cliff-core"
 
 [dependencies.clap]
-version = "4.1.4"
-features = ["derive", "env", "wrap_help"]
+version = "4.3.21"
+features = ["derive", "env", "wrap_help", "cargo"]
 
 [dependencies.update-informer]
-version = "0.6.0"
+version = "1.1.0"
 optional = true
 
 [dev-dependencies]
-pretty_assertions = "1.2.1"
+pretty_assertions = "1.4.0"
 
 # metadata for cargo-binstall to get the right artifacts
 [package.metadata.binstall]
