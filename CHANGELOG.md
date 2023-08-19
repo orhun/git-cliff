@@ -108,43 +108,23 @@ All notable changes to this project will be documented in this file.
 
 - *(git)* Use timestamp for deriving the tag order ([#139](https://github.com/orhun/git-cliff/issues/139)) - ([accfb0f](https://github.com/orhun/git-cliff/commit/accfb0fcdd06c66d3e9d98f8848cbb9ab0944d09))
 
-## [1.1.1](https://github.com/orhun/git-cliff/compare/v1.1.1-rc.4..v1.1.1) - 2023-01-09
+## [1.1.1](https://github.com/orhun/git-cliff/compare/v1.1.0..v1.1.1) - 2023-01-09
+
+### 🐛 Bug Fixes
+
+- *(npm)* Fix the type casting in base NPM package - ([bc0807f](https://github.com/orhun/git-cliff/commit/bc0807fe935d1ea1b1fe81025f8f4da0aad3387c))
+- *(npm)* Fix the variable declaration for NPM package OS - ([f40a565](https://github.com/orhun/git-cliff/commit/f40a56588e22de2f6ed83e9d7b333da11cc0a797))
+- *(npm)* Rename the NPM binary package for Windows - ([ce1d468](https://github.com/orhun/git-cliff/commit/ce1d468f0bd045f584d2ce4c0ed5f046cdc13777))
 
 ### 📚 Documentation
 
 - *(readme)* Update README.md about the NPM package - ([e0177c2](https://github.com/orhun/git-cliff/commit/e0177c25e13812306aab0b0991562d58b6d14767))
 
-## [1.1.1-rc.4](https://github.com/orhun/git-cliff/compare/v1.1.1-rc.3..v1.1.1-rc.4) - 2023-01-09
-
-### 🐛 Bug Fixes
-
-- *(npm)* Fix the type casting in base NPM package - ([bc0807f](https://github.com/orhun/git-cliff/commit/bc0807fe935d1ea1b1fe81025f8f4da0aad3387c))
-
-## [1.1.1-rc.3](https://github.com/orhun/git-cliff/compare/v1.1.1-rc.2..v1.1.1-rc.3) - 2023-01-09
-
-### 🐛 Bug Fixes
-
-- *(npm)* Fix the variable declaration for NPM package OS - ([f40a565](https://github.com/orhun/git-cliff/commit/f40a56588e22de2f6ed83e9d7b333da11cc0a797))
-
 ### ⚙️ Miscellaneous Tasks
 
 - *(cd)* Parallelize releasing on crates.io - ([24c8e3e](https://github.com/orhun/git-cliff/commit/24c8e3e4cf092dc347f90c6621238d86f0001f2a))
-
-## [1.1.1-rc.2](https://github.com/orhun/git-cliff/compare/v1.1.1-rc.1..v1.1.1-rc.2) - 2023-01-09
-
-### 🐛 Bug Fixes
-
-- *(npm)* Rename the NPM binary package for Windows - ([ce1d468](https://github.com/orhun/git-cliff/commit/ce1d468f0bd045f584d2ce4c0ed5f046cdc13777))
-
-### ⚙️ Miscellaneous Tasks
-
 - *(cd)* Add README.md to the base NPM package - ([e2e124e](https://github.com/orhun/git-cliff/commit/e2e124ed4bc9ff77413af1b5cd075f5a55ca98de))
 - *(npm)* Add more keywords to the base NPM package - ([abe68a2](https://github.com/orhun/git-cliff/commit/abe68a28847ec9d444337fb1adec522fca7aac1b))
-
-## [1.1.1-rc.1](https://github.com/orhun/git-cliff/compare/v1.1.0..v1.1.1-rc.1) - 2023-01-09
-
-### ⚙️ Miscellaneous Tasks
-
 - *(npm)* Package `git-cliff` for npm ([#133](https://github.com/orhun/git-cliff/issues/133)) - ([b7dd592](https://github.com/orhun/git-cliff/commit/b7dd592653a722a764609a3eacff5e1eee58c07e))
 
 ## [1.1.0](https://github.com/orhun/git-cliff/compare/v1.0.0..v1.1.0) - 2023-01-08
@@ -663,33 +643,68 @@ All notable changes to this project will be documented in this file.
 
 - *(project)* Rename the shell completions binary - ([718f535](https://github.com/orhun/git-cliff/commit/718f53573b9f48a60ad1930cd9555063414f8b96))
 
-## [0.1.0](https://github.com/orhun/git-cliff/compare/v0.1.0-rc.21..v0.1.0) - 2021-08-12
+## [0.1.0] - 2021-08-12
+
+### ⛰️  Features
+
+- *(args)* Add `--output` argument - ([e0cda23](https://github.com/orhun/git-cliff/commit/e0cda238105e0ce22ac71409d6e3ee0e32a6bad7))
+- *(args)* Add `--workdir` argument - ([de439be](https://github.com/orhun/git-cliff/commit/de439bef01e0e1209b8517ce7b241bb0db2cb530))
+- *(changelog)* Support setting the body template via args - ([9fc08f4](https://github.com/orhun/git-cliff/commit/9fc08f4c50160374298bf77701ee5e299fa435a0))
+- *(logs)* Show the processsed commit message - ([45dccf7](https://github.com/orhun/git-cliff/commit/45dccf74a4a5449d92d453d21b6566acd8f30ebe))
 
 ### 🐛 Bug Fixes
 
+- *(cd)* Wait for core library to update on crates.io before publish - ([e795460](https://github.com/orhun/git-cliff/commit/e795460c9bb7275294d1fa53a9d73258fb51eb10))
+- *(cd)* Wait between publishing crates - ([777b3e5](https://github.com/orhun/git-cliff/commit/777b3e573f20e913a68293eb155076d52914b4d4))
+- *(cd)* Generate changelog on a dedicated/different job - ([2f16dd5](https://github.com/orhun/git-cliff/commit/2f16dd5ae7f4bbff7b9944db039192d8ce148655))
+- *(cd)* Fix the syntax of publish step arguments - ([6414789](https://github.com/orhun/git-cliff/commit/6414789067780d0551292c004a8aaff04483906d))
+- *(cd)* Use a separate step for setting the changelog body - ([f038054](https://github.com/orhun/git-cliff/commit/f038054417f608b5792b89f60b4d384b74b317dd))
+- *(cd)* Publish the cargo workspace members seperately - ([acc1d34](https://github.com/orhun/git-cliff/commit/acc1d3453ca865ddbf3e8e786fcc157c8e31eae6))
+- *(cd)* Strip the changelog header before escaping - ([6b97c2d](https://github.com/orhun/git-cliff/commit/6b97c2d18c05fb9cf27088a39b24d12ab1b0c556))
+- *(cd)* Use printf to prevent field splitting the variable - ([92a4b0d](https://github.com/orhun/git-cliff/commit/92a4b0d5bfb8c27627886005d0e6d823a3cc6476))
+- *(cd)* Double quote the environment variable - ([85aa1cd](https://github.com/orhun/git-cliff/commit/85aa1cdc688b74d1d2df46dc61e6aa5561fc6ace))
 - *(changelog)* Return error if there is not a latest tag to process - ([8232111](https://github.com/orhun/git-cliff/commit/8232111aa1fab0089fdb3b025202729b59dcf906))
 - *(changelog)* Use footers field as an array for the context - ([3e5c23d](https://github.com/orhun/git-cliff/commit/3e5c23d342ef96bececf41254cb609025a012fb3))
+- *(ci)* Update lychee arguments to exclude invalid links - ([e1d604c](https://github.com/orhun/git-cliff/commit/e1d604cbdf049f30c33380c591bfedf0baa3f0a7))
 - *(config)* Update the environment variable parsing settings - ([9984abf](https://github.com/orhun/git-cliff/commit/9984abfe04e6bed0745b52701ce3f45dd92529f6))
+- *(config)* Update config to skip release commits - ([2e5f30a](https://github.com/orhun/git-cliff/commit/2e5f30a5c3b920dc2b52fe12774fccb2fb3fd124))
+- *(config)* Update commit parsers to match the commit type - ([24b9068](https://github.com/orhun/git-cliff/commit/24b9068d308b9818fab8fd631120a79e4069521d))
 - *(example)* Remove symbolic link - ([ed010be](https://github.com/orhun/git-cliff/commit/ed010be74fb745a9147315bcbbe0f9ac0aae85fb))
 - *(example)* Update symbolic link to the default config - ([ee377cc](https://github.com/orhun/git-cliff/commit/ee377cc42d2d8771d67b0907151b1bb2ee012d69))
 - *(git)* Sort the commits in topological order - ([a1b4b5b](https://github.com/orhun/git-cliff/commit/a1b4b5b18a6061392fc27b66a5726824212c114c))
+- *(git)* Return tags by their creation order - ([000a67c](https://github.com/orhun/git-cliff/commit/000a67cd8aae7ae20848baa04cd6212376dcde12))
+- *(release)* Fix the character escape in release script - ([5d616ee](https://github.com/orhun/git-cliff/commit/5d616ee249aaee9f38d6d9b7a9e14170b9b7405a))
+- *(release)* Specify the committer email in release script - ([381c941](https://github.com/orhun/git-cliff/commit/381c941a94188fb40bcce1129c29e6a5379ac7a7))
+- *(release)* Strip the unreleased title from tag message - ([c7f08fe](https://github.com/orhun/git-cliff/commit/c7f08fe4a3113f656bb45a29141aa127d4e453e5))
 - *(template)* Use 7 digits for short SHA - ([1f85263](https://github.com/orhun/git-cliff/commit/1f85263f84bf15285fd3fd75af00fa21b12e9738))
+- *(test)* Use default tag_pattern for tests - ([e6fb8de](https://github.com/orhun/git-cliff/commit/e6fb8de5d834eb5fe5ff3b5fab1986fcf5e720b6))
 
 ### 🚜 Refactor
 
 - *(args)* Rename changelog argument to prepend - ([5a5a042](https://github.com/orhun/git-cliff/commit/5a5a042134c4829d98271607f697f77701f80860))
+- *(args)* Update value names and description - ([c697b17](https://github.com/orhun/git-cliff/commit/c697b17f67c9438a1fb159db74b1e225aeb28853))
+- *(args)* Update the value name for `--strip` - ([e8a3c35](https://github.com/orhun/git-cliff/commit/e8a3c35fa1f2a9a1a99ad8c60b82899c2af212eb))
+- *(config)* Make tag_pattern optional - ([3a27a3e](https://github.com/orhun/git-cliff/commit/3a27a3e1a2d3813def0405ddf89914c5f10f7b36))
+- *(error)* Use custom error message for GroupError - ([1be66ee](https://github.com/orhun/git-cliff/commit/1be66eebebaa3a5849399433ad5823345668ffb1))
+- *(logs)* Improve logging - ([5333453](https://github.com/orhun/git-cliff/commit/53334533eb6399dc4b931fa3f61c32b5e28bd9e7))
 
 ### 📚 Documentation
 
+- *(bin)* Update the doc comment for completions script - ([c056196](https://github.com/orhun/git-cliff/commit/c056196af9ee3f7109876639a0fb3b230661e1e4))
+- *(contributing)* Add CONTRIBUTING.md - ([0fe28b3](https://github.com/orhun/git-cliff/commit/0fe28b322e4dd83bef1ba39d1028922065aa8aee))
 - *(readme)* Add preview image to README.md - ([6e6bdde](https://github.com/orhun/git-cliff/commit/6e6bddeadd3ee43ac6bb626ce5ebd582ffd1f7cb))
 - *(readme)* Update detailed template example - ([441ed4d](https://github.com/orhun/git-cliff/commit/441ed4d8b499a46ce22800da3d969ea6165d6ddf))
 - *(readme)* Add examples for templating - ([a406158](https://github.com/orhun/git-cliff/commit/a40615860871d4bbb351ae1571192a624b1b539d))
 - *(readme)* Add examples for CLI usage - ([32f837e](https://github.com/orhun/git-cliff/commit/32f837e3f0d642f5dc16f1e144ef5040652173ec))
 - *(readme)* Update README.md about template and examples - ([2f2b2fc](https://github.com/orhun/git-cliff/commit/2f2b2fc50a5aa4cdd7842448b9fde7f73564f5d7))
 - *(readme)* Update README.md about usage - ([7f4a9c2](https://github.com/orhun/git-cliff/commit/7f4a9c20128af75a8972e58130ac0ed4ce52d995))
+- *(readme)* Add usage section - ([c87fbbe](https://github.com/orhun/git-cliff/commit/c87fbbe7cf869dd343269f6f23d9e4776a7d952b))
+- *(release)* Add RELEASE.md - ([ce2246b](https://github.com/orhun/git-cliff/commit/ce2246bcfdcbce2e2ef30ec44fbfae26d3914139))
+- *(release)* Add link to the signer key of the tag - ([59b7c6e](https://github.com/orhun/git-cliff/commit/59b7c6ef79c6377b3de26247a232412c765ab6a8))
 
 ### 🎨 Styling
 
+- *(config)* Update the order of entries in config - ([9f84fe5](https://github.com/orhun/git-cliff/commit/9f84fe58a76c4aed97844e648bf42ad0c1d46303))
 - *(readme)* Remove quotes from rendered output - ([dfab978](https://github.com/orhun/git-cliff/commit/dfab97842fe78fb8f217a5185fb6ec92682a53ca))
 - *(readme)* Wrap table of contents into summary - ([fa6a38b](https://github.com/orhun/git-cliff/commit/fa6a38b339d7a56e976820b363f48d5c13d5cdf5))
 - *(readme)* Remove comments from template context - ([1cf1ac7](https://github.com/orhun/git-cliff/commit/1cf1ac73fa26d015f7316c7c27639c1c7f4a7995))
@@ -703,240 +718,35 @@ All notable changes to this project will be documented in this file.
 
 ### ⚙️ Miscellaneous Tasks
 
-- *(docker)* Bump the rust version - ([a2df26f](https://github.com/orhun/git-cliff/commit/a2df26ff8602095707ebcfcfc4c278d12a9463f4))
-- *(git)* Remove etc directory from .gitignore - ([8881083](https://github.com/orhun/git-cliff/commit/8881083520e5fcdbdfa27520f0a1aa29752067cc))
-
-## [0.1.0-rc.21](https://github.com/orhun/git-cliff/compare/v0.1.0-rc.20..v0.1.0-rc.21) - 2021-07-01
-
-### 🐛 Bug Fixes
-
-- *(cd)* Wait for core library to update on crates.io before publish - ([e795460](https://github.com/orhun/git-cliff/commit/e795460c9bb7275294d1fa53a9d73258fb51eb10))
-
-## [0.1.0-rc.20](https://github.com/orhun/git-cliff/compare/v0.1.0-rc.19..v0.1.0-rc.20) - 2021-06-30
-
-### 🐛 Bug Fixes
-
-- *(cd)* Wait between publishing crates - ([777b3e5](https://github.com/orhun/git-cliff/commit/777b3e573f20e913a68293eb155076d52914b4d4))
-
-## [0.1.0-rc.19](https://github.com/orhun/git-cliff/compare/v0.1.0-rc.18..v0.1.0-rc.19) - 2021-06-30
-
-### 🐛 Bug Fixes
-
-- *(cd)* Generate changelog on a dedicated/different job - ([2f16dd5](https://github.com/orhun/git-cliff/commit/2f16dd5ae7f4bbff7b9944db039192d8ce148655))
-
-### ⚙️ Miscellaneous Tasks
-
 - *(cargo)* Update project details - ([22f0a7e](https://github.com/orhun/git-cliff/commit/22f0a7ef73cb1649d9ed59e43ee0e410b456233d))
-
-## [0.1.0-rc.18](https://github.com/orhun/git-cliff/compare/v0.1.0-rc.17..v0.1.0-rc.18) - 2021-06-30
-
-### 🐛 Bug Fixes
-
-- *(cd)* Fix the syntax of publish step arguments - ([6414789](https://github.com/orhun/git-cliff/commit/6414789067780d0551292c004a8aaff04483906d))
-- *(cd)* Use a separate step for setting the changelog body - ([f038054](https://github.com/orhun/git-cliff/commit/f038054417f608b5792b89f60b4d384b74b317dd))
-
-## [0.1.0-rc.17](https://github.com/orhun/git-cliff/compare/v0.1.0-rc.16..v0.1.0-rc.17) - 2021-06-29
-
-### 🐛 Bug Fixes
-
-- *(cd)* Publish the cargo workspace members seperately - ([acc1d34](https://github.com/orhun/git-cliff/commit/acc1d3453ca865ddbf3e8e786fcc157c8e31eae6))
-
-### ⚙️ Miscellaneous Tasks
-
+- *(cd)* Enable crates.io releases - ([31ecfd8](https://github.com/orhun/git-cliff/commit/31ecfd8ad041e36090575e5851ff00d491ccebca))
+- *(cd)* Use only one step for uploading releases - ([42a714f](https://github.com/orhun/git-cliff/commit/42a714f31cf5b6f924fe68d966189e2c278a11a6))
+- *(cd)* Use seperate steps for uploading releases - ([0182533](https://github.com/orhun/git-cliff/commit/01825330d90a9399c9285b5a286b1d69aa1494e7))
+- *(cd)* Remove the custom changelog template - ([d826b9d](https://github.com/orhun/git-cliff/commit/d826b9d2e5bdd30b132731ff6d1dc87748543ccb))
+- *(cd)* Override the changelog template - ([41053fb](https://github.com/orhun/git-cliff/commit/41053fbe90a08648b70e5cca6a2504e94202bd06))
+- *(cd)* Set the release body on linux - ([7623977](https://github.com/orhun/git-cliff/commit/76239771662bf342d742c12907619eece1bf946d))
+- *(cd)* Fix setting the release body - ([62403be](https://github.com/orhun/git-cliff/commit/62403be828ac75f5689f27ad5d5e0421b514be62))
+- *(cd)* Set the changelog as release body - ([66dfbf4](https://github.com/orhun/git-cliff/commit/66dfbf40ec0ef91dc2016c1bdf2044a07e4580d5))
+- *(cd)* Set the release name explicitly - ([0e5a7b1](https://github.com/orhun/git-cliff/commit/0e5a7b1dd54afff0085930bf8c058803cfe3ea03))
+- *(config)* Update template to include commit ids - ([e3d3482](https://github.com/orhun/git-cliff/commit/e3d34821911ffb44e4c6e61e8d0c6ecd2d31a341))
+- *(config)* Update the skip_tags regex - ([28171f0](https://github.com/orhun/git-cliff/commit/28171f0f98f0980f9b0a6d3ca89ed3d6c70eb0ef))
+- *(docker)* Bump the rust version - ([a2df26f](https://github.com/orhun/git-cliff/commit/a2df26ff8602095707ebcfcfc4c278d12a9463f4))
+- *(docker)* Rename the docker automated builds action - ([ad3126e](https://github.com/orhun/git-cliff/commit/ad3126e15144f98b5845c31149214cdce5ffb3d5))
+- *(docker)* Remove user directive from Dockerfile - ([076fc85](https://github.com/orhun/git-cliff/commit/076fc8580aee74755003d99d902b3e64abcad535))
+- *(git)* Remove etc directory from .gitignore - ([8881083](https://github.com/orhun/git-cliff/commit/8881083520e5fcdbdfa27520f0a1aa29752067cc))
+- *(project)* Update .editorconfig about shell scripts - ([c898912](https://github.com/orhun/git-cliff/commit/c8989122d06af2abb70edf5d42d7297411d0b093))
+- *(project)* Update the release script about arguments - ([098c6ad](https://github.com/orhun/git-cliff/commit/098c6ad3803d728f4cd25320cb557d2a0bb22bd1))
+- *(project)* Add release script - ([d76bb9b](https://github.com/orhun/git-cliff/commit/d76bb9b3e5ff41df96b27c4fb202a2dd2344d6b2))
 - *(release)* Indicate which versions are managed by the script - ([f481081](https://github.com/orhun/git-cliff/commit/f48108109e84ea6d869c75e98143be9b7ed5d069))
 - *(release)* Verify the created tag after creation - ([99f2f07](https://github.com/orhun/git-cliff/commit/99f2f0701cbf92c5b4ec235e307549af53336db7))
-
-## [0.1.0-rc.16](https://github.com/orhun/git-cliff/compare/v0.1.0-rc.15..v0.1.0-rc.16) - 2021-06-29
-
-### 🐛 Bug Fixes
-
-- *(ci)* Update lychee arguments to exclude invalid links - ([e1d604c](https://github.com/orhun/git-cliff/commit/e1d604cbdf049f30c33380c591bfedf0baa3f0a7))
-
-### 📚 Documentation
-
-- *(contributing)* Add CONTRIBUTING.md - ([0fe28b3](https://github.com/orhun/git-cliff/commit/0fe28b322e4dd83bef1ba39d1028922065aa8aee))
-- *(release)* Add RELEASE.md - ([ce2246b](https://github.com/orhun/git-cliff/commit/ce2246bcfdcbce2e2ef30ec44fbfae26d3914139))
-- *(release)* Add link to the signer key of the tag - ([59b7c6e](https://github.com/orhun/git-cliff/commit/59b7c6ef79c6377b3de26247a232412c765ab6a8))
-
-### ⚙️ Miscellaneous Tasks
-
-- *(cd)* Enable crates.io releases - ([31ecfd8](https://github.com/orhun/git-cliff/commit/31ecfd8ad041e36090575e5851ff00d491ccebca))
 - *(release)* Set the new version in release script - ([6619c38](https://github.com/orhun/git-cliff/commit/6619c385ed5220293b4a9af1c405a364f0085bc9))
-
-## [0.1.0-rc.15](https://github.com/orhun/git-cliff/compare/v0.1.0-rc.14..v0.1.0-rc.15) - 2021-06-23
-
-### ⚙️ Miscellaneous Tasks
-
-- *(cd)* Use only one step for uploading releases - ([42a714f](https://github.com/orhun/git-cliff/commit/42a714f31cf5b6f924fe68d966189e2c278a11a6))
-
-## [0.1.0-rc.14](https://github.com/orhun/git-cliff/compare/v0.1.0-rc.13..v0.1.0-rc.14) - 2021-06-23
-
-### 🐛 Bug Fixes
-
-- *(cd)* Strip the changelog header before escaping - ([6b97c2d](https://github.com/orhun/git-cliff/commit/6b97c2d18c05fb9cf27088a39b24d12ab1b0c556))
-
-## [0.1.0-rc.13](https://github.com/orhun/git-cliff/compare/v0.1.0-rc.12..v0.1.0-rc.13) - 2021-06-23
-
-### ⚙️ Miscellaneous Tasks
-
-- *(cd)* Use seperate steps for uploading releases - ([0182533](https://github.com/orhun/git-cliff/commit/01825330d90a9399c9285b5a286b1d69aa1494e7))
-
-## [0.1.0-rc.12](https://github.com/orhun/git-cliff/compare/v0.1.0-rc.11..v0.1.0-rc.12) - 2021-06-21
-
-### 🐛 Bug Fixes
-
-- *(cd)* Use printf to prevent field splitting the variable - ([92a4b0d](https://github.com/orhun/git-cliff/commit/92a4b0d5bfb8c27627886005d0e6d823a3cc6476))
-- *(git)* Return tags by their creation order - ([000a67c](https://github.com/orhun/git-cliff/commit/000a67cd8aae7ae20848baa04cd6212376dcde12))
-- *(release)* Fix the character escape in release script - ([5d616ee](https://github.com/orhun/git-cliff/commit/5d616ee249aaee9f38d6d9b7a9e14170b9b7405a))
-
-### ⚙️ Miscellaneous Tasks
-
-- *(project)* Update .editorconfig about shell scripts - ([c898912](https://github.com/orhun/git-cliff/commit/c8989122d06af2abb70edf5d42d7297411d0b093))
 - *(release)* Include the commit id in the custom template - ([5677281](https://github.com/orhun/git-cliff/commit/5677281b2ca594789a32c53e7f304cae734c089f))
-
-## [0.1.0-rc.11](https://github.com/orhun/git-cliff/compare/v0.1.0-rc.10..v0.1.0-rc.11) - 2021-06-21
-
-### 🚜 Refactor
-
-- *(error)* Use custom error message for GroupError - ([1be66ee](https://github.com/orhun/git-cliff/commit/1be66eebebaa3a5849399433ad5823345668ffb1))
-
-### ⚙️ Miscellaneous Tasks
-
-- *(cd)* Remove the custom changelog template - ([d826b9d](https://github.com/orhun/git-cliff/commit/d826b9d2e5bdd30b132731ff6d1dc87748543ccb))
-
-## [0.1.0-rc.10](https://github.com/orhun/git-cliff/compare/v0.1.0-rc.9..v0.1.0-rc.10) - 2021-06-20
-
-### 🎨 Styling
-
-- *(config)* Update the order of entries in config - ([9f84fe5](https://github.com/orhun/git-cliff/commit/9f84fe58a76c4aed97844e648bf42ad0c1d46303))
-
-## [0.1.0-rc.8](https://github.com/orhun/git-cliff/compare/v0.1.0-rc.7..v0.1.0-rc.8) - 2021-06-20
-
-### 🐛 Bug Fixes
-
-- *(cd)* Double quote the environment variable - ([85aa1cd](https://github.com/orhun/git-cliff/commit/85aa1cdc688b74d1d2df46dc61e6aa5561fc6ace))
-- *(release)* Specify the committer email in release script - ([381c941](https://github.com/orhun/git-cliff/commit/381c941a94188fb40bcce1129c29e6a5379ac7a7))
-
-### ⚙️ Miscellaneous Tasks
-
-- *(docker)* Rename the docker automated builds action - ([ad3126e](https://github.com/orhun/git-cliff/commit/ad3126e15144f98b5845c31149214cdce5ffb3d5))
-
-## [0.1.0-rc.7](https://github.com/orhun/git-cliff/compare/v0.1.0-rc.6..v0.1.0-rc.7) - 2021-06-20
-
-### ⛰️  Features
-
-- *(changelog)* Support setting the body template via args - ([9fc08f4](https://github.com/orhun/git-cliff/commit/9fc08f4c50160374298bf77701ee5e299fa435a0))
-
-### ⚙️ Miscellaneous Tasks
-
-- *(cd)* Override the changelog template - ([41053fb](https://github.com/orhun/git-cliff/commit/41053fbe90a08648b70e5cca6a2504e94202bd06))
 - *(release)* Set a custom changelog for the tag message - ([c4df0fa](https://github.com/orhun/git-cliff/commit/c4df0fa892568f1491b62c47d5757fb70b7f4316))
-
-## [0.1.0-rc.6](https://github.com/orhun/git-cliff/compare/v0.1.0-rc.5..v0.1.0-rc.6) - 2021-06-20
-
-### ⚙️ Miscellaneous Tasks
-
-- *(cd)* Set the release body on linux - ([7623977](https://github.com/orhun/git-cliff/commit/76239771662bf342d742c12907619eece1bf946d))
-
-## [0.1.0-rc.5](https://github.com/orhun/git-cliff/compare/v0.1.0-rc.4..v0.1.0-rc.5) - 2021-06-19
-
-### 🐛 Bug Fixes
-
-- *(config)* Update config to skip release commits - ([2e5f30a](https://github.com/orhun/git-cliff/commit/2e5f30a5c3b920dc2b52fe12774fccb2fb3fd124))
-
-## [0.1.0-rc.4](https://github.com/orhun/git-cliff/compare/v0.1.0-rc.3..v0.1.0-rc.4) - 2021-06-19
+- *(release)* Add release title to the tag message - ([6099b2d](https://github.com/orhun/git-cliff/commit/6099b2d0c7c7d51a44a0e05a53908a9a370a7e83))
+- *(release)* Strip the markdown format from tag message - ([3cb6761](https://github.com/orhun/git-cliff/commit/3cb67618ef475bf0eb144c5b84cd68af0758f564))
 
 ### ◀️ Revert
 
 - Chore(config): update template to include commit ids - ([f95fca9](https://github.com/orhun/git-cliff/commit/f95fca966bacb520e958fe783e239f98dfe026bc))
-
-## [0.1.0-rc.3](https://github.com/orhun/git-cliff/compare/v0.1.0-rc.2..v0.1.0-rc.3) - 2021-06-19
-
-### 🐛 Bug Fixes
-
-- *(config)* Update commit parsers to match the commit type - ([24b9068](https://github.com/orhun/git-cliff/commit/24b9068d308b9818fab8fd631120a79e4069521d))
-- *(release)* Strip the unreleased title from tag message - ([c7f08fe](https://github.com/orhun/git-cliff/commit/c7f08fe4a3113f656bb45a29141aa127d4e453e5))
-
-### ⚙️ Miscellaneous Tasks
-
-- *(cd)* Fix setting the release body - ([62403be](https://github.com/orhun/git-cliff/commit/62403be828ac75f5689f27ad5d5e0421b514be62))
-- *(config)* Update template to include commit ids - ([e3d3482](https://github.com/orhun/git-cliff/commit/e3d34821911ffb44e4c6e61e8d0c6ecd2d31a341))
-- *(config)* Update the skip_tags regex - ([28171f0](https://github.com/orhun/git-cliff/commit/28171f0f98f0980f9b0a6d3ca89ed3d6c70eb0ef))
-
-## [0.1.0-rc.2](https://github.com/orhun/git-cliff/compare/v0.1.0-rc.1..v0.1.0-rc.2) - 2021-06-19
-
-### ⛰️  Features
-
-- *(args)* Add `--output` argument - ([e0cda23](https://github.com/orhun/git-cliff/commit/e0cda238105e0ce22ac71409d6e3ee0e32a6bad7))
-
-### 🐛 Bug Fixes
-
-- *(test)* Use default tag_pattern for tests - ([e6fb8de](https://github.com/orhun/git-cliff/commit/e6fb8de5d834eb5fe5ff3b5fab1986fcf5e720b6))
-
-### 🚜 Refactor
-
-- *(config)* Make tag_pattern optional - ([3a27a3e](https://github.com/orhun/git-cliff/commit/3a27a3e1a2d3813def0405ddf89914c5f10f7b36))
-
-### ⚙️ Miscellaneous Tasks
-
-- *(cd)* Set the changelog as release body - ([66dfbf4](https://github.com/orhun/git-cliff/commit/66dfbf40ec0ef91dc2016c1bdf2044a07e4580d5))
-- *(cd)* Set the release name explicitly - ([0e5a7b1](https://github.com/orhun/git-cliff/commit/0e5a7b1dd54afff0085930bf8c058803cfe3ea03))
-- *(docker)* Remove user directive from Dockerfile - ([076fc85](https://github.com/orhun/git-cliff/commit/076fc8580aee74755003d99d902b3e64abcad535))
-- *(release)* Add release title to the tag message - ([6099b2d](https://github.com/orhun/git-cliff/commit/6099b2d0c7c7d51a44a0e05a53908a9a370a7e83))
-
-## [0.1.0-rc.1](https://github.com/orhun/git-cliff/compare/v0.1.0-beta.4..v0.1.0-rc.1) - 2021-06-16
-
-### ⛰️  Features
-
-- *(args)* Add `--workdir` argument - ([de439be](https://github.com/orhun/git-cliff/commit/de439bef01e0e1209b8517ce7b241bb0db2cb530))
-- *(logs)* Show the processsed commit message - ([45dccf7](https://github.com/orhun/git-cliff/commit/45dccf74a4a5449d92d453d21b6566acd8f30ebe))
-
-### 🚜 Refactor
-
-- *(args)* Update value names and description - ([c697b17](https://github.com/orhun/git-cliff/commit/c697b17f67c9438a1fb159db74b1e225aeb28853))
-- *(args)* Update the value name for `--strip` - ([e8a3c35](https://github.com/orhun/git-cliff/commit/e8a3c35fa1f2a9a1a99ad8c60b82899c2af212eb))
-- *(logs)* Improve logging - ([5333453](https://github.com/orhun/git-cliff/commit/53334533eb6399dc4b931fa3f61c32b5e28bd9e7))
-
-### 📚 Documentation
-
-- *(bin)* Update the doc comment for completions script - ([c056196](https://github.com/orhun/git-cliff/commit/c056196af9ee3f7109876639a0fb3b230661e1e4))
-- *(readme)* Add usage section - ([c87fbbe](https://github.com/orhun/git-cliff/commit/c87fbbe7cf869dd343269f6f23d9e4776a7d952b))
-
-### ⚙️ Miscellaneous Tasks
-
-- *(project)* Update the release script about arguments - ([098c6ad](https://github.com/orhun/git-cliff/commit/098c6ad3803d728f4cd25320cb557d2a0bb22bd1))
-- *(project)* Add release script - ([d76bb9b](https://github.com/orhun/git-cliff/commit/d76bb9b3e5ff41df96b27c4fb202a2dd2344d6b2))
-- *(release)* Strip the markdown format from tag message - ([3cb6761](https://github.com/orhun/git-cliff/commit/3cb67618ef475bf0eb144c5b84cd68af0758f564))
-
-## [0.1.0-beta.4](https://github.com/orhun/git-cliff/compare/v0.1.0-beta.3..v0.1.0-beta.4) - 2021-06-14
-
-### 🐛 Bug Fixes
-
-- *(cd)* Use bash while setting the release version - ([d64395c](https://github.com/orhun/git-cliff/commit/d64395c78bf2f45142b6bb711d25983fba69b0df))
-
-### ⚙️ Miscellaneous Tasks
-
-- *(cd)* Add docker releases - ([4ddef08](https://github.com/orhun/git-cliff/commit/4ddef08debfff48117586296e49d5caa0800d1b5))
-
-## [0.1.0-beta.3](https://github.com/orhun/git-cliff/compare/v0.1.0-beta.2..v0.1.0-beta.3) - 2021-06-14
-
-### 🐛 Bug Fixes
-
-- *(cd)* Specify the bash as shell - ([627cd11](https://github.com/orhun/git-cliff/commit/627cd11355a64ab2f8d2b4a80c9949c7197e564e))
-- *(cd)* Include configuration file in the binary releases - ([4bd5c34](https://github.com/orhun/git-cliff/commit/4bd5c343893c68c1bf6b5cfcbf88c64f8fdd14be))
-
-### ⚙️ Miscellaneous Tasks
-
-- *(cd)* Set the release body text - ([a37a08e](https://github.com/orhun/git-cliff/commit/a37a08ec67eb36a9184cc6e597eb6af2b7159732))
-
-## [0.1.0-beta.2] - 2021-06-14
-
-### 🐛 Bug Fixes
-
-- *(cd)* Install musl-tools for musl builds - ([6789929](https://github.com/orhun/git-cliff/commit/6789929c8a15849ae17839d8338ff056b6967238))
-
-### ⚙️ Miscellaneous Tasks
-
-- *(config)* Update config - ([6990b8f](https://github.com/orhun/git-cliff/commit/6990b8f3995d0c0f6c987afb2b6454b46e6dc888))
 
 <!-- generated by git-cliff -->
