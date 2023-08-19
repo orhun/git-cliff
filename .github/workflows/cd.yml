@@ -207,6 +207,7 @@ jobs:
           tag: ${{ github.ref }}
           release_name: "Release v${{ env.RELEASE_VERSION }}"
           body: "${{ needs.generate-changelog.outputs.release_body }}"
+          prerelease: ${{ contains(env.RELEASE_VERSION, 'alpha') || contains(env.RELEASE_VERSION, 'beta') || contains(env.RELEASE_VERSION, 'rc')}}
       - name: Install node
         if: matrix.build.NPM_PUBLISH == true
         uses: actions/setup-node@v3
@@ -353,6 +354,7 @@ jobs:
           tag: ${{ github.ref }}
           release_name: "Release v${{ env.RELEASE_VERSION }}"
           body: "${{ needs.generate-changelog.outputs.release_body }}"
+          prerelease: ${{ contains(env.RELEASE_VERSION, 'alpha') || contains(env.RELEASE_VERSION, 'beta') || contains(env.RELEASE_VERSION, 'rc')}}
 
   publish-crates-io:
     name: Publish on crates.io
