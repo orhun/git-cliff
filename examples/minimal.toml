@@ -1,4 +1,5 @@
-# configuration file for git-cliff (0.1.0)
+# git-cliff ~ configuration file
+# https://git-cliff.org/docs/configuration
 
 [changelog]
 # template for the changelog body
