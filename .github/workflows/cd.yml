@@ -111,7 +111,7 @@ jobs:
               TOOLCHAIN: stable,
               TARGET: aarch64-pc-windows-msvc,
               NPM_PUBLISH: true,
-              PYPI_PUBLISH: true,
+              PYPI_PUBLISH: false,
             }
           - {
               NAME: darwin-x64,
