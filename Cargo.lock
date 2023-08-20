@@ -571,7 +571,7 @@ checksum = "b6c80984affa11d98d1b88b66ac8853f143217b399d3c74116778ff8fdb4ed2e"
 
 [[package]]
 name = "git-cliff"
-version = "1.3.0-rc.0"
+version = "1.3.0-rc.1"
 dependencies = [
  "clap",
  "clap_complete",
@@ -588,7 +588,7 @@ dependencies = [
 
 [[package]]
 name = "git-cliff-core"
-version = "1.3.0-rc.0"
+version = "1.3.0-rc.1"
 dependencies = [
  "config",
  "git-conventional",

@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.3.0-rc.0](https://github.com/orhun/git-cliff/compare/v1.2.0..v1.3.0-rc.0) - 2023-08-19
+## [1.3.0-rc.1](https://github.com/orhun/git-cliff/compare/v1.2.0..v1.3.0-rc.1) - 2023-08-20
 
 ### ⛰️  Features
 
@@ -10,6 +10,8 @@ All notable changes to this project will be documented in this file.
 
 ### 🐛 Bug Fixes
 
+- *(cd)* Disable win32-arm64 PyPI builds - ([baf34a8](https://github.com/orhun/git-cliff/commit/baf34a81f0b27be30f24f8899d44dfd1f3afaa13))
+- *(deps)* Avoid problematic serde release - ([87f74bc](https://github.com/orhun/git-cliff/commit/87f74bc78feb94c390ad421849e9b356e71657ca))
 - Fix previous release references - ([fbb605e](https://github.com/orhun/git-cliff/commit/fbb605e4f663d96ad140767bf816b5af8c97a92e))
 
 ### 🚜 Refactor
