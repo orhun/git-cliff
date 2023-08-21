@@ -198,6 +198,7 @@ jobs:
             --passphrase-fd 0 --detach-sign \
             git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}.tar.gz
       - name: Publish to GitHub
+        if: ${{ !contains(env.RELEASE_VERSION, 'alpha') && !contains(env.RELEASE_VERSION, 'beta') && !contains(env.RELEASE_VERSION, 'rc') }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -207,7 +208,17 @@ jobs:
           tag: ${{ github.ref }}
           release_name: "Release v${{ env.RELEASE_VERSION }}"
           body: "${{ needs.generate-changelog.outputs.release_body }}"
-          prerelease: ${{ contains(env.RELEASE_VERSION, 'alpha') || contains(env.RELEASE_VERSION, 'beta') || contains(env.RELEASE_VERSION, 'rc')}}
+      - name: Publish to GitHub (pre-release)
+        if: ${{ contains(env.RELEASE_VERSION, 'alpha') || contains(env.RELEASE_VERSION, 'beta') || contains(env.RELEASE_VERSION, 'rc') }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}*
+          file_glob: true
+          overwrite: true
+          tag: ${{ github.ref }}
+          release_name: "Pre-release v${{ env.RELEASE_VERSION }}"
+          prerelease: true
       - name: Install node
         if: matrix.build.NPM_PUBLISH == true
         uses: actions/setup-node@v3
@@ -248,7 +259,7 @@ jobs:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
           args: --release --sdist --out wheels
-          sccache: 'true'
+          sccache: "true"
           manylinux: auto
       - name: Build Python wheels (macos & windows)
         if: |
@@ -259,7 +270,7 @@ jobs:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
           args: --release --sdist --out wheels
-          sccache: 'true'
+          sccache: "true"
       - name: Build Python wheels (musl)
         if: matrix.build.PYPI_PUBLISH == true && endsWith(matrix.build.OS, 'musl')
         uses: PyO3/maturin-action@v1
@@ -267,7 +278,7 @@ jobs:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
           args: --release --sdist --out wheels
-          sccache: 'true'
+          sccache: "true"
           manylinux: musllinux_1_2
       - name: Upload Python wheels
         uses: actions/upload-artifact@v3
@@ -347,6 +358,7 @@ jobs:
             --passphrase-fd 0 --detach-sign \
             git-cliff-${{ env.RELEASE_VERSION }}.deb
       - name: Upload the release
+        if: ${{ !contains(env.RELEASE_VERSION, 'alpha') && !contains(env.RELEASE_VERSION, 'beta') && !contains(env.RELEASE_VERSION, 'rc') }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -354,7 +366,15 @@ jobs:
           tag: ${{ github.ref }}
           release_name: "Release v${{ env.RELEASE_VERSION }}"
           body: "${{ needs.generate-changelog.outputs.release_body }}"
-          prerelease: ${{ contains(env.RELEASE_VERSION, 'alpha') || contains(env.RELEASE_VERSION, 'beta') || contains(env.RELEASE_VERSION, 'rc')}}
+      - name: Upload the pre-release
+        if: ${{ contains(env.RELEASE_VERSION, 'alpha') || contains(env.RELEASE_VERSION, 'beta') || contains(env.RELEASE_VERSION, 'rc') }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: git-cliff-${{ env.RELEASE_VERSION }}.deb
+          tag: ${{ github.ref }}
+          release_name: "Pre-release v${{ env.RELEASE_VERSION }}"
+          prerelease: true
 
   publish-crates-io:
     name: Publish on crates.io
