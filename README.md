@@ -66,6 +66,16 @@ Learn how to use **git-cliff** from the [documentation](https://git-cliff.org/do
   to semantically bump a NodeJS package and generate a git-cliff powered changelog.
 - [release-plz](https://github.com/MarcoIeni/release-plz) - Release Rust packages from CI.
 
+## Contributors
+
+Thanks goes to these wonderful people ✨
+
+<a href="https://github.com/orhun/git-cliff/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=orhun/git-cliff" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).
+
 ## License
 
 GNU General Public License ([v3.0](https://www.gnu.org/licenses/gpl.txt))
