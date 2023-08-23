@@ -39,7 +39,7 @@ version = "1.3.0-rc.1" # managed by release.sh
 path = "../git-cliff-core"
 
 [dependencies.clap]
-version = "4.3.23"
+version = "4.3.24"
 features = ["derive", "env", "wrap_help", "cargo"]
 
 [dependencies.update-informer]
