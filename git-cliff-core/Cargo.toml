@@ -42,7 +42,7 @@ version = "0.12.4"
 features = ["serde"]
 
 [dependencies.rust-embed]
-version = "6.8.1"
+version = "8.0.0"
 features = ["debug-embed"]
 
 [dev-dependencies]
