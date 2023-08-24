@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.3.0-rc.1](https://github.com/orhun/git-cliff/compare/v1.2.0..v1.3.0-rc.1) - 2023-08-20
+## [1.3.0-rc.1](https://github.com/orhun/git-cliff/compare/v1.2.0..v1.3.0-rc.1) - 2023-08-24
 
 ### ⛰️  Features
 
@@ -10,8 +10,10 @@ All notable changes to this project will be documented in this file.
 
 ### 🐛 Bug Fixes
 
+- *(cd)* Do not publish release notes for pre-releases ([#249](https://github.com/orhun/git-cliff/issues/249)) - ([7a82aa1](https://github.com/orhun/git-cliff/commit/7a82aa1a769b2170ea7563d7df3c59da5a134201))
 - *(cd)* Disable win32-arm64 PyPI builds - ([baf34a8](https://github.com/orhun/git-cliff/commit/baf34a81f0b27be30f24f8899d44dfd1f3afaa13))
 - *(deps)* Avoid problematic serde release - ([87f74bc](https://github.com/orhun/git-cliff/commit/87f74bc78feb94c390ad421849e9b356e71657ca))
+- *(informer)* Do not inform about pre-releases ([#249](https://github.com/orhun/git-cliff/issues/249)) - ([87e47e6](https://github.com/orhun/git-cliff/commit/87e47e68b6154a4da870342e0973123a974cb105))
 - Fix previous release references - ([fbb605e](https://github.com/orhun/git-cliff/commit/fbb605e4f663d96ad140767bf816b5af8c97a92e))
 
 ### 🚜 Refactor
@@ -25,6 +27,7 @@ All notable changes to this project will be documented in this file.
 
 - *(example)* Update the header of configuration examples - ([0bf5ebe](https://github.com/orhun/git-cliff/commit/0bf5ebe79b293d28a3ed168ef26e4d7c2477614a))
 - *(example)* Add example for generating changelog similar to cocogitto - ([e1cf26e](https://github.com/orhun/git-cliff/commit/e1cf26e2a57266e786b395a76f0fc95a7b723cc3))
+- *(readme)* Add contributors graph - ([3c9ced0](https://github.com/orhun/git-cliff/commit/3c9ced0b0526c5f5c63c160a03ae06076624eb6c))
 
 ### 🎨 Styling
 
