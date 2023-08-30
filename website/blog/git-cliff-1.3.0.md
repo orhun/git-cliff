@@ -168,7 +168,7 @@ To avoid [CVE-2022-24765](https://github.blog/2022-04-12-git-security-vulnerabil
 
 I'm happy to announce that I will be talking about `git-cliff` at [**RustLab 2023**](https://rustlab.it/)! 🎉
 
-![](/img/rustlab2023.png)
+![rustlab2023](/img/rustlab2023.png)
 
 <center>
 
