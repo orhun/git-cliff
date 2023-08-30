@@ -22,7 +22,7 @@ The full changelog can be found [here](https://github.com/orhun/git-cliff/blob/m
 
 ### Fancier changelog 🍬
 
-As you might have realized, the changelog of `git-cliff` is looking more fancy now!
+The changelog of `git-cliff` is looking more fancy now!
 
 For example:
 
@@ -107,7 +107,7 @@ The way that it works is:
 - <https://pypi.org/project/git-cliff>
 - <https://test.pypi.org/project/git-cliff> (test package)
 
-It can be simply downloaded from there with `pip` 🥳
+You can download it with `pip`:
 
 ```sh
 pip install git-cliff
@@ -124,7 +124,7 @@ Here is an example from [`release-plz`](https://github.com/MarcoIeni/release-plz
 
 ```toml
 [dependencies]
-git-cliff-core = { version = "1.3.0-rc.0", default-features = false }
+git-cliff-core = { version = "1.3.0", default-features = false }
 ```
 
 ### Cocogitto example 🐓
