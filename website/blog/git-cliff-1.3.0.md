@@ -38,7 +38,7 @@ For example:
 - _(cd)_ Do not publish release notes for pre-releases ([#249](https://github.com/orhun/git-cliff/issues/249)) - ([7a82aa1](https://github.com/orhun/git-cliff/commit/7a82aa1a769b2170ea7563d7df3c59da5a134201))
 ```
 
-- Title now have links to the compare changes page on GitHub
+- The title now has links to the compare changes page on GitHub
 - Each entry shows the issue/PR number and related commit
 - Emojis!
 
@@ -46,7 +46,7 @@ Configuration: <https://github.com/orhun/git-cliff/blob/main/cliff.toml>
 
 ### Postprocessors ⚙️
 
-Now you can postprocess the changelog _after generation_:
+Now you can post-process the changelog _after generation_:
 
 > An array of commit postprocessors for manipulating the changelog before outputting. Can e.g. be used for replacing commit author with GitHub usernames.
 
@@ -115,7 +115,7 @@ pip install git-cliff
 
 ### Optional git2 🍦
 
-If you are using `git-cliff` as a library, you can now get rid of [`git2`](https://crates.io/crates/git2) dependency with disabling the `repo` feature.
+If you are using `git-cliff` as a library, you can now get rid of [`git2`](https://crates.io/crates/git2) dependency by disabling the `repo` feature.
 
 > `repo`: Enable parsing commits from a git repository. Enabled by default.
 > You can turn this off if you already have the commits to put in the changelog and you don't need `git-cliff` to parse them.
