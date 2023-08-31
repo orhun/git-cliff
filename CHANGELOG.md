@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.3.0-rc.1](https://github.com/orhun/git-cliff/compare/v1.2.0..v1.3.0-rc.1) - 2023-08-24
+## [1.3.0](https://github.com/orhun/git-cliff/compare/v1.2.0..v1.3.0) - 2023-08-31
 
 ### ⛰️  Features
 
@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 - *(cd)* Do not publish release notes for pre-releases ([#249](https://github.com/orhun/git-cliff/issues/249)) - ([7a82aa1](https://github.com/orhun/git-cliff/commit/7a82aa1a769b2170ea7563d7df3c59da5a134201))
 - *(cd)* Disable win32-arm64 PyPI builds - ([baf34a8](https://github.com/orhun/git-cliff/commit/baf34a81f0b27be30f24f8899d44dfd1f3afaa13))
 - *(deps)* Avoid problematic serde release - ([87f74bc](https://github.com/orhun/git-cliff/commit/87f74bc78feb94c390ad421849e9b356e71657ca))
+- *(examples)* Add missing newline ([#253](https://github.com/orhun/git-cliff/issues/253)) - ([aad4222](https://github.com/orhun/git-cliff/commit/aad4222986ea9d65807f3dcb06446d19455e3865))
 - *(informer)* Do not inform about pre-releases ([#249](https://github.com/orhun/git-cliff/issues/249)) - ([87e47e6](https://github.com/orhun/git-cliff/commit/87e47e68b6154a4da870342e0973123a974cb105))
 - Fix previous release references - ([fbb605e](https://github.com/orhun/git-cliff/commit/fbb605e4f663d96ad140767bf816b5af8c97a92e))
 
@@ -20,11 +21,13 @@ All notable changes to this project will be documented in this file.
 
 - *(clippy)* Apply clippy suggestions - ([4c09759](https://github.com/orhun/git-cliff/commit/4c097591584f15f61fa830feb0d738f051a009c3))
 - *(clippy)* Apply clippy suggestions - ([a814bbe](https://github.com/orhun/git-cliff/commit/a814bbea34050301cec8140d6a12aa28ff62ae32))
+- *(config)* Use a macro for generating commit list - ([c695ca3](https://github.com/orhun/git-cliff/commit/c695ca308e5aada03cbd65085497436ac5c341e9))
 - *(docker)* Avoid copying volume inside container ([#142](https://github.com/orhun/git-cliff/issues/142)) - ([65d365c](https://github.com/orhun/git-cliff/commit/65d365c7b521e30ebc173d97f10c41da604582ae))
 - *(lib)* Use implicit serde imports - ([c8cf855](https://github.com/orhun/git-cliff/commit/c8cf855939ce588824d7a4109ddf0f1c0828b6c6))
 
 ### 📚 Documentation
 
+- *(blog)* Add blog post for 1.3.0 release ([#264](https://github.com/orhun/git-cliff/issues/264)) - ([93d4aa4](https://github.com/orhun/git-cliff/commit/93d4aa41e362d8f1c332930a8a400a2781146625))
 - *(example)* Update the header of configuration examples - ([0bf5ebe](https://github.com/orhun/git-cliff/commit/0bf5ebe79b293d28a3ed168ef26e4d7c2477614a))
 - *(example)* Add example for generating changelog similar to cocogitto - ([e1cf26e](https://github.com/orhun/git-cliff/commit/e1cf26e2a57266e786b395a76f0fc95a7b723cc3))
 - *(readme)* Add contributors graph - ([3c9ced0](https://github.com/orhun/git-cliff/commit/3c9ced0b0526c5f5c63c160a03ae06076624eb6c))
@@ -44,11 +47,14 @@ All notable changes to this project will be documented in this file.
 
 ### ⚙️ Miscellaneous Tasks
 
+- *(cargo)* Update MSRV to 1.70.0 - ([1068912](https://github.com/orhun/git-cliff/commit/10689128222865515c32c9730fc5742beb7e6b03))
+- *(cd)* Use the latest git-cliff-action for releases - ([3eb97b8](https://github.com/orhun/git-cliff/commit/3eb97b8426ec42e28ed1d623f8d8a15a7a64756e))
 - *(cd)* Support creating prereleases on GitHub - ([a22426a](https://github.com/orhun/git-cliff/commit/a22426a37d6278f1d348751d00928a20057b578c))
 - *(config)* Add additional parsers for default config - ([b745778](https://github.com/orhun/git-cliff/commit/b7457785e6b753ccd9c163b18ad557a0a621f87c))
 - *(config)* Update configuration for alpha/beta/rc releases - ([7e7e5a7](https://github.com/orhun/git-cliff/commit/7e7e5a7e09acf6e91e45b25cb567a8f9bdd56bb5))
 - *(config)* Skip dependency updates in the changelog - ([b2edc23](https://github.com/orhun/git-cliff/commit/b2edc231a6d999f3af737a2bff00309b499e13d7))
 - *(core)* Make git2 optional - ([5fdf39a](https://github.com/orhun/git-cliff/commit/5fdf39ae32441ce70a942e577e31ba0cd2323137))
+- *(docker)* Update versions in Dockerfile - ([0ccab91](https://github.com/orhun/git-cliff/commit/0ccab915868b2e594e7bef0b9e56eb290ca500dc))
 - *(github)* Add config for welcome bot - ([a4725d4](https://github.com/orhun/git-cliff/commit/a4725d4ce43340cdb0483ac2bb7566c00dc7a991))
 - *(mergify)* Rename mergify configuration file - ([9fd1be6](https://github.com/orhun/git-cliff/commit/9fd1be6dc6a5189911572caab99f13c72903af09))
 - *(mergify)* Add configuration file for automatic merge ([#245](https://github.com/orhun/git-cliff/issues/245)) - ([0a79aae](https://github.com/orhun/git-cliff/commit/0a79aae3576aaa17385d17d114ef6d3f3aa1fb48))
