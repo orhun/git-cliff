@@ -18,7 +18,7 @@ jobs:
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Check
         uses: actions-rs/cargo@v1
         with:
@@ -38,12 +38,12 @@ jobs:
         uses: dtolnay/rust-toolchain@nightly
       - name: Checkout
         if: github.event_name != 'pull_request'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Checkout
         if: github.event_name == 'pull_request'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
@@ -73,7 +73,7 @@ jobs:
         with:
           components: clippy
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Check the lints
         uses: actions-rs/cargo@v1
         with:
@@ -89,7 +89,7 @@ jobs:
         with:
           components: rustfmt
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Check the formatting
         uses: actions-rs/cargo@v1
         with:
@@ -101,7 +101,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Check the links
         uses: lycheeverse/lychee-action@v1
         with:
@@ -116,7 +116,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Run cargo-audit
         uses: actions-rs/audit-check@v1
         with:
@@ -127,7 +127,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Run cargo-msrv
         shell: bash
         run: |
