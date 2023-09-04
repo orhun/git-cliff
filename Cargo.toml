@@ -3,7 +3,7 @@ resolver = "2"
 members = ["git-cliff-core", "git-cliff"]
 
 [workspace.dependencies]
-regex = "1.9.4"
+regex = "1.9.5"
 glob = "0.3.1"
 log = "0.4.19"
 
