@@ -63,10 +63,23 @@ pub struct Opt {
 	#[arg(short, long, action = ArgAction::Count, alias = "debug", help_heading = Some("FLAGS"))]
 	pub verbose:      u8,
 	/// Sets the configuration file.
-	#[arg(short, long, env = "GIT_CLIFF_CONFIG", value_name = "PATH", default_value = DEFAULT_CONFIG)]
+	#[arg(
+	    short,
+	    long,
+	    env = "GIT_CLIFF_CONFIG",
+	    value_name = "PATH",
+	    default_value = DEFAULT_CONFIG,
+	    value_parser = Opt::parse_dir
+	)]
 	pub config:       PathBuf,
 	/// Sets the working directory.
-	#[arg(short, long, env = "GIT_CLIFF_WORKDIR", value_name = "PATH")]
+	#[arg(
+	    short,
+	    long,
+	    env = "GIT_CLIFF_WORKDIR",
+	    value_name = "PATH",
+	    value_parser = Opt::parse_dir
+	)]
 	pub workdir:      Option<PathBuf>,
 	/// Sets the git repository.
 	#[arg(
@@ -74,7 +87,8 @@ pub struct Opt {
 		long,
 		env = "GIT_CLIFF_REPOSITORY",
 		value_name = "PATH",
-		num_args(1..)
+		num_args(1..),
+		value_parser = Opt::parse_dir
 	)]
 	pub repository:   Option<Vec<PathBuf>>,
 	/// Sets the path to include related commits.
@@ -102,10 +116,22 @@ pub struct Opt {
 	)]
 	pub with_commit:  Option<Vec<String>>,
 	/// Prepends entries to the given changelog file.
-	#[arg(short, long, env = "GIT_CLIFF_PREPEND", value_name = "PATH")]
+	#[arg(
+	    short,
+	    long,
+	    env = "GIT_CLIFF_PREPEND",
+	    value_name = "PATH",
+	    value_parser = Opt::parse_dir
+	)]
 	pub prepend:      Option<PathBuf>,
 	/// Writes output to the given file.
-	#[arg(short, long, env = "GIT_CLIFF_OUTPUT", value_name = "PATH")]
+	#[arg(
+	    short,
+	    long,
+	    env = "GIT_CLIFF_OUTPUT",
+	    value_name = "PATH",
+	    value_parser = Opt::parse_dir
+	)]
 	pub output:       Option<PathBuf>,
 	/// Sets the tag for the latest version.
 	#[arg(
@@ -158,6 +184,18 @@ pub struct Opt {
 	pub range:        Option<String>,
 }
 
+impl Opt {
+	/// Custom string parser for directories.
+	///
+	/// Expands the tilde (`~`) character in the beginning of the
+	/// input string into contents of the path returned by [`home_dir`].
+	///
+	/// [`home_dir`]: dirs_next::home_dir
+	fn parse_dir(dir: &str) -> Result<PathBuf, String> {
+		Ok(PathBuf::from(shellexpand::tilde(dir).to_string()))
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -166,5 +204,13 @@ mod tests {
 	#[test]
 	fn verify_cli() {
 		Opt::command().debug_assert()
+	}
+
+	#[test]
+	fn path_tilde_expansion() {
+		let home_dir =
+			dirs_next::home_dir().expect("cannot retrieve home directory");
+		let dir = Opt::parse_dir("~/").expect("cannot expand tilde");
+		assert_eq!(home_dir, dir);
 	}
 }
