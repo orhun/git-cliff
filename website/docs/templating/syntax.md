@@ -15,7 +15,7 @@ There are 3 kinds of delimiters and those cannot be changed:
 
 <!-- {% endraw %} -->
 
-See the [Tera Documentation](https://tera.netlify.app/docs/#templates) for more information about [control structures](https://tera.netlify.app/docs/#control-structures), [built-ins filters](https://tera.netlify.app/docs/#built-ins), etc.
+See the [Tera Documentation](https://keats.github.io/tera/docs/#templates) for more information about [control structures](https://keats.github.io/tera/docs/#control-structures), [built-ins filters](https://keats.github.io/tera/docs/#built-ins), etc.
 
 Custom built-in filters that **git-cliff** uses:
 

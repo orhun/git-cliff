@@ -3,7 +3,7 @@
 
 [changelog]
 # template for the changelog body
-# https://tera.netlify.app/docs/#introduction
+# https://keats.github.io/tera/docs/#introduction
 body = """
 {% if version %}\
     ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}\
