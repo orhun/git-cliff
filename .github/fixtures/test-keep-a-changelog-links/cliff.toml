@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n
 """
 # template for the changelog body
-# https://tera.netlify.app/docs/#introduction
+# https://keats.github.io/tera/docs/#introduction
 body = """
 {% if version %}\
     {% if previous %}\
@@ -77,4 +77,3 @@ ignore_tags = ""
 topo_order = false
 # sort the commits inside sections by oldest/newest order
 sort_commits = "oldest"
-

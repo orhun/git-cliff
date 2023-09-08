@@ -8,7 +8,7 @@ header = """
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.\n
 """
 # template for the changelog body
-# https://tera.netlify.app/docs
+# https://keats.github.io/tera/docs/#introduction
 body = """
 ---
 {% if version %}\
