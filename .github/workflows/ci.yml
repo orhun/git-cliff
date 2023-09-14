@@ -56,7 +56,7 @@ jobs:
       - name: Run tests
         run: cargo tarpaulin --out Xml --verbose
       - name: Upload reports to codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           name: code-coverage-report
           file: cobertura.xml
