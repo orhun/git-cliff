@@ -28,7 +28,7 @@ toml = "0.8.0"
 lazy-regex = "3.0.2"
 
 [dependencies.git2]
-version = "0.18.0"
+version = "0.18.1"
 default-features = false
 optional = true
 
