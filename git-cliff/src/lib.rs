@@ -9,7 +9,7 @@ use args::{
 	Sort,
 	Strip,
 };
-use clap::ArgEnum;
+use clap::ValueEnum;
 use git_cliff_core::changelog::Changelog;
 use git_cliff_core::commit::Commit;
 use git_cliff_core::config::Config;
