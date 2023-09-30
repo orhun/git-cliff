@@ -78,7 +78,7 @@ Made with [contrib.rocks](https://contrib.rocks).
 
 ## License
 
-GNU General Public License ([v3.0](https://www.gnu.org/licenses/gpl.txt))
+Licensed under either of [Apache License Version 2.0](./LICENSE-APACHE) or [The MIT License](./LICENSE-MIT) at your option.
 
 ## Copyright
 
