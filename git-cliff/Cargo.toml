@@ -52,3 +52,14 @@ pkg-fmt = "tgz"
 
 [package.metadata.maturin]
 name = "git-cliff"
+
+[package.metadata.generate-rpm]
+assets = [
+  { source = "target/release/git-cliff", dest = "/usr/bin/git-cliff", mode = "755" },
+  { source = "LICENSE", dest = "/usr/share/doc/git-cliff/LICENSE", mode = "644" },
+  { source = "README.md", dest = "/usr/share/doc/git-cliff/README.md", mode = "644" },
+  { source = "man/git-cliff.1", dest = "/usr/share/man/man1/git-cliff.1", mode = "644", doc = true },
+  { source = "completions/git-cliff.bash", dest = "/usr/share/bash-completion/completions/git-cliff", mode = "644" },
+  { source = "completions/git-cliff.fish", dest = "/usr/share/fish/vendor_completions.d/git-cliff.fish", mode = "644" },
+  { source = "completions/_git-cliff", dest = "/usr/share/zsh/vendor-completions/", mode = "644" },
+]
