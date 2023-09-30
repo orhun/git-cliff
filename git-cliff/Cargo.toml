@@ -56,7 +56,7 @@ name = "git-cliff"
 [package.metadata.generate-rpm]
 assets = [
   { source = "target/release/git-cliff", dest = "/usr/bin/git-cliff", mode = "755" },
-  { source = "LICENSE", dest = "/usr/share/doc/git-cliff/LICENSE", mode = "644" },
+  { source = "LICENSE-MIT", dest = "/usr/share/doc/git-cliff/LICENSE-MIT", mode = "644" },
   { source = "README.md", dest = "/usr/share/doc/git-cliff/README.md", mode = "644" },
   { source = "man/git-cliff.1", dest = "/usr/share/man/man1/git-cliff.1", mode = "644", doc = true },
   { source = "completions/git-cliff.bash", dest = "/usr/share/bash-completion/completions/git-cliff", mode = "644" },
