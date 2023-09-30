@@ -24,7 +24,7 @@ pub enum Sort {
 #[derive(Debug, Parser)]
 #[command(
     version,
-    author,
+    author = clap::crate_authors!("\n"),
     about,
     rename_all_env = "screaming-snake",
 	help_template = "\
@@ -41,20 +41,45 @@ pub enum Sort {
 	disable_version_flag = true,
 )]
 pub struct Opt {
-	/// Prints help information.
-	#[arg(short, long, action = ArgAction::Help, global = true, help_heading = Some("FLAGS"))]
-	pub help:         bool,
-	/// Prints version information.
-	#[arg(short = 'V', long, action = ArgAction::Version, global = true, help_heading = Some("FLAGS"))]
-	pub version:      bool,
+	#[arg(
+		short,
+		long,
+		action = ArgAction::Help,
+		global = true,
+		help = "Prints help information",
+		help_heading = "FLAGS"
+	)]
+	pub help:         Option<bool>,
+	#[arg(
+		short = 'V',
+		long,
+		action = ArgAction::Version,
+		global = true,
+		help = "Prints version information",
+		help_heading = "FLAGS"
+	)]
+	pub version:      Option<bool>,
 	/// Increases the logging verbosity.
 	#[arg(short, long, action = ArgAction::Count, alias = "debug", help_heading = Some("FLAGS"))]
 	pub verbose:      u8,
 	/// Sets the configuration file.
-	#[arg(short, long, env = "GIT_CLIFF_CONFIG", value_name = "PATH", default_value = DEFAULT_CONFIG, value_parser = Opt::parse_dir)]
+	#[arg(
+	    short,
+	    long,
+	    env = "GIT_CLIFF_CONFIG",
+	    value_name = "PATH",
+	    default_value = DEFAULT_CONFIG,
+	    value_parser = Opt::parse_dir
+	)]
 	pub config:       PathBuf,
 	/// Sets the working directory.
-	#[arg(short, long, env = "GIT_CLIFF_WORKDIR", value_name = "PATH", value_parser = Opt::parse_dir)]
+	#[arg(
+	    short,
+	    long,
+	    env = "GIT_CLIFF_WORKDIR",
+	    value_name = "PATH",
+	    value_parser = Opt::parse_dir
+	)]
 	pub workdir:      Option<PathBuf>,
 	/// Sets the git repository.
 	#[arg(
@@ -62,8 +87,8 @@ pub struct Opt {
 		long,
 		env = "GIT_CLIFF_REPOSITORY",
 		value_name = "PATH",
-		num_args = 1..,
-		value_parser = Opt::parse_dir,
+		num_args(1..),
+		value_parser = Opt::parse_dir
 	)]
 	pub repository:   Option<Vec<PathBuf>>,
 	/// Sets the path to include related commits.
@@ -71,7 +96,7 @@ pub struct Opt {
 		long,
 		env = "GIT_CLIFF_INCLUDE_PATH",
 		value_name = "PATTERN",
-		num_args = 1..,
+		num_args(1..)
 	)]
 	pub include_path: Option<Vec<Pattern>>,
 	/// Sets the path to exclude related commits.
@@ -79,7 +104,7 @@ pub struct Opt {
 		long,
 		env = "GIT_CLIFF_EXCLUDE_PATH",
 		value_name = "PATTERN",
-		num_args = 1..,
+		num_args(1..)
 	)]
 	pub exclude_path: Option<Vec<Pattern>>,
 	/// Sets custom commit messages to include in the changelog.
@@ -87,14 +112,26 @@ pub struct Opt {
 		long,
 		env = "GIT_CLIFF_WITH_COMMIT",
 		value_name = "MSG",
-		num_args = 1..,
+		num_args(1..)
 	)]
 	pub with_commit:  Option<Vec<String>>,
 	/// Prepends entries to the given changelog file.
-	#[arg(short, long, env = "GIT_CLIFF_PREPEND", value_name = "PATH", value_parser = Opt::parse_dir)]
+	#[arg(
+	    short,
+	    long,
+	    env = "GIT_CLIFF_PREPEND",
+	    value_name = "PATH",
+	    value_parser = Opt::parse_dir
+	)]
 	pub prepend:      Option<PathBuf>,
 	/// Writes output to the given file.
-	#[arg(short, long, env = "GIT_CLIFF_OUTPUT", value_name = "PATH", value_parser = Opt::parse_dir)]
+	#[arg(
+	    short,
+	    long,
+	    env = "GIT_CLIFF_OUTPUT",
+	    value_name = "PATH",
+	    value_parser = Opt::parse_dir
+	)]
 	pub output:       Option<PathBuf>,
 	/// Sets the tag for the latest version.
 	#[arg(

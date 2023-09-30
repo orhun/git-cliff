@@ -48,15 +48,11 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
       - name: Setup cargo-tarpaulin
-        run: |
-          curl -s https://api.github.com/repos/xd009642/tarpaulin/releases/latest | \
-            grep "browser_download_url.*x86_64-unknown-linux-musl.tar.gz" | cut -d : -f 2,3 | tr -d \" | wget -qi -
-          tar -xzf cargo-tarpaulin-*.tar.gz
-          mv cargo-tarpaulin ~/.cargo/bin/
+        uses: taiki-e/install-action@cargo-tarpaulin
       - name: Run tests
-        run: cargo tarpaulin --out Xml --verbose
+        run: cargo tarpaulin --out xml --verbose
       - name: Upload reports to codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v3
         with:
           name: code-coverage-report
           file: cobertura.xml
