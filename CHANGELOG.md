@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1-rc.0](https://github.com/orhun/git-cliff/compare/v1.3.0..v1.3.1-rc.0) - 2023-09-30
+
+### ⛰️  Features
+
+- *(args)* Support tilde for options ([#266](https://github.com/orhun/git-cliff/issues/266)) - ([8698bc2](https://github.com/orhun/git-cliff/commit/8698bc2ce4d58fdeb9563c18f7430798b6359029))
+- *(ci)* Distribute RPM package ([#159](https://github.com/orhun/git-cliff/issues/159)) - ([baf4da8](https://github.com/orhun/git-cliff/commit/baf4da80639682628ca4ae538b4555ff1b6262da))
+
+### 🐛 Bug Fixes
+
+- *(ci)* Update cargo-tarpaulin arguments - ([83a0371](https://github.com/orhun/git-cliff/commit/83a03711185df20f37bbcbad955e7783b8bdb662))
+
+### 🚜 Refactor
+
+- *(ci)* Simplify cargo-tarpaulin installation - ([95f8d53](https://github.com/orhun/git-cliff/commit/95f8d53ac158d81433f6a49cf0794d92b0eb21ef))
+
+### 📚 Documentation
+
+- *(installation)* Update instructions for Arch Linux - ([291a928](https://github.com/orhun/git-cliff/commit/291a9282888547b4c45d64ccb8f1495448544201))
+- *(installation)* Add instructions for Alpine Linux - ([3199bba](https://github.com/orhun/git-cliff/commit/3199bba672e8045141debf1268873811f17ac405))
+- *(license)* Re-license under the MIT + Apache 2.0 license ([#303](https://github.com/orhun/git-cliff/issues/303)) - ([cd56344](https://github.com/orhun/git-cliff/commit/cd563444dec852bacc2586dea55a7b0d5dcdc844))
+- Update Tera links to the new URL ([#272](https://github.com/orhun/git-cliff/issues/272)) - ([890de00](https://github.com/orhun/git-cliff/commit/890de0007e108059378b134e9b9d0af2a6965027))
+
+### ⚙️ Miscellaneous Tasks
+
+- Remove GPL code ([#293](https://github.com/orhun/git-cliff/issues/293)) - ([e3606ba](https://github.com/orhun/git-cliff/commit/e3606babdf35022b662c870cb720c1f5339e1543))
+
+### ◀️ Revert
+
+- *(args)* Update clap and clap extras to v4 ([#137](https://github.com/orhun/git-cliff/issues/137)) ([#292](https://github.com/orhun/git-cliff/issues/292)) - ([fb4c733](https://github.com/orhun/git-cliff/commit/fb4c733a70a4dbc25060481ee5f3c644bb0bb83b))
+
 ## [1.3.0](https://github.com/orhun/git-cliff/compare/v1.2.0..v1.3.0) - 2023-08-31
 
 ### ⛰️  Features
