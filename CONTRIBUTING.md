@@ -45,4 +45,4 @@ We use the `nightly` channel for `rustfmt` so please set the appropriate setting
 
 # License
 
-By contributing, you agree that your contributions will be licensed under [GNU General Public License v3.0](./LICENSE).
+By contributing, you agree that your contributions will be licensed under [The MIT License](./LICENSE-MIT) or [Apache License 2.0](./LICENSE-APACHE).
