@@ -376,6 +376,57 @@ jobs:
           release_name: "Pre-release v${{ env.RELEASE_VERSION }}"
           prerelease: true
 
+  publish-rpm:
+    name: Publish RPM package
+    needs: generate-changelog
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set the release version
+        shell: bash
+        run: echo "RELEASE_VERSION=${GITHUB_REF:11}" >> $GITHUB_ENV
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+      - name: Install cargo-generate-rpm
+        run: cargo install cargo-generate-rpm
+      - name: Build RPM package
+        run: |
+          cargo build --release --locked -p git-cliff
+          mkdir man/
+          OUT_DIR=man cargo run --bin git-cliff-mangen
+          mkdir completions
+          OUT_DIR=completions cargo run --bin git-cliff-completions
+          cargo generate-rpm -p git-cliff -o git-cliff-${{ env.RELEASE_VERSION }}.x86_64.rpm
+      - name: Sign the package
+        run: |
+          echo "${{ secrets.GPG_RELEASE_KEY }}" | base64 --decode > private.key
+          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --pinentry-mode=loopback \
+            --passphrase-fd 0 --import private.key
+          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --pinentry-mode=loopback \
+            --passphrase-fd 0 --detach-sign \
+            git-cliff-${{ env.RELEASE_VERSION }}.x86_64.rpm
+      - name: Upload the release
+        if: ${{ !contains(env.RELEASE_VERSION, 'alpha') && !contains(env.RELEASE_VERSION, 'beta') && !contains(env.RELEASE_VERSION, 'rc') }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: git-cliff-${{ env.RELEASE_VERSION }}.x86_64.rpm
+          tag: ${{ github.ref }}
+          release_name: "Release v${{ env.RELEASE_VERSION }}"
+          body: "${{ needs.generate-changelog.outputs.release_body }}"
+      - name: Upload the pre-release
+        if: ${{ contains(env.RELEASE_VERSION, 'alpha') || contains(env.RELEASE_VERSION, 'beta') || contains(env.RELEASE_VERSION, 'rc') }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: git-cliff-${{ env.RELEASE_VERSION }}.x86_64.rpm
+          tag: ${{ github.ref }}
+          release_name: "Pre-release v${{ env.RELEASE_VERSION }}"
+          prerelease: true
+
   publish-crates-io:
     name: Publish on crates.io
     runs-on: ubuntu-22.04
