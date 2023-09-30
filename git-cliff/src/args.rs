@@ -1,20 +1,20 @@
 use clap::{
-	ArgAction,
+	AppSettings,
+	ArgEnum,
 	Parser,
-	ValueEnum,
 };
 use git_cliff_core::DEFAULT_CONFIG;
 use glob::Pattern;
 use std::path::PathBuf;
 
-#[derive(Debug, Clone, Copy, ValueEnum)]
+#[derive(Debug, Clone, Copy, ArgEnum)]
 pub enum Strip {
 	Header,
 	Footer,
 	All,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
 pub enum Sort {
 	Oldest,
 	Newest,
@@ -22,10 +22,11 @@ pub enum Sort {
 
 /// Command-line arguments to parse.
 #[derive(Debug, Parser)]
-#[command(
+#[clap(
     version,
-    author = clap::crate_authors!("\n"),
+    author,
     about,
+    global_setting = AppSettings::DeriveDisplayOrder,
     rename_all_env = "screaming-snake",
 	help_template = "\
 {before-help}{name} {version}
@@ -36,105 +37,61 @@ pub enum Sort {
 {all-args}{after-help}
 ",
     override_usage = "git-cliff [FLAGS] [OPTIONS] [--] [RANGE]",
-    next_help_heading = Some("OPTIONS"),
-	disable_help_flag = true,
-	disable_version_flag = true,
+    mut_arg("help", |arg| arg.help("Prints help information").help_heading("FLAGS")),
+    mut_arg("version", |arg| arg.help("Prints version information").help_heading("FLAGS"))
 )]
 pub struct Opt {
-	#[arg(
-		short,
-		long,
-		action = ArgAction::Help,
-		global = true,
-		help = "Prints help information",
-		help_heading = "FLAGS"
-	)]
-	pub help:         Option<bool>,
-	#[arg(
-		short = 'V',
-		long,
-		action = ArgAction::Version,
-		global = true,
-		help = "Prints version information",
-		help_heading = "FLAGS"
-	)]
-	pub version:      Option<bool>,
 	/// Increases the logging verbosity.
-	#[arg(short, long, action = ArgAction::Count, alias = "debug", help_heading = Some("FLAGS"))]
+	#[clap(short, long, parse(from_occurrences), alias = "debug", help_heading = Some("FLAGS"))]
 	pub verbose:      u8,
 	/// Sets the configuration file.
-	#[arg(
-	    short,
-	    long,
-	    env = "GIT_CLIFF_CONFIG",
-	    value_name = "PATH",
-	    default_value = DEFAULT_CONFIG,
-	    value_parser = Opt::parse_dir
-	)]
+	#[clap(short, long, env = "GIT_CLIFF_CONFIG", value_name = "PATH", default_value = DEFAULT_CONFIG, value_parser = Opt::parse_dir)]
 	pub config:       PathBuf,
 	/// Sets the working directory.
-	#[arg(
-	    short,
-	    long,
-	    env = "GIT_CLIFF_WORKDIR",
-	    value_name = "PATH",
-	    value_parser = Opt::parse_dir
-	)]
+	#[clap(short, long, env = "GIT_CLIFF_WORKDIR", value_name = "PATH", value_parser = Opt::parse_dir)]
 	pub workdir:      Option<PathBuf>,
 	/// Sets the git repository.
-	#[arg(
+	#[clap(
 		short,
 		long,
 		env = "GIT_CLIFF_REPOSITORY",
 		value_name = "PATH",
-		num_args(1..),
-		value_parser = Opt::parse_dir
+		multiple_values = true,
+        value_parser = Opt::parse_dir,
 	)]
 	pub repository:   Option<Vec<PathBuf>>,
 	/// Sets the path to include related commits.
-	#[arg(
+	#[clap(
 		long,
 		env = "GIT_CLIFF_INCLUDE_PATH",
 		value_name = "PATTERN",
-		num_args(1..)
+		multiple_values = true
 	)]
 	pub include_path: Option<Vec<Pattern>>,
 	/// Sets the path to exclude related commits.
-	#[arg(
+	#[clap(
 		long,
 		env = "GIT_CLIFF_EXCLUDE_PATH",
 		value_name = "PATTERN",
-		num_args(1..)
+		multiple_values = true
 	)]
 	pub exclude_path: Option<Vec<Pattern>>,
 	/// Sets custom commit messages to include in the changelog.
-	#[arg(
+	#[clap(
 		long,
 		env = "GIT_CLIFF_WITH_COMMIT",
 		value_name = "MSG",
-		num_args(1..)
+		multiple_values = true
 	)]
 	pub with_commit:  Option<Vec<String>>,
 	/// Prepends entries to the given changelog file.
-	#[arg(
-	    short,
-	    long,
-	    env = "GIT_CLIFF_PREPEND",
-	    value_name = "PATH",
-	    value_parser = Opt::parse_dir
-	)]
+	#[clap(short, long, env = "GIT_CLIFF_PREPEND", value_name = "PATH", value_parser = Opt::parse_dir)]
 	pub prepend:      Option<PathBuf>,
 	/// Writes output to the given file.
-	#[arg(
-	    short,
-	    long,
-	    env = "GIT_CLIFF_OUTPUT",
-	    value_name = "PATH",
-	    value_parser = Opt::parse_dir
-	)]
+	#[clap(short, long, env = "GIT_CLIFF_OUTPUT", value_name = "PATH", value_parser = Opt::parse_dir)]
 	pub output:       Option<PathBuf>,
 	/// Sets the tag for the latest version.
-	#[arg(
+	#[clap(
 		short,
 		long,
 		env = "GIT_CLIFF_TAG",
@@ -143,7 +100,7 @@ pub struct Opt {
 	)]
 	pub tag:          Option<String>,
 	/// Sets the template for the changelog body.
-	#[arg(
+	#[clap(
 		short,
 		long,
 		env = "GIT_CLIFF_TEMPLATE",
@@ -152,35 +109,35 @@ pub struct Opt {
 	)]
 	pub body:         Option<String>,
 	/// Writes the default configuration file to cliff.toml
-	#[arg(short, long, help_heading = Some("FLAGS"))]
+	#[clap(short, long, help_heading = Some("FLAGS"))]
 	pub init:         bool,
 	/// Processes the commits starting from the latest tag.
-	#[arg(short, long, help_heading = Some("FLAGS"))]
+	#[clap(short, long, help_heading = Some("FLAGS"))]
 	pub latest:       bool,
 	/// Processes the commits that belong to the current tag.
-	#[arg(long, help_heading = Some("FLAGS"))]
+	#[clap(long, help_heading = Some("FLAGS"))]
 	pub current:      bool,
 	/// Processes the commits that do not belong to a tag.
-	#[arg(short, long, help_heading = Some("FLAGS"))]
+	#[clap(short, long, help_heading = Some("FLAGS"))]
 	pub unreleased:   bool,
 	/// Sorts the tags topologically.
-	#[arg(long, help_heading = Some("FLAGS"))]
+	#[clap(long, help_heading = Some("FLAGS"))]
 	pub topo_order:   bool,
 	/// Prints changelog context as JSON.
-	#[arg(long, help_heading = Some("FLAGS"))]
+	#[clap(long, help_heading = Some("FLAGS"))]
 	pub context:      bool,
 	/// Strips the given parts from the changelog.
-	#[arg(short, long, value_name = "PART", value_enum)]
+	#[clap(short, long, value_name = "PART", arg_enum)]
 	pub strip:        Option<Strip>,
 	/// Sets sorting of the commits inside sections.
-	#[arg(
+	#[clap(
 		long,
-		value_enum,
+		arg_enum,
 		default_value_t = Sort::Oldest
 	)]
 	pub sort:         Sort,
 	/// Sets the commit range to process.
-	#[arg(value_name = "RANGE", help_heading = Some("ARGS"))]
+	#[clap(value_name = "RANGE", help_heading = Some("ARGS"))]
 	pub range:        Option<String>,
 }
 
