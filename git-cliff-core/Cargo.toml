@@ -24,7 +24,7 @@ serde_json = "1.0.107"
 serde_regex = "1.1.0"
 tera = "1.19.1"
 indexmap = { version = "2.0.2", optional = true }
-toml = "0.8.1"
+toml = "0.8.2"
 lazy-regex = "3.0.2"
 
 [dependencies.git2]
