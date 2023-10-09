@@ -55,6 +55,10 @@ Learn how to use **git-cliff** from the [documentation](https://git-cliff.org/do
 
 - **git-cliff** was featured in [Console #141 - The Open Source Newsletter](https://console.substack.com/p/console-141)
 
+## Editor Support
+
+- [git-cliff.el](https://github.com/liuyinz/git-cliff.el) - Genarate, update and release changelog in Emacs
+
 ## Similar/Related Projects
 
 - [git-journal](https://github.com/saschagrunert/git-journal) - The Git Commit Message and Changelog Generation Framework
