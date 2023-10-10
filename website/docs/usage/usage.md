@@ -1,6 +1,7 @@
 ---
 sidebar_position: 3
 ---
+
 # Usage
 
 ```
@@ -13,6 +14,7 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
 -h, --help        Prints help information
 -V, --version     Prints version information
 -v, --verbose...  Increases the logging verbosity
+    --bump        Bumps the version for unreleased changes
 -i, --init        Writes the default configuration file to cliff.toml
 -l, --latest      Processes the commits starting from the latest tag
     --current     Processes the commits that belong to the current tag
