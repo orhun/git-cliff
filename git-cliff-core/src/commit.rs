@@ -631,4 +631,36 @@ mod test {
 			Commit::from(String::from("thisisinvalidsha1 style: add formatting"))
 		);
 	}
+
+	#[test]
+	fn parse_commit_field() -> Result<()> {
+		let mut commit = Commit::new(
+			String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
+			String::from("feat: do something"),
+		);
+
+		commit.author = Signature {
+			name:      Some("John Doe".to_string()),
+			email:     None,
+			timestamp: 0x0,
+		};
+
+		let parsed_commit = commit.parse(
+			&[CommitParser {
+				message:       None,
+				body:          None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("author.name")),
+				pattern:       Regex::new("John Doe").ok(),
+			}],
+			false,
+			false,
+		)?;
+
+		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+		Ok(())
+	}
 }
