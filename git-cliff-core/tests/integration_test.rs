@@ -55,6 +55,8 @@ fn generate_changelog() -> Result<()> {
 				default_scope: None,
 				scope:         None,
 				skip:          None,
+				field:         None,
+				pattern:       None,
 			},
 			CommitParser {
 				message:       Regex::new("^fix").ok(),
@@ -63,6 +65,8 @@ fn generate_changelog() -> Result<()> {
 				default_scope: None,
 				scope:         None,
 				skip:          None,
+				field:         None,
+				pattern:       None,
 			},
 			CommitParser {
 				message:       Regex::new("^test").ok(),
@@ -71,6 +75,8 @@ fn generate_changelog() -> Result<()> {
 				default_scope: None,
 				scope:         Some(String::from("tests")),
 				skip:          None,
+				field:         None,
+				pattern:       None,
 			},
 		]),
 		protect_breaking_commits: None,
