@@ -142,6 +142,9 @@ pub struct Opt {
 		allow_hyphen_values = true
 	)]
 	pub tag:          Option<String>,
+	/// Bumps the version for unreleased changes.
+	#[arg(long, help_heading = Some("FLAGS"))]
+	pub bump:         bool,
 	/// Sets the template for the changelog body.
 	#[arg(
 		short,
