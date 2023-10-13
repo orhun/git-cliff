@@ -17,11 +17,19 @@ Then simply create a changelog at your projects git root directory:
 git cliff
 ```
 
-Set a tag for the "unreleased" changes:
+Set a tag for the unreleased changes:
 
 ```bash
 # it doesn't have to be an existing tag
 git cliff --tag 1.0.0
+```
+
+Calculate and set the next semantic version (i.e. _bump the version_) for the unreleased changes:
+
+```bash
+# Semver: {MAJOR}.{MINOR}.{PATCH}
+# "fix:" increments PATCH, "feat:" increments MINOR and "scope!" (breaking changes) increments MAJOR
+git cliff --bump
 ```
 
 Generate a changelog for a certain part of git history:

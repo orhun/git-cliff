@@ -57,6 +57,13 @@ pub enum Error {
 	/// Error that may occur while parsing integers.
 	#[error("Failed to parse integer: `{0}`")]
 	IntParseError(#[from] std::num::TryFromIntError),
+	/// Error that may occur while parsing a SemVer version or version
+	/// requirement.
+	#[error("Semver error: `{0}`")]
+	SemverError(#[from] semver::Error),
+	/// Error that may occur when a version is not found for the next release.
+	#[error("Previous version is not found for calculating the next release.")]
+	PreviousVersionNotFound,
 }
 
 /// Result type of the core library.

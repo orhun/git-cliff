@@ -302,6 +302,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "conventional_commit_parser"
+version = "0.9.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "58660f9e1d5eeeeec9c33d1473ea8bba000c673a2189edaeedb4523ec7d6f7cb"
+dependencies = [
+ "pest",
+ "pest_derive",
+]
+
+[[package]]
 name = "core-foundation-sys"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -604,9 +614,11 @@ dependencies = [
  "indexmap 2.0.2",
  "lazy-regex",
  "log",
+ "next_version",
  "pretty_assertions",
  "regex",
  "rust-embed",
+ "semver",
  "serde",
  "serde_json",
  "serde_regex",
@@ -1030,6 +1042,16 @@ dependencies = [
  "libc",
  "wasi",
  "windows-sys",
+]
+
+[[package]]
+name = "next_version"
+version = "0.2.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "70bb5535b0e53d062c92ad0ad600a29b5fd4ea84e40dc42faecff21218239593"
+dependencies = [
+ "conventional_commit_parser",
+ "semver",
 ]
 
 [[package]]

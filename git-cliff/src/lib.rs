@@ -229,6 +229,17 @@ fn process_repository<'a>(
 		}
 	}
 
+	// Bump the version.
+	if args.bump && releases[release_index].version.is_none() {
+		let next_version = releases[release_index].calculate_next_version()?;
+		debug!("Bumping the version to {next_version}");
+		releases[release_index].version = Some(next_version.to_string());
+		releases[release_index].timestamp = SystemTime::now()
+			.duration_since(UNIX_EPOCH)?
+			.as_secs()
+			.try_into()?;
+	}
+
 	Ok(releases)
 }
 
