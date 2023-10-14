@@ -101,11 +101,9 @@ jobs:
       - name: Check the links
         uses: lycheeverse/lychee-action@v1
         with:
-          args: >
-            --exclude "%7Busername%7D|file:///|https://datatracker.ietf.org|protonmail"
-              -v *.md website/docs/* website/blog/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          args: -v --max-concurrency 1 *.md website/docs/* website/blog/*
+          fail: true
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   audit:
     name: Audit check
