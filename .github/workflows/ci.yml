@@ -103,7 +103,7 @@ jobs:
         with:
           args: -v *.md website/docs/* website/blog/*
           fail: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.LYCHEE_TOKEN }}
 
   audit:
     name: Audit check
