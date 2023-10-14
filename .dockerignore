@@ -14,3 +14,4 @@ Dockerfile
 LICENSE
 rustfmt.toml
 _config.yml
+.lycheeignore
