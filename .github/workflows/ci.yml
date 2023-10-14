@@ -103,8 +103,7 @@ jobs:
         with:
           args: -v *.md website/docs/* website/blog/*
           fail: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   audit:
     name: Audit check
