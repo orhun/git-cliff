@@ -101,9 +101,9 @@ jobs:
       - name: Check the links
         uses: lycheeverse/lychee-action@v1
         with:
-          args: -v *.md website/docs/* website/blog/*
+          args: -v --max-concurrency 1 *.md website/docs/* website/blog/*
           fail: true
-          token: ${{ secrets.LYCHEE_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   audit:
     name: Audit check
