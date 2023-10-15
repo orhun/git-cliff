@@ -61,6 +61,13 @@ pub enum Error {
 	/// value matchers
 	#[error("Field error: `{0}`")]
 	FieldError(String),
+	/// Error that may occur while parsing a SemVer version or version
+	/// requirement.
+	#[error("Semver error: `{0}`")]
+	SemverError(#[from] semver::Error),
+	/// Error that may occur when a version is not found for the next release.
+	#[error("Previous version is not found for calculating the next release.")]
+	PreviousVersionNotFound,
 }
 
 /// Result type of the core library.
