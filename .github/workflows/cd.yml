@@ -16,6 +16,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Check typos
+        uses: crate-ci/typos@master
       - name: Generate a changelog
         uses: orhun/git-cliff-action@main
         id: git-cliff
