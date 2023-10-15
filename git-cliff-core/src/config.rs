@@ -100,9 +100,9 @@ pub struct CommitParser {
 	pub scope:         Option<String>,
 	/// Whether to skip this commit group.
 	pub skip:          Option<bool>,
-	/// Field name of the commit to match the regex against
+	/// Field name of the commit to match the regex against.
 	pub field:         Option<String>,
-	/// Regex for matching the field value
+	/// Regex for matching the field value.
 	#[serde(with = "serde_regex", default)]
 	pub pattern:       Option<Regex>,
 }
