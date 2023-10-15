@@ -19,6 +19,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Check typos
+        uses: crate-ci/typos@master
       - name: Check
         uses: actions-rs/cargo@v1
         with:
