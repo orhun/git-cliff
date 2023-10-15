@@ -227,8 +227,8 @@ Examples:
     - `body`
     - `author.name`
     - `author.email`
-    - `commiter.email`
-    - `commiter.name`
+    - `committer.email`
+    - `committer.name`
 
 ### protect_breaking_commits
 
