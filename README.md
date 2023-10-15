@@ -57,7 +57,7 @@ Learn how to use **git-cliff** from the [documentation](https://git-cliff.org/do
 
 ## Editor Support
 
-- [git-cliff.el](https://github.com/liuyinz/git-cliff.el) - Genarate, update and release changelog in Emacs
+- [git-cliff.el](https://github.com/liuyinz/git-cliff.el) - Generate, update and release changelog in Emacs
 
 ## Similar/Related Projects
 
