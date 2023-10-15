@@ -258,6 +258,33 @@ impl Commit<'_> {
 			) {
 				regex_checks.push((body_regex, body.to_string()))
 			}
+			if let (Some(field_name), Some(pattern_regex)) =
+				(parser.field.as_ref(), parser.pattern.as_ref())
+			{
+				regex_checks.push((
+					pattern_regex,
+					match field_name.as_str() {
+						"id" => Some(self.id.clone()),
+						"message" => Some(self.message.clone()),
+						"body" => self
+							.conv
+							.as_ref()
+							.and_then(|v| v.body())
+							.map(|v| v.to_string()),
+						"author.name" => self.author.name.clone(),
+						"author.email" => self.author.email.clone(),
+						"committer.name" => self.committer.name.clone(),
+						"committer.email" => self.committer.email.clone(),
+						_ => None,
+					}
+					.ok_or_else(|| {
+						AppError::FieldError(format!(
+							"field {} does not have a value",
+							field_name
+						))
+					})?,
+				));
+			}
 			for (regex, text) in regex_checks {
 				if regex.is_match(&text) {
 					if self.skip_commit(parser, protect_breaking) {
@@ -420,6 +447,8 @@ mod test {
 				default_scope: Some(String::from("test_scope")),
 				scope:         None,
 				skip:          None,
+				field:         None,
+				pattern:       None,
 			}],
 			false,
 			false,
@@ -567,5 +596,37 @@ mod test {
 			),
 			Commit::from(String::from("thisisinvalidsha1 style: add formatting"))
 		);
+	}
+
+	#[test]
+	fn parse_commit_field() -> Result<()> {
+		let mut commit = Commit::new(
+			String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
+			String::from("feat: do something"),
+		);
+
+		commit.author = Signature {
+			name:      Some("John Doe".to_string()),
+			email:     None,
+			timestamp: 0x0,
+		};
+
+		let parsed_commit = commit.parse(
+			&[CommitParser {
+				message:       None,
+				body:          None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("author.name")),
+				pattern:       Regex::new("John Doe").ok(),
+			}],
+			false,
+			false,
+		)?;
+
+		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+		Ok(())
 	}
 }

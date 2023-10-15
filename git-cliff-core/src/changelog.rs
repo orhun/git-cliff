@@ -238,6 +238,8 @@ mod test {
 						default_scope: None,
 						scope:         None,
 						skip:          Some(true),
+						field:         None,
+						pattern:       None,
 					},
 					CommitParser {
 						message:       Regex::new("feat*").ok(),
@@ -246,6 +248,8 @@ mod test {
 						default_scope: Some(String::from("other")),
 						scope:         None,
 						skip:          None,
+						field:         None,
+						pattern:       None,
 					},
 					CommitParser {
 						message:       Regex::new("^fix*").ok(),
@@ -254,6 +258,8 @@ mod test {
 						default_scope: None,
 						scope:         None,
 						skip:          None,
+						field:         None,
+						pattern:       None,
 					},
 					CommitParser {
 						message:       Regex::new("doc:").ok(),
@@ -262,6 +268,8 @@ mod test {
 						default_scope: None,
 						scope:         Some(String::from("documentation")),
 						skip:          None,
+						field:         None,
+						pattern:       None,
 					},
 					CommitParser {
 						message:       Regex::new("docs:").ok(),
@@ -270,6 +278,8 @@ mod test {
 						default_scope: None,
 						scope:         Some(String::from("documentation")),
 						skip:          None,
+						field:         None,
+						pattern:       None,
 					},
 					CommitParser {
 						message:       Regex::new(r"match\((.*)\):.*").ok(),
@@ -278,6 +288,8 @@ mod test {
 						default_scope: None,
 						scope:         None,
 						skip:          None,
+						field:         None,
+						pattern:       None,
 					},
 					CommitParser {
 						message:       Regex::new(".*").ok(),
@@ -286,6 +298,8 @@ mod test {
 						default_scope: Some(String::from("other")),
 						scope:         None,
 						skip:          None,
+						field:         None,
+						pattern:       None,
 					},
 				]),
 				protect_breaking_commits: None,

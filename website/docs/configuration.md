@@ -220,6 +220,15 @@ Examples:
   - If the commit starts with "doc", group the commit as "Documentation" and set the default scope to "other". (e.g. `docs: xyz` will be processed as `docs(other): xyz`)
 - `{ message = "(www)", scope = "Application"}`
   - If the commit contains "(www)", override the scope with "Application". Scoping order is: scope specification, conventional commit's scope and default scope.
+- `{ field = "author.name", pattern = "John Doe", group = "John's stuff"}`
+  - If the author's name attribute of the commit matches the pattern "John Doe" (as a regex), override the scope with "John' stuff". Supported commit attributes are:
+    - `id`
+    - `message`
+    - `body`
+    - `author.name`
+    - `author.email`
+    - `committer.email`
+    - `committer.name`
 
 ### protect_breaking_commits
 

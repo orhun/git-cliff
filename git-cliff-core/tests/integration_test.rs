@@ -1,4 +1,7 @@
-use git_cliff_core::commit::Commit;
+use git_cliff_core::commit::{
+	Commit,
+	Signature,
+};
 use git_cliff_core::config::{
 	ChangelogConfig,
 	CommitParser,
@@ -55,6 +58,8 @@ fn generate_changelog() -> Result<()> {
 				default_scope: None,
 				scope:         None,
 				skip:          None,
+				field:         None,
+				pattern:       None,
 			},
 			CommitParser {
 				message:       Regex::new("^fix").ok(),
@@ -63,6 +68,8 @@ fn generate_changelog() -> Result<()> {
 				default_scope: None,
 				scope:         None,
 				skip:          None,
+				field:         None,
+				pattern:       None,
 			},
 			CommitParser {
 				message:       Regex::new("^test").ok(),
@@ -71,6 +78,18 @@ fn generate_changelog() -> Result<()> {
 				default_scope: None,
 				scope:         Some(String::from("tests")),
 				skip:          None,
+				field:         None,
+				pattern:       None,
+			},
+			CommitParser {
+				message:       None,
+				body:          None,
+				group:         Some(String::from("docs")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("author.name")),
+				pattern:       Regex::new("John Doe").ok(),
 			},
 		]),
 		protect_breaking_commits: None,
@@ -93,6 +112,17 @@ fn generate_changelog() -> Result<()> {
 			},
 		]),
 		limit_commits:            None,
+	};
+
+	let mut commit_with_author = Commit::new(
+		String::from("hjdfas32"),
+		String::from("docs(cool): testing author filtering"),
+	);
+
+	commit_with_author.author = Signature {
+		name:      Some("John Doe".to_string()),
+		email:     None,
+		timestamp: 0x0,
 	};
 
 	let releases = vec![
@@ -133,6 +163,7 @@ fn generate_changelog() -> Result<()> {
 					String::from("1234"),
 					String::from("fix: support preprocessing (fixes #99)"),
 				),
+                commit_with_author
 			]
 			.iter()
 			.filter_map(|c| c.process(&git_config).ok())
@@ -180,6 +211,9 @@ fn generate_changelog() -> Result<()> {
 		r#"this is a changelog
 
 ## Release v2.0.0
+
+### docs
+- *(cool)* testing author filtering
 
 ### fix bugs
 - fix abc

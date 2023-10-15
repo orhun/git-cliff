@@ -57,6 +57,10 @@ pub enum Error {
 	/// Error that may occur while parsing integers.
 	#[error("Failed to parse integer: `{0}`")]
 	IntParseError(#[from] std::num::TryFromIntError),
+	/// Error that may occur while processing parsers that define field and
+	/// value matchers
+	#[error("Field error: `{0}`")]
+	FieldError(String),
 	/// Error that may occur while parsing a SemVer version or version
 	/// requirement.
 	#[error("Semver error: `{0}`")]
