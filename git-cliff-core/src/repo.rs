@@ -10,6 +10,7 @@ use git2::{
 };
 use glob::Pattern;
 use indexmap::IndexMap;
+use regex::Regex;
 use std::io;
 use std::path::PathBuf;
 
@@ -102,12 +103,19 @@ impl Repository {
 	/// It collects lightweight and annotated tags.
 	pub fn tags(
 		&self,
-		pattern: &Option<String>,
+		pattern: &Option<Regex>,
 		topo_order: bool,
 	) -> Result<IndexMap<String, String>> {
 		let mut tags: Vec<(Commit, String)> = Vec::new();
-		let tag_names = self.inner.tag_names(pattern.as_deref())?;
-		for name in tag_names.iter().flatten().map(String::from) {
+		let tag_names = self.inner.tag_names(None)?;
+		for name in tag_names
+			.iter()
+			.flatten()
+			.filter(|tag_name| {
+				pattern.as_ref().map_or(true, |pat| pat.is_match(tag_name))
+			})
+			.map(String::from)
+		{
 			let obj = self.inner.revparse_single(&name)?;
 			if let Ok(commit) = obj.clone().into_commit() {
 				tags.push((commit, name));
@@ -189,6 +197,45 @@ mod test {
 		}
 		let tags = repository.tags(&None, false)?;
 		assert_eq!(&get_last_tag()?, tags.last().expect("no tags found").1);
+		Ok(())
+	}
+
+	#[test]
+	fn git_tags() -> Result<()> {
+		let repository = Repository::init(
+			PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+				.parent()
+				.expect("parent directory not found")
+				.to_path_buf(),
+		)?;
+		let tags = repository.tags(&None, true)?;
+		assert_eq!(
+			tags.get("2b8b4d3535f29231e05c3572e919634b9af907b6").expect(
+				"the commit hash does not exist in the repository (tag v0.1.0)"
+			),
+			"v0.1.0"
+		);
+		assert_eq!(
+			tags.get("4ddef08debfff48117586296e49d5caa0800d1b5").expect(
+				"the commit hash does not exist in the repository (tag \
+				 v0.1.0-beta.4)"
+			),
+			"v0.1.0-beta.4"
+		);
+		let tags = repository.tags(
+			&Some(
+				Regex::new("^v[0-9]+\\.[0-9]+\\.[0-9]$")
+					.expect("the regex is not valid"),
+			),
+			true,
+		)?;
+		assert_eq!(
+			tags.get("2b8b4d3535f29231e05c3572e919634b9af907b6").expect(
+				"the commit hash does not exist in the repository (tag v0.1.0)"
+			),
+			"v0.1.0"
+		);
+		assert!(!tags.contains_key("4ddef08debfff48117586296e49d5caa0800d1b5"));
 		Ok(())
 	}
 }

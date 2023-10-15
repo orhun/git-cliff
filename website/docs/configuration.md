@@ -83,7 +83,7 @@ commit_parsers = [
 ]
 protect_breaking_commits = false
 filter_commits = false
-tag_pattern = "v[0-9]*"
+tag_pattern = "^v[0-9].*"
 skip_tags = "v0.1.0-beta.1"
 ignore_tags = ""
 topo_order = false
@@ -241,13 +241,7 @@ If set to `true`, commits that are not matched by [`commit_parsers`](#commit_par
 
 ### tag_pattern
 
-A glob pattern for matching the git tags.
-
-e.g. It processes the same tags as the output of the following git command:
-
-```bash
-git tag --list 'v[0-9]*'
-```
+A regular expression for matching the git tags.
 
 ### skip_tags
 

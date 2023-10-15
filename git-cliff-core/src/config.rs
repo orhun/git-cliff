@@ -68,7 +68,8 @@ pub struct GitConfig {
 	/// Whether to filter out commits.
 	pub filter_commits:           Option<bool>,
 	/// Blob pattern for git tags.
-	pub tag_pattern:              Option<String>,
+	#[serde(with = "serde_regex", default)]
+	pub tag_pattern:              Option<Regex>,
 	/// Regex to skip matched tags.
 	#[serde(with = "serde_regex", default)]
 	pub skip_tags:                Option<Regex>,
@@ -199,7 +200,7 @@ mod test {
 			.join(crate::DEFAULT_CONFIG);
 
 		const FOOTER_VALUE: &str = "test";
-		const TAG_PATTERN_VALUE: &str = "*[0-9]*";
+		const TAG_PATTERN_VALUE: &str = ".*[0-9].*";
 		const IGNORE_TAGS_VALUE: &str = "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+";
 
 		env::set_var("GIT_CLIFF__CHANGELOG__FOOTER", FOOTER_VALUE);
@@ -211,7 +212,10 @@ mod test {
 		assert_eq!(Some(String::from(FOOTER_VALUE)), config.changelog.footer);
 		assert_eq!(
 			Some(String::from(TAG_PATTERN_VALUE)),
-			config.git.tag_pattern
+			config
+				.git
+				.tag_pattern
+				.map(|tag_pattern| tag_pattern.to_string())
 		);
 		assert_eq!(
 			Some(String::from(IGNORE_TAGS_VALUE)),
