@@ -261,64 +261,30 @@ impl Commit<'_> {
 			if let (Some(field_name), Some(pattern_regex)) =
 				(parser.field.as_ref(), parser.pattern.as_ref())
 			{
-				match field_name.as_str() {
-					"id" => regex_checks.push((pattern_regex, self.id.clone())),
-					"message" => {
-						regex_checks.push((pattern_regex, self.message.clone()))
-					}
-					"body" => regex_checks.push((
-						pattern_regex,
-						self.conv
+				regex_checks.push((
+					pattern_regex,
+					match field_name.as_str() {
+						"id" => Some(self.id.clone()),
+						"message" => Some(self.message.clone()),
+						"body" => self
+							.conv
 							.as_ref()
 							.and_then(|v| v.body())
-							.unwrap_or_default()
-							.to_string(),
-					)),
-					"author.name" => regex_checks.push((
-						pattern_regex,
-						self.author.name.clone().ok_or_else(|| {
-							AppError::FieldError(format!(
-								"field {} does not have a value",
-								field_name
-							))
-						})?,
-					)),
-					"author.email" => regex_checks.push((
-						pattern_regex,
-						self.author.email.clone().ok_or_else(|| {
-							AppError::FieldError(format!(
-								"field {} does not have a value",
-								field_name
-							))
-						})?,
-					)),
-					"commiter.name" => regex_checks.push((
-						pattern_regex,
-						self.committer.name.clone().ok_or_else(|| {
-							AppError::FieldError(format!(
-								"field {} does not have a value",
-								field_name
-							))
-						})?,
-					)),
-					"commiter.email" => regex_checks.push((
-						pattern_regex,
-						self.committer.email.clone().ok_or_else(|| {
-							AppError::FieldError(format!(
-								"field {} does not have a value",
-								field_name
-							))
-						})?,
-					)),
-					_ => {
-						return Err(AppError::FieldError(format!(
-							"field does not exist: {}",
-							field_name
-						)))
+							.map(|v| v.to_string()),
+						"author.name" => self.author.name.clone(),
+						"author.email" => self.author.email.clone(),
+						"committer.name" => self.committer.name.clone(),
+						"committer.email" => self.committer.email.clone(),
+						_ => None,
 					}
-				}
+					.ok_or_else(|| {
+						AppError::FieldError(format!(
+							"field {} does not have a value",
+							field_name
+						))
+					})?,
+				));
 			}
-
 			for (regex, text) in regex_checks {
 				if regex.is_match(&text) {
 					if self.skip_commit(parser, protect_breaking) {
