@@ -70,9 +70,8 @@ export default function Home(): JSX.Element {
         <link rel="manifest" href="/favicon/site.webmanifest" />
         <script
           async
-          defer
+          src="https://umami.orhun.dev/script.js"
           data-website-id="f75484b0-d2a4-4a0c-a560-cb58080e2f2e"
-          src="https://umami.orhun.dev/umami.js"
         ></script>
       </Head>
       <HomepageHeader />
