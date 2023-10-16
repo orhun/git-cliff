@@ -26,7 +26,7 @@ tera = "1.19.1"
 indexmap = { version = "2.0.2", optional = true }
 toml = "0.8.2"
 lazy-regex = "3.0.2"
-next_version = "0.2.8"
+next_version = "0.2.9"
 semver = "1.0.20"
 
 [dependencies.git2]
