@@ -48,6 +48,12 @@ pub fn run(
 	if output.status.success() {
 		Ok(str::from_utf8(&output.stdout)?.to_string())
 	} else {
+		for output in [output.stdout, output.stderr] {
+			let output = str::from_utf8(&output)?.to_string();
+			if !output.is_empty() {
+				log::error!("{}", output);
+			}
+		}
 		Err(IoError::new(
 			IoErrorKind::Other,
 			format!("command exited with {:?}", output.status),
