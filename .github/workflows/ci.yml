@@ -30,6 +30,15 @@ jobs:
           command: check
           args: --locked --no-default-features --verbose
 
+  typos:
+    name: Typos
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Check typos
+        uses: crate-ci/typos@master
+
   test:
     name: Test suite
     runs-on: ubuntu-22.04

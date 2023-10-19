@@ -27,7 +27,7 @@ WORKDIR app
 
 # Even if the repository as marked as safe, GitHub Actions and some other
 # environments insist on running the entrypoint as root inside the container
-# even when being run by a non priviledged user on their own files. Here we
+# even when being run by a non privileged user on their own files. Here we
 # check the ownership of the workdir (which may or may not be /app) and change
 # our effective user/group ID to match.
 RUN cat <<'EOF' > /usr/local/bin/entrypoint.sh

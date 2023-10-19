@@ -27,7 +27,7 @@ following context is generated to use for templating:
   "commits": [
     {
       "id": "e795460c9bb7275294d1fa53a9d73258fb51eb10",
-      "group": "<type> (overrided by commit_parsers)",
+      "group": "<type> (overridden by commit_parsers)",
       "scope": "[scope]",
       "message": "<description>",
       "body": "[body]",
@@ -124,8 +124,8 @@ If [`conventional_commits`](/docs/configuration#conventional_commits) is set to 
   "commits": [
     {
       "id": "e795460c9bb7275294d1fa53a9d73258fb51eb10",
-      "group": "(overrided by commit_parsers)",
-      "scope": "(overrided by commit_parsers)",
+      "group": "(overridden by commit_parsers)",
+      "scope": "(overridden by commit_parsers)",
       "message": "(full commit message including description, footers, etc.)",
       "conventional": false,
       "links": [
