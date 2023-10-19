@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+if ! command -v typos &>/dev/null; then
+  echo "typos is not installed. Run 'cargo install typos' to install it, otherwise the typos won't be fixed"
+fi
+
 if [ -z "$1" ]; then
 	echo "Please provide a tag."
 	echo "Usage: ./release.sh v[X.Y.Z]"

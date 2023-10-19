@@ -739,7 +739,7 @@ All notable changes to this project will be documented in this file.
 - *(args)* Add `--output` argument - ([e0cda23](https://github.com/orhun/git-cliff/commit/e0cda238105e0ce22ac71409d6e3ee0e32a6bad7))
 - *(args)* Add `--workdir` argument - ([de439be](https://github.com/orhun/git-cliff/commit/de439bef01e0e1209b8517ce7b241bb0db2cb530))
 - *(changelog)* Support setting the body template via args - ([9fc08f4](https://github.com/orhun/git-cliff/commit/9fc08f4c50160374298bf77701ee5e299fa435a0))
-- *(logs)* Show the processsed commit message - ([45dccf7](https://github.com/orhun/git-cliff/commit/45dccf74a4a5449d92d453d21b6566acd8f30ebe))
+- *(logs)* Show the processed commit message - ([45dccf7](https://github.com/orhun/git-cliff/commit/45dccf74a4a5449d92d453d21b6566acd8f30ebe))
 
 ### 🐛 Bug Fixes
 
@@ -748,7 +748,7 @@ All notable changes to this project will be documented in this file.
 - *(cd)* Generate changelog on a dedicated/different job - ([2f16dd5](https://github.com/orhun/git-cliff/commit/2f16dd5ae7f4bbff7b9944db039192d8ce148655))
 - *(cd)* Fix the syntax of publish step arguments - ([6414789](https://github.com/orhun/git-cliff/commit/6414789067780d0551292c004a8aaff04483906d))
 - *(cd)* Use a separate step for setting the changelog body - ([f038054](https://github.com/orhun/git-cliff/commit/f038054417f608b5792b89f60b4d384b74b317dd))
-- *(cd)* Publish the cargo workspace members seperately - ([acc1d34](https://github.com/orhun/git-cliff/commit/acc1d3453ca865ddbf3e8e786fcc157c8e31eae6))
+- *(cd)* Publish the cargo workspace members separately - ([acc1d34](https://github.com/orhun/git-cliff/commit/acc1d3453ca865ddbf3e8e786fcc157c8e31eae6))
 - *(cd)* Strip the changelog header before escaping - ([6b97c2d](https://github.com/orhun/git-cliff/commit/6b97c2d18c05fb9cf27088a39b24d12ab1b0c556))
 - *(cd)* Use printf to prevent field splitting the variable - ([92a4b0d](https://github.com/orhun/git-cliff/commit/92a4b0d5bfb8c27627886005d0e6d823a3cc6476))
 - *(cd)* Double quote the environment variable - ([85aa1cd](https://github.com/orhun/git-cliff/commit/85aa1cdc688b74d1d2df46dc61e6aa5561fc6ace))
@@ -810,7 +810,7 @@ All notable changes to this project will be documented in this file.
 - *(cargo)* Update project details - ([22f0a7e](https://github.com/orhun/git-cliff/commit/22f0a7ef73cb1649d9ed59e43ee0e410b456233d))
 - *(cd)* Enable crates.io releases - ([31ecfd8](https://github.com/orhun/git-cliff/commit/31ecfd8ad041e36090575e5851ff00d491ccebca))
 - *(cd)* Use only one step for uploading releases - ([42a714f](https://github.com/orhun/git-cliff/commit/42a714f31cf5b6f924fe68d966189e2c278a11a6))
-- *(cd)* Use seperate steps for uploading releases - ([0182533](https://github.com/orhun/git-cliff/commit/01825330d90a9399c9285b5a286b1d69aa1494e7))
+- *(cd)* Use separate steps for uploading releases - ([0182533](https://github.com/orhun/git-cliff/commit/01825330d90a9399c9285b5a286b1d69aa1494e7))
 - *(cd)* Remove the custom changelog template - ([d826b9d](https://github.com/orhun/git-cliff/commit/d826b9d2e5bdd30b132731ff6d1dc87748543ccb))
 - *(cd)* Override the changelog template - ([41053fb](https://github.com/orhun/git-cliff/commit/41053fbe90a08648b70e5cca6a2504e94202bd06))
 - *(cd)* Set the release body on linux - ([7623977](https://github.com/orhun/git-cliff/commit/76239771662bf342d742c12907619eece1bf946d))
