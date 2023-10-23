@@ -223,7 +223,7 @@ jobs:
           prerelease: true
       - name: Install node
         if: matrix.build.NPM_PUBLISH == true
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: "16"
           registry-url: "https://registry.npmjs.org"
@@ -297,7 +297,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: "16"
           registry-url: "https://registry.npmjs.org"
