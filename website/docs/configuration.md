@@ -160,7 +160,7 @@ commit_parsers = [
 
 With the configuration above, lines are parsed as conventional commits and unconventional lines are omitted.
 
-If `filter_unconventional = false`, every line will be processes as an unconventional commit, resulting in each line of
+If `filter_unconventional = false`, every line will be processed as an unconventional commit, resulting in each line of
 a commit being treated as a changelog entry.
 
 ### commit_preprocessors
@@ -289,7 +289,7 @@ Examples:
 
 ### limit_commits
 
-`limit_commits` is a **optional** positive integer number that limits the number of included commits in the generated changelog.
+`limit_commits` is an **optional** positive integer number that limits the number of included commits in the generated changelog.
 
 `limit_commits` is not part of the default configuration.
 
