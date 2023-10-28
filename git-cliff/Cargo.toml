@@ -63,3 +63,42 @@ assets = [
   { source = "completions/git-cliff.fish", dest = "/usr/share/fish/vendor_completions.d/git-cliff.fish", mode = "644" },
   { source = "completions/_git-cliff", dest = "/usr/share/zsh/vendor-completions/", mode = "644" },
 ]
+
+[package.metadata.deb]
+assets = [
+  [
+    "target/release/git-cliff",
+    "usr/bin/",
+    "755",
+  ],
+  [
+    "../LICENSE-MIT",
+    "/usr/share/doc/git-cliff/LICENSE-MIT",
+    "644",
+  ],
+  [
+    "../README.md",
+    "usr/share/doc/git-cliff/README",
+    "644",
+  ],
+  [
+    "../man/git-cliff.1",
+    "/usr/share/man/man1/git-cliff.1",
+    "644",
+  ],
+  [
+    "../completions/git-cliff.bash",
+    "/usr/share/bash-completion/completions/git-cliff",
+    "644",
+  ],
+  [
+    "../completions/git-cliff.fish",
+    "/usr/share/fish/vendor_completions.d/git-cliff.fish",
+    "644",
+  ],
+  [
+    "../completions/_git-cliff",
+    "/usr/share/zsh/vendor-completions/",
+    "644",
+  ],
+]

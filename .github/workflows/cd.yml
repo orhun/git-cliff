@@ -350,7 +350,12 @@ jobs:
         run: |
           # https://github.com/kornelski/cargo-deb/pull/62
           sed "/readme = (.*)/d" -E -i git-cliff/Cargo.toml
-          cargo-deb --strip --manifest-path git-cliff/Cargo.toml -v -o git-cliff-${{ env.RELEASE_VERSION }}.deb
+          cargo build --release --locked -p git-cliff
+          mkdir man/
+          OUT_DIR=man cargo run --bin git-cliff-mangen
+          mkdir completions
+          OUT_DIR=completions cargo run --bin git-cliff-completions
+          cargo-deb --deb-revision="" --strip -p git-cliff -v -o git-cliff-${{ env.RELEASE_VERSION }}.deb
       - name: Sign the package
         run: |
           echo "${{ secrets.GPG_RELEASE_KEY }}" | base64 --decode > private.key
