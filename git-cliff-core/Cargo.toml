@@ -12,6 +12,9 @@ rust-version = "1.70.0"
 
 [features]
 default = ["repo"]
+## Enable parsing commits from a git repository.
+## You can turn this off if you already have the commits to put in the
+## changelog and you don't need `git-cliff` to parse them.
 repo = ["dep:git2", "dep:glob", "dep:indexmap"]
 
 [dependencies]
@@ -28,6 +31,7 @@ toml = "0.8.6"
 lazy-regex = "3.0.2"
 next_version = "0.2.9"
 semver = "1.0.20"
+document-features = { version = "0.2.7", optional = true }
 
 [dependencies.git2]
 version = "0.18.1"
@@ -49,3 +53,7 @@ features = ["debug-embed"]
 
 [dev-dependencies]
 pretty_assertions = "1.4.0"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
