@@ -1,4 +1,4 @@
-//! A highly customizable changelog generator
+//! A highly customizable changelog generator ⛰️
 //!
 //! ## Features
 //!
@@ -8,6 +8,10 @@
 //!   You can turn this off if you already have the commits to put in the
 //!   changelog and you don't need `git-cliff` to parse them.
 #![warn(missing_docs, clippy::unwrap_used)]
+#![doc(
+	html_logo_url = "https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff.png",
+	html_favicon_url = "https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/favicon/favicon.ico"
+)]
 
 /// Changelog generator.
 pub mod changelog;

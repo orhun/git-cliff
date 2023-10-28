@@ -9,7 +9,7 @@ tags:
 <center>
 
  <a href="https://github.com/orhun/git-cliff">
-    <img src="https://user-images.githubusercontent.com/24392180/146058022-494a7a28-34a9-473e-8c80-85fd7294783c.jpg" />
+    <img src="https://raw.githubusercontent.com/orhun/git-cliff/main/img/git-cliff-banner.jpg" />
 </a>
 
 </center>

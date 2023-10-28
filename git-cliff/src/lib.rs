@@ -1,3 +1,9 @@
+//! A highly customizable changelog generator ⛰️
+#![doc(
+	html_logo_url = "https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff.png",
+	html_favicon_url = "https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/favicon/favicon.ico"
+)]
+
 /// Command-line argument parser.
 pub mod args;
 
