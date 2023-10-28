@@ -210,7 +210,7 @@ impl Commit<'_> {
 		}
 	}
 
-	/// Preprocesses the commit using [`CommitPreprocessor`]s.
+	/// Preprocesses the commit using [`TextProcessor`]s.
 	///
 	/// Modifies the commit [`message`] using regex or custom OS command.
 	///
