@@ -83,7 +83,8 @@ commit_parsers = [
 ]
 protect_breaking_commits = false
 filter_commits = false
-tag_pattern = "^v[0-9].*"
+tag_pattern = "v[0-9].*"
+
 skip_tags = "v0.1.0-beta.1"
 ignore_tags = ""
 topo_order = false
