@@ -47,7 +47,7 @@ For example, to group the commits that belong to `Dependabot` under "Dependency 
 # regex for parsing and grouping commits
 commit_parsers = [
   { field = "author.name", pattern = "dependabot\\[bot\\]", group = "Dependency Updates"},
-}
+]
 ```
 
 This will result in:
