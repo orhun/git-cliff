@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0](https://github.com/orhun/git-cliff/compare/v1.3.1..v1.4.0) - 2023-10-29
+
+### ⛰️  Features
+
+- *(changelog)* Support bumping the semantic version via `--bump` ([#309](https://github.com/orhun/git-cliff/issues/309)) - ([bcfcd1f](https://github.com/orhun/git-cliff/commit/bcfcd1fd59fa2c1ef3222d588f3a563c3e10027e))
+- *(ci)* Add 'typos' check ([#317](https://github.com/orhun/git-cliff/issues/317)) - ([88c34ab](https://github.com/orhun/git-cliff/commit/88c34abe2c6572d401e0bd77d2aec4138bd2c88b))
+- *(command)* Log the output of failed external commands - ([205cdbb](https://github.com/orhun/git-cliff/commit/205cdbb391b03244abaf2e5e0651976544c78ff4))
+- *(config)* [**breaking**] Support regex in 'tag_pattern' configuration ([#318](https://github.com/orhun/git-cliff/issues/318)) - ([3c2fb60](https://github.com/orhun/git-cliff/commit/3c2fb6072612a38ab7c6ea41e7c2ae34435fde99))
+- *(config)* Add field and value matchers to the commit parser ([#312](https://github.com/orhun/git-cliff/issues/312)) - ([04fbcb8](https://github.com/orhun/git-cliff/commit/04fbcb88a5cb85a2f192b3ecc7261bd55548be9e))
+
+### 📚 Documentation
+
+- *(blog)* Fix the TOML format in 1.4.0 blog post - ([4d691d2](https://github.com/orhun/git-cliff/commit/4d691d2620f6fcd574c2be64c6a8f6023db063c2))
+- *(blog)* Add blog post for 1.4.0 release - ([e3f1b3b](https://github.com/orhun/git-cliff/commit/e3f1b3bdb3d7f8a0dce695fed18077aacdc1d3bd))
+- *(changelog)* Fix typos ([#316](https://github.com/orhun/git-cliff/issues/316)) - ([edd3c30](https://github.com/orhun/git-cliff/commit/edd3c30000af1542c0df5b3ca5e0ea4fcc6efb74))
+- *(config)* Update the comment for tag_pattern - ([596fd4d](https://github.com/orhun/git-cliff/commit/596fd4d14d57ce6357c299181c523a00af11b36c))
+- *(core)* Update the doc comment for commit preprocessors - ([7faccc6](https://github.com/orhun/git-cliff/commit/7faccc65a87fe29aa26cdfce63880899a0e8bf3d))
+- *(image)* Use images from the repository - ([91c0cda](https://github.com/orhun/git-cliff/commit/91c0cda9dc79740d322275f45184facfc8300163))
+- *(lib)* Extract feature documentation from Cargo.toml - ([1f8098c](https://github.com/orhun/git-cliff/commit/1f8098cd7f0f5473a3a7f847aaaa62b1cfdc7759))
+- *(lib)* Add logo and favicon to docs.rs page - ([32b1fe1](https://github.com/orhun/git-cliff/commit/32b1fe1556e25c2a29adffe0a68e68183bc9ae63))
+- *(readme)* Add link to emacs package support git-cliff ([#307](https://github.com/orhun/git-cliff/issues/307)) - ([fa471c7](https://github.com/orhun/git-cliff/commit/fa471c7178dce184ca6fe5bbb24b9c2db96d68ce))
+- *(website)* Fix typos in configuration docs ([#329](https://github.com/orhun/git-cliff/issues/329)) - ([d863c94](https://github.com/orhun/git-cliff/commit/d863c9481a7882a1a1ecc59050c2d30b2b9a1728))
+- *(website)* Add instructions for installing the latest git version - ([be87608](https://github.com/orhun/git-cliff/commit/be87608002d6beba58368af4fed73e746cde352a))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(ci)* Update the link checker configuration ([#315](https://github.com/orhun/git-cliff/issues/315)) - ([32cbea8](https://github.com/orhun/git-cliff/commit/32cbea8e48300746879e754618672c5a1270ba95))
+- *(config)* Update tag_pattern value for backwards compatibility - ([2c621f7](https://github.com/orhun/git-cliff/commit/2c621f71e6cdca05b17516d2a9ba80fbabd4d3f8))
+- *(img)* Add more images - ([2792362](https://github.com/orhun/git-cliff/commit/2792362a52a8fc862fa7899cda911ce7e56786b1))
+- *(img)* Add git-cliff logo - ([51f5e5b](https://github.com/orhun/git-cliff/commit/51f5e5b16f7f509c59bd1d6e990989ba33581e7b))
+- *(release)* Update cargo-deb usage - ([213f383](https://github.com/orhun/git-cliff/commit/213f383b54c9a40a351f341c28bbdf03b73f701d))
+- *(website)* Update the tracking link - ([eb9f8e9](https://github.com/orhun/git-cliff/commit/eb9f8e970d2adcb6c6f512b20ca8a9f77d09ff54))
+
 ## [1.3.1](https://github.com/orhun/git-cliff/compare/v1.3.0..v1.3.1) - 2023-09-30
 
 ### ⛰️  Features
