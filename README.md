@@ -42,6 +42,13 @@
 
 ![preview](https://raw.githubusercontent.com/orhun/git-cliff/main/img/git-cliff-preview.png)
 
+## Features
+
+- Generate changelog files from Git history.
+- Utilize conventional commits for changelog entries.
+- Create custom parsers using regex patterns.
+- Customize changelog templates with a configuration file.
+
 ## Documentation
 
 Learn how to use **git-cliff** from the [documentation](https://git-cliff.org/docs).
