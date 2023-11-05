@@ -247,3 +247,148 @@ eoc - end of changelog
 
 	Ok(())
 }
+
+#[test]
+fn commit_groups_filter() -> Result<()> {
+	let changelog_config = ChangelogConfig {
+		header:         Some(String::from("this is a changelog")),
+		body:           Some(String::from(
+			r#"
+## Release {{ version }}
+{% for group, commits in commits | commit_groups(groups=commit_groups_filter) %}
+### {{ group }}
+{% for commit in commits -%}
+- {{ commit.message }}
+{% endfor -%}
+{% endfor %}"#,
+		)),
+		footer:         None,
+		trim:           None,
+		postprocessors: None,
+	};
+	let git_config = GitConfig {
+		conventional_commits:     Some(true),
+		filter_unconventional:    Some(true),
+		split_commits:            Some(false),
+		commit_preprocessors:     None,
+		commit_parsers:           Some(vec![
+			CommitParser {
+				message:       Regex::new("^feat").ok(),
+				body:          None,
+				group:         Some(String::from("features")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         None,
+				pattern:       None,
+			},
+			CommitParser {
+				message:       Regex::new("^fix").ok(),
+				body:          None,
+				group:         Some(String::from("fixes")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         None,
+				pattern:       None,
+			},
+		]),
+		protect_breaking_commits: None,
+		filter_commits:           Some(true),
+		tag_pattern:              None,
+		skip_tags:                None,
+		ignore_tags:              None,
+		topo_order:               None,
+		sort_commits:             None,
+		link_parsers:             None,
+		limit_commits:            None,
+	};
+
+	let releases = vec![Release {
+		version:   Some(String::from("v2.0.0")),
+		commits:   vec![
+			Commit::new(String::from("qwerty"), String::from("fix: fix abc")),
+			Commit::new(
+				String::from("000abc"),
+				String::from("Add unconventional commit"),
+			),
+			Commit::new(String::from("qwerty"), String::from("chore: fix def")),
+			Commit::new(String::from("123"), String::from("chore: fix def")),
+			Commit::new(String::from("cba"), String::from("chore: fix def")),
+			Commit::new(String::from("abc123"), String::from("feat: add xyz")),
+			Commit::new(String::from("abc124"), String::from("feat: add zyx")),
+			Commit::new(
+				String::from("hjkl12"),
+				String::from("chore: do boring stuff"),
+			),
+			Commit::new(
+				String::from("hjkl13"),
+				String::from("test: test some stuff"),
+			),
+		]
+		.iter()
+		.filter_map(|c| c.process(&git_config).ok())
+		.collect::<Vec<Commit>>(),
+		commit_id: None,
+		timestamp: 0,
+		previous:  None,
+	}];
+
+	let out = &mut String::new();
+	let template = Template::new(changelog_config.body.clone().unwrap())?;
+
+	writeln!(out, "{}", changelog_config.header.clone().unwrap()).unwrap();
+	for release in &releases {
+		write!(
+			out,
+			"{}",
+			template.render_with_groups(release, &["fixes", "features"])?
+		)
+		.unwrap();
+	}
+
+	assert_eq!(
+		r#"this is a changelog
+
+## Release v2.0.0
+
+### fixes
+- fix abc
+
+### features
+- add xyz
+- add zyx
+"#,
+		out
+	);
+
+	let out = &mut String::new();
+	let template = Template::new(changelog_config.body.unwrap())?;
+
+	writeln!(out, "{}", changelog_config.header.unwrap()).unwrap();
+	for release in &releases {
+		write!(
+			out,
+			"{}",
+			template.render_with_groups(release, &["features", "fixes"])?
+		)
+		.unwrap();
+	}
+
+	assert_eq!(
+		r#"this is a changelog
+
+## Release v2.0.0
+
+### features
+- add xyz
+- add zyx
+
+### fixes
+- fix abc
+"#,
+		out
+	);
+
+	Ok(())
+}

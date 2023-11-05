@@ -15,7 +15,7 @@ default = ["repo"]
 ## Enable parsing commits from a git repository.
 ## You can turn this off if you already have the commits to put in the
 ## changelog and you don't need `git-cliff` to parse them.
-repo = ["dep:git2", "dep:glob", "dep:indexmap"]
+repo = ["dep:git2", "dep:glob"]
 
 [dependencies]
 glob = { workspace = true, optional = true }
@@ -23,10 +23,11 @@ regex.workspace = true
 log.workspace = true
 thiserror = "1.0.50"
 serde = { version = "1.0.190", features = ["derive"] }
-serde_json = "1.0.108"
+serde_json = { version = "1.0.108", features = ["preserve_order"] }
 serde_regex = "1.1.0"
 tera = "1.19.1"
-indexmap = { version = "2.1.0", optional = true }
+indexmap = { version = "2.1.0", features = ["serde"] }
+itertools = "0.11"
 toml = "0.8.6"
 lazy-regex = "3.0.2"
 next_version = "0.2.9"

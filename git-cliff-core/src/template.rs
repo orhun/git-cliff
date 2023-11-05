@@ -1,8 +1,11 @@
+use crate::commit::Commit;
 use crate::error::{
 	Error,
 	Result,
 };
 use crate::release::Release;
+use indexmap::IndexMap;
+use itertools::Itertools as _;
 use std::collections::HashMap;
 use std::error::Error as ErrorImpl;
 use tera::{
@@ -30,7 +33,51 @@ impl Template {
 			};
 		}
 		tera.register_filter("upper_first", Self::upper_first_filter);
+		tera.register_filter("commit_groups", Self::commit_groups);
 		Ok(Self { tera })
+	}
+
+	/// Filter for making the first character of a string uppercase.
+	fn commit_groups(
+		value: &Value,
+		args: &HashMap<String, Value>,
+	) -> TeraResult<Value> {
+		let mut commits =
+			tera::try_get_value!("commit_groups", "value", Vec<Commit>, value);
+		let groups_ordered_filter = tera::try_get_value!(
+			"commit_groups",
+			"groups",
+			Vec<String>,
+			args.get("groups").expect("groups must be present in args")
+		);
+
+		commits.retain(|commit| {
+			groups_ordered_filter.iter().any(|group| {
+				group == commit.group.as_deref().expect("commit must have group")
+			})
+		});
+
+		let groups = commits
+			.into_iter()
+			.into_group_map_by(|commit| {
+				commit.group.clone().expect("commit must have group")
+			})
+			.into_iter()
+			.sorted_by_key(|(group_name, _)| {
+				groups_ordered_filter
+					.iter()
+					.position(|group| group_name == group)
+					.expect("commits have already been filtered to specified groups")
+			});
+
+		let mut ordered_groups = IndexMap::new();
+
+		for (group, commits) in groups {
+			dbg!((&group, &commits));
+			ordered_groups.insert(group, commits);
+		}
+
+		Ok(tera::to_value(ordered_groups)?)
 	}
 
 	/// Filter for making the first character of a string uppercase.
@@ -51,6 +98,26 @@ impl Template {
 	/// Renders the template.
 	pub fn render(&self, release: &Release) -> Result<String> {
 		let context = TeraContext::from_serialize(release)?;
+		match self.tera.render("template", &context) {
+			Ok(v) => Ok(v),
+			Err(e) => {
+				return if let Some(error_source) = e.source() {
+					Err(Error::TemplateRenderError(error_source.to_string()))
+				} else {
+					Err(Error::TemplateError(e))
+				};
+			}
+		}
+	}
+
+	/// Renders the template.
+	pub fn render_with_groups(
+		&self,
+		release: &Release,
+		groups: &[&str],
+	) -> Result<String> {
+		let mut context = TeraContext::from_serialize(release)?;
+		context.insert("commit_groups_filter", groups);
 		match self.tera.render("template", &context) {
 			Ok(v) => Ok(v),
 			Err(e) => {
