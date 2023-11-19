@@ -3,7 +3,10 @@ use clap::{
 	Parser,
 	ValueEnum,
 };
-use git_cliff_core::DEFAULT_CONFIG;
+use git_cliff_core::{
+	DEFAULT_CONFIG,
+	DEFAULT_OUTPUT,
+};
 use glob::Pattern;
 use std::path::PathBuf;
 
@@ -130,7 +133,9 @@ pub struct Opt {
 	    long,
 	    env = "GIT_CLIFF_OUTPUT",
 	    value_name = "PATH",
-	    value_parser = Opt::parse_dir
+	    value_parser = Opt::parse_dir,
+	    num_args = 0..=1,
+	    default_missing_value = DEFAULT_OUTPUT
 	)]
 	pub output:       Option<PathBuf>,
 	/// Sets the tag for the latest version.

@@ -102,7 +102,11 @@ git cliff --topo-order
 Save the changelog file to the specified file:
 
 ```bash
+# Set output path
 git cliff --output CHANGELOG.md
+
+# Without path, the default is `CHANGELOG.md`
+git cliff -o
 ```
 
 Print the changelog [context](/docs/templating/context) as JSON:
