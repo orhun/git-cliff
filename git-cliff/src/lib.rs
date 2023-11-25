@@ -222,7 +222,11 @@ fn process_repository<'a>(
 
 	// Set the previous release if needed.
 	if args.latest || args.unreleased {
-		let sub = if args.latest { 2 } else { 1 };
+		let sub = if args.latest || args.tag.is_some() {
+			2
+		} else {
+			1
+		};
 		if let Some((commit_id, version)) =
 			tags.len().checked_sub(sub).and_then(|v| tags.get_index(v))
 		{
