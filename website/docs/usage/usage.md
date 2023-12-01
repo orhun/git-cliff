@@ -11,16 +11,17 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
 ## Flags
 
 ```
--h, --help        Prints help information
--V, --version     Prints version information
--v, --verbose...  Increases the logging verbosity
-    --bump        Bumps the version for unreleased changes
--i, --init        Writes the default configuration file to cliff.toml
--l, --latest      Processes the commits starting from the latest tag
-    --current     Processes the commits that belong to the current tag
--u, --unreleased  Processes the commits that do not belong to a tag
-    --topo-order  Sorts the tags topologically
-    --context     Prints changelog context as JSON
+-h, --help            Prints help information
+-V, --version         Prints version information
+-v, --verbose...      Increases the logging verbosity
+    --bump            Bumps the version for unreleased changes
+    --bumped-version  Returns bumped version for unreleased changes
+-i, --init            Writes the default configuration file to cliff.toml
+-l, --latest          Processes the commits starting from the latest tag
+    --current         Processes the commits that belong to the current tag
+-u, --unreleased      Processes the commits that do not belong to a tag
+    --topo-order      Sorts the tags topologically
+    --context         Prints changelog context as JSON
 ```
 
 ## Options

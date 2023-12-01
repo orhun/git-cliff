@@ -32,7 +32,10 @@ use std::fs::{
 	self,
 	File,
 };
-use std::io;
+use std::io::{
+	self,
+	Write,
+};
 use std::time::{
 	SystemTime,
 	UNIX_EPOCH,
@@ -59,6 +62,14 @@ fn check_new_version() {
 	}
 }
 
+/// `process_repository` returned type
+enum ProcessOutput<'a> {
+	/// List of releases
+	Releases(Vec<Release<'a>>),
+	/// Semver
+	Version(String),
+}
+
 /// Processes the tags and commits for creating release entries for the
 /// changelog.
 ///
@@ -68,7 +79,7 @@ fn process_repository<'a>(
 	repository: &'static Repository,
 	config: Config,
 	args: &Opt,
-) -> Result<Vec<Release<'a>>> {
+) -> Result<ProcessOutput<'a>> {
 	let mut tags = repository.tags(&config.git.tag_pattern, args.topo_order)?;
 	let skip_regex = config.git.skip_tags.as_ref();
 	let ignore_regex = config.git.ignore_tags.as_ref();
@@ -240,8 +251,14 @@ fn process_repository<'a>(
 	}
 
 	// Bump the version.
-	if args.bump && releases[release_index].version.is_none() {
+	if (args.bump || args.bumped_version) &&
+		releases[release_index].version.is_none()
+	{
 		let next_version = releases[release_index].calculate_next_version()?;
+		if args.bumped_version {
+			return Ok(ProcessOutput::Version(next_version));
+		}
+
 		debug!("Bumping the version to {next_version}");
 		releases[release_index].version = Some(next_version.to_string());
 		releases[release_index].timestamp = SystemTime::now()
@@ -250,7 +267,7 @@ fn process_repository<'a>(
 			.try_into()?;
 	}
 
-	Ok(releases)
+	Ok(ProcessOutput::Releases(releases))
 }
 
 /// Runs `git-cliff`.
@@ -350,16 +367,33 @@ pub fn run(mut args: Opt) -> Result<()> {
 	// Process the repository.
 	let repositories = args.repository.clone().unwrap_or(vec![env::current_dir()?]);
 	let mut releases = Vec::<Release>::new();
+	let mut versions = Vec::<String>::new();
 	for repository in repositories {
 		let repository = Repository::init(repository)?;
-		releases.extend(process_repository(
+		let process_output = process_repository(
 			Box::leak(Box::new(repository)),
 			config.clone(),
 			&args,
-		)?);
+		)?;
+
+		match process_output {
+			ProcessOutput::Releases(release) => releases.extend(release),
+			ProcessOutput::Version(version) => versions.push(version),
+		}
 	}
 
 	// Generate output.
+	if !versions.is_empty() {
+		let buf = versions.join("\n");
+		if let Some(path) = args.output {
+			let mut output = File::create(path)?;
+			output.write_all(buf.as_bytes())?;
+		} else {
+			println!("{buf}");
+		};
+		return Ok(());
+	}
+
 	let changelog = Changelog::new(releases, &config)?;
 	if args.context {
 		return if let Some(path) = args.output {
