@@ -204,7 +204,7 @@ fn process_repository<'a>(
 		}
 	}
 
-	if release_index > 1 {
+	if release_index > 0 {
 		previous_release.previous = None;
 		releases[release_index].previous = Some(Box::new(previous_release));
 	}
