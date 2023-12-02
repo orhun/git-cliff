@@ -3,12 +3,19 @@ use crate::error::{
 	Error,
 	Result,
 };
+use crate::github::{
+	GitHubCommit,
+	GitHubContributor,
+	GitHubPullRequest,
+	GitHubReleaseMetadata,
+};
 use next_version::NextVersion;
 use semver::Version;
 use serde::{
 	Deserialize,
 	Serialize,
 };
+use std::collections::HashSet;
 
 /// Representation of a release.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -25,9 +32,60 @@ pub struct Release<'a> {
 	pub timestamp: i64,
 	/// Previous release.
 	pub previous:  Option<Box<Release<'a>>>,
+	/// Contributors.
+	pub github:    GitHubReleaseMetadata,
 }
 
 impl<'a> Release<'a> {
+	/// Updates the GitHub metadata that is contained in the release.
+	///
+	/// This function takes two arguments:
+	///
+	/// - GitHub commits: needed for associating the Git user with the GitHub
+	///   username.
+	/// - GitHub pull requests: needed for generating the contributor list for
+	///   the release.
+	pub fn update_github_metadata(
+		&mut self,
+		mut github_commits: Vec<GitHubCommit>,
+		github_pull_requests: Vec<GitHubPullRequest>,
+	) -> Result<()> {
+		let mut contributors = HashSet::new();
+		// retain the commits that are not a part of this release for later on
+		// checking the first contributors.
+		github_commits.retain(|v| {
+			if let Some(commit) =
+				self.commits.iter_mut().find(|commit| commit.id == v.sha)
+			{
+				commit.github.username = Some(v.author.login.to_string());
+				commit.github.pr_number = github_pull_requests
+					.iter()
+					.find(|pr| pr.merge_commit_sha == Some(v.sha.clone()))
+					.map(|v| v.number);
+				contributors.insert(GitHubContributor {
+					username:      Some(v.author.login.to_string()),
+					pr_number:     commit.github.pr_number,
+					is_first_time: false,
+				});
+				false
+			} else {
+				true
+			}
+		});
+		// mark contributors as first-time
+		self.github.contributors = contributors
+			.into_iter()
+			.map(|mut v| {
+				v.is_first_time = !github_commits
+					.iter()
+					.map(|v| v.author.login.clone())
+					.any(|login| Some(login) == v.username);
+				v
+			})
+			.collect();
+		Ok(())
+	}
+
 	/// Calculates the next version based on the commits.
 	pub fn calculate_next_version(&self) -> Result<String> {
 		let version = self
@@ -79,6 +137,9 @@ mod test {
 					version: Some(String::from("1.0.0")),
 					..Default::default()
 				})),
+				github:    GitHubReleaseMetadata {
+					contributors: vec![],
+				},
 			};
 			let next_version = release.calculate_next_version()?;
 			assert_eq!(expected_version, next_version);

@@ -68,6 +68,16 @@ pub enum Error {
 	/// Error that may occur when a version is not found for the next release.
 	#[error("Previous version is not found for calculating the next release.")]
 	PreviousVersionNotFound,
+	/// The errors that may occur when processing a HTTP request.
+	#[error("HTTP client error: `{0}`")]
+	HttpClientError(#[from] reqwest::Error),
+	/// A possible error when converting a HeaderValue from a string or byte
+	/// slice.
+	#[error("HTTP header error: `{0}`")]
+	HttpHeaderError(#[from] reqwest::header::InvalidHeaderValue),
+	/// Error that may occur during handling pages.
+	#[error("Pagination error: `{0}`")]
+	PaginationError(String),
 }
 
 /// Result type of the core library.

@@ -4,6 +4,10 @@ use regex::{
 	Regex,
 	RegexBuilder,
 };
+use secrecy::{
+	Secret,
+	SecretString,
+};
 use serde::{
 	Deserialize,
 	Serialize,
@@ -11,6 +15,7 @@ use serde::{
 use std::ffi::OsStr;
 use std::fs;
 use std::path::Path;
+use std::result::Result as StdResult;
 
 /// Regex for matching the metadata in Cargo.toml
 const CARGO_METADATA_REGEX: &str =
@@ -28,6 +33,9 @@ pub struct Config {
 	/// Configuration values about git.
 	#[serde(default)]
 	pub git:       GitConfig,
+	/// Configuration values about remote.
+	#[serde(default)]
+	pub remote:    RemoteConfig,
 }
 
 /// Changelog configuration.
@@ -82,6 +90,36 @@ pub struct GitConfig {
 	pub sort_commits:             Option<String>,
 	/// Limit the number of commits included in the changelog.
 	pub limit_commits:            Option<usize>,
+}
+
+/// Remote configuration.
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct RemoteConfig {
+	/// GitHub remote.
+	pub github: Remote,
+}
+
+/// A single remote.
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct Remote {
+	/// Owner of the remote.
+	pub owner: String,
+	/// Repository name.
+	pub repo:  String,
+	/// Access token.
+	#[serde(serialize_with = "serialize_secret_string")]
+	pub token: Option<SecretString>,
+}
+
+/// Custom serializer function for the secret string.
+fn serialize_secret_string<S>(
+	_: &Option<Secret<String>>,
+	ser: S,
+) -> StdResult<S::Ok, S::Error>
+where
+	S: serde::Serializer,
+{
+	ser.serialize_str("*")
 }
 
 /// Parser for grouping commits.

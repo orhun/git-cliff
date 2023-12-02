@@ -1,11 +1,17 @@
 use crate::commit::Commit;
 use crate::config::Config;
 use crate::error::Result;
+use crate::github::{
+	GitHubClient,
+	GitHubCommit,
+	GitHubPullRequest,
+};
 use crate::release::{
 	Release,
 	Releases,
 };
 use crate::template::Template;
+use std::collections::HashMap;
 use std::io::Write;
 
 /// Changelog generator.
@@ -135,14 +141,61 @@ impl<'a> Changelog<'a> {
 		}
 	}
 
+	/// Returns the GitHub metadata needed for the changelog.
+	///
+	/// This function creates a multithread async runtime for handling the
+	/// requests. The following are fetched from the GitHub REST API:
+	///
+	/// - Commits
+	/// - Pull requests
+	///
+	/// Each of these are paginated requests so they are being run in parallel
+	/// for speedup.
+	///
+	/// If no GitHub related variable is used in the template then this function
+	/// returns empty vectors.
+	fn get_github_metadata(
+		&self,
+	) -> Result<(Vec<GitHubCommit>, Vec<GitHubPullRequest>)> {
+		if self
+			.template
+			.get_template_variables()?
+			.iter()
+			.any(|v| v.contains("github."))
+		{
+			let github_client =
+				GitHubClient::try_from(self.config.remote.github.clone())?;
+			tokio::runtime::Builder::new_multi_thread()
+				.enable_all()
+				.build()?
+				.block_on(async {
+					let (commits, pull_requests) = tokio::try_join!(
+						github_client.get_commits(),
+						github_client.get_pull_requests(),
+					)?;
+					Ok((commits, pull_requests))
+				})
+		} else {
+			Ok((vec![], vec![]))
+		}
+	}
+
 	/// Generates the changelog and writes it to the given output.
 	pub fn generate<W: Write>(&self, out: &mut W) -> Result<()> {
 		debug!("Generating changelog...");
 		if let Some(header) = &self.config.changelog.header {
 			write!(out, "{header}")?;
 		}
-		for release in &self.releases {
-			let mut rendered = self.template.render(release)?;
+		let mut context = HashMap::new();
+		context.insert("remote", self.config.remote.clone());
+		let (github_commits, github_pull_requests) = self.get_github_metadata()?;
+		for mut release in self.releases.clone() {
+			release.update_github_metadata(
+				github_commits.clone(),
+				github_pull_requests.clone(),
+			)?;
+			let mut rendered =
+				self.template.render(&release, Some(context.clone()))?;
 			if let Some(postprocessors) =
 				self.config.changelog.postprocessors.as_ref()
 			{
@@ -184,11 +237,16 @@ impl<'a> Changelog<'a> {
 #[cfg(test)]
 mod test {
 	use super::*;
-	use crate::config::{
-		ChangelogConfig,
-		CommitParser,
-		GitConfig,
-		TextProcessor,
+	use crate::{
+		config::{
+			ChangelogConfig,
+			CommitParser,
+			GitConfig,
+			Remote,
+			RemoteConfig,
+			TextProcessor,
+		},
+		github::GitHubReleaseMetadata,
 	};
 	use pretty_assertions::assert_eq;
 	use regex::Regex;
@@ -312,6 +370,13 @@ mod test {
 				link_parsers:             None,
 				limit_commits:            None,
 			},
+			remote:    RemoteConfig {
+				github: Remote {
+					owner: String::from("coolguy"),
+					repo:  String::from("awesome"),
+					token: None,
+				},
+			},
 		};
 		let test_release = Release {
 			version:   Some(String::from("v1.0.0")),
@@ -364,6 +429,9 @@ mod test {
 			commit_id: Some(String::from("0bc123")),
 			timestamp: 50000000,
 			previous:  None,
+			github:    GitHubReleaseMetadata {
+				contributors: vec![],
+			},
 		};
 		let releases = vec![
 			test_release.clone(),
@@ -403,6 +471,9 @@ mod test {
 				commit_id: None,
 				timestamp: 1000,
 				previous:  Some(Box::new(test_release)),
+				github:    GitHubReleaseMetadata {
+					contributors: vec![],
+				},
 			},
 		];
 		(config, releases)

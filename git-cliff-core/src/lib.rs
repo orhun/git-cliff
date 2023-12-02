@@ -22,8 +22,10 @@ pub mod commit;
 pub mod config;
 /// Embedded file handler.
 pub mod embed;
-/// Error handling.
+/// Error handl ing.
 pub mod error;
+/// GitHub client.
+pub mod github;
 /// Common release type.
 pub mod release;
 #[cfg(feature = "repo")]

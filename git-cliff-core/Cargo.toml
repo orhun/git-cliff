@@ -32,6 +32,13 @@ lazy-regex = "3.1.0"
 next_version = "0.2.10"
 semver = "1.0.20"
 document-features = { version = "0.2.7", optional = true }
+secrecy = { version = "0.8.0", features = ["serde"] }
+reqwest = { version = "0.11.22", default-features = false, features = [
+  "rustls-tls",
+  "json",
+] }
+tokio = { version = "1.34.0", features = ["rt-multi-thread", "macros"] }
+futures = "0.3.29"
 
 [dependencies.git2]
 version = "0.18.1"
