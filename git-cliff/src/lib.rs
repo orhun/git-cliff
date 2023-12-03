@@ -245,8 +245,6 @@ fn process_repository<'a>(
 		releases[0].previous = Some(Box::new(previous_release));
 	}
 
-    info!("releases: {:?}", releases);
-
 	// Bump the version.
 	if args.bump && releases[release_index].version.is_none() {
 		let next_version = releases[release_index].calculate_next_version()?;
