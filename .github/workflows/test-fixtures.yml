@@ -32,6 +32,8 @@ jobs:
           - fixtures-name: test-skip-breaking-changes
           - fixtures-name: test-split-commits
           - fixtures-name: test-keep-a-changelog-links
+          - fixtures-name: test-bump-version
+            command: --bump
           - fixtures-name: test-keep-a-changelog-links-current-arg
             command: --current
           - fixtures-name: test-keep-a-changelog-links-current-arg

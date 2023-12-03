@@ -219,7 +219,7 @@ fn process_repository<'a>(
 		.or_else(|| Some(tags.last()))
 		.flatten();
 
-	if release_index > 1 {
+	if release_index > 0 {
 		previous_release.previous = None;
 		releases[release_index].previous = Some(Box::new(previous_release));
 	}
@@ -244,6 +244,8 @@ fn process_repository<'a>(
 		};
 		releases[0].previous = Some(Box::new(previous_release));
 	}
+
+    info!("releases: {:?}", releases);
 
 	// Bump the version.
 	if args.bump && releases[release_index].version.is_none() {
