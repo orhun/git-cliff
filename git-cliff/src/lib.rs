@@ -177,6 +177,7 @@ fn process_repository<'a>(
 	let mut releases = vec![Release::default()];
 	let mut release_index = 0;
 	let mut previous_release = Release::default();
+	let mut first_processed_tag = None;
 	for git_commit in commits.into_iter().rev() {
 		let commit = Commit::from(&git_commit);
 		let commit_id = commit.id.to_string();
@@ -196,6 +197,9 @@ fn process_repository<'a>(
 			} else {
 				git_commit.time().seconds()
 			};
+			if first_processed_tag.is_none() {
+				first_processed_tag = Some(tag);
+			}
 			previous_release.previous = None;
 			releases[release_index].previous = Some(Box::new(previous_release));
 			previous_release = releases[release_index].clone();
@@ -203,6 +207,17 @@ fn process_repository<'a>(
 			release_index += 1;
 		}
 	}
+
+	let first_tag = first_processed_tag
+		.map(|tag| {
+			tags.iter()
+				.enumerate()
+				.find(|(_, (_, v))| v == &tag)
+				.and_then(|(i, _)| i.checked_sub(1))
+				.and_then(|i| tags.get_index(i))
+		})
+		.or_else(|| Some(tags.last()))
+		.flatten();
 
 	if release_index > 1 {
 		previous_release.previous = None;
@@ -221,22 +236,13 @@ fn process_repository<'a>(
 	}
 
 	// Set the previous release if needed.
-	if args.latest || args.unreleased {
-		let sub = if args.latest || args.tag.is_some() {
-			2
-		} else {
-			1
+	if let Some((commit_id, version)) = first_tag {
+		let previous_release = Release {
+			commit_id: Some(commit_id.to_string()),
+			version: Some(version.to_string()),
+			..Release::default()
 		};
-		if let Some((commit_id, version)) =
-			tags.len().checked_sub(sub).and_then(|v| tags.get_index(v))
-		{
-			let previous_release = Release {
-				commit_id: Some(commit_id.to_string()),
-				version: Some(version.to_string()),
-				..Release::default()
-			};
-			releases[0].previous = Some(Box::new(previous_release));
-		}
+		releases[0].previous = Some(Box::new(previous_release));
 	}
 
 	// Bump the version.
