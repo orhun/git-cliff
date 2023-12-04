@@ -1,3 +1,4 @@
+use git_cliff_core::changelog::Changelog;
 use git_cliff_core::commit::{
 	Commit,
 	Signature,
@@ -255,7 +256,7 @@ fn commit_groups_filter() -> Result<()> {
 		body:           Some(String::from(
 			r#"
 ## Release {{ version }}
-{% for group, commits in commits | commit_groups(groups=commit_groups_filter) %}
+{% for group, commits in commits | commit_groups %}
 ### {{ group }}
 {% for commit in commits -%}
 - {{ commit.message }}
@@ -338,13 +339,12 @@ fn commit_groups_filter() -> Result<()> {
 	let template = Template::new(changelog_config.body.clone().unwrap())?;
 
 	writeln!(out, "{}", changelog_config.header.clone().unwrap()).unwrap();
+	Changelog::set_commit_groups(vec![
+		String::from("fixes"),
+		String::from("features"),
+	]);
 	for release in &releases {
-		write!(
-			out,
-			"{}",
-			template.render_with_groups(release, &["fixes", "features"])?
-		)
-		.unwrap();
+		write!(out, "{}", template.render(release)?).unwrap();
 	}
 
 	assert_eq!(
@@ -366,13 +366,12 @@ fn commit_groups_filter() -> Result<()> {
 	let template = Template::new(changelog_config.body.unwrap())?;
 
 	writeln!(out, "{}", changelog_config.header.unwrap()).unwrap();
+	Changelog::set_commit_groups(vec![
+		String::from("features"),
+		String::from("fixes"),
+	]);
 	for release in &releases {
-		write!(
-			out,
-			"{}",
-			template.render_with_groups(release, &["features", "fixes"])?
-		)
-		.unwrap();
+		write!(out, "{}", template.render(release)?).unwrap();
 	}
 
 	assert_eq!(

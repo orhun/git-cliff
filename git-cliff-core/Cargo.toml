@@ -33,6 +33,7 @@ lazy-regex = "3.0.2"
 next_version = "0.2.9"
 semver = "1.0.20"
 document-features = { version = "0.2.7", optional = true }
+lazy_static = "1.4.0"
 
 [dependencies.git2]
 version = "0.18.1"

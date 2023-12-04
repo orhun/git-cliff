@@ -6,7 +6,16 @@ use crate::release::{
 	Releases,
 };
 use crate::template::Template;
+use lazy_static::lazy_static;
 use std::io::Write;
+use std::sync::RwLock;
+
+lazy_static! {
+	/// Commit groups in the changelog.
+	///
+	/// This is defined globally for passing it to the `commit_groups` Tera filter.
+	pub static ref COMMIT_GROUPS: RwLock<Vec<String>> = RwLock::new(Vec::new());
+}
 
 /// Changelog generator.
 #[derive(Debug)]
@@ -135,9 +144,24 @@ impl<'a> Changelog<'a> {
 		}
 	}
 
+	/// Sets the commit groups for the changelog.
+	pub fn set_commit_groups(commit_groups: Vec<String>) {
+		*COMMIT_GROUPS
+			.write()
+			.expect("failed to retrieve the commits groups") = commit_groups;
+	}
+
 	/// Generates the changelog and writes it to the given output.
 	pub fn generate<W: Write>(&self, out: &mut W) -> Result<()> {
 		debug!("Generating changelog...");
+		Self::set_commit_groups(
+			self.config
+				.git
+				.commit_parsers
+				.as_ref()
+				.map(|v| v.iter().flat_map(|v| v.group.clone()).collect())
+				.unwrap_or_default(),
+		);
 		if let Some(header) = &self.config.changelog.header {
 			write!(out, "{header}")?;
 		}

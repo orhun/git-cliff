@@ -37,19 +37,18 @@ impl Template {
 		Ok(Self { tera })
 	}
 
-	/// Filter for making the first character of a string uppercase.
+	/// Filter for grouping the commits based on their `group` which is set by
+	/// `commit_parsers`.
 	fn commit_groups(
 		value: &Value,
-		args: &HashMap<String, Value>,
+		_: &HashMap<String, Value>,
 	) -> TeraResult<Value> {
 		let mut commits =
 			tera::try_get_value!("commit_groups", "value", Vec<Commit>, value);
-		let groups_ordered_filter = tera::try_get_value!(
-			"commit_groups",
-			"groups",
-			Vec<String>,
-			args.get("groups").expect("groups must be present in args")
-		);
+
+		let groups_ordered_filter = &crate::changelog::COMMIT_GROUPS
+			.read()
+			.expect("failed to read commit groups");
 
 		commits.retain(|commit| {
 			groups_ordered_filter.iter().any(|group| {
@@ -73,7 +72,6 @@ impl Template {
 		let mut ordered_groups = IndexMap::new();
 
 		for (group, commits) in groups {
-			dbg!((&group, &commits));
 			ordered_groups.insert(group, commits);
 		}
 
@@ -98,26 +96,6 @@ impl Template {
 	/// Renders the template.
 	pub fn render(&self, release: &Release) -> Result<String> {
 		let context = TeraContext::from_serialize(release)?;
-		match self.tera.render("template", &context) {
-			Ok(v) => Ok(v),
-			Err(e) => {
-				return if let Some(error_source) = e.source() {
-					Err(Error::TemplateRenderError(error_source.to_string()))
-				} else {
-					Err(Error::TemplateError(e))
-				};
-			}
-		}
-	}
-
-	/// Renders the template.
-	pub fn render_with_groups(
-		&self,
-		release: &Release,
-		groups: &[&str],
-	) -> Result<String> {
-		let mut context = TeraContext::from_serialize(release)?;
-		context.insert("commit_groups_filter", groups);
 		match self.tera.render("template", &context) {
 			Ok(v) => Ok(v),
 			Err(e) => {

@@ -630,6 +630,7 @@ dependencies = [
  "indexmap 2.1.0",
  "itertools",
  "lazy-regex",
+ "lazy_static",
  "log",
  "next_version",
  "pretty_assertions",
