@@ -34,6 +34,8 @@ jobs:
           - fixtures-name: test-keep-a-changelog-links
           - fixtures-name: test-bump-version
             command: --bump
+          - fixtures-name: test-bumped-version
+            command: --bumped-version
     steps:
       - name: Checkout
         uses: actions/checkout@v4
