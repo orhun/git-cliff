@@ -62,11 +62,11 @@ fn check_new_version() {
 	}
 }
 
-/// `process_repository` returned type
+/// Output of the `process_repository` call.
 enum ProcessOutput<'a> {
-	/// List of releases
+	/// List of releases.
 	Releases(Vec<Release<'a>>),
-	/// Semver
+	/// Semantic version.
 	Version(String),
 }
 

@@ -30,7 +30,7 @@ Calculate and set the next semantic version (i.e. _bump the version_) for the un
 # Semver: {MAJOR}.{MINOR}.{PATCH}
 # "fix:" increments PATCH, "feat:" increments MINOR and "scope!" (breaking changes) increments MAJOR
 git cliff --bump
-# Simply calculate and return next semantic version
+# Calculate and print the next semantic version to stdout
 git cliff --bumped-version
 ```
 

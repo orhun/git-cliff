@@ -150,7 +150,7 @@ pub struct Opt {
 	/// Bumps the version for unreleased changes.
 	#[arg(long, help_heading = Some("FLAGS"))]
 	pub bump:           bool,
-	/// Returns bumped version for unreleased changes.
+	/// Prints bumped version for unreleased changes.
 	#[arg(long, help_heading = Some("FLAGS"))]
 	pub bumped_version: bool,
 	/// Sets the template for the changelog body.
