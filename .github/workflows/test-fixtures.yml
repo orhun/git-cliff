@@ -36,6 +36,7 @@ jobs:
             command: --bump
           - fixtures-name: test-bumped-version
             command: --bumped-version
+          - fixtures-name: test-footer-template
     steps:
       - name: Checkout
         uses: actions/checkout@v4
