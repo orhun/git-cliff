@@ -48,12 +48,16 @@ impl<'a> Release<'a> {
 }
 
 /// Representation of a list of releases.
-pub struct Releases<'a>(pub &'a Vec<Release<'a>>);
+#[derive(Serialize)]
+pub struct Releases<'a> {
+	/// Releases.
+	pub releases: &'a Vec<Release<'a>>,
+}
 
 impl<'a> Releases<'a> {
 	/// Returns the list of releases as JSON.
 	pub fn as_json(&self) -> Result<String> {
-		Ok(serde_json::to_string(self.0)?)
+		Ok(serde_json::to_string(self.releases)?)
 	}
 }
 

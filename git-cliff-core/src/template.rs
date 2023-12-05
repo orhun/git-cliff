@@ -1,8 +1,11 @@
-use crate::error::{
-	Error,
-	Result,
+use crate::{
+	config::TextProcessor,
+	error::{
+		Error,
+		Result,
+	},
 };
-use crate::release::Release;
+use serde::Serialize;
 use std::collections::HashMap;
 use std::error::Error as ErrorImpl;
 use tera::{
@@ -20,7 +23,14 @@ pub struct Template {
 
 impl Template {
 	/// Constructs a new instance.
-	pub fn new(template: String) -> Result<Self> {
+	pub fn new(mut template: String, trim: bool) -> Result<Self> {
+		if trim {
+			template = template
+				.lines()
+				.map(|v| v.trim())
+				.collect::<Vec<&str>>()
+				.join("\n")
+		}
 		let mut tera = Tera::default();
 		if let Err(e) = tera.add_raw_template("template", &template) {
 			return if let Some(error_source) = e.source() {
@@ -49,10 +59,19 @@ impl Template {
 	}
 
 	/// Renders the template.
-	pub fn render(&self, release: &Release) -> Result<String> {
-		let context = TeraContext::from_serialize(release)?;
+	pub fn render<T: Serialize>(
+		&self,
+		context: &T,
+		postprocessors: &[TextProcessor],
+	) -> Result<String> {
+		let context = TeraContext::from_serialize(context)?;
 		match self.tera.render("template", &context) {
-			Ok(v) => Ok(v),
+			Ok(mut v) => {
+				for postprocessor in postprocessors {
+					postprocessor.replace(&mut v, vec![])?;
+				}
+				Ok(v)
+			}
 			Err(e) => {
 				return if let Some(error_source) = e.source() {
 					Err(Error::TemplateRenderError(error_source.to_string()))
@@ -68,19 +87,21 @@ impl Template {
 mod test {
 	use super::*;
 	use crate::commit::Commit;
+	use crate::release::Release;
+	use regex::Regex;
 
 	#[test]
 	fn render_template() -> Result<()> {
 		let template = r#"
-		## {{ version }}
+		## {{ version }} - <DATE>
 		{% for commit in commits %}
 		### {{ commit.group }}
 		- {{ commit.message | upper_first }}
 		{% endfor %}"#;
-		let template = Template::new(template.to_string())?;
+		let template = Template::new(template.to_string(), false)?;
 		assert_eq!(
 			r#"
-		## 1.0
+		## 1.0 - 2023
 		
 		### feat
 		- Add xyz
@@ -88,25 +109,33 @@ mod test {
 		### fix
 		- Fix abc
 		"#,
-			template.render(&Release {
-				version:   Some(String::from("1.0")),
-				commits:   vec![
-					Commit::new(
-						String::from("123123"),
-						String::from("feat(xyz): add xyz"),
-					),
-					Commit::new(
-						String::from("124124"),
-						String::from("fix(abc): fix abc"),
-					)
-				]
-				.into_iter()
-				.filter_map(|c| c.into_conventional().ok())
-				.collect(),
-				commit_id: None,
-				timestamp: 0,
-				previous:  None,
-			})?
+			template.render(
+				&Release {
+					version:   Some(String::from("1.0")),
+					commits:   vec![
+						Commit::new(
+							String::from("123123"),
+							String::from("feat(xyz): add xyz"),
+						),
+						Commit::new(
+							String::from("124124"),
+							String::from("fix(abc): fix abc"),
+						)
+					]
+					.into_iter()
+					.filter_map(|c| c.into_conventional().ok())
+					.collect(),
+					commit_id: None,
+					timestamp: 0,
+					previous:  None,
+				},
+				&[TextProcessor {
+					pattern:         Regex::new("<DATE>")
+						.expect("failed to compile regex"),
+					replace:         Some(String::from("2023")),
+					replace_command: None,
+				}]
+			)?
 		);
 		Ok(())
 	}
