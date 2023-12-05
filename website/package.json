@@ -1,6 +1,7 @@
 {
   "name": "git-cliff-website",
   "version": "0.0.0",
+  "license": "MIT OR Apache-2.0",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
