@@ -37,6 +37,8 @@ jobs:
           - fixtures-name: test-bumped-version
             command: --bumped-version
           - fixtures-name: test-footer-template
+          - fixtures-name: test-builtin-template
+            command: --config keepachangelog
     steps:
       - name: Checkout
         uses: actions/checkout@v4
