@@ -16,6 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - fixtures-name: new-fixture-template
           - fixtures-name: test-ignore-tags
           - fixtures-name: test-topo-order
             command: --latest
