@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Test
 
-## [0.2.0] - 2022-04-05
+## [0.2.0] - 2022-04-06
 
 ### Bug Fixes
 
@@ -20,7 +20,7 @@ All notable changes to this project will be documented in this file.
 
 - Add feature 2
 
-## [0.1.0] - 2022-04-05
+## [0.1.0] - 2022-04-06
 
 ### Bug Fixes
 
