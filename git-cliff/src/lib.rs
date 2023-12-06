@@ -19,7 +19,10 @@ use clap::ValueEnum;
 use git_cliff_core::changelog::Changelog;
 use git_cliff_core::commit::Commit;
 use git_cliff_core::config::Config;
-use git_cliff_core::embed::EmbeddedConfig;
+use git_cliff_core::embed::{
+	BuiltinConfig,
+	EmbeddedConfig,
+};
 use git_cliff_core::error::{
 	Error,
 	Result,
@@ -277,11 +280,23 @@ pub fn run(mut args: Opt) -> Result<()> {
 	check_new_version();
 
 	// Create the configuration file if init flag is given.
-	if args.init {
-		info!("Saving the configuration file to {:?}", DEFAULT_CONFIG);
-		fs::write(DEFAULT_CONFIG, EmbeddedConfig::get_config()?)?;
+	if let Some(init_config) = args.init {
+		let contents = match init_config {
+			Some(ref name) => BuiltinConfig::get_config(name.to_string())?,
+			None => EmbeddedConfig::get_config()?,
+		};
+		info!(
+			"Saving the configuration file{} to {:?}",
+			init_config.map(|v| format!(" ({v})")).unwrap_or_default(),
+			DEFAULT_CONFIG
+		);
+		fs::write(DEFAULT_CONFIG, contents)?;
 		return Ok(());
 	}
+
+	// Retrieve the built-in configuration.
+	let builtin_config =
+		BuiltinConfig::parse(args.config.to_string_lossy().to_string());
 
 	// Set the working directory.
 	if let Some(ref workdir) = args.workdir {
@@ -310,7 +325,10 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 
 	// Load the default configuration if necessary.
-	let mut config = if path.exists() {
+	let mut config = if let Ok((config, name)) = builtin_config {
+		info!("Using built-in configuration file: {name}");
+		config
+	} else if path.exists() {
 		Config::parse(&path)?
 	} else {
 		if !args.context {

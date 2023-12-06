@@ -65,6 +65,15 @@ pub struct Opt {
 	/// Increases the logging verbosity.
 	#[arg(short, long, action = ArgAction::Count, alias = "debug", help_heading = Some("FLAGS"))]
 	pub verbose:        u8,
+	/// Writes the default configuration file to cliff.toml
+	#[arg(
+	    short,
+	    long,
+	    value_name = "CONFIG",
+	    num_args = 0..=1,
+	    required = false
+	)]
+	pub init:           Option<Option<String>>,
 	/// Sets the configuration file.
 	#[arg(
 	    short,
@@ -162,9 +171,6 @@ pub struct Opt {
 		allow_hyphen_values = true
 	)]
 	pub body:           Option<String>,
-	/// Writes the default configuration file to cliff.toml
-	#[arg(short, long, help_heading = Some("FLAGS"))]
-	pub init:           bool,
 	/// Processes the commits starting from the latest tag.
 	#[arg(short, long, help_heading = Some("FLAGS"))]
 	pub latest:         bool,
