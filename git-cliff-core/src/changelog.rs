@@ -174,6 +174,8 @@ impl<'a> Changelog<'a> {
 						github_client.get_commits(),
 						github_client.get_pull_requests(),
 					)?;
+					debug!("Number of GitHub commits: {}", commits.len());
+					debug!("Number of GitHub pull requests: {}", commits.len());
 					Ok((commits, pull_requests))
 				})
 		} else {
@@ -190,41 +192,40 @@ impl<'a> Changelog<'a> {
 		let mut context = HashMap::new();
 		context.insert("remote", self.config.remote.clone());
 		let (github_commits, github_pull_requests) = self.get_github_metadata()?;
-		for mut release in self.releases.clone() {
+		let postprocessors = self
+			.config
+			.changelog
+			.postprocessors
+			.clone()
+			.unwrap_or_default();
+		let mut releases = self.releases.clone();
+		for release in releases.iter_mut() {
 			release.update_github_metadata(
 				github_commits.clone(),
 				github_pull_requests.clone(),
 			)?;
-			let postprocessors = self
-				.config
-				.changelog
-				.postprocessors
-				.clone()
-				.unwrap_or_default();
-			for release in &self.releases {
-				write!(
-					out,
-					"{}",
-					self.body_template.render(
-						release,
-						Some(&context),
-						&postprocessors
-					)?
-				)?;
-			}
-			if let Some(footer_template) = &self.footer_template {
-				writeln!(
-					out,
-					"{}",
-					footer_template.render(
-						&Releases {
-							releases: &self.releases,
-						},
-						Some(&context),
-						&postprocessors,
-					)?
-				)?;
-			}
+			write!(
+				out,
+				"{}",
+				self.body_template.render(
+					&release,
+					Some(&context),
+					&postprocessors
+				)?
+			)?;
+		}
+		if let Some(footer_template) = &self.footer_template {
+			writeln!(
+				out,
+				"{}",
+				footer_template.render(
+					&Releases {
+						releases: &releases,
+					},
+					Some(&context),
+					&postprocessors,
+				)?
+			)?;
 		}
 		Ok(())
 	}
