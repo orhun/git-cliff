@@ -15,6 +15,7 @@ use git_cliff_core::release::*;
 use git_cliff_core::template::Template;
 use pretty_assertions::assert_eq;
 use regex::Regex;
+use std::collections::HashMap;
 use std::fmt::Write;
 
 #[test]
@@ -213,11 +214,15 @@ fn generate_changelog() -> Result<()> {
 		write!(
 			out,
 			"{}",
-			template.render(&release, None, &[TextProcessor {
-				pattern:         Regex::new("<DATE>").unwrap(),
-				replace:         Some(String::from("2023")),
-				replace_command: None,
-			}])?
+			template.render(
+				&release,
+				Option::<HashMap<&str, String>>::None.as_ref(),
+				&[TextProcessor {
+					pattern:         Regex::new("<DATE>").unwrap(),
+					replace:         Some(String::from("2023")),
+					replace_command: None,
+				}]
+			)?
 		)
 		.unwrap();
 	}

@@ -196,7 +196,7 @@ mod test {
 		### fix
 		- Fix abc
 		"#,
-			template.render::<String, String>(
+			template.render(
 				&Release {
 					version:   Some(String::from("1.0")),
 					commits:   vec![
@@ -219,7 +219,7 @@ mod test {
 						contributors: vec![],
 					},
 				},
-				None,
+				Option::<HashMap<&str, String>>::None.as_ref(),
 				&[TextProcessor {
 					pattern:         Regex::new("<DATE>")
 						.expect("failed to compile regex"),
