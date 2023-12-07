@@ -17,30 +17,31 @@ use std::io::Write;
 /// Changelog generator.
 #[derive(Debug)]
 pub struct Changelog<'a> {
-	releases: Vec<Release<'a>>,
-	template: Template,
-	config:   &'a Config,
+	releases:        Vec<Release<'a>>,
+	body_template:   Template,
+	footer_template: Option<Template>,
+	config:          &'a Config,
 }
 
 impl<'a> Changelog<'a> {
 	/// Constructs a new instance.
 	pub fn new(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
-		let mut template = config
-			.changelog
-			.body
-			.as_deref()
-			.unwrap_or_default()
-			.to_string();
-		if config.changelog.trim.unwrap_or(true) {
-			template = template
-				.lines()
-				.map(|v| v.trim())
-				.collect::<Vec<&str>>()
-				.join("\n")
-		}
+		let trim = config.changelog.trim.unwrap_or(true);
 		let mut changelog = Self {
 			releases,
-			template: Template::new(template)?,
+			body_template: Template::new(
+				config
+					.changelog
+					.body
+					.as_deref()
+					.unwrap_or_default()
+					.to_string(),
+				trim,
+			)?,
+			footer_template: match &config.changelog.footer {
+				Some(footer) => Some(Template::new(footer.to_string(), trim)?),
+				None => None,
+			},
 			config,
 		};
 		changelog.process_commits();
@@ -157,11 +158,11 @@ impl<'a> Changelog<'a> {
 	fn get_github_metadata(
 		&self,
 	) -> Result<(Vec<GitHubCommit>, Vec<GitHubPullRequest>)> {
-		if self
-			.template
-			.get_template_variables()?
-			.iter()
-			.any(|v| v.contains("github."))
+		if self.body_template.contains_variable("github.")? ||
+			self.footer_template
+				.as_ref()
+				.and_then(|v| v.contains_variable("github.").ok())
+				.unwrap_or(false)
 		{
 			let github_client =
 				GitHubClient::try_from(self.config.remote.github.clone())?;
@@ -194,19 +195,36 @@ impl<'a> Changelog<'a> {
 				github_commits.clone(),
 				github_pull_requests.clone(),
 			)?;
-			let mut rendered =
-				self.template.render(&release, Some(context.clone()))?;
-			if let Some(postprocessors) =
-				self.config.changelog.postprocessors.as_ref()
-			{
-				for postprocessor in postprocessors {
-					postprocessor.replace(&mut rendered, vec![])?;
-				}
+			let postprocessors = self
+				.config
+				.changelog
+				.postprocessors
+				.clone()
+				.unwrap_or_default();
+			for release in &self.releases {
+				write!(
+					out,
+					"{}",
+					self.body_template.render(
+						release,
+						Some(&context),
+						&postprocessors
+					)?
+				)?;
 			}
-			write!(out, "{}", rendered)?;
-		}
-		if let Some(footer) = &self.config.changelog.footer {
-			write!(out, "{footer}")?;
+			if let Some(footer_template) = &self.footer_template {
+				writeln!(
+					out,
+					"{}",
+					footer_template.render(
+						&Releases {
+							releases: &self.releases,
+						},
+						Some(&context),
+						&postprocessors,
+					)?
+				)?;
+			}
 		}
 		Ok(())
 	}
@@ -228,7 +246,10 @@ impl<'a> Changelog<'a> {
 
 	/// Prints the changelog context to the given output.
 	pub fn write_context<W: Write>(&self, out: &mut W) -> Result<()> {
-		let output = Releases(&self.releases).as_json()?;
+		let output = Releases {
+			releases: &self.releases,
+		}
+		.as_json()?;
 		writeln!(out, "{output}")?;
 		Ok(())
 	}
@@ -267,7 +288,9 @@ mod test {
 				- {{ commit.message }}{% endfor %}
 				{% endfor %}{% endfor %}"#,
 				)),
-				footer:         Some(String::from("------------")),
+				footer:         Some(String::from(
+					r#"-- total releases: {{ releases | length }} --"#,
+				)),
 				trim:           Some(true),
 				postprocessors: Some(vec![TextProcessor {
 					pattern:         Regex::new("boring")
@@ -539,7 +562,8 @@ mod test {
 
 			#### ui
 			- make good stuff
-			------------"#
+			-- total releases: 2 --
+			"#
 			)
 			.replace("			", ""),
 			str::from_utf8(&out).unwrap_or_default()
@@ -654,7 +678,8 @@ chore(deps): fix broken deps
 
 			#### ui
 			- make good stuff
-			------------"#
+			-- total releases: 2 --
+			"#
 			)
 			.replace("			", ""),
 			str::from_utf8(&out).unwrap_or_default()

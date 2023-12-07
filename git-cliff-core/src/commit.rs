@@ -295,16 +295,17 @@ impl Commit<'_> {
 							"Skipping commit",
 						)));
 					} else {
+						let regex_replace = |mut value: String| {
+							for mat in regex.find_iter(&text) {
+								value =
+									regex.replace(mat.as_str(), value).to_string();
+							}
+							value
+						};
 						self.group =
-							parser.group.as_ref().cloned().map(|mut group| {
-								for mat in regex.find_iter(&text) {
-									group = regex
-										.replace(mat.as_str(), group)
-										.to_string();
-								}
-								group
-							});
-						self.scope = parser.scope.as_ref().cloned();
+							parser.group.as_ref().cloned().map(regex_replace);
+						self.scope =
+							parser.scope.as_ref().cloned().map(regex_replace);
 						self.default_scope = parser.default_scope.as_ref().cloned();
 						return Ok(self);
 					}

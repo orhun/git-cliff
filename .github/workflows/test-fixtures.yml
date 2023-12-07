@@ -16,6 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - fixtures-name: new-fixture-template
           - fixtures-name: test-ignore-tags
           - fixtures-name: test-topo-order
             command: --latest
@@ -32,6 +33,11 @@ jobs:
           - fixtures-name: test-skip-breaking-changes
           - fixtures-name: test-split-commits
           - fixtures-name: test-keep-a-changelog-links
+          - fixtures-name: test-bump-version
+            command: --bump
+          - fixtures-name: test-bumped-version
+            command: --bumped-version
+          - fixtures-name: test-footer-template
     steps:
       - name: Checkout
         uses: actions/checkout@v4

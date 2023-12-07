@@ -47,15 +47,21 @@ Body template that represents a single release in the changelog.
 
 See [templating](/docs/category/templating) for more detail.
 
+### footer
+
+Footer template that will be rendered and added to the end of the changelog.
+
+The template context is the same as [`body`](#body) and contains all the releases instead of a single release.
+
+For example, to get the list of releases, use the `{{ releases }}` variable in the template. To get information about a single release, iterate over this array and access the fields similar to [`body`](#body).
+
+See [Keep a Changelog configuration](/docs/templating/examples#keep-a-changelog) for seeing the example of adding links to the end of the changelog.
+
 ### trim
 
 If set to `true`, leading and trailing whitespace are removed from the [`body`](#body).
 
 It is useful for adding indentation to the template for readability, as shown [in the example](#changelog).
-
-### footer
-
-Footer text that will be added to the end of the changelog.
 
 ### postprocessors
 

@@ -23,7 +23,7 @@ fn generate_changelog() -> Result<()> {
 		header:         Some(String::from("this is a changelog")),
 		body:           Some(String::from(
 			r#"
-## Release {{ version }}
+## Release {{ version }} - <DATE>
 {% for group, commits in commits | group_by(attribute="group") %}
 ### {{ group }}
 {% for commit in commits %}
@@ -206,14 +206,18 @@ fn generate_changelog() -> Result<()> {
 	];
 
 	let out = &mut String::new();
-	let template = Template::new(changelog_config.body.unwrap())?;
+	let template = Template::new(changelog_config.body.unwrap(), false)?;
 
 	writeln!(out, "{}", changelog_config.header.unwrap()).unwrap();
 	for release in releases {
 		write!(
 			out,
 			"{}",
-			template.render::<String, String>(&release, None)?
+			template.render(&release, None, &[TextProcessor {
+				pattern:         Regex::new("<DATE>").unwrap(),
+				replace:         Some(String::from("2023")),
+				replace_command: None,
+			}])?
 		)
 		.unwrap();
 	}
@@ -222,7 +226,7 @@ fn generate_changelog() -> Result<()> {
 	assert_eq!(
 		r#"this is a changelog
 
-## Release v2.0.0
+## Release v2.0.0 - 2023
 
 ### docs
 - *(cool)* testing author filtering
@@ -241,7 +245,7 @@ fn generate_changelog() -> Result<()> {
 ### test
 - *(tests)* test some stuff
 
-## Release v1.0.0
+## Release v1.0.0 - 2023
 
 ### chore
 - do nothing

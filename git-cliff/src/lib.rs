@@ -19,7 +19,10 @@ use clap::ValueEnum;
 use git_cliff_core::changelog::Changelog;
 use git_cliff_core::commit::Commit;
 use git_cliff_core::config::Config;
-use git_cliff_core::embed::EmbeddedConfig;
+use git_cliff_core::embed::{
+	BuiltinConfig,
+	EmbeddedConfig,
+};
 use git_cliff_core::error::{
 	Error,
 	Result,
@@ -32,7 +35,10 @@ use std::fs::{
 	self,
 	File,
 };
-use std::io;
+use std::io::{
+	self,
+	Write,
+};
 use std::time::{
 	SystemTime,
 	UNIX_EPOCH,
@@ -59,6 +65,14 @@ fn check_new_version() {
 	}
 }
 
+/// Output of the `process_repository` call.
+enum ProcessOutput<'a> {
+	/// List of releases.
+	Releases(Vec<Release<'a>>),
+	/// Semantic version.
+	Version(String),
+}
+
 /// Processes the tags and commits for creating release entries for the
 /// changelog.
 ///
@@ -68,7 +82,7 @@ fn process_repository<'a>(
 	repository: &'static Repository,
 	config: Config,
 	args: &Opt,
-) -> Result<Vec<Release<'a>>> {
+) -> Result<ProcessOutput<'a>> {
 	let mut tags = repository.tags(&config.git.tag_pattern, args.topo_order)?;
 	let skip_regex = config.git.skip_tags.as_ref();
 	let ignore_regex = config.git.ignore_tags.as_ref();
@@ -204,7 +218,7 @@ fn process_repository<'a>(
 		}
 	}
 
-	if release_index > 1 {
+	if release_index > 0 {
 		previous_release.previous = None;
 		releases[release_index].previous = Some(Box::new(previous_release));
 	}
@@ -240,8 +254,14 @@ fn process_repository<'a>(
 	}
 
 	// Bump the version.
-	if args.bump && releases[release_index].version.is_none() {
+	if (args.bump || args.bumped_version) &&
+		releases[release_index].version.is_none()
+	{
 		let next_version = releases[release_index].calculate_next_version()?;
+		if args.bumped_version {
+			return Ok(ProcessOutput::Version(next_version));
+		}
+
 		debug!("Bumping the version to {next_version}");
 		releases[release_index].version = Some(next_version.to_string());
 		releases[release_index].timestamp = SystemTime::now()
@@ -250,7 +270,7 @@ fn process_repository<'a>(
 			.try_into()?;
 	}
 
-	Ok(releases)
+	Ok(ProcessOutput::Releases(releases))
 }
 
 /// Runs `git-cliff`.
@@ -260,11 +280,23 @@ pub fn run(mut args: Opt) -> Result<()> {
 	check_new_version();
 
 	// Create the configuration file if init flag is given.
-	if args.init {
-		info!("Saving the configuration file to {:?}", DEFAULT_CONFIG);
-		fs::write(DEFAULT_CONFIG, EmbeddedConfig::get_config()?)?;
+	if let Some(init_config) = args.init {
+		let contents = match init_config {
+			Some(ref name) => BuiltinConfig::get_config(name.to_string())?,
+			None => EmbeddedConfig::get_config()?,
+		};
+		info!(
+			"Saving the configuration file{} to {:?}",
+			init_config.map(|v| format!(" ({v})")).unwrap_or_default(),
+			DEFAULT_CONFIG
+		);
+		fs::write(DEFAULT_CONFIG, contents)?;
 		return Ok(());
 	}
+
+	// Retrieve the built-in configuration.
+	let builtin_config =
+		BuiltinConfig::parse(args.config.to_string_lossy().to_string());
 
 	// Set the working directory.
 	if let Some(ref workdir) = args.workdir {
@@ -293,7 +325,10 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 
 	// Load the default configuration if necessary.
-	let mut config = if path.exists() {
+	let mut config = if let Ok((config, name)) = builtin_config {
+		info!("Using built-in configuration file: {name}");
+		config
+	} else if path.exists() {
 		Config::parse(&path)?
 	} else {
 		if !args.context {
@@ -350,16 +385,33 @@ pub fn run(mut args: Opt) -> Result<()> {
 	// Process the repository.
 	let repositories = args.repository.clone().unwrap_or(vec![env::current_dir()?]);
 	let mut releases = Vec::<Release>::new();
+	let mut versions = Vec::<String>::new();
 	for repository in repositories {
 		let repository = Repository::init(repository)?;
-		releases.extend(process_repository(
+		let process_output = process_repository(
 			Box::leak(Box::new(repository)),
 			config.clone(),
 			&args,
-		)?);
+		)?;
+
+		match process_output {
+			ProcessOutput::Releases(release) => releases.extend(release),
+			ProcessOutput::Version(version) => versions.push(version),
+		}
 	}
 
 	// Generate output.
+	if !versions.is_empty() {
+		let buf = versions.join("\n");
+		if let Some(path) = args.output {
+			let mut output = File::create(path)?;
+			output.write_all(buf.as_bytes())?;
+		} else {
+			println!("{buf}");
+		};
+		return Ok(());
+	}
+
 	let changelog = Changelog::new(releases, &config)?;
 	if args.context {
 		return if let Some(path) = args.output {

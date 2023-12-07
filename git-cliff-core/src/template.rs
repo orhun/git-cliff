@@ -1,8 +1,10 @@
-use crate::error::{
-	Error,
-	Result,
+use crate::{
+	config::TextProcessor,
+	error::{
+		Error,
+		Result,
+	},
 };
-use crate::release::Release;
 use serde::Serialize;
 use std::collections::{
 	HashMap,
@@ -25,7 +27,14 @@ pub struct Template {
 
 impl Template {
 	/// Constructs a new instance.
-	pub fn new(template: String) -> Result<Self> {
+	pub fn new(mut template: String, trim: bool) -> Result<Self> {
+		if trim {
+			template = template
+				.lines()
+				.map(|v| v.trim())
+				.collect::<Vec<&str>>()
+				.join("\n")
+		}
 		let mut tera = Tera::default();
 		if let Err(e) = tera.add_raw_template("template", &template) {
 			return if let Some(error_source) = e.source() {
@@ -116,20 +125,37 @@ impl Template {
 		Ok(variables.into_iter().collect())
 	}
 
+	/// Returns `true` if the given string/variable exists in the template.
+	///
+	/// Note that this uses a greedy match (*)
+	pub fn contains_variable(&self, variable: &str) -> Result<bool> {
+		let found = self
+			.get_template_variables()?
+			.iter()
+			.any(|v| v.contains(variable));
+		Ok(found)
+	}
+
 	/// Renders the template.
-	pub fn render<T: Serialize, S: Into<String>>(
+	pub fn render<C: Serialize, T: Serialize, S: Into<String> + Copy>(
 		&self,
-		release: &Release,
-		additional_context: Option<HashMap<S, T>>,
+		context: &C,
+		additional_context: Option<&HashMap<S, T>>,
+		postprocessors: &[TextProcessor],
 	) -> Result<String> {
-		let mut context = TeraContext::from_serialize(release)?;
+		let mut context = TeraContext::from_serialize(context)?;
 		if let Some(additional_context) = additional_context {
 			for (key, value) in additional_context {
-				context.insert(key, &value);
+				context.insert(*key, &value);
 			}
 		}
 		match self.tera.render("template", &context) {
-			Ok(v) => Ok(v),
+			Ok(mut v) => {
+				for postprocessor in postprocessors {
+					postprocessor.replace(&mut v, vec![])?;
+				}
+				Ok(v)
+			}
 			Err(e) => {
 				return if let Some(error_source) = e.source() {
 					Err(Error::TemplateRenderError(error_source.to_string()))
@@ -147,20 +173,22 @@ mod test {
 	use crate::{
 		commit::Commit,
 		github::GitHubReleaseMetadata,
+		release::Release,
 	};
+	use regex::Regex;
 
 	#[test]
 	fn render_template() -> Result<()> {
 		let template = r#"
-		## {{ version }}
+		## {{ version }} - <DATE>
 		{% for commit in commits %}
 		### {{ commit.group }}
 		- {{ commit.message | upper_first }}
 		{% endfor %}"#;
-		let template = Template::new(template.to_string())?;
+		let template = Template::new(template.to_string(), false)?;
 		assert_eq!(
 			r#"
-		## 1.0
+		## 1.0 - 2023
 		
 		### feat
 		- Add xyz
@@ -191,7 +219,13 @@ mod test {
 						contributors: vec![],
 					},
 				},
-				None
+				None,
+				&[TextProcessor {
+					pattern:         Regex::new("<DATE>")
+						.expect("failed to compile regex"),
+					replace:         Some(String::from("2023")),
+					replace_command: None,
+				}]
 			)?
 		);
 		Ok(())
