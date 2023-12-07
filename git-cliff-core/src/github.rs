@@ -173,8 +173,10 @@ impl GitHubClient {
 		page: i32,
 	) -> Result<Vec<T>> {
 		let url = T::url(&self.owner, &self.repo, page);
-		trace!("Sending request to: {url}");
-		let response = self.client.get(&url).send().await?.json::<Vec<T>>().await?;
+		debug!("Sending request to: {url}");
+		let response = self.client.get(&url).send().await?.text().await?;
+		trace!("Response: {:?}", response);
+		let response = serde_json::from_str::<Vec<T>>(&response)?;
 		if response.is_empty() {
 			Err(Error::PaginationError(String::from("end of entries")))
 		} else {
@@ -187,7 +189,12 @@ impl GitHubClient {
 		let entries: Vec<Vec<T>> = stream::iter(1..)
 			.map(|i| self.get_entries_with_page(i))
 			.buffered(T::buffer_size())
-			.take_while(|page| future::ready(page.is_ok()))
+			.take_while(|page| {
+				if let Err(e) = page {
+					debug!("Error while fetching page: {:?}", e);
+				}
+				future::ready(page.is_ok())
+			})
 			.map(|page| match page {
 				Ok(v) => v,
 				Err(ref e) => {
