@@ -6,17 +6,15 @@ All notable changes to this project will be documented in this file.
 
 ### Test
 
+- Add tests
+
 ## [0.2.0] - 2022-04-06
 
 ### Bug Fixes
 
-#### Cli
-
 - Fix feature 2
 
 ### Features
-
-#### Gui
 
 - Add feature 2
 
@@ -24,13 +22,9 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Fixes
 
-#### Cli
-
 - Fix feature 1
 
 ### Features
-
-#### App
 
 - Add feature 1
 
