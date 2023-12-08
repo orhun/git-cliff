@@ -14,6 +14,10 @@ pub enum Error {
 	#[cfg(feature = "repo")]
 	#[error("Git error: `{0}`")]
 	GitError(#[from] git2::Error),
+	/// Error variant that represents other repository related errors.
+	#[cfg(feature = "repo")]
+	#[error("Git repository error: `{0}`")]
+	RepoError(String),
 	/// Error that may occur while parsing the config file.
 	#[error("Cannot parse config: `{0}`")]
 	ConfigError(#[from] config::ConfigError),
@@ -78,6 +82,12 @@ pub enum Error {
 	/// Error that may occur during handling pages.
 	#[error("Pagination error: `{0}`")]
 	PaginationError(String),
+	/// The errors that may occur while parsing URLs.
+	#[error("URL parse error: `{0}`")]
+	UrlParseError(#[from] url::ParseError),
+	/// Error that may occur when a remote is not set.
+	#[error("Repository remote is not set.")]
+	RemoteNotSetError,
 }
 
 /// Result type of the core library.

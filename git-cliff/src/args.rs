@@ -199,6 +199,14 @@ pub struct Opt {
 	/// Sets the commit range to process.
 	#[arg(value_name = "RANGE", help_heading = Some("ARGS"))]
 	pub range:          Option<String>,
+	/// Sets the GitHub API token.
+	#[arg(
+		long,
+		env = "GITHUB_TOKEN",
+		value_name = "TOKEN",
+		hide_env_values = true
+	)]
+	pub github_token:   Option<String>,
 }
 
 impl Opt {

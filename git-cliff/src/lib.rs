@@ -30,6 +30,7 @@ use git_cliff_core::error::{
 use git_cliff_core::release::Release;
 use git_cliff_core::repo::Repository;
 use git_cliff_core::DEFAULT_CONFIG;
+use secrecy::Secret;
 use std::env;
 use std::fs::{
 	self,
@@ -80,7 +81,7 @@ enum ProcessOutput<'a> {
 /// repository individually.
 fn process_repository<'a>(
 	repository: &'static Repository,
-	config: Config,
+	config: &mut Config,
 	args: &Opt,
 ) -> Result<ProcessOutput<'a>> {
 	let mut tags = repository.tags(&config.git.tag_pattern, args.topo_order)?;
@@ -109,6 +110,19 @@ fn process_repository<'a>(
 			skip || !ignore
 		})
 		.collect();
+
+	if !config.remote.github.is_set() {
+		match repository.upstream_remote() {
+			Ok(remote) => {
+				debug!("Using remote: {:?}", remote);
+				config.remote.github.owner = remote.owner;
+				config.remote.github.repo = remote.repo;
+			}
+			Err(e) => {
+				debug!("Failed to get remote from repository: {:?}", e);
+			}
+		}
+	}
 
 	// Print debug information about configuration and arguments.
 	log::trace!("{:#?}", args);
@@ -380,6 +394,9 @@ pub fn run(mut args: Opt) -> Result<()> {
 			args.topo_order = topo_order;
 		}
 	}
+	if args.github_token.is_some() {
+		config.remote.github.token = args.github_token.clone().map(Secret::new);
+	}
 	config.git.skip_tags = config.git.skip_tags.filter(|r| !r.as_str().is_empty());
 
 	// Process the repository.
@@ -388,11 +405,8 @@ pub fn run(mut args: Opt) -> Result<()> {
 	let mut versions = Vec::<String>::new();
 	for repository in repositories {
 		let repository = Repository::init(repository)?;
-		let process_output = process_repository(
-			Box::leak(Box::new(repository)),
-			config.clone(),
-			&args,
-		)?;
+		let process_output =
+			process_repository(Box::leak(Box::new(repository)), &mut config, &args)?;
 
 		match process_output {
 			ProcessOutput::Releases(release) => releases.extend(release),

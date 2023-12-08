@@ -142,6 +142,9 @@ pub struct GitHubClient {
 impl TryFrom<Remote> for GitHubClient {
 	type Error = Error;
 	fn try_from(remote: Remote) -> StdResult<Self, Self::Error> {
+		if !remote.is_set() {
+			return Err(Error::RemoteNotSetError);
+		}
 		let mut headers = HeaderMap::new();
 		headers.insert(
 			reqwest::header::ACCEPT,

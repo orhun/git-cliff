@@ -5,9 +5,9 @@
 # Configuration options are organized into tables and keys.
 # See documentation for more information on available options.
 
-[remote.github]
-owner = "orhun"
-repo = "git-cliff"
+# [remote.github]
+# owner = "orhun"
+# repo = "git-cliff"
 # token = ""
 
 [changelog]
@@ -31,7 +31,7 @@ body = """
 {% if version %}\
     {% if previous.version %}\
       {% raw %}\n{% endraw %}
-      **Full Changelog**: https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}/compare/{{ previous.version }}...{{ version }}\
+      **Full Changelog**: https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}/compare/{{ previous.version }}...{{ version }}
     {% endif %}\
 {% endif %}
 """

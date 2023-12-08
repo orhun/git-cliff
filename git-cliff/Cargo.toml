@@ -29,6 +29,7 @@ default = ["update-informer"]
 glob.workspace = true
 regex.workspace = true
 log.workspace = true
+secrecy.workspace = true
 dirs-next = "2.0.0"
 clap = { version = "4.4.11", features = ["derive", "env", "wrap_help", "cargo"] }
 clap_complete = "4.4.4"

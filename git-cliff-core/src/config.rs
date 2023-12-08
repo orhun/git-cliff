@@ -13,6 +13,7 @@ use serde::{
 	Serialize,
 };
 use std::ffi::OsStr;
+use std::fmt;
 use std::fs;
 use std::path::Path;
 use std::result::Result as StdResult;
@@ -120,6 +121,25 @@ where
 	S: serde::Serializer,
 {
 	ser.serialize_str("*")
+}
+
+impl fmt::Display for Remote {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "{}/{}", self.owner, self.repo)
+	}
+}
+
+impl PartialEq for Remote {
+	fn eq(&self, other: &Self) -> bool {
+		self.to_string().eq(&other.to_string())
+	}
+}
+
+impl Remote {
+	/// Returns `true` if the remote has an owner and repo.
+	pub fn is_set(&self) -> bool {
+		!self.owner.is_empty() && !self.repo.is_empty()
+	}
 }
 
 /// Parser for grouping commits.

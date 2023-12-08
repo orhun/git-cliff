@@ -1,8 +1,10 @@
+use crate::config::Remote;
 use crate::error::{
 	Error,
 	Result,
 };
 use git2::{
+	BranchType,
 	Commit,
 	DescribeOptions,
 	Repository as GitRepository,
@@ -13,6 +15,7 @@ use indexmap::IndexMap;
 use regex::Regex;
 use std::io;
 use std::path::PathBuf;
+use url::Url;
 
 /// Wrapper for [`Repository`] type from git2.
 ///
@@ -137,6 +140,59 @@ impl Repository {
 			.map(|(a, b)| (a.id().to_string(), b))
 			.collect())
 	}
+
+	/// Returns the remote of the upstream repository.
+	///
+	/// The strategy used here is the following:
+	///
+	/// Find the branch that HEAD points to, and read the remote configured for
+	/// that branch returns the remote and the name of the local branch.
+	pub fn upstream_remote(&self) -> Result<Remote> {
+		for branch in self.inner.branches(Some(BranchType::Local))? {
+			let branch = branch?.0;
+			if branch.is_head() {
+				let upstream = &self.inner.branch_upstream_remote(&format!(
+					"refs/heads/{}",
+					&branch.name()?.ok_or_else(|| Error::RepoError(
+						String::from("branch name is not valid")
+					))?
+				))?;
+				let upstream_name = upstream.as_str().ok_or_else(|| {
+					Error::RepoError(String::from(
+						"name of the upstream remote is not valid",
+					))
+				})?;
+				let origin = &self.inner.find_remote(upstream_name)?;
+				let url = origin
+					.url()
+					.ok_or_else(|| {
+						Error::RepoError(String::from(
+							"failed to get the remote URL",
+						))
+					})?
+					.to_string();
+				trace!("Upstream URL: {url}");
+				let url = Url::parse(&url)?;
+				let segments: Vec<&str> = url
+					.path_segments()
+					.ok_or_else(|| {
+						Error::RepoError(String::from("failed to get URL segments"))
+					})?
+					.rev()
+					.collect();
+				if let (Some(owner), Some(repo)) =
+					(segments.get(1), segments.first())
+				{
+					return Ok(Remote {
+						owner: owner.to_string(),
+						repo:  repo.trim_end_matches(".git").to_string(),
+						token: None,
+					});
+				}
+			}
+		}
+		Err(Error::RepoError(String::from("no remotes configured")))
+	}
 }
 
 #[cfg(test)]
@@ -236,6 +292,26 @@ mod test {
 			"v0.1.0"
 		);
 		assert!(!tags.contains_key("4ddef08debfff48117586296e49d5caa0800d1b5"));
+		Ok(())
+	}
+
+	#[test]
+	fn git_upstream_remote() -> Result<()> {
+		let repository = Repository::init(
+			PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+				.parent()
+				.expect("parent directory not found")
+				.to_path_buf(),
+		)?;
+		let remote = repository.upstream_remote()?;
+		assert_eq!(
+			Remote {
+				owner: String::from("orhun"),
+				repo:  String::from("git-cliff"),
+				token: None,
+			},
+			remote
+		);
 		Ok(())
 	}
 }
