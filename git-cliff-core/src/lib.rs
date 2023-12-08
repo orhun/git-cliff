@@ -22,7 +22,7 @@ pub mod commit;
 pub mod config;
 /// Embedded file handler.
 pub mod embed;
-/// Error handl ing.
+/// Error handling.
 pub mod error;
 /// GitHub client.
 pub mod github;
