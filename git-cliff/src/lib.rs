@@ -239,26 +239,32 @@ fn process_repository<'a>(
 	}
 
 	// Set the previous release if needed.
-    if !releases.is_empty() && releases[0].previous.and_then(|p| p.version).is_none() {
-        let first_tag = first_processed_tag
-            .map(|tag| {
-                tags.iter()
-                    .enumerate()
-                    .find(|(_, (_, v))| v == &tag)
-                    .and_then(|(i, _)| i.checked_sub(1))
-                    .and_then(|i| tags.get_index(i))
-            })
-            .or_else(|| Some(tags.last()))
-            .flatten();
-        if let Some((commit_id, version)) = first_tag {
-            let previous_release = Release {
-                commit_id: Some(commit_id.to_string()),
-                version: Some(version.to_string()),
-                ..Release::default()
-            };
-            releases[0].previous = Some(Box::new(previous_release));
-        }
-    }
+	if !releases.is_empty() &&
+		releases
+			.first()
+			.and_then(|r| r.previous.as_ref())
+			.and_then(|p| p.version.as_ref())
+			.is_none()
+	{
+		let first_tag = first_processed_tag
+			.map(|tag| {
+				tags.iter()
+					.enumerate()
+					.find(|(_, (_, v))| v == &tag)
+					.and_then(|(i, _)| i.checked_sub(1))
+					.and_then(|i| tags.get_index(i))
+			})
+			.or_else(|| Some(tags.last()))
+			.flatten();
+		if let Some((commit_id, version)) = first_tag {
+			let previous_release = Release {
+				commit_id: Some(commit_id.to_string()),
+				version: Some(version.to_string()),
+				..Release::default()
+			};
+			releases[0].previous = Some(Box::new(previous_release));
+		}
+	}
 
 	// Bump the version.
 	if (args.bump || args.bumped_version) &&
