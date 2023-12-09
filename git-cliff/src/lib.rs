@@ -222,17 +222,6 @@ fn process_repository<'a>(
 		}
 	}
 
-	let first_tag = first_processed_tag
-		.map(|tag| {
-			tags.iter()
-				.enumerate()
-				.find(|(_, (_, v))| v == &tag)
-				.and_then(|(i, _)| i.checked_sub(1))
-				.and_then(|i| tags.get_index(i))
-		})
-		.or_else(|| Some(tags.last()))
-		.flatten();
-
 	if release_index > 0 {
 		previous_release.previous = None;
 		releases[release_index].previous = Some(Box::new(previous_release));
@@ -250,6 +239,23 @@ fn process_repository<'a>(
 	}
 
 	// Set the previous release if needed.
+	let first_tag = releases
+		.first()
+		.and_then(|r| r.previous.as_ref())
+		.map(|r| r.version.is_none())
+		.unwrap_or(false)
+		.then_some(first_processed_tag)
+		.flatten()
+		.map(|tag| {
+			tags.iter()
+				.enumerate()
+				.find(|(_, (_, v))| v == &tag)
+				.and_then(|(i, _)| i.checked_sub(1))
+				.and_then(|i| tags.get_index(i))
+		})
+		.or_else(|| Some(tags.last()))
+		.flatten();
+
 	if let Some((commit_id, version)) = first_tag {
 		let previous_release = Release {
 			commit_id: Some(commit_id.to_string()),
