@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 ---
+
 # Context
 
 Context is the model that holds the required data for a template rendering. The [JSON](https://en.wikipedia.org/wiki/JSON) format is used in the following examples for the representation of a context.

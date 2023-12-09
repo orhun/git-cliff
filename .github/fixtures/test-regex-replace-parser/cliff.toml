@@ -15,7 +15,7 @@ body = """
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | upper_first }}
     {% for commit in commits %}
-        - {% if commit.breaking %}[**breaking**] {% endif %}{{ commit.message | upper_first }}\
+        - ({{ commit.scope }}) {{ commit.message | upper_first }}\
     {% endfor %}
 {% endfor %}\n
 """
@@ -27,8 +27,9 @@ footer = """
 trim = true
 
 [git]
-# regex for preprocessing the commit messages
-commit_preprocessors = [
-    { pattern = '\(#([0-9]+)\)', replace = "([issue#${1}](https://github.com/orhun/git-cliff/issues/${1}))" },
-    { pattern = "  +", replace = " " },
+# regex for parsing and grouping commits
+commit_parsers = [
+  { message = '^fix\((.*)\)', group = 'Fix (${1}) 🧰' },
+  { message = '^feat\((.*)\)', group = 'Feature (${1}) 🚀' },
+  { message = "^\\[(.*)\\]", group = "Changes to ${1}", scope = "${1}" },
 ]

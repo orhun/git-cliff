@@ -48,8 +48,8 @@ version = "0.12.4"
 features = ["serde"]
 
 [dependencies.rust-embed]
-version = "8.0.0"
-features = ["debug-embed"]
+version = "8.1.0"
+features = ["debug-embed", "compression"]
 
 [dev-dependencies]
 pretty_assertions = "1.4.0"
