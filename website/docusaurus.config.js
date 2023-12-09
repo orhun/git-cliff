@@ -96,6 +96,10 @@ const config = {
                 label: "Get started",
                 to: "/docs/",
               },
+              {
+                label: "Blog",
+                to: "/blog",
+              },
             ],
           },
           {
@@ -115,12 +119,12 @@ const config = {
             title: "More",
             items: [
               {
-                label: "Blog",
-                to: "/blog",
-              },
-              {
                 label: "GitHub",
                 href: "https://github.com/orhun/git-cliff",
+              },
+              {
+                label: "Mastodon",
+                href: "https://fosstodon.org/@git_cliff",
               },
               {
                 label: "Twitter",
