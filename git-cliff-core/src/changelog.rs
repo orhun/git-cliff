@@ -164,6 +164,7 @@ impl<'a> Changelog<'a> {
 				.and_then(|v| v.contains_variable("github.").ok())
 				.unwrap_or(false)
 		{
+			warn!("You are using an experimental feature! Please report bugs at <https://github.com/orhun/git-cliff/issues/new/choose>");
 			let github_client =
 				GitHubClient::try_from(self.config.remote.github.clone())?;
 			tokio::runtime::Builder::new_multi_thread()
