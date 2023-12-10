@@ -246,7 +246,7 @@ fn process_repository<'a>(
 			.and_then(|p| p.version.as_ref())
 			.is_none()
 	{
-        // Get the previous tag of the first processed tag in the release loop.
+		// Get the previous tag of the first processed tag in the release loop.
 		let first_tag = first_processed_tag
 			.map(|tag| {
 				tags.iter()
@@ -258,7 +258,7 @@ fn process_repository<'a>(
 			.or_else(|| Some(tags.last()))
 			.flatten();
 
-        // Set the previous release if the first tag is found.
+		// Set the previous release if the first tag is found.
 		if let Some((commit_id, version)) = first_tag {
 			let previous_release = Release {
 				commit_id: Some(commit_id.to_string()),
