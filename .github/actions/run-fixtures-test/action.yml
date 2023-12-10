@@ -9,6 +9,10 @@ inputs:
     description: The git-cliff command to run
     required: false
     default: ""
+  date-format:
+    description: The date format to use
+    required: false
+    default: "%Y-%m-%d"
 
 runs:
   using: composite
@@ -40,7 +44,11 @@ runs:
 
     - name: Compare the output with the expected output
       working-directory: ${{ inputs.fixtures-dir }}
+      env:
+        IN_DATE_FORMAT: ${{ inputs.date-format }}
       run: |
         cat output.md
+        current_date=$(date +"$IN_DATE_FORMAT")
+        sed -i "s/<<DATE>>/$current_date/g" expected.md
         diff --strip-trailing-cr output.md expected.md
       shell: bash
