@@ -60,7 +60,7 @@ impl<'a> Release<'a> {
 				commit.github.username = Some(v.author.login.to_string());
 				commit.github.pr_number = github_pull_requests
 					.iter()
-					.find(|pr| pr.user.login == v.author.login)
+					.find(|pr| pr.merge_commit_sha == Some(v.sha.clone()))
 					.map(|v| v.number);
 				contributors.insert(GitHubContributor {
 					username:      Some(v.author.login.to_string()),
