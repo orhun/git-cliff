@@ -78,9 +78,17 @@ pub struct GitHubCommitAuthor {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitHubPullRequest {
 	/// Pull request number.
-	pub number:           i64,
-	/// SHA of the merge commit.
-	pub merge_commit_sha: Option<String>,
+	pub number: i64,
+	/// Owner of the pull request.
+	pub user:   PullRequestUser,
+}
+
+/// User that has created the pull request.
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PullRequestUser {
+	/// Username.
+	pub login: String,
 }
 
 impl GitHubEntry for GitHubPullRequest {
