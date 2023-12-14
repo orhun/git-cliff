@@ -57,13 +57,13 @@ impl<'a> Release<'a> {
 			if let Some(commit) =
 				self.commits.iter_mut().find(|commit| commit.id == v.sha)
 			{
-				commit.github.username = Some(v.author.login.to_string());
+				commit.github.username = v.author.clone().and_then(|v| v.login);
 				commit.github.pr_number = github_pull_requests
 					.iter()
 					.find(|pr| pr.merge_commit_sha == Some(v.sha.clone()))
 					.map(|v| v.number);
 				contributors.insert(GitHubContributor {
-					username:      Some(v.author.login.to_string()),
+					username:      v.author.clone().and_then(|v| v.login),
 					pr_number:     commit.github.pr_number,
 					is_first_time: false,
 				});
@@ -78,8 +78,8 @@ impl<'a> Release<'a> {
 			.map(|mut v| {
 				v.is_first_time = !github_commits
 					.iter()
-					.map(|v| v.author.login.clone())
-					.any(|login| Some(login) == v.username);
+					.map(|v| v.author.clone().and_then(|v| v.login))
+					.any(|login| login == v.username);
 				v
 			})
 			.collect();

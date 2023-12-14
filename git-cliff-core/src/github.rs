@@ -51,7 +51,7 @@ pub struct GitHubCommit {
 	/// SHA.
 	pub sha:    String,
 	/// Author of the commit.
-	pub author: GitHubCommitAuthor,
+	pub author: Option<GitHubCommitAuthor>,
 }
 
 impl GitHubEntry for GitHubCommit {
@@ -71,7 +71,7 @@ impl GitHubEntry for GitHubCommit {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitHubCommitAuthor {
 	/// Username.
-	pub login: String,
+	pub login: Option<String>,
 }
 
 /// Representation of a single pull request.
