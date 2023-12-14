@@ -285,6 +285,19 @@ impl Commit<'_> {
 					})?,
 				));
 			}
+			if parser.sha.as_deref() == Some(&self.id) {
+				if self.skip_commit(parser, protect_breaking) {
+					return Err(AppError::GroupError(String::from(
+						"Skipping commit",
+					)));
+				} else {
+					self.group = parser.group.clone().or(self.group);
+					self.scope = parser.scope.clone().or(self.scope);
+					self.default_scope =
+						parser.default_scope.clone().or(self.default_scope);
+					return Ok(self);
+				}
+			}
 			for (regex, text) in regex_checks {
 				if regex.is_match(&text) {
 					if self.skip_commit(parser, protect_breaking) {
@@ -442,6 +455,7 @@ mod test {
 		}
 		let commit = test_cases[0].0.clone().parse(
 			&[CommitParser {
+				sha:           None,
 				message:       Regex::new("test*").ok(),
 				body:          None,
 				group:         Some(String::from("test_group")),
@@ -614,6 +628,7 @@ mod test {
 
 		let parsed_commit = commit.parse(
 			&[CommitParser {
+				sha:           None,
 				message:       None,
 				body:          None,
 				group:         Some(String::from("Test group")),
@@ -628,6 +643,53 @@ mod test {
 		)?;
 
 		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+		Ok(())
+	}
+
+	#[test]
+	fn commit_sha() -> Result<()> {
+		let commit = Commit::new(
+			String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
+			String::from("feat: do something"),
+		);
+		let parsed_commit = commit.clone().parse(
+			&[CommitParser {
+				sha:           Some(String::from(
+					"8f55e69eba6e6ce811ace32bd84cc82215673cb6",
+				)),
+				message:       None,
+				body:          None,
+				group:         None,
+				default_scope: None,
+				scope:         None,
+				skip:          Some(true),
+				field:         None,
+				pattern:       None,
+			}],
+			false,
+			false,
+		);
+		assert!(parsed_commit.is_err());
+
+		let parsed_commit = commit.parse(
+			&[CommitParser {
+				sha:           Some(String::from(
+					"8f55e69eba6e6ce811ace32bd84cc82215673cb6",
+				)),
+				message:       None,
+				body:          None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         None,
+				pattern:       None,
+			}],
+			false,
+			false,
+		)?;
+		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+
 		Ok(())
 	}
 }

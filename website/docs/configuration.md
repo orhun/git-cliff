@@ -1,6 +1,7 @@
 ---
 sidebar_position: 4
 ---
+
 # Configuration
 
 **git-cliff** configuration file supports [TOML](https://github.com/toml-lang/toml) (preferred) and [YAML](https://yaml.org) formats.
@@ -213,21 +214,25 @@ An array of commit parsers for determining the commit groups by using regex.
 
 Examples:
 
-- `{ message = "^feat", group = "Features"}`
+- `{ message = "^feat", group = "Features" }`
   - Group the commit as "Features" if the commit message (description) starts with "feat".
-- `{ body = ".*security", group = "Security"}`
+- `{ body = ".*security", group = "Security" }`
   - Group the commit as "Security" if the commit body contains "security".
 - `{ message = '^fix\((.*)\)', group = 'Fix (${1})' }`
   - Use the matched scope value from the commit message in the group name.
-- `{ message = ".*deprecated", body = ".*deprecated", group = "Deprecation"}`
+- `{ message = ".*deprecated", body = ".*deprecated", group = "Deprecation" }`
   - Group the commit as "Deprecation" if the commit body and message contains "deprecated".
-- `{ message = "^revert", skip = true}`
+- `{ message = "^revert", skip = true }`
   - Skip processing the commit if the commit message (description) starts with "revert".
-- `{ message = "^doc", group = "Documentation", default_scope = "other"},`
+- `{ message = "^doc", group = "Documentation", default_scope = "other" },`
   - If the commit starts with "doc", group the commit as "Documentation" and set the default scope to "other". (e.g. `docs: xyz` will be processed as `docs(other): xyz`)
-- `{ message = "(www)", scope = "Application"}`
+- `{ message = "(www)", scope = "Application" }`
   - If the commit contains "(www)", override the scope with "Application". Scoping order is: scope specification, conventional commit's scope and default scope.
-- `{ field = "author.name", pattern = "John Doe", group = "John's stuff"}`
+- `{ sha = "f6f2472bdf0bbb5f9fcaf2d72c1fa9f98f772bb2", skip = true }`
+  - Skip a specific commit by using its SHA1.
+- `{ sha = "f6f2472bdf0bbb5f9fcaf2d72c1fa9f98f772bb2", group = "Stuff" }`
+  - Set the group of the commit by using its SHA1.
+- `{ field = "author.name", pattern = "John Doe", group = "John's stuff" }`
   - If the author's name attribute of the commit matches the pattern "John Doe" (as a regex), override the scope with "John' stuff". Supported commit attributes are:
     - `id`
     - `message`

@@ -52,6 +52,18 @@ fn generate_changelog() -> Result<()> {
 		}]),
 		commit_parsers:           Some(vec![
 			CommitParser {
+				sha:           Some(String::from("coffee")),
+				message:       None,
+				body:          None,
+				group:         Some(String::from("I love coffee")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         None,
+				pattern:       None,
+			},
+			CommitParser {
+				sha:           None,
 				message:       Regex::new("^feat").ok(),
 				body:          None,
 				group:         Some(String::from("shiny features")),
@@ -62,6 +74,7 @@ fn generate_changelog() -> Result<()> {
 				pattern:       None,
 			},
 			CommitParser {
+				sha:           None,
 				message:       Regex::new("^fix").ok(),
 				body:          None,
 				group:         Some(String::from("fix bugs")),
@@ -72,6 +85,7 @@ fn generate_changelog() -> Result<()> {
 				pattern:       None,
 			},
 			CommitParser {
+				sha:           None,
 				message:       Regex::new("^test").ok(),
 				body:          None,
 				group:         None,
@@ -82,6 +96,7 @@ fn generate_changelog() -> Result<()> {
 				pattern:       None,
 			},
 			CommitParser {
+				sha:           None,
 				message:       None,
 				body:          None,
 				group:         Some(String::from("docs")),
@@ -129,6 +144,7 @@ fn generate_changelog() -> Result<()> {
 		Release {
 			version:   Some(String::from("v2.0.0")),
 			commits:   vec![
+
 				Commit::new(
 					String::from("000abc"),
 					String::from("Add unconventional commit"),
