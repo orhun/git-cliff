@@ -285,7 +285,9 @@ impl Commit<'_> {
 					})?,
 				));
 			}
-			if parser.sha.as_deref() == Some(&self.id) {
+			if parser.sha.clone().map(|v| v.to_lowercase()).as_deref() ==
+				Some(&self.id)
+			{
 				if self.skip_commit(parser, protect_breaking) {
 					return Err(AppError::GroupError(String::from(
 						"Skipping commit",
