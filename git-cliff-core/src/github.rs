@@ -177,9 +177,17 @@ impl GitHubClient {
 	) -> Result<Vec<T>> {
 		let url = T::url(&self.owner, &self.repo, page);
 		debug!("Sending request to: {url}");
-		let response = self.client.get(&url).send().await?.text().await?;
-		trace!("Response: {:?}", response);
-		let response = serde_json::from_str::<Vec<T>>(&response)?;
+		let response = self.client.get(&url).send().await?;
+		let response_text = if response.status().is_success() {
+			let text = response.text().await?;
+			trace!("Response: {:?}", text);
+			text
+		} else {
+			let text = response.text().await?;
+			error!("Request error: {}", text);
+			text
+		};
+		let response = serde_json::from_str::<Vec<T>>(&response_text)?;
 		if response.is_empty() {
 			Err(Error::PaginationError(String::from("end of entries")))
 		} else {
