@@ -114,12 +114,12 @@ fn process_repository<'a>(
 	if !config.remote.github.is_set() {
 		match repository.upstream_remote() {
 			Ok(remote) => {
-				info!("No GitHub remote is set, using remote: {}", remote);
+				debug!("No GitHub remote is set, using remote: {}", remote);
 				config.remote.github.owner = remote.owner;
 				config.remote.github.repo = remote.repo;
 			}
 			Err(e) => {
-				error!("Failed to get remote from repository: {:?}", e);
+				debug!("Failed to get remote from repository: {:?}", e);
 			}
 		}
 	}
