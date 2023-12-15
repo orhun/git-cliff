@@ -75,6 +75,10 @@ pub enum Error {
 	/// The errors that may occur when processing a HTTP request.
 	#[error("HTTP client error: `{0}`")]
 	HttpClientError(#[from] reqwest::Error),
+	/// The errors that may occur while constructing the HTTP client with
+	/// middleware.
+	#[error("HTTP client with middleware error: `{0}`")]
+	HttpClientMiddlewareError(#[from] reqwest_middleware::Error),
 	/// A possible error when converting a HeaderValue from a string or byte
 	/// slice.
 	#[error("HTTP header error: `{0}`")]

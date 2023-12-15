@@ -5,11 +5,22 @@ use futures::{
 	stream,
 	StreamExt,
 };
+use http_cache_reqwest::{
+	CACacheManager,
+	Cache,
+	CacheMode,
+	HttpCache,
+	HttpCacheOptions,
+};
 use reqwest::header::{
 	HeaderMap,
 	HeaderValue,
 };
 use reqwest::Client;
+use reqwest_middleware::{
+	ClientBuilder,
+	ClientWithMiddleware,
+};
 use secrecy::ExposeSecret;
 use serde::de::DeserializeOwned;
 use serde::{
@@ -135,7 +146,7 @@ pub struct GitHubClient {
 	/// GitHub repository.
 	repo:   String,
 	/// HTTP client.
-	client: Client,
+	client: ClientWithMiddleware,
 }
 
 /// Constructs a GitHub client from the remote configuration.
@@ -161,6 +172,13 @@ impl TryFrom<Remote> for GitHubClient {
 			.timeout(Duration::from_secs(REQUEST_TIMEOUT))
 			.default_headers(headers)
 			.build()?;
+		let client = ClientBuilder::new(client)
+			.with(Cache(HttpCache {
+				mode:    CacheMode::Default,
+				manager: CACacheManager::default(),
+				options: HttpCacheOptions::default(),
+			}))
+			.build();
 		Ok(Self {
 			owner: remote.owner,
 			repo: remote.repo,
