@@ -136,6 +136,15 @@ impl PartialEq for Remote {
 }
 
 impl Remote {
+	/// Constructs a new instance.
+	pub fn new<S: Into<String>>(owner: S, repo: S) -> Self {
+		Self {
+			owner: owner.into(),
+			repo:  repo.into(),
+			token: None,
+		}
+	}
+
 	/// Returns `true` if the remote has an owner and repo.
 	pub fn is_set(&self) -> bool {
 		!self.owner.is_empty() && !self.repo.is_empty()

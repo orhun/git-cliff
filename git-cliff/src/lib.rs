@@ -413,6 +413,10 @@ pub fn run(mut args: Opt) -> Result<()> {
 	if args.github_token.is_some() {
 		config.remote.github.token = args.github_token.clone().map(Secret::new);
 	}
+	if let Some(ref remote) = args.github_repo {
+		config.remote.github.owner = remote.0.owner.to_string();
+		config.remote.github.repo = remote.0.repo.to_string();
+	}
 	config.git.skip_tags = config.git.skip_tags.filter(|r| !r.as_str().is_empty());
 
 	// Process the repository.
