@@ -21,7 +21,7 @@ repo = ["dep:git2", "dep:glob", "dep:indexmap"]
 glob = { workspace = true, optional = true }
 regex.workspace = true
 log.workspace = true
-thiserror = "1.0.50"
+thiserror = "1.0.51"
 serde = { version = "1.0.193", features = ["derive"] }
 serde_json = "1.0.108"
 serde_regex = "1.1.0"
