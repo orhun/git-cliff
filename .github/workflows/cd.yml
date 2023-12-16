@@ -283,7 +283,7 @@ jobs:
           sccache: "true"
           manylinux: musllinux_1_2
       - name: Upload Python wheels
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           working-directory: pypi
           name: wheels
@@ -317,7 +317,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs: publish-binaries
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           path: pypi/wheels
           name: wheels
