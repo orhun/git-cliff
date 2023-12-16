@@ -21,6 +21,9 @@ pub enum Error {
 	/// Error that may occur while parsing the config file.
 	#[error("Cannot parse config: `{0}`")]
 	ConfigError(#[from] config::ConfigError),
+	/// A possible error while initializing the logger.
+	#[error("HTTP header error: `{0}`")]
+	LoggerError(#[from] log::SetLoggerError),
 	/// When commit's not follow the conventional commit structure we throw this
 	/// error.
 	#[error("Cannot parse the commit: `{0}`")]

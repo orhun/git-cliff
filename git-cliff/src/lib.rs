@@ -7,6 +7,9 @@
 /// Command-line argument parser.
 pub mod args;
 
+/// Custom logger implementation.
+pub mod logger;
+
 #[macro_use]
 extern crate log;
 

@@ -48,6 +48,12 @@ const REQUEST_TIMEOUT: u64 = 30;
 /// Maximum number of entries to fetch in a single page.
 const MAX_PAGE_SIZE: usize = 100;
 
+/// Log message to show while fetching data from GitHub.
+pub const START_FETCHING_MSG: &str = "Retrieving data from GitHub...";
+
+/// Log message to show when done fetching from GitHub.
+pub const FINISHED_FETCHING_MSG: &str = "Done fetching GitHub data.";
+
 /// Trait for handling the different entries returned from the GitHub API.
 trait GitHubEntry {
 	/// Returns the API URL for fetching the entries at the specified page.

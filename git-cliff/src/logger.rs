@@ -1,0 +1,126 @@
+use std::sync::atomic::{
+	AtomicUsize,
+	Ordering,
+};
+use std::time::Duration;
+use std::{
+	env,
+	fmt,
+};
+
+use env_logger::{
+	fmt::{
+		Color,
+		Style,
+		StyledValue,
+	},
+	Builder,
+};
+use git_cliff_core::error::Result;
+use git_cliff_core::github::{
+	FINISHED_FETCHING_MSG,
+	START_FETCHING_MSG,
+};
+use indicatif::{
+	ProgressBar,
+	ProgressStyle,
+};
+use log::Level;
+
+/// Environment variable to use for the logger.
+const LOGGER_ENV: &str = "RUST_LOG";
+
+/// Global variable for storing the maximum width of the modules.
+static MAX_MODULE_WIDTH: AtomicUsize = AtomicUsize::new(0);
+
+/// Wrapper for the padded values.
+struct Padded<T> {
+	value: T,
+	width: usize,
+}
+
+impl<T: fmt::Display> fmt::Display for Padded<T> {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(f, "{: <width$}", self.value, width = self.width)
+	}
+}
+
+/// Returns the max width of the target.
+fn max_target_width(target: &str) -> usize {
+	let max_width = MAX_MODULE_WIDTH.load(Ordering::Relaxed);
+	if max_width < target.len() {
+		MAX_MODULE_WIDTH.store(target.len(), Ordering::Relaxed);
+		target.len()
+	} else {
+		max_width
+	}
+}
+
+/// Adds colors to the given level and returns it.
+fn colored_level(style: &mut Style, level: Level) -> StyledValue<'_, &'static str> {
+	match level {
+		Level::Trace => style.set_color(Color::Magenta).value("TRACE"),
+		Level::Debug => style.set_color(Color::Blue).value("DEBUG"),
+		Level::Info => style.set_color(Color::Green).value("INFO "),
+		Level::Warn => style.set_color(Color::Yellow).value("WARN "),
+		Level::Error => style.set_color(Color::Red).value("ERROR"),
+	}
+}
+
+/// Initializes the global logger.
+///
+/// This method also creates a progress bar which is triggered
+/// by the network operations that are related to GitHub.
+pub fn init() -> Result<()> {
+	let progress_bar = ProgressBar::new_spinner();
+	progress_bar.set_style(
+		ProgressStyle::with_template("{spinner:.green} {msg}")
+			.unwrap()
+			.tick_strings(&[
+				"▹▹▹▹▹",
+				"▸▹▹▹▹",
+				"▹▸▹▹▹",
+				"▹▹▸▹▹",
+				"▹▹▹▸▹",
+				"▹▹▹▹▸",
+				"▪▪▪▪▪",
+			]),
+	);
+
+	let mut builder = Builder::new();
+	builder.format(move |f, record| {
+		use std::io::Write;
+
+		let target = record.target();
+		let max_width = max_target_width(target);
+
+		let mut style = f.style();
+		let level = colored_level(&mut style, record.level());
+
+		let mut style = f.style();
+		let target = style.set_bold(true).value(Padded {
+			value: target,
+			width: max_width,
+		});
+		let message = record.args().to_string();
+
+		if message.starts_with(START_FETCHING_MSG) {
+			progress_bar.enable_steady_tick(Duration::from_millis(80));
+			progress_bar.set_message(message);
+			Ok(())
+		} else if message.starts_with(FINISHED_FETCHING_MSG) {
+			progress_bar.finish_and_clear();
+			Ok(())
+		} else {
+			writeln!(f, " {} {} > {}", level, target, record.args(),)
+		}
+	});
+
+	if let Ok(var) = env::var(LOGGER_ENV) {
+		builder.parse_filters(&var);
+	}
+
+	builder.try_init()?;
+
+	Ok(())
+}

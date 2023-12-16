@@ -5,6 +5,8 @@ use crate::github::{
 	GitHubClient,
 	GitHubCommit,
 	GitHubPullRequest,
+	FINISHED_FETCHING_MSG,
+	START_FETCHING_MSG,
 };
 use crate::release::{
 	Release,
@@ -167,7 +169,8 @@ impl<'a> Changelog<'a> {
 			warn!("You are using an experimental feature! Please report bugs at <https://github.com/orhun/git-cliff/issues/new/choose>");
 			let github_client =
 				GitHubClient::try_from(self.config.remote.github.clone())?;
-			tokio::runtime::Builder::new_multi_thread()
+			info!("{START_FETCHING_MSG} ({})", self.config.remote.github);
+			let data = tokio::runtime::Builder::new_multi_thread()
 				.enable_all()
 				.build()?
 				.block_on(async {
@@ -178,7 +181,9 @@ impl<'a> Changelog<'a> {
 					debug!("Number of GitHub commits: {}", commits.len());
 					debug!("Number of GitHub pull requests: {}", commits.len());
 					Ok((commits, pull_requests))
-				})
+				});
+			info!("{FINISHED_FETCHING_MSG}");
+			data
 		} else {
 			Ok((vec![], vec![]))
 		}
