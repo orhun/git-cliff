@@ -120,6 +120,8 @@ pub struct Commit<'a> {
 	pub author:        Signature,
 	/// Committer.
 	pub committer:     Signature,
+	/// Whether if the commit has two or more parents.
+	pub merge_commit:  bool,
 }
 
 impl<'a> From<String> for Commit<'a> {
@@ -152,6 +154,7 @@ impl<'a> From<&GitCommit<'a>> for Commit<'a> {
 			message: commit.message().unwrap_or_default().to_string(),
 			author: commit.author().into(),
 			committer: commit.committer().into(),
+			merge_commit: commit.parent_count() > 1,
 			..Default::default()
 		}
 	}
@@ -414,6 +417,7 @@ impl Serialize for Commit<'_> {
 		commit.serialize_field("author", &self.author)?;
 		commit.serialize_field("committer", &self.committer)?;
 		commit.serialize_field("conventional", &self.conv.is_some())?;
+		commit.serialize_field("merge_commit", &self.merge_commit)?;
 		commit.end()
 	}
 }
