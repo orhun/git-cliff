@@ -3,6 +3,7 @@ use crate::error::{
 	Error,
 	Result,
 };
+#[cfg(feature = "github")]
 use crate::github::{
 	GitHubCommit,
 	GitHubContributor,
@@ -15,7 +16,6 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
-use std::collections::HashSet;
 
 /// Representation of a release.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -33,6 +33,7 @@ pub struct Release<'a> {
 	/// Previous release.
 	pub previous:  Option<Box<Release<'a>>>,
 	/// Contributors.
+	#[cfg(feature = "github")]
 	pub github:    GitHubReleaseMetadata,
 }
 
@@ -45,12 +46,13 @@ impl<'a> Release<'a> {
 	///   username.
 	/// - GitHub pull requests: needed for generating the contributor list for
 	///   the release.
+	#[cfg(feature = "github")]
 	pub fn update_github_metadata(
 		&mut self,
 		mut github_commits: Vec<GitHubCommit>,
 		github_pull_requests: Vec<GitHubPullRequest>,
 	) -> Result<()> {
-		let mut contributors = HashSet::new();
+		let mut contributors = std::collections::HashSet::new();
 		// retain the commits that are not a part of this release for later on
 		// checking the first contributors.
 		github_commits.retain(|v| {

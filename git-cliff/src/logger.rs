@@ -1,13 +1,3 @@
-use std::sync::atomic::{
-	AtomicUsize,
-	Ordering,
-};
-use std::time::Duration;
-use std::{
-	env,
-	fmt,
-};
-
 use env_logger::{
 	fmt::{
 		Color,
@@ -17,15 +7,26 @@ use env_logger::{
 	Builder,
 };
 use git_cliff_core::error::Result;
+#[cfg(feature = "github")]
 use git_cliff_core::github::{
 	FINISHED_FETCHING_MSG,
 	START_FETCHING_MSG,
 };
+#[cfg(feature = "github")]
 use indicatif::{
 	ProgressBar,
 	ProgressStyle,
 };
 use log::Level;
+use std::io::Write;
+use std::sync::atomic::{
+	AtomicUsize,
+	Ordering,
+};
+use std::{
+	env,
+	fmt,
+};
 
 /// Environment variable to use for the logger.
 const LOGGER_ENV: &str = "RUST_LOG";
@@ -67,30 +68,35 @@ fn colored_level(style: &mut Style, level: Level) -> StyledValue<'_, &'static st
 	}
 }
 
+#[cfg(feature = "github")]
+lazy_static::lazy_static! {
+	/// Lazily initialized progress bar.
+	pub static ref PROGRESS_BAR: ProgressBar = {
+		let progress_bar = ProgressBar::new_spinner();
+		progress_bar.set_style(
+			ProgressStyle::with_template("{spinner:.green} {msg}")
+				.unwrap()
+				.tick_strings(&[
+					"▹▹▹▹▹",
+					"▸▹▹▹▹",
+					"▹▸▹▹▹",
+					"▹▹▸▹▹",
+					"▹▹▹▸▹",
+					"▹▹▹▹▸",
+					"▪▪▪▪▪",
+				]),
+		);
+		progress_bar
+	};
+}
+
 /// Initializes the global logger.
 ///
 /// This method also creates a progress bar which is triggered
 /// by the network operations that are related to GitHub.
 pub fn init() -> Result<()> {
-	let progress_bar = ProgressBar::new_spinner();
-	progress_bar.set_style(
-		ProgressStyle::with_template("{spinner:.green} {msg}")
-			.unwrap()
-			.tick_strings(&[
-				"▹▹▹▹▹",
-				"▸▹▹▹▹",
-				"▹▸▹▹▹",
-				"▹▹▸▹▹",
-				"▹▹▹▸▹",
-				"▹▹▹▹▸",
-				"▪▪▪▪▪",
-			]),
-	);
-
 	let mut builder = Builder::new();
 	builder.format(move |f, record| {
-		use std::io::Write;
-
 		let target = record.target();
 		let max_width = max_target_width(target);
 
@@ -102,16 +108,23 @@ pub fn init() -> Result<()> {
 			value: target,
 			width: max_width,
 		});
-		let message = record.args().to_string();
-
-		if message.starts_with(START_FETCHING_MSG) {
-			progress_bar.enable_steady_tick(Duration::from_millis(80));
-			progress_bar.set_message(message);
-			Ok(())
-		} else if message.starts_with(FINISHED_FETCHING_MSG) {
-			progress_bar.finish_and_clear();
-			Ok(())
-		} else {
+		#[cfg(feature = "github")]
+		{
+			let message = record.args().to_string();
+			if message.starts_with(START_FETCHING_MSG) {
+				PROGRESS_BAR
+					.enable_steady_tick(std::time::Duration::from_millis(80));
+				PROGRESS_BAR.set_message(message);
+				Ok(())
+			} else if message.starts_with(FINISHED_FETCHING_MSG) {
+				PROGRESS_BAR.finish_and_clear();
+				Ok(())
+			} else {
+				writeln!(f, " {} {} > {}", level, target, record.args(),)
+			}
+		}
+		#[cfg(not(feature = "github"))]
+		{
 			writeln!(f, " {} {} > {}", level, target, record.args(),)
 		}
 	});

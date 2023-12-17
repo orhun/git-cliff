@@ -1,6 +1,7 @@
 use crate::commit::Commit;
 use crate::config::Config;
 use crate::error::Result;
+#[cfg(feature = "github")]
 use crate::github::{
 	GitHubClient,
 	GitHubCommit,
@@ -157,6 +158,7 @@ impl<'a> Changelog<'a> {
 	///
 	/// If no GitHub related variable is used in the template then this function
 	/// returns empty vectors.
+	#[cfg(feature = "github")]
 	fn get_github_metadata(
 		&self,
 	) -> Result<(Vec<GitHubCommit>, Vec<GitHubPullRequest>)> {
@@ -197,6 +199,7 @@ impl<'a> Changelog<'a> {
 		}
 		let mut context = HashMap::new();
 		context.insert("remote", self.config.remote.clone());
+		#[cfg(feature = "github")]
 		let (github_commits, github_pull_requests) = self.get_github_metadata()?;
 		let postprocessors = self
 			.config
@@ -206,6 +209,7 @@ impl<'a> Changelog<'a> {
 			.unwrap_or_default();
 		let mut releases = self.releases.clone();
 		for release in releases.iter_mut() {
+			#[cfg(feature = "github")]
 			release.update_github_metadata(
 				github_commits.clone(),
 				github_pull_requests.clone(),

@@ -77,14 +77,17 @@ pub enum Error {
 	PreviousVersionNotFound,
 	/// The errors that may occur when processing a HTTP request.
 	#[error("HTTP client error: `{0}`")]
+	#[cfg(feature = "github")]
 	HttpClientError(#[from] reqwest::Error),
 	/// The errors that may occur while constructing the HTTP client with
 	/// middleware.
 	#[error("HTTP client with middleware error: `{0}`")]
+	#[cfg(feature = "github")]
 	HttpClientMiddlewareError(#[from] reqwest_middleware::Error),
 	/// A possible error when converting a HeaderValue from a string or byte
 	/// slice.
 	#[error("HTTP header error: `{0}`")]
+	#[cfg(feature = "github")]
 	HttpHeaderError(#[from] reqwest::header::InvalidHeaderValue),
 	/// Error that may occur during handling pages.
 	#[error("Pagination error: `{0}`")]

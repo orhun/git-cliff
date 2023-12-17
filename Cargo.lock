@@ -733,6 +733,7 @@ dependencies = [
  "git-cliff-core",
  "glob",
  "indicatif",
+ "lazy_static",
  "log",
  "pretty_assertions",
  "regex",

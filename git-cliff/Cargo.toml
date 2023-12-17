@@ -23,20 +23,23 @@ path = "src/bin/mangen.rs"
 
 [features]
 # check for new versions
-default = ["update-informer"]
+default = ["update-informer", "github"]
+# enable GitHub integration
+github = ["git-cliff-core/github", "dep:indicatif"]
 
 [dependencies]
 glob.workspace = true
 regex.workspace = true
 log.workspace = true
 secrecy.workspace = true
+lazy_static.workspace = true
 dirs-next = "2.0.0"
 clap = { version = "4.4.11", features = ["derive", "env", "wrap_help", "cargo"] }
 clap_complete = "4.4.4"
 clap_mangen = "0.2.15"
 shellexpand = "3.1.0"
 update-informer = { version = "1.1.0", optional = true }
-indicatif = "0.17.7"
+indicatif = { version = "0.17.7", optional = true }
 env_logger = "0.10.1"
 
 [dependencies.git-cliff-core]
