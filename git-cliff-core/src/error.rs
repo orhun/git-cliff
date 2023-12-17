@@ -98,6 +98,9 @@ pub enum Error {
 	/// Error that may occur when a remote is not set.
 	#[error("Repository remote is not set.")]
 	RemoteNotSetError,
+	/// Error that may occur while handling location of directories.
+	#[error("Directory error: `{0}`")]
+	DirsError(String),
 }
 
 /// Result type of the core library.

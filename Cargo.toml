@@ -8,6 +8,7 @@ glob = "0.3.1"
 log = "0.4.19"
 secrecy = { version = "0.8.0", features = ["serde"] }
 lazy_static = "1.4.0"
+dirs = "5.0.1"
 
 [profile.dev]
 opt-level = 0

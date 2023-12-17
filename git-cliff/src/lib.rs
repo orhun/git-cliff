@@ -350,7 +350,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 	// Parse the configuration file.
 	let mut path = args.config.clone();
 	if !path.exists() {
-		if let Some(config_path) = dirs_next::config_dir()
+		if let Some(config_path) = dirs::config_dir()
 			.map(|dir| dir.join(env!("CARGO_PKG_NAME")).join(DEFAULT_CONFIG))
 		{
 			path = config_path;

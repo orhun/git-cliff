@@ -31,7 +31,6 @@ use std::hash::{
 	Hash,
 	Hasher,
 };
-use std::result::Result as StdResult;
 use std::time::Duration;
 
 /// GitHub REST API url.
@@ -158,7 +157,7 @@ pub struct GitHubClient {
 /// Constructs a GitHub client from the remote configuration.
 impl TryFrom<Remote> for GitHubClient {
 	type Error = Error;
-	fn try_from(remote: Remote) -> StdResult<Self, Self::Error> {
+	fn try_from(remote: Remote) -> Result<Self> {
 		if !remote.is_set() {
 			return Err(Error::RemoteNotSetError);
 		}
@@ -181,7 +180,15 @@ impl TryFrom<Remote> for GitHubClient {
 		let client = ClientBuilder::new(client)
 			.with(Cache(HttpCache {
 				mode:    CacheMode::Default,
-				manager: CACacheManager::default(),
+				manager: CACacheManager {
+					path: dirs::cache_dir()
+						.ok_or_else(|| {
+							Error::DirsError(String::from(
+								"failed to find the user's cache directory",
+							))
+						})?
+						.join(env!("CARGO_PKG_NAME")),
+				},
 				options: HttpCacheOptions::default(),
 			}))
 			.build();

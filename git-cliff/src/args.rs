@@ -275,7 +275,7 @@ impl Opt {
 	/// Expands the tilde (`~`) character in the beginning of the
 	/// input string into contents of the path returned by [`home_dir`].
 	///
-	/// [`home_dir`]: dirs_next::home_dir
+	/// [`home_dir`]: dirs::home_dir
 	fn parse_dir(dir: &str) -> Result<PathBuf, String> {
 		Ok(PathBuf::from(shellexpand::tilde(dir).to_string()))
 	}
@@ -294,8 +294,7 @@ mod tests {
 
 	#[test]
 	fn path_tilde_expansion() {
-		let home_dir =
-			dirs_next::home_dir().expect("cannot retrieve home directory");
+		let home_dir = dirs::home_dir().expect("cannot retrieve home directory");
 		let dir = Opt::parse_dir("~/").expect("cannot expand tilde");
 		assert_eq!(home_dir, dir);
 	}
