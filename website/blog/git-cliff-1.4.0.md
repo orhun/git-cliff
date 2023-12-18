@@ -6,6 +6,7 @@ authors: orhun
 tags:
   - release
 ---
+
 <center>
 
  <a href="https://github.com/orhun/git-cliff">
@@ -109,7 +110,7 @@ I'm happy to announce that I will be talking about `git-cliff` at [**RustLab 202
 
 <center>
 
-**<https://rustlab.it/talks/turning-git-commits-into-changelog-with-git-cliff>**
+**[https://rustlab.it/talks/turning-git-commits-into-changelog-with-git-cliff](https://rustlab.it/talks/turning-git-commits-into-changelog-with-git-cliff)**
 
 </center>
 
@@ -119,7 +120,7 @@ I'm happy to announce that I will be talking about `git-cliff` at [**RustLab 202
 
 - **Dates**: November 19th -> November 21th
 - **Location**: Florence, Italy
-- **Tickets**: <https://rustlab.it/tickets>
+- **Tickets**: [https://rustlab.it/tickets](https://rustlab.it/tickets)
 
 ## Contributions
 
