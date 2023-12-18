@@ -9,7 +9,6 @@ on:
       - main
   workflow_dispatch:
 
-
 permissions:
   contents: read
   pages: write
@@ -33,7 +32,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 16.x
+          node-version: 18
           cache: yarn
           cache-dependency-path: ./website/package-lock.json
       - name: Install dependencies
@@ -56,7 +55,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 16.x
+          node-version: 18
           cache: yarn
           cache-dependency-path: ./website/package-lock.json
       - name: Install dependencies
