@@ -37,3 +37,5 @@ extern crate log;
 
 /// Default configuration file.
 pub const DEFAULT_CONFIG: &str = "cliff.toml";
+/// Default output file.
+pub const DEFAULT_OUTPUT: &str = "CHANGELOG.md";

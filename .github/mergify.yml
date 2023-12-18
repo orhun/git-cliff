@@ -5,11 +5,3 @@ pull_request_rules:
     actions:
       merge:
         method: squash
-
-  - name: Automatic update to the main branch for pull requests
-    conditions:
-      - -conflict # skip PRs with conflicts
-      - -draft # skip GH draft PRs
-      - -author=dependabot[bot] # skip dependabot PRs
-    actions:
-      update:

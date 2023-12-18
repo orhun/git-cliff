@@ -3,7 +3,10 @@ use clap::{
 	Parser,
 	ValueEnum,
 };
-use git_cliff_core::DEFAULT_CONFIG;
+use git_cliff_core::{
+	DEFAULT_CONFIG,
+	DEFAULT_OUTPUT,
+};
 use glob::Pattern;
 use std::path::PathBuf;
 
@@ -49,7 +52,7 @@ pub struct Opt {
 		help = "Prints help information",
 		help_heading = "FLAGS"
 	)]
-	pub help:         Option<bool>,
+	pub help:           Option<bool>,
 	#[arg(
 		short = 'V',
 		long,
@@ -58,10 +61,19 @@ pub struct Opt {
 		help = "Prints version information",
 		help_heading = "FLAGS"
 	)]
-	pub version:      Option<bool>,
+	pub version:        Option<bool>,
 	/// Increases the logging verbosity.
 	#[arg(short, long, action = ArgAction::Count, alias = "debug", help_heading = Some("FLAGS"))]
-	pub verbose:      u8,
+	pub verbose:        u8,
+	/// Writes the default configuration file to cliff.toml
+	#[arg(
+	    short,
+	    long,
+	    value_name = "CONFIG",
+	    num_args = 0..=1,
+	    required = false
+	)]
+	pub init:           Option<Option<String>>,
 	/// Sets the configuration file.
 	#[arg(
 	    short,
@@ -71,7 +83,7 @@ pub struct Opt {
 	    default_value = DEFAULT_CONFIG,
 	    value_parser = Opt::parse_dir
 	)]
-	pub config:       PathBuf,
+	pub config:         PathBuf,
 	/// Sets the working directory.
 	#[arg(
 	    short,
@@ -80,7 +92,7 @@ pub struct Opt {
 	    value_name = "PATH",
 	    value_parser = Opt::parse_dir
 	)]
-	pub workdir:      Option<PathBuf>,
+	pub workdir:        Option<PathBuf>,
 	/// Sets the git repository.
 	#[arg(
 		short,
@@ -90,7 +102,7 @@ pub struct Opt {
 		num_args(1..),
 		value_parser = Opt::parse_dir
 	)]
-	pub repository:   Option<Vec<PathBuf>>,
+	pub repository:     Option<Vec<PathBuf>>,
 	/// Sets the path to include related commits.
 	#[arg(
 		long,
@@ -98,7 +110,7 @@ pub struct Opt {
 		value_name = "PATTERN",
 		num_args(1..)
 	)]
-	pub include_path: Option<Vec<Pattern>>,
+	pub include_path:   Option<Vec<Pattern>>,
 	/// Sets the path to exclude related commits.
 	#[arg(
 		long,
@@ -106,7 +118,7 @@ pub struct Opt {
 		value_name = "PATTERN",
 		num_args(1..)
 	)]
-	pub exclude_path: Option<Vec<Pattern>>,
+	pub exclude_path:   Option<Vec<Pattern>>,
 	/// Sets custom commit messages to include in the changelog.
 	#[arg(
 		long,
@@ -114,7 +126,7 @@ pub struct Opt {
 		value_name = "MSG",
 		num_args(1..)
 	)]
-	pub with_commit:  Option<Vec<String>>,
+	pub with_commit:    Option<Vec<String>>,
 	/// Prepends entries to the given changelog file.
 	#[arg(
 	    short,
@@ -123,16 +135,18 @@ pub struct Opt {
 	    value_name = "PATH",
 	    value_parser = Opt::parse_dir
 	)]
-	pub prepend:      Option<PathBuf>,
+	pub prepend:        Option<PathBuf>,
 	/// Writes output to the given file.
 	#[arg(
 	    short,
 	    long,
 	    env = "GIT_CLIFF_OUTPUT",
 	    value_name = "PATH",
-	    value_parser = Opt::parse_dir
+	    value_parser = Opt::parse_dir,
+	    num_args = 0..=1,
+	    default_missing_value = DEFAULT_OUTPUT
 	)]
-	pub output:       Option<PathBuf>,
+	pub output:         Option<PathBuf>,
 	/// Sets the tag for the latest version.
 	#[arg(
 		short,
@@ -141,10 +155,13 @@ pub struct Opt {
 		value_name = "TAG",
 		allow_hyphen_values = true
 	)]
-	pub tag:          Option<String>,
+	pub tag:            Option<String>,
 	/// Bumps the version for unreleased changes.
 	#[arg(long, help_heading = Some("FLAGS"))]
-	pub bump:         bool,
+	pub bump:           bool,
+	/// Prints bumped version for unreleased changes.
+	#[arg(long, help_heading = Some("FLAGS"))]
+	pub bumped_version: bool,
 	/// Sets the template for the changelog body.
 	#[arg(
 		short,
@@ -153,38 +170,35 @@ pub struct Opt {
 		value_name = "TEMPLATE",
 		allow_hyphen_values = true
 	)]
-	pub body:         Option<String>,
-	/// Writes the default configuration file to cliff.toml
-	#[arg(short, long, help_heading = Some("FLAGS"))]
-	pub init:         bool,
+	pub body:           Option<String>,
 	/// Processes the commits starting from the latest tag.
 	#[arg(short, long, help_heading = Some("FLAGS"))]
-	pub latest:       bool,
+	pub latest:         bool,
 	/// Processes the commits that belong to the current tag.
 	#[arg(long, help_heading = Some("FLAGS"))]
-	pub current:      bool,
+	pub current:        bool,
 	/// Processes the commits that do not belong to a tag.
 	#[arg(short, long, help_heading = Some("FLAGS"))]
-	pub unreleased:   bool,
+	pub unreleased:     bool,
 	/// Sorts the tags topologically.
 	#[arg(long, help_heading = Some("FLAGS"))]
-	pub topo_order:   bool,
+	pub topo_order:     bool,
 	/// Prints changelog context as JSON.
 	#[arg(long, help_heading = Some("FLAGS"))]
-	pub context:      bool,
+	pub context:        bool,
 	/// Strips the given parts from the changelog.
 	#[arg(short, long, value_name = "PART", value_enum)]
-	pub strip:        Option<Strip>,
+	pub strip:          Option<Strip>,
 	/// Sets sorting of the commits inside sections.
 	#[arg(
 		long,
 		value_enum,
 		default_value_t = Sort::Oldest
 	)]
-	pub sort:         Sort,
+	pub sort:           Sort,
 	/// Sets the commit range to process.
 	#[arg(value_name = "RANGE", help_heading = Some("ARGS"))]
-	pub range:        Option<String>,
+	pub range:          Option<String>,
 }
 
 impl Opt {

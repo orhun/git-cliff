@@ -21,19 +21,19 @@ repo = ["dep:git2", "dep:glob"]
 glob = { workspace = true, optional = true }
 regex.workspace = true
 log.workspace = true
-thiserror = "1.0.50"
-serde = { version = "1.0.190", features = ["derive"] }
-serde_json = { version = "1.0.108", features = ["preserve_order"] }
+thiserror = "1.0.51"
+serde = { version = "1.0.193", features = ["derive"] }
+serde_json = "1.0.108"
 serde_regex = "1.1.0"
 tera = "1.19.1"
 indexmap = { version = "2.1.0", features = ["serde"] }
-itertools = "0.11"
-toml = "0.8.6"
-lazy-regex = "3.0.2"
-next_version = "0.2.9"
+toml = "0.8.8"
+lazy-regex = "3.1.0"
+next_version = "0.2.11"
 semver = "1.0.20"
 document-features = { version = "0.2.7", optional = true }
 lazy_static = "1.4.0"
+itertools = "0.12.0"
 
 [dependencies.git2]
 version = "0.18.1"
@@ -41,7 +41,7 @@ default-features = false
 optional = true
 
 [dependencies.config]
-version = "0.13.3"
+version = "0.13.4"
 default-features = false
 features = ["toml", "yaml"]
 
@@ -50,8 +50,8 @@ version = "0.12.4"
 features = ["serde"]
 
 [dependencies.rust-embed]
-version = "8.0.0"
-features = ["debug-embed"]
+version = "8.1.0"
+features = ["debug-embed", "compression"]
 
 [dev-dependencies]
 pretty_assertions = "1.4.0"

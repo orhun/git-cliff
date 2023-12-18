@@ -1,8 +1,8 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
-const lightCodeTheme = require("prism-react-renderer/themes/github");
-const darkCodeTheme = require("prism-react-renderer/themes/vsDark");
+const lightCodeTheme = require("prism-react-renderer").themes.github;
+const darkCodeTheme = require("prism-react-renderer").themes.dracula;
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -86,6 +86,11 @@ const config = {
           },
         ],
       },
+      colorMode: {
+        defaultMode: "dark",
+        disableSwitch: false,
+        respectPrefersColorScheme: false,
+      },
       footer: {
         style: "dark",
         links: [
@@ -95,6 +100,10 @@ const config = {
               {
                 label: "Get started",
                 to: "/docs/",
+              },
+              {
+                label: "Blog",
+                to: "/blog",
               },
             ],
           },
@@ -115,12 +124,12 @@ const config = {
             title: "More",
             items: [
               {
-                label: "Blog",
-                to: "/blog",
-              },
-              {
                 label: "GitHub",
                 href: "https://github.com/orhun/git-cliff",
+              },
+              {
+                label: "Mastodon",
+                href: "https://fosstodon.org/@git_cliff",
               },
               {
                 label: "Twitter",
@@ -134,7 +143,7 @@ const config = {
       prism: {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
-        additionalLanguages: ["yaml", "toml", "rust"],
+        additionalLanguages: ["bash", "diff", "json", "yaml", "toml", "rust"],
       },
     }),
 };

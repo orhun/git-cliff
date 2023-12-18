@@ -13,3 +13,10 @@ updates:
     schedule:
       interval: daily
     open-pull-requests-limit: 10
+
+  # Maintain dependencies for NPM
+  - package-ecosystem: "npm"
+    directory: "/website"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10

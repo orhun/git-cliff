@@ -9,7 +9,6 @@ on:
       - main
   workflow_dispatch:
 
-
 permissions:
   contents: read
   pages: write
@@ -33,7 +32,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 16.x
+          node-version: 18
           cache: yarn
           cache-dependency-path: ./website/package-lock.json
       - name: Install dependencies
@@ -56,7 +55,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 16.x
+          node-version: 18
           cache: yarn
           cache-dependency-path: ./website/package-lock.json
       - name: Install dependencies
@@ -66,11 +65,11 @@ jobs:
         working-directory: ./website
         run: yarn build
       - name: Setup Pages
-        uses: actions/configure-pages@v3
+        uses: actions/configure-pages@v4
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
           path: website/build
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v3

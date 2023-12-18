@@ -16,6 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - fixtures-name: new-fixture-template
           - fixtures-name: test-ignore-tags
           - fixtures-name: test-topo-order
             command: --latest
@@ -31,7 +32,34 @@ jobs:
           - fixtures-name: test-limit-commits
           - fixtures-name: test-skip-breaking-changes
           - fixtures-name: test-split-commits
+          - fixtures-name: test-bump-version
+            command: --bump
+          - fixtures-name: test-bumped-version
+            command: --bumped-version
+          - fixtures-name: test-footer-template
           - fixtures-name: test-keep-a-changelog-links
+          - fixtures-name: test-keep-a-changelog-links-current-arg
+            command: --current
+          - fixtures-name: test-keep-a-changelog-links-current-arg
+            command: --latest
+          - fixtures-name: test-keep-a-changelog-links-latest-arg
+            command: --latest
+          - fixtures-name: test-keep-a-changelog-links-no-tags
+          - fixtures-name: test-keep-a-changelog-links-no-tags
+            command: --unreleased
+          - fixtures-name: test-keep-a-changelog-links-no-tags
+            command: --latest
+          - fixtures-name: test-keep-a-changelog-links-no-tags
+            command: --current
+          - fixtures-name: test-keep-a-changelog-links-one-tag
+          - fixtures-name: test-keep-a-changelog-links-tag-arg
+            command: --tag v0.3.0
+          - fixtures-name: test-keep-a-changelog-links-unreleased-arg
+            command: --unreleased
+          - fixtures-name: test-keep-a-changelog-links-unreleased-arg
+            command: --latest --unreleased
+          - fixtures-name: test-keep-a-changelog-links-one-tag-bump-arg
+            command: --bump
     steps:
       - name: Checkout
         uses: actions/checkout@v4
