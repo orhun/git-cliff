@@ -44,6 +44,9 @@ const USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION
 /// Request timeout value in seconds.
 const REQUEST_TIMEOUT: u64 = 30;
 
+/// TCP keeplive value in seconds.
+const REQUEST_KEEP_ALIVE: u64 = 60;
+
 /// Maximum number of entries to fetch in a single page.
 const MAX_PAGE_SIZE: usize = 100;
 
@@ -175,6 +178,7 @@ impl TryFrom<Remote> for GitHubClient {
 		headers.insert(reqwest::header::USER_AGENT, USER_AGENT.parse()?);
 		let client = Client::builder()
 			.timeout(Duration::from_secs(REQUEST_TIMEOUT))
+			.tcp_keepalive(Duration::from_secs(REQUEST_KEEP_ALIVE))
 			.default_headers(headers)
 			.build()?;
 		let client = ClientBuilder::new(client)
