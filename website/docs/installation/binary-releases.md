@@ -1,3 +1,6 @@
+---
+sidebar_position: 3
+---
 # Binary releases
 
 See the available binaries for different operating systems/architectures from the [releases page](https://github.com/orhun/git-cliff/releases).

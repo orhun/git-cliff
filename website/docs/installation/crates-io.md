@@ -1,4 +1,7 @@
-# crates.io
+---
+sidebar_position: 1
+---
+# Crates.io
 
 **git-cliff** can be installed from [crates.io](https://crates.io/crates/git-cliff):
 
