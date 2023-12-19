@@ -324,6 +324,40 @@ mod test {
 				}]),
 				commit_parsers:           Some(vec![
 					CommitParser {
+						sha:           Some(String::from("tea")),
+						message:       None,
+						body:          None,
+						group:         Some(String::from("I love tea")),
+						default_scope: None,
+						scope:         None,
+						skip:          None,
+						field:         None,
+						pattern:       None,
+					},
+					CommitParser {
+						sha:           Some(String::from("coffee")),
+						message:       None,
+						body:          None,
+						group:         None,
+						default_scope: None,
+						scope:         None,
+						skip:          Some(true),
+						field:         None,
+						pattern:       None,
+					},
+					CommitParser {
+						sha:           Some(String::from("coffee2")),
+						message:       None,
+						body:          None,
+						group:         None,
+						default_scope: None,
+						scope:         None,
+						skip:          Some(true),
+						field:         None,
+						pattern:       None,
+					},
+					CommitParser {
+						sha:           None,
 						message:       Regex::new(r".*merge.*").ok(),
 						body:          None,
 						group:         None,
@@ -334,6 +368,7 @@ mod test {
 						pattern:       None,
 					},
 					CommitParser {
+						sha:           None,
 						message:       Regex::new("feat*").ok(),
 						body:          None,
 						group:         Some(String::from("New features")),
@@ -344,6 +379,7 @@ mod test {
 						pattern:       None,
 					},
 					CommitParser {
+						sha:           None,
 						message:       Regex::new("^fix*").ok(),
 						body:          None,
 						group:         Some(String::from("Bug Fixes")),
@@ -354,6 +390,7 @@ mod test {
 						pattern:       None,
 					},
 					CommitParser {
+						sha:           None,
 						message:       Regex::new("doc:").ok(),
 						body:          None,
 						group:         Some(String::from("Documentation")),
@@ -364,6 +401,7 @@ mod test {
 						pattern:       None,
 					},
 					CommitParser {
+						sha:           None,
 						message:       Regex::new("docs:").ok(),
 						body:          None,
 						group:         Some(String::from("Documentation")),
@@ -374,6 +412,7 @@ mod test {
 						pattern:       None,
 					},
 					CommitParser {
+						sha:           None,
 						message:       Regex::new(r"match\((.*)\):.*").ok(),
 						body:          None,
 						group:         Some(String::from("Matched ($1)")),
@@ -384,6 +423,7 @@ mod test {
 						pattern:       None,
 					},
 					CommitParser {
+						sha:           None,
 						message:       Regex::new(".*").ok(),
 						body:          None,
 						group:         Some(String::from("Other")),
@@ -415,6 +455,14 @@ mod test {
 		let test_release = Release {
 			version:   Some(String::from("v1.0.0")),
 			commits:   vec![
+				Commit::new(
+					String::from("coffee"),
+					String::from("revert(app): skip this commit"),
+				),
+				Commit::new(
+					String::from("tea"),
+					String::from("feat(app): damn right"),
+				),
 				Commit::new(
 					String::from("0bc123"),
 					String::from("feat(app): add cool features"),
@@ -459,6 +507,10 @@ mod test {
 					String::from("qwert0"),
 					String::from("match(group): support regex-replace for groups"),
 				),
+				Commit::new(
+					String::from("coffee"),
+					String::from("revert(app): skip this commit"),
+				),
 			],
 			commit_id: Some(String::from("0bc123")),
 			timestamp: 50000000,
@@ -500,6 +552,10 @@ mod test {
 					Commit::new(
 						String::from("hjkl12"),
 						String::from("chore(ui): do boring stuff"),
+					),
+					Commit::new(
+						String::from("coffee2"),
+						String::from("revert(app): skip this commit"),
 					),
 				],
 				commit_id: None,
@@ -550,6 +606,10 @@ mod test {
 			#### documentation
 			- update docs
 			- add some documentation
+
+			### I love tea
+			#### app
+			- damn right
 
 			### Matched (group)
 			#### group
@@ -661,6 +721,10 @@ chore(deps): fix broken deps
 			#### documentation
 			- update docs
 			- add some documentation
+
+			### I love tea
+			#### app
+			- damn right
 
 			### Matched (group)
 			#### group

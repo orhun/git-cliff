@@ -43,6 +43,7 @@ following context is generated to use for templating:
       "breaking_description": "<description>",
       "breaking": false,
       "conventional": true,
+      "merge_commit": false,
       "links": [
         { "text": "(set by link_parsers)", "href": "(set by link_parsers)" }
       ],
@@ -129,6 +130,7 @@ If [`conventional_commits`](/docs/configuration#conventional_commits) is set to 
       "scope": "(overridden by commit_parsers)",
       "message": "(full commit message including description, footers, etc.)",
       "conventional": false,
+      "merge_commit": false,
       "links": [
         { "text": "(set by link_parsers)", "href": "(set by link_parsers)" }
       ],
