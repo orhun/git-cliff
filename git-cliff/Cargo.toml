@@ -24,6 +24,8 @@ path = "src/bin/mangen.rs"
 [features]
 # check for new versions
 default = ["update-informer", "github"]
+# inform about new releases
+update-informer = ["dep:update-informer"]
 # enable GitHub integration
 github = ["git-cliff-core/github", "dep:indicatif"]
 
