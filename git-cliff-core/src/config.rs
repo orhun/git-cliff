@@ -4,10 +4,7 @@ use regex::{
 	Regex,
 	RegexBuilder,
 };
-use secrecy::{
-	Secret,
-	SecretString,
-};
+use secrecy::SecretString;
 use serde::{
 	Deserialize,
 	Serialize,
@@ -16,7 +13,6 @@ use std::ffi::OsStr;
 use std::fmt;
 use std::fs;
 use std::path::Path;
-use std::result::Result as StdResult;
 
 /// Regex for matching the metadata in Cargo.toml
 const CARGO_METADATA_REGEX: &str =
@@ -108,19 +104,8 @@ pub struct Remote {
 	/// Repository name.
 	pub repo:  String,
 	/// Access token.
-	#[serde(serialize_with = "serialize_secret_string")]
+	#[serde(skip_serializing)]
 	pub token: Option<SecretString>,
-}
-
-/// Custom serializer function for the secret string.
-fn serialize_secret_string<S>(
-	_: &Option<Secret<String>>,
-	ser: S,
-) -> StdResult<S::Ok, S::Error>
-where
-	S: serde::Serializer,
-{
-	ser.serialize_str("*")
 }
 
 impl fmt::Display for Remote {
