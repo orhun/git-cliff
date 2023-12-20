@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 ---
+
 # Crates.io
 
 **git-cliff** can be installed from [crates.io](https://crates.io/crates/git-cliff):
@@ -20,7 +21,7 @@ The minimum supported Rust version is `1.70.0`.
 Also, **git-cliff** has the following feature flags which can be enabled via `--features` argument:
 
 - `update-informer`: inform about the new releases of **git-cliff** (enabled as default)
-- `github`: enables the GitHub integration (enabled as default)
+- `github`: enables the [GitHub integration](/docs/integration/github) (enabled as default)
 
 To install without these features:
 

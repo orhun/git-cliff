@@ -17,7 +17,7 @@ body = """
 ## What's Changed\
 {%- if version %} in {{ version }}{%- endif %}\
 {% for commit in commits %}
-  * {{ commit.message | split(pat="\n") | first |  trim }}\
+  * {{ commit.message | split(pat="\n") | first | trim }}\
     {% if commit.github.username %} by @{{ commit.github.username }}{%- endif %}\
     {% if commit.github.pr_number %} in #{{ commit.github.pr_number }}{%- endif %}
 {%- endfor -%}

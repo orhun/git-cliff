@@ -67,6 +67,12 @@ following context is generated to use for templating:
 }
 ```
 
+:::info
+
+See the [GitHub integration](/docs/integration/github) for the additional values you can use in the template.
+
+:::
+
 ### Footers
 
 A conventional commit's body may end with any number of structured key-value pairs known as [footers](https://www.conventionalcommits.org/en/v1.0.0/#specification). These consist of a string token naming the footer, a separator (which is either `: ` or ` #`), and a value, similar to [the git trailers convention](https://git-scm.com/docs/git-interpret-trailers).
@@ -153,3 +159,9 @@ If [`conventional_commits`](/docs/configuration#conventional_commits) is set to 
   }
 }
 ```
+
+:::info
+
+See the [GitHub integration](/docs/integration/github) for the additional values you can use in the template.
+
+:::
