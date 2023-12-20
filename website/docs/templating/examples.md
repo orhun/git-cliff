@@ -269,42 +269,6 @@ All notable changes to this project will be documented in this file.
 
 </details>
 
-#### [Limited Commits](https://github.com/orhun/git-cliff/tree/main/examples/limitedcommits.toml)
-
-<details>
-  <summary>Raw Output</summary>
-
-```
-## [unreleased]
-### Feat
-- Support multiple file formats
-- Use cache while fetching pages
-
-## [1.0.1] - 2021-07-18
-### Chore
-- Add release script
-```
-
-</details>
-
-<details>
-  <summary>Rendered Output</summary>
-
-## [unreleased]
-
-### Feat
-
-- Support multiple file formats
-- Use cache while fetching pages
-
-## [1.0.1] - 2021-07-18
-
-### Chore
-
-- Add release script
-
-</details>
-
 #### [Detailed](https://github.com/orhun/git-cliff/tree/main/examples/detailed.toml)
 
 <details>
