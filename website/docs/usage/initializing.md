@@ -31,7 +31,6 @@ Here are the list of available templates:
 
 - [`keepachangelog.toml`](https://github.com/orhun/git-cliff/tree/main/examples/keepachangelog.toml)
 - [`detailed.toml`](https://github.com/orhun/git-cliff/tree/main/examples/detailed.toml)
-- [`limitedcommits.toml`](https://github.com/orhun/git-cliff/tree/main/examples/limitedcommits.toml)
 - [`minimal.toml`](https://github.com/orhun/git-cliff/tree/main/examples/minimal.toml)
 - [`scoped.toml`](https://github.com/orhun/git-cliff/tree/main/examples/scoped.toml)
 - [`scopesorted.toml`](https://github.com/orhun/git-cliff/tree/main/examples/scopesorted.toml)
