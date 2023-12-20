@@ -1,7 +1,6 @@
 ---
 sidebar_position: 1
 ---
-
 # Command-line Arguments
 
 ```
@@ -20,7 +19,7 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
     --current         Processes the commits that belong to the current tag
 -u, --unreleased      Processes the commits that do not belong to a tag
     --topo-order      Sorts the tags topologically
-    --context         Prints changelog context as JSON
+-x, --context         Prints changelog context as JSON
 ```
 
 ## Options
