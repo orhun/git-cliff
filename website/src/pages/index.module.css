@@ -12,6 +12,7 @@
   0% {
     opacity: 0;
   }
+
   100% {
     opacity: 1;
   }
@@ -36,21 +37,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-bottom: 10px;
 }
 
-.titleText {
-  font-family: "A Angkanya Sebelas";
-}
-
-.titleText span:first-child {
-  color: #1c2c2e;
-}
-
-.titleText span:last-child {
-  color: #c96329;
+.bodyContainer {
+  animation: intro 1s both;
+  animation-delay: 0.15s;
 }
 
 .animContainer {
-  animation: intro 1s both;
-  animation-delay: 0.15s;
+  padding: 20px;
 }

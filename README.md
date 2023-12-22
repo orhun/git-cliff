@@ -1,6 +1,6 @@
 <p align="center">
     <a href="https://git-cliff.org">
-        <img src="https://raw.githubusercontent.com/orhun/git-cliff/main/img/git-cliff-logo.png" width="300"></a>
+        <img src="https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-logo.png" width="300"></a>
     <br>
     <a href="https://github.com/orhun/git-cliff/releases">
         <img src="https://img.shields.io/github/v/release/orhun/git-cliff?style=flat&labelColor=1C2C2E&color=C96329&logo=GitHub&logoColor=white">
@@ -40,7 +40,7 @@
 
 **git-cliff** can generate [changelog](https://en.wikipedia.org/wiki/Changelog) files from the [Git](https://git-scm.com/) history by utilizing [conventional commits](https://git-cliff.org/docs/configuration#conventional_commits) as well as regex-powered [custom parsers](https://git-cliff.org/docs/configuration#commit_parsers). The [changelog template](https://git-cliff.org/docs/category/templating) can be customized with a [configuration file](https://git-cliff.org/docs/configuration) to match the desired format.
 
-![preview](https://raw.githubusercontent.com/orhun/git-cliff/main/img/git-cliff-preview.png)
+![animation](https://git-cliff.org/img/git-cliff-anim.gif)
 
 ## Documentation
 
