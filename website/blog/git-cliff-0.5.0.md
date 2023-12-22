@@ -11,7 +11,7 @@ In this post, I'm explaining the new features in the 0.5.0 release while giving 
 <center>
 
  <a href="https://github.com/orhun/git-cliff">
-    <img src="https://raw.githubusercontent.com/orhun/git-cliff/main/img/git-cliff-banner.jpg" />
+    <img src="/img/git-cliff-banner.jpg" />
 </a>
 
 </center>
