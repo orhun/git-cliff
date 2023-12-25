@@ -57,7 +57,11 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
       - name: Set remote
-        run: git remote add upstream https://github.com/${GITHUB_REPOSITORY}.git
+        run: |
+          git status
+          git branch -v
+          git remote -v
+          git remote add upstream https://github.com/${GITHUB_REPOSITORY}.git
       - name: Setup cargo-tarpaulin
         uses: taiki-e/install-action@cargo-tarpaulin
       - name: Run tests
