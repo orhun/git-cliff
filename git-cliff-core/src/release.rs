@@ -1,8 +1,5 @@
 use crate::commit::Commit;
-use crate::error::{
-	Error,
-	Result,
-};
+use crate::error::Result;
 use next_version::NextVersion;
 use semver::Version;
 use serde::{
@@ -30,20 +27,27 @@ pub struct Release<'a> {
 impl<'a> Release<'a> {
 	/// Calculates the next version based on the commits.
 	pub fn calculate_next_version(&self) -> Result<String> {
-		let version = self
+		match self
 			.previous
 			.as_ref()
 			.and_then(|release| release.version.clone())
-			.ok_or_else(|| Error::PreviousVersionNotFound)?;
-		let next_version = Version::parse(version.trim_start_matches('v'))?
-			.next(
-				self.commits
-					.iter()
-					.map(|commit| commit.message.trim_end().to_string())
-					.collect::<Vec<String>>(),
-			)
-			.to_string();
-		Ok(next_version)
+		{
+			Some(version) => {
+				let next_version = Version::parse(version.trim_start_matches('v'))?
+					.next(
+						self.commits
+							.iter()
+							.map(|commit| commit.message.trim_end().to_string())
+							.collect::<Vec<String>>(),
+					)
+					.to_string();
+				Ok(next_version)
+			}
+			None => {
+				warn!("No releases found, using 0.0.1 as the next version.");
+				Ok(String::from("0.0.1"))
+			}
+		}
 	}
 }
 
@@ -88,6 +92,15 @@ mod test {
 			let next_version = release.calculate_next_version()?;
 			assert_eq!(expected_version, next_version);
 		}
+		let empty_release = Release {
+			previous: Some(Box::new(Release {
+				version: None,
+				..Default::default()
+			})),
+			..Default::default()
+		};
+		let next_version = empty_release.calculate_next_version()?;
+		assert_eq!("0.0.1", next_version);
 		Ok(())
 	}
 }
