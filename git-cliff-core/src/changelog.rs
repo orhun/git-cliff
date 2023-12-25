@@ -162,10 +162,10 @@ impl<'a> Changelog<'a> {
 	fn get_github_metadata(
 		&self,
 	) -> Result<(Vec<GitHubCommit>, Vec<GitHubPullRequest>)> {
-		if self.body_template.contains_variable("github.")? ||
+		if self.body_template.contains_github_variable() ||
 			self.footer_template
 				.as_ref()
-				.and_then(|v| v.contains_variable("github.").ok())
+				.map(|v| v.contains_github_variable())
 				.unwrap_or(false)
 		{
 			warn!("You are using an experimental feature! Please report bugs at <https://github.com/orhun/git-cliff/issues/new/choose>");
@@ -194,8 +194,8 @@ impl<'a> Changelog<'a> {
 	/// Generates the changelog and writes it to the given output.
 	pub fn generate<W: Write>(&self, out: &mut W) -> Result<()> {
 		debug!("Generating changelog...");
-		let mut context = HashMap::new();
-		context.insert("remote", self.config.remote.clone());
+		let mut additional_context = HashMap::new();
+		additional_context.insert("remote", self.config.remote.clone());
 		#[cfg(feature = "github")]
 		let (github_commits, github_pull_requests) = self.get_github_metadata()?;
 		let postprocessors = self
@@ -219,7 +219,7 @@ impl<'a> Changelog<'a> {
 				"{}",
 				self.body_template.render(
 					&release,
-					Some(&context),
+					Some(&additional_context),
 					&postprocessors
 				)?
 			)?;
@@ -232,7 +232,7 @@ impl<'a> Changelog<'a> {
 					&Releases {
 						releases: &releases,
 					},
-					Some(&context),
+					Some(&additional_context),
 					&postprocessors,
 				)?
 			)?;

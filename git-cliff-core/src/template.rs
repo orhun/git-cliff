@@ -22,7 +22,10 @@ use tera::{
 /// Wrapper for [`Tera`].
 #[derive(Debug)]
 pub struct Template {
-	tera: Tera,
+	tera:          Tera,
+	/// Template variables.
+	#[cfg_attr(not(feature = "github"), allow(dead_code))]
+	pub variables: Vec<String>,
 }
 
 impl Template {
@@ -44,7 +47,10 @@ impl Template {
 			};
 		}
 		tera.register_filter("upper_first", Self::upper_first_filter);
-		Ok(Self { tera })
+		Ok(Self {
+			variables: Self::get_template_variables(&tera)?,
+			tera,
+		})
 	}
 
 	/// Filter for making the first character of a string uppercase.
@@ -116,24 +122,24 @@ impl Template {
 	}
 
 	/// Returns the variable names that are used in the template.
-	pub fn get_template_variables(&self) -> Result<Vec<String>> {
+	fn get_template_variables(tera: &Tera) -> Result<Vec<String>> {
 		let mut variables = HashSet::new();
-		let ast = &self.tera.get_template("template")?.ast;
+		let ast = &tera.get_template("template")?.ast;
 		for node in ast {
 			Self::find_identifiers(node, &mut variables);
 		}
 		Ok(variables.into_iter().collect())
 	}
 
-	/// Returns `true` if the given string/variable exists in the template.
+	/// Returns `true` if the template contains GitHub related variables.
 	///
-	/// Note that this uses a greedy match (*)
-	pub fn contains_variable(&self, variable: &str) -> Result<bool> {
-		let found = self
-			.get_template_variables()?
+	/// Note that this checks the variables starting with "github" and
+	/// "commit.github" and ignores "remote.github" values.
+	#[cfg(feature = "github")]
+	pub(crate) fn contains_github_variable(&self) -> bool {
+		self.variables
 			.iter()
-			.any(|v| v.contains(variable));
-		Ok(found)
+			.any(|v| v.starts_with("github") || v.starts_with("commit.github"))
 	}
 
 	/// Renders the template.
