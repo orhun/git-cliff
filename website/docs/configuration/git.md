@@ -221,6 +221,8 @@ Examples:
 - `{ pattern = "RFC(\\d+)", text = "ietf-rfc$1", href = "https://datatracker.ietf.org/doc/html/rfc$1"}`,
   - Extract mentions of IETF RFCs and generate URLs linking to them. It also rewrites the text as "ietf-rfc...".
 
+These extracted links can be used in the [template](/docs/templating/context) with `commits.links` variable.
+
 ### limit_commits
 
 `limit_commits` is an **optional** positive integer number that limits the number of included commits in the generated changelog.
