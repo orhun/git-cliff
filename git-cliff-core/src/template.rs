@@ -178,7 +178,6 @@ mod test {
 	use super::*;
 	use crate::{
 		commit::Commit,
-		github::GitHubReleaseMetadata,
 		release::Release,
 	};
 	use regex::Regex;
@@ -191,7 +190,7 @@ mod test {
 		### {{ commit.group }}
 		- {{ commit.message | upper_first }}
 		{% endfor %}"#;
-		let template = Template::new(template.to_string(), false)?;
+		let mut template = Template::new(template.to_string(), false)?;
 		assert_eq!(
 			r#"
 		## 1.0 - 2023
@@ -204,8 +203,8 @@ mod test {
 		"#,
 			template.render(
 				&Release {
-					version:   Some(String::from("1.0")),
-					commits:   vec![
+					version: Some(String::from("1.0")),
+					commits: vec![
 						Commit::new(
 							String::from("123123"),
 							String::from("feat(xyz): add xyz"),
@@ -220,8 +219,9 @@ mod test {
 					.collect(),
 					commit_id: None,
 					timestamp: 0,
-					previous:  None,
-					github:    GitHubReleaseMetadata {
+					previous: None,
+					#[cfg(feature = "github")]
+					github: crate::github::GitHubReleaseMetadata {
 						contributors: vec![],
 					},
 				},
@@ -234,6 +234,18 @@ mod test {
 				}]
 			)?
 		);
+		template.variables.sort();
+		assert_eq!(
+			vec![
+				String::from("commit.group"),
+				String::from("commit.message"),
+				String::from("commits"),
+				String::from("version"),
+			],
+			template.variables
+		);
+		#[cfg(feature = "github")]
+		assert!(!template.contains_github_variable());
 		Ok(())
 	}
 }

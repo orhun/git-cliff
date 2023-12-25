@@ -137,18 +137,19 @@ mod test {
 			("2.0.0", vec!["feat!: add xyz\n", "feat: zzz\n"]),
 		] {
 			let release = Release {
-				version:   None,
-				commits:   commits
+				version: None,
+				commits: commits
 					.into_iter()
 					.map(|v| Commit::from(v.to_string()))
 					.collect(),
 				commit_id: None,
 				timestamp: 0,
-				previous:  Some(Box::new(Release {
+				previous: Some(Box::new(Release {
 					version: Some(String::from("1.0.0")),
 					..Default::default()
 				})),
-				github:    GitHubReleaseMetadata {
+				#[cfg(feature = "github")]
+				github: crate::github::GitHubReleaseMetadata {
 					contributors: vec![],
 				},
 			};
@@ -164,6 +165,234 @@ mod test {
 		};
 		let next_version = empty_release.calculate_next_version()?;
 		assert_eq!("0.0.1", next_version);
+		Ok(())
+	}
+
+	#[cfg(feature = "github")]
+	#[test]
+	fn update_github_metadata() -> Result<()> {
+		use crate::github::GitHubCommitAuthor;
+
+		let mut release = Release {
+			version:   None,
+			commits:   vec![
+				Commit::from(String::from(
+					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \
+					 integration",
+				)),
+				Commit::from(String::from(
+					"21f6aa587fcb772de13f2fde0e92697c51f84162 fix github \
+					 integration",
+				)),
+				Commit::from(String::from(
+					"35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973 update metadata",
+				)),
+				Commit::from(String::from(
+					"4d3ffe4753b923f4d7807c490e650e6624a12074 do some stuff",
+				)),
+				Commit::from(String::from(
+					"5a55e92e5a62dc5bf9872ffb2566959fad98bd05 alright",
+				)),
+				Commit::from(String::from(
+					"6c34967147560ea09658776d4901709139b4ad66 should be fine",
+				)),
+			],
+			commit_id: None,
+			timestamp: 0,
+			previous:  Some(Box::new(Release {
+				version: Some(String::from("1.0.0")),
+				..Default::default()
+			})),
+			github:    GitHubReleaseMetadata {
+				contributors: vec![],
+			},
+		};
+		release.update_github_metadata(
+			vec![
+				GitHubCommit {
+					sha:    String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+					author: Some(GitHubCommitAuthor {
+						login: Some(String::from("orhun")),
+					}),
+				},
+				GitHubCommit {
+					sha:    String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
+					author: Some(GitHubCommitAuthor {
+						login: Some(String::from("orhun")),
+					}),
+				},
+				GitHubCommit {
+					sha:    String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
+					author: Some(GitHubCommitAuthor {
+						login: Some(String::from("nuhro")),
+					}),
+				},
+				GitHubCommit {
+					sha:    String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
+					author: Some(GitHubCommitAuthor {
+						login: Some(String::from("awesome_contributor")),
+					}),
+				},
+				GitHubCommit {
+					sha:    String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
+					author: Some(GitHubCommitAuthor {
+						login: Some(String::from("orhun")),
+					}),
+				},
+				GitHubCommit {
+					sha:    String::from("6c34967147560ea09658776d4901709139b4ad66"),
+					author: Some(GitHubCommitAuthor {
+						login: Some(String::from("someone")),
+					}),
+				},
+				GitHubCommit {
+					sha:    String::from("0c34967147560e809658776d4901709139b4ad68"),
+					author: Some(GitHubCommitAuthor {
+						login: Some(String::from("idk")),
+					}),
+				},
+				GitHubCommit {
+					sha:    String::from("kk34967147560e809658776d4901709139b4ad68"),
+					author: None,
+				},
+				GitHubCommit {
+					sha:    String::new(),
+					author: None,
+				},
+			],
+			vec![
+				GitHubPullRequest {
+					number:           42,
+					merge_commit_sha: Some(String::from(
+						"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
+					)),
+				},
+				GitHubPullRequest {
+					number:           66,
+					merge_commit_sha: Some(String::from(
+						"21f6aa587fcb772de13f2fde0e92697c51f84162",
+					)),
+				},
+				GitHubPullRequest {
+					number:           53,
+					merge_commit_sha: Some(String::from(
+						"35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973",
+					)),
+				},
+				GitHubPullRequest {
+					number:           1000,
+					merge_commit_sha: Some(String::from(
+						"4d3ffe4753b923f4d7807c490e650e6624a12074",
+					)),
+				},
+				GitHubPullRequest {
+					number:           999999,
+					merge_commit_sha: Some(String::from(
+						"5a55e92e5a62dc5bf9872ffb2566959fad98bd05",
+					)),
+				},
+			],
+		)?;
+
+		assert_eq!(
+			vec![
+				Commit {
+					id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+					message: String::from("add github integration"),
+					github: GitHubContributor {
+						username:      Some(String::from("orhun")),
+						pr_number:     Some(42),
+						is_first_time: false,
+					},
+					..Default::default()
+				},
+				Commit {
+					id: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
+					message: String::from("fix github integration"),
+					github: GitHubContributor {
+						username:      Some(String::from("orhun")),
+						pr_number:     Some(66),
+						is_first_time: false,
+					},
+					..Default::default()
+				},
+				Commit {
+					id: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
+					message: String::from("update metadata"),
+					github: GitHubContributor {
+						username:      Some(String::from("nuhro")),
+						pr_number:     Some(53),
+						is_first_time: false,
+					},
+					..Default::default()
+				},
+				Commit {
+					id: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
+					message: String::from("do some stuff"),
+					github: GitHubContributor {
+						username:      Some(String::from("awesome_contributor")),
+						pr_number:     Some(1000),
+						is_first_time: false,
+					},
+					..Default::default()
+				},
+				Commit {
+					id: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
+					message: String::from("alright"),
+					github: GitHubContributor {
+						username:      Some(String::from("orhun")),
+						pr_number:     Some(999999),
+						is_first_time: false,
+					},
+					..Default::default()
+				},
+				Commit {
+					id: String::from("6c34967147560ea09658776d4901709139b4ad66"),
+					message: String::from("should be fine"),
+					github: GitHubContributor {
+						username:      Some(String::from("someone")),
+						pr_number:     None,
+						is_first_time: false,
+					},
+					..Default::default()
+				}
+			],
+			release.commits
+		);
+
+		release
+			.github
+			.contributors
+			.sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+
+		assert_eq!(
+			GitHubReleaseMetadata {
+				contributors: vec![
+					GitHubContributor {
+						username:      Some(String::from("someone")),
+						pr_number:     None,
+						is_first_time: true,
+					},
+					GitHubContributor {
+						username:      Some(String::from("orhun")),
+						pr_number:     Some(42),
+						is_first_time: true,
+					},
+					GitHubContributor {
+						username:      Some(String::from("nuhro")),
+						pr_number:     Some(53),
+						is_first_time: true,
+					},
+					GitHubContributor {
+						username:      Some(String::from("awesome_contributor")),
+						pr_number:     Some(1000),
+						is_first_time: true,
+					},
+				],
+			},
+			release.github
+		);
+
 		Ok(())
 	}
 }

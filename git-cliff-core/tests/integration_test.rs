@@ -10,7 +10,6 @@ use git_cliff_core::config::{
 	TextProcessor,
 };
 use git_cliff_core::error::Result;
-use git_cliff_core::github::GitHubReleaseMetadata;
 use git_cliff_core::release::*;
 use git_cliff_core::template::Template;
 use pretty_assertions::assert_eq;
@@ -189,7 +188,8 @@ fn generate_changelog() -> Result<()> {
 			commit_id: None,
 			timestamp: 0,
 			previous:  None,
-			github:    GitHubReleaseMetadata {
+			#[cfg(feature = "github")]
+			github: git_cliff_core::github::GitHubReleaseMetadata {
 				contributors: vec![],
 			},
 		},
@@ -216,7 +216,8 @@ fn generate_changelog() -> Result<()> {
 			commit_id: None,
 			timestamp: 0,
 			previous:  None,
-			github:    GitHubReleaseMetadata {
+			#[cfg(feature = "github")]
+			github: git_cliff_core::github::GitHubReleaseMetadata {
 				contributors: vec![],
 			},
 		},

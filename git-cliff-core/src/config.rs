@@ -280,4 +280,16 @@ mod test {
 		);
 		Ok(())
 	}
+
+	#[test]
+	fn remote_config() {
+		let remote1 = Remote::new("abc", "xyz1");
+		let remote2 = Remote::new("abc", "xyz2");
+		assert!(!remote1.eq(&remote2));
+		assert_eq!("abc/xyz1", remote1.to_string());
+		assert!(remote1.is_set());
+		assert!(!Remote::new("", "test").is_set());
+		assert!(!Remote::new("test", "").is_set());
+		assert!(!Remote::new("", "").is_set());
+	}
 }

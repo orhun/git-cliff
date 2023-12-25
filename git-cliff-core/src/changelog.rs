@@ -269,16 +269,13 @@ impl<'a> Changelog<'a> {
 #[cfg(test)]
 mod test {
 	use super::*;
-	use crate::{
-		config::{
-			ChangelogConfig,
-			CommitParser,
-			GitConfig,
-			Remote,
-			RemoteConfig,
-			TextProcessor,
-		},
-		github::GitHubReleaseMetadata,
+	use crate::config::{
+		ChangelogConfig,
+		CommitParser,
+		GitConfig,
+		Remote,
+		RemoteConfig,
+		TextProcessor,
 	};
 	use pretty_assertions::assert_eq;
 	use regex::Regex;
@@ -453,8 +450,8 @@ mod test {
 			},
 		};
 		let test_release = Release {
-			version:   Some(String::from("v1.0.0")),
-			commits:   vec![
+			version: Some(String::from("v1.0.0")),
+			commits: vec![
 				Commit::new(
 					String::from("coffee"),
 					String::from("revert(app): skip this commit"),
@@ -514,8 +511,9 @@ mod test {
 			],
 			commit_id: Some(String::from("0bc123")),
 			timestamp: 50000000,
-			previous:  None,
-			github:    GitHubReleaseMetadata {
+			previous: None,
+			#[cfg(feature = "github")]
+			github: crate::github::GitHubReleaseMetadata {
 				contributors: vec![],
 			},
 		};
@@ -530,8 +528,8 @@ mod test {
 				..Release::default()
 			},
 			Release {
-				version:   None,
-				commits:   vec![
+				version: None,
+				commits: vec![
 					Commit::new(
 						String::from("abc123"),
 						String::from("feat(app): add xyz"),
@@ -560,8 +558,9 @@ mod test {
 				],
 				commit_id: None,
 				timestamp: 1000,
-				previous:  Some(Box::new(test_release)),
-				github:    GitHubReleaseMetadata {
+				previous: Some(Box::new(test_release)),
+				#[cfg(feature = "github")]
+				github: crate::github::GitHubReleaseMetadata {
 					contributors: vec![],
 				},
 			},
