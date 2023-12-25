@@ -56,16 +56,12 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-      - name: Set remote
-        run: |
-          git status
-          git branch -v
-          git remote -v
-          git remote add upstream https://github.com/${GITHUB_REPOSITORY}.git
       - name: Setup cargo-tarpaulin
         uses: taiki-e/install-action@cargo-tarpaulin
       - name: Run tests
-        run: cargo tarpaulin --out xml --verbose --all-features
+        run: |
+          cargo tarpaulin --out xml --verbose --all-features \
+            -- --skip "git_upstream_remote"
       - name: Upload reports to codecov
         uses: codecov/codecov-action@v3
         with:
