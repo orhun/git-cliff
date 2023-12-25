@@ -59,7 +59,7 @@ jobs:
       - name: Setup cargo-tarpaulin
         uses: taiki-e/install-action@cargo-tarpaulin
       - name: Run tests
-        run: cargo tarpaulin --out xml --verbose
+        run: cargo tarpaulin --out xml --verbose --all-features
       - name: Upload reports to codecov
         uses: codecov/codecov-action@v3
         with:
