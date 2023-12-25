@@ -194,9 +194,6 @@ impl<'a> Changelog<'a> {
 	/// Generates the changelog and writes it to the given output.
 	pub fn generate<W: Write>(&self, out: &mut W) -> Result<()> {
 		debug!("Generating changelog...");
-		if let Some(header) = &self.config.changelog.header {
-			write!(out, "{header}")?;
-		}
 		let mut context = HashMap::new();
 		context.insert("remote", self.config.remote.clone());
 		#[cfg(feature = "github")]
@@ -207,6 +204,9 @@ impl<'a> Changelog<'a> {
 			.postprocessors
 			.clone()
 			.unwrap_or_default();
+		if let Some(header) = &self.config.changelog.header {
+			write!(out, "{header}")?;
+		}
 		let mut releases = self.releases.clone();
 		for release in releases.iter_mut() {
 			#[cfg(feature = "github")]
