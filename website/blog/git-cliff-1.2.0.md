@@ -11,7 +11,7 @@ In this post, I'm giving a brief introduction to the new features in the 1.2.0 r
 <center>
 
  <a href="https://github.com/orhun/git-cliff">
-    <img src="https://raw.githubusercontent.com/orhun/git-cliff/main/img/git-cliff-banner.jpg" />
+    <img src="/img/git-cliff-banner.jpg" />
 </a>
 
 </center>

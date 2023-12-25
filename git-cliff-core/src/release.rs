@@ -99,7 +99,7 @@ impl<'a> Release<'a> {
 			.next(
 				self.commits
 					.iter()
-					.map(|commit| commit.message.to_string())
+					.map(|commit| commit.message.trim_end().to_string())
 					.collect::<Vec<String>>(),
 			)
 			.to_string();
@@ -130,6 +130,7 @@ mod test {
 			("1.1.0", vec!["feat: add xyz", "fix: fix xyz"]),
 			("1.0.1", vec!["fix: add xyz", "fix: aaaaaa"]),
 			("2.0.0", vec!["feat!: add xyz", "feat: zzz"]),
+			("2.0.0", vec!["feat!: add xyz\n", "feat: zzz\n"]),
 		] {
 			let release = Release {
 				version:   None,

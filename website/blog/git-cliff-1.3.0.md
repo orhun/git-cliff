@@ -6,11 +6,10 @@ authors: orhun
 tags:
   - release
 ---
-
 <center>
 
  <a href="https://github.com/orhun/git-cliff">
-    <img src="https://raw.githubusercontent.com/orhun/git-cliff/main/img/git-cliff-banner.jpg" />
+    <img src="/img/git-cliff-banner.jpg" />
 </a>
 
 </center>
