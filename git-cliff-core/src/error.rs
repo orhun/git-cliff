@@ -72,9 +72,6 @@ pub enum Error {
 	/// requirement.
 	#[error("Semver error: `{0}`")]
 	SemverError(#[from] semver::Error),
-	/// Error that may occur when a version is not found for the next release.
-	#[error("Previous version is not found for calculating the next release.")]
-	PreviousVersionNotFound,
 	/// The errors that may occur when processing a HTTP request.
 	#[error("HTTP client error: `{0}`")]
 	#[cfg(feature = "github")]
