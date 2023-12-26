@@ -140,7 +140,12 @@ impl<'a> Changelog<'a> {
 	pub fn generate<W: Write>(&self, out: &mut W) -> Result<()> {
 		debug!("Generating changelog...");
 		if let Some(header) = &self.config.changelog.header {
-			write!(out, "{header}")?;
+			let write_result = write!(out, "{header}");
+			if let Err(e) = write_result {
+				if e.kind() != std::io::ErrorKind::BrokenPipe {
+					return Err(e.into());
+				}
+			}
 		}
 		let postprocessors = self
 			.config
@@ -149,14 +154,19 @@ impl<'a> Changelog<'a> {
 			.clone()
 			.unwrap_or_default();
 		for release in &self.releases {
-			write!(
+			let write_result = write!(
 				out,
 				"{}",
 				self.body_template.render(release, &postprocessors)?
-			)?;
+			);
+			if let Err(e) = write_result {
+				if e.kind() != std::io::ErrorKind::BrokenPipe {
+					return Err(e.into());
+				}
+			}
 		}
 		if let Some(footer_template) = &self.footer_template {
-			writeln!(
+			let write_result = writeln!(
 				out,
 				"{}",
 				footer_template.render(
@@ -165,7 +175,12 @@ impl<'a> Changelog<'a> {
 					},
 					&postprocessors,
 				)?
-			)?;
+			);
+			if let Err(e) = write_result {
+				if e.kind() != std::io::ErrorKind::BrokenPipe {
+					return Err(e.into());
+				}
+			}
 		}
 		Ok(())
 	}
