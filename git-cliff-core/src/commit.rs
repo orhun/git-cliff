@@ -8,6 +8,8 @@ use crate::error::{
 	Error as AppError,
 	Result,
 };
+#[cfg(feature = "github")]
+use crate::github::GitHubContributor;
 #[cfg(feature = "repo")]
 use git2::{
 	Commit as GitCommit,
@@ -122,6 +124,9 @@ pub struct Commit<'a> {
 	pub committer:     Signature,
 	/// Whether if the commit has two or more parents.
 	pub merge_commit:  bool,
+	/// GitHub metadata of the commit.
+	#[cfg(feature = "github")]
+	pub github:        GitHubContributor,
 }
 
 impl<'a> From<String> for Commit<'a> {
@@ -433,6 +438,8 @@ impl Serialize for Commit<'_> {
 		commit.serialize_field("committer", &self.committer)?;
 		commit.serialize_field("conventional", &self.conv.is_some())?;
 		commit.serialize_field("merge_commit", &self.merge_commit)?;
+		#[cfg(feature = "github")]
+		commit.serialize_field("github", &self.github)?;
 		commit.end()
 	}
 }

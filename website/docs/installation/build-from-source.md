@@ -1,3 +1,7 @@
+---
+sidebar_position: 2
+---
+
 # Build from source
 
 ### Prerequisites
@@ -22,6 +26,8 @@ CARGO_TARGET_DIR=target cargo build --release
 ```
 
 Binary will be located at `target/release/git-cliff`.
+
+Also, see the [available feature flags](/docs/installation/crates-io).
 
 ### Shell completions
 

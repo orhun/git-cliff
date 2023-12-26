@@ -7,6 +7,9 @@
 /// Command-line argument parser.
 pub mod args;
 
+/// Custom logger implementation.
+pub mod logger;
+
 #[macro_use]
 extern crate log;
 
@@ -30,6 +33,7 @@ use git_cliff_core::error::{
 use git_cliff_core::release::Release;
 use git_cliff_core::repo::Repository;
 use git_cliff_core::DEFAULT_CONFIG;
+use secrecy::Secret;
 use std::env;
 use std::fs::{
 	self,
@@ -72,7 +76,7 @@ fn check_new_version() {
 /// repository individually.
 fn process_repository<'a>(
 	repository: &'static Repository,
-	config: Config,
+	config: &mut Config,
 	args: &Opt,
 ) -> Result<Vec<Release<'a>>> {
 	let mut tags = repository.tags(&config.git.tag_pattern, args.topo_order)?;
@@ -101,6 +105,19 @@ fn process_repository<'a>(
 			skip || !ignore
 		})
 		.collect();
+
+	if !config.remote.github.is_set() {
+		match repository.upstream_remote() {
+			Ok(remote) => {
+				debug!("No GitHub remote is set, using remote: {}", remote);
+				config.remote.github.owner = remote.owner;
+				config.remote.github.repo = remote.repo;
+			}
+			Err(e) => {
+				debug!("Failed to get remote from repository: {:?}", e);
+			}
+		}
+	}
 
 	// Print debug information about configuration and arguments.
 	log::trace!("{:#?}", args);
@@ -308,7 +325,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 	// Parse the configuration file.
 	let mut path = args.config.clone();
 	if !path.exists() {
-		if let Some(config_path) = dirs_next::config_dir()
+		if let Some(config_path) = dirs::config_dir()
 			.map(|dir| dir.join(env!("CARGO_PKG_NAME")).join(DEFAULT_CONFIG))
 		{
 			path = config_path;
@@ -371,6 +388,13 @@ pub fn run(mut args: Opt) -> Result<()> {
 			args.topo_order = topo_order;
 		}
 	}
+	if args.github_token.is_some() {
+		config.remote.github.token = args.github_token.clone().map(Secret::new);
+	}
+	if let Some(ref remote) = args.github_repo {
+		config.remote.github.owner = remote.0.owner.to_string();
+		config.remote.github.repo = remote.0.repo.to_string();
+	}
 	config.git.skip_tags = config.git.skip_tags.filter(|r| !r.as_str().is_empty());
 
 	// Process the repository.
@@ -380,7 +404,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		let repository = Repository::init(repository)?;
 		releases.extend(process_repository(
 			Box::leak(Box::new(repository)),
-			config.clone(),
+			&mut config,
 			&args,
 		)?);
 	}

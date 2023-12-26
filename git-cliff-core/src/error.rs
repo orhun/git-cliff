@@ -14,9 +14,16 @@ pub enum Error {
 	#[cfg(feature = "repo")]
 	#[error("Git error: `{0}`")]
 	GitError(#[from] git2::Error),
+	/// Error variant that represents other repository related errors.
+	#[cfg(feature = "repo")]
+	#[error("Git repository error: `{0}`")]
+	RepoError(String),
 	/// Error that may occur while parsing the config file.
 	#[error("Cannot parse config: `{0}`")]
 	ConfigError(#[from] config::ConfigError),
+	/// A possible error while initializing the logger.
+	#[error("Logger error: `{0}`")]
+	LoggerError(String),
 	/// When commit's not follow the conventional commit structure we throw this
 	/// error.
 	#[error("Cannot parse the commit: `{0}`")]
@@ -65,6 +72,32 @@ pub enum Error {
 	/// requirement.
 	#[error("Semver error: `{0}`")]
 	SemverError(#[from] semver::Error),
+	/// The errors that may occur when processing a HTTP request.
+	#[error("HTTP client error: `{0}`")]
+	#[cfg(feature = "github")]
+	HttpClientError(#[from] reqwest::Error),
+	/// The errors that may occur while constructing the HTTP client with
+	/// middleware.
+	#[error("HTTP client with middleware error: `{0}`")]
+	#[cfg(feature = "github")]
+	HttpClientMiddlewareError(#[from] reqwest_middleware::Error),
+	/// A possible error when converting a HeaderValue from a string or byte
+	/// slice.
+	#[error("HTTP header error: `{0}`")]
+	#[cfg(feature = "github")]
+	HttpHeaderError(#[from] reqwest::header::InvalidHeaderValue),
+	/// Error that may occur during handling pages.
+	#[error("Pagination error: `{0}`")]
+	PaginationError(String),
+	/// The errors that may occur while parsing URLs.
+	#[error("URL parse error: `{0}`")]
+	UrlParseError(#[from] url::ParseError),
+	/// Error that may occur when a remote is not set.
+	#[error("Repository remote is not set.")]
+	RemoteNotSetError,
+	/// Error that may occur while handling location of directories.
+	#[error("Directory error: `{0}`")]
+	DirsError(String),
 }
 
 /// Result type of the core library.

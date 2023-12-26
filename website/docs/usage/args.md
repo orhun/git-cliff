@@ -38,6 +38,8 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
 -b, --body <TEMPLATE>            Sets the template for the changelog body [env: GIT_CLIFF_TEMPLATE=]
 -s, --strip <PART>               Strips the given parts from the changelog [possible values: header, footer, all]
     --sort <SORT>                Sets sorting of the commits inside sections [default: oldest] [possible values: oldest, newest]
+    --github-token <TOKEN>       Sets the GitHub API token [env: GITHUB_TOKEN]
+    --github-repo <OWNER/REPO>   Sets the GitHub repository [env: GITHUB_REPO=]
 ```
 
 ## Args

@@ -1,11 +1,20 @@
 use crate::commit::Commit;
 use crate::config::Config;
 use crate::error::Result;
+#[cfg(feature = "github")]
+use crate::github::{
+	GitHubClient,
+	GitHubCommit,
+	GitHubPullRequest,
+	FINISHED_FETCHING_MSG,
+	START_FETCHING_MSG,
+};
 use crate::release::{
 	Release,
 	Releases,
 };
 use crate::template::Template;
+use std::collections::HashMap;
 use std::io::Write;
 use std::time::{
 	SystemTime,
@@ -140,6 +149,52 @@ impl<'a> Changelog<'a> {
 		}
 	}
 
+	/// Returns the GitHub metadata needed for the changelog.
+	///
+	/// This function creates a multithread async runtime for handling the
+	/// requests. The following are fetched from the GitHub REST API:
+	///
+	/// - Commits
+	/// - Pull requests
+	///
+	/// Each of these are paginated requests so they are being run in parallel
+	/// for speedup.
+	///
+	/// If no GitHub related variable is used in the template then this function
+	/// returns empty vectors.
+	#[cfg(feature = "github")]
+	fn get_github_metadata(
+		&self,
+	) -> Result<(Vec<GitHubCommit>, Vec<GitHubPullRequest>)> {
+		if self.body_template.contains_github_variable() ||
+			self.footer_template
+				.as_ref()
+				.map(|v| v.contains_github_variable())
+				.unwrap_or(false)
+		{
+			warn!("You are using an experimental feature! Please report bugs at <https://github.com/orhun/git-cliff/issues/new/choose>");
+			let github_client =
+				GitHubClient::try_from(self.config.remote.github.clone())?;
+			info!("{START_FETCHING_MSG} ({})", self.config.remote.github);
+			let data = tokio::runtime::Builder::new_multi_thread()
+				.enable_all()
+				.build()?
+				.block_on(async {
+					let (commits, pull_requests) = tokio::try_join!(
+						github_client.get_commits(),
+						github_client.get_pull_requests(),
+					)?;
+					debug!("Number of GitHub commits: {}", commits.len());
+					debug!("Number of GitHub pull requests: {}", commits.len());
+					Ok((commits, pull_requests))
+				});
+			info!("{FINISHED_FETCHING_MSG}");
+			data
+		} else {
+			Ok((vec![], vec![]))
+		}
+	}
+
 	/// Increments the version for the unreleased changes based on semver.
 	pub fn bump_version(&mut self) -> Result<Option<String>> {
 		if let Some(ref mut last_release) = self.releases.iter_mut().next() {
@@ -160,6 +215,16 @@ impl<'a> Changelog<'a> {
 	/// Generates the changelog and writes it to the given output.
 	pub fn generate<W: Write>(&self, out: &mut W) -> Result<()> {
 		debug!("Generating changelog...");
+		let mut additional_context = HashMap::new();
+		additional_context.insert("remote", self.config.remote.clone());
+		#[cfg(feature = "github")]
+		let (github_commits, github_pull_requests) = self.get_github_metadata()?;
+		let postprocessors = self
+			.config
+			.changelog
+			.postprocessors
+			.clone()
+			.unwrap_or_default();
 		if let Some(header) = &self.config.changelog.header {
 			let write_result = write!(out, "{header}");
 			if let Err(e) = write_result {
@@ -168,17 +233,21 @@ impl<'a> Changelog<'a> {
 				}
 			}
 		}
-		let postprocessors = self
-			.config
-			.changelog
-			.postprocessors
-			.clone()
-			.unwrap_or_default();
-		for release in &self.releases {
+		let mut releases = self.releases.clone();
+		for release in releases.iter_mut() {
+			#[cfg(feature = "github")]
+			release.update_github_metadata(
+				github_commits.clone(),
+				github_pull_requests.clone(),
+			)?;
 			let write_result = write!(
 				out,
 				"{}",
-				self.body_template.render(release, &postprocessors)?
+				self.body_template.render(
+					&release,
+					Some(&additional_context),
+					&postprocessors
+				)?
 			);
 			if let Err(e) = write_result {
 				if e.kind() != std::io::ErrorKind::BrokenPipe {
@@ -192,8 +261,9 @@ impl<'a> Changelog<'a> {
 				"{}",
 				footer_template.render(
 					&Releases {
-						releases: &self.releases,
+						releases: &releases,
 					},
+					Some(&additional_context),
 					&postprocessors,
 				)?
 			);
@@ -239,6 +309,8 @@ mod test {
 		ChangelogConfig,
 		CommitParser,
 		GitConfig,
+		Remote,
+		RemoteConfig,
 		TextProcessor,
 	};
 	use pretty_assertions::assert_eq;
@@ -405,10 +477,17 @@ mod test {
 				link_parsers:             None,
 				limit_commits:            None,
 			},
+			remote:    RemoteConfig {
+				github: Remote {
+					owner: String::from("coolguy"),
+					repo:  String::from("awesome"),
+					token: None,
+				},
+			},
 		};
 		let test_release = Release {
-			version:   Some(String::from("v1.0.0")),
-			commits:   vec![
+			version: Some(String::from("v1.0.0")),
+			commits: vec![
 				Commit::new(
 					String::from("coffee"),
 					String::from("revert(app): skip this commit"),
@@ -468,7 +547,11 @@ mod test {
 			],
 			commit_id: Some(String::from("0bc123")),
 			timestamp: 50000000,
-			previous:  None,
+			previous: None,
+			#[cfg(feature = "github")]
+			github: crate::github::GitHubReleaseMetadata {
+				contributors: vec![],
+			},
 		};
 		let releases = vec![
 			test_release.clone(),
@@ -481,8 +564,8 @@ mod test {
 				..Release::default()
 			},
 			Release {
-				version:   None,
-				commits:   vec![
+				version: None,
+				commits: vec![
 					Commit::new(
 						String::from("abc123"),
 						String::from("feat(app): add xyz"),
@@ -511,7 +594,11 @@ mod test {
 				],
 				commit_id: None,
 				timestamp: 1000,
-				previous:  Some(Box::new(test_release)),
+				previous: Some(Box::new(test_release)),
+				#[cfg(feature = "github")]
+				github: crate::github::GitHubReleaseMetadata {
+					contributors: vec![],
+				},
 			},
 		];
 		(config, releases)

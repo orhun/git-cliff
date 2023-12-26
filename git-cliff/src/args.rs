@@ -1,9 +1,19 @@
 use clap::{
+	builder::{
+		TypedValueParser,
+		ValueParserFactory,
+	},
+	error::{
+		ContextKind,
+		ContextValue,
+		ErrorKind,
+	},
 	ArgAction,
 	Parser,
 	ValueEnum,
 };
 use git_cliff_core::{
+	config::Remote,
 	DEFAULT_CONFIG,
 	DEFAULT_OUTPUT,
 };
@@ -199,6 +209,64 @@ pub struct Opt {
 	/// Sets the commit range to process.
 	#[arg(value_name = "RANGE", help_heading = Some("ARGS"))]
 	pub range:          Option<String>,
+	/// Sets the GitHub API token.
+	#[arg(
+		long,
+		env = "GITHUB_TOKEN",
+		value_name = "TOKEN",
+		hide_env_values = true
+	)]
+	pub github_token:   Option<String>,
+	/// Sets the GitHub repository.
+	#[arg(
+	    long,
+	    env = "GITHUB_REPO",
+	    value_parser = clap::value_parser!(RemoteValue),
+	    value_name = "OWNER/REPO"
+	)]
+	pub github_repo:    Option<RemoteValue>,
+}
+
+/// Custom type for the remote value.
+#[derive(Clone, Debug, PartialEq)]
+pub struct RemoteValue(pub Remote);
+
+impl ValueParserFactory for RemoteValue {
+	type Parser = RemoteValueParser;
+	fn value_parser() -> Self::Parser {
+		RemoteValueParser
+	}
+}
+
+/// Parser for the remote value.
+#[derive(Clone, Debug)]
+pub struct RemoteValueParser;
+
+impl TypedValueParser for RemoteValueParser {
+	type Value = RemoteValue;
+	fn parse_ref(
+		&self,
+		cmd: &clap::Command,
+		arg: Option<&clap::Arg>,
+		value: &std::ffi::OsStr,
+	) -> Result<Self::Value, clap::Error> {
+		let inner = clap::builder::StringValueParser::new();
+		let value = inner.parse_ref(cmd, arg, value)?;
+		let parts = value.split('/').rev().collect::<Vec<&str>>();
+		if let (Some(owner), Some(repo)) = (parts.get(1), parts.first()) {
+			Ok(RemoteValue(Remote::new(*owner, *repo)))
+		} else {
+			let mut err = clap::Error::new(ErrorKind::ValueValidation).with_cmd(cmd);
+			if let Some(arg) = arg {
+				err.insert(
+					ContextKind::InvalidArg,
+					ContextValue::String(arg.to_string()),
+				);
+			}
+			err.insert(ContextKind::InvalidValue, ContextValue::String(value));
+			Err(err)
+		}
+	}
 }
 
 impl Opt {
@@ -207,7 +275,7 @@ impl Opt {
 	/// Expands the tilde (`~`) character in the beginning of the
 	/// input string into contents of the path returned by [`home_dir`].
 	///
-	/// [`home_dir`]: dirs_next::home_dir
+	/// [`home_dir`]: dirs::home_dir
 	fn parse_dir(dir: &str) -> Result<PathBuf, String> {
 		Ok(PathBuf::from(shellexpand::tilde(dir).to_string()))
 	}
@@ -217,6 +285,7 @@ impl Opt {
 mod tests {
 	use super::*;
 	use clap::CommandFactory;
+	use std::ffi::OsStr;
 
 	#[test]
 	fn verify_cli() {
@@ -225,9 +294,36 @@ mod tests {
 
 	#[test]
 	fn path_tilde_expansion() {
-		let home_dir =
-			dirs_next::home_dir().expect("cannot retrieve home directory");
+		let home_dir = dirs::home_dir().expect("cannot retrieve home directory");
 		let dir = Opt::parse_dir("~/").expect("cannot expand tilde");
 		assert_eq!(home_dir, dir);
+	}
+
+	#[test]
+	fn remote_value_parser() -> Result<(), clap::Error> {
+		let remote_value_parser = RemoteValueParser;
+		assert_eq!(
+			RemoteValue(Remote::new("test", "repo")),
+			remote_value_parser.parse_ref(
+				&Opt::command(),
+				None,
+				OsStr::new("test/repo")
+			)?
+		);
+		assert!(remote_value_parser
+			.parse_ref(&Opt::command(), None, OsStr::new("test"))
+			.is_err());
+		assert_eq!(
+			RemoteValue(Remote::new("test", "testrepo")),
+			remote_value_parser.parse_ref(
+				&Opt::command(),
+				None,
+				OsStr::new("https://github.com/test/testrepo")
+			)?
+		);
+		assert!(remote_value_parser
+			.parse_ref(&Opt::command(), None, OsStr::new(""))
+			.is_err());
+		Ok(())
 	}
 }

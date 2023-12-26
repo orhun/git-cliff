@@ -14,6 +14,7 @@ use git_cliff_core::release::*;
 use git_cliff_core::template::Template;
 use pretty_assertions::assert_eq;
 use regex::Regex;
+use std::collections::HashMap;
 use std::fmt::Write;
 
 #[test]
@@ -187,6 +188,10 @@ fn generate_changelog() -> Result<()> {
 			commit_id: None,
 			timestamp: 0,
 			previous:  None,
+			#[cfg(feature = "github")]
+			github: git_cliff_core::github::GitHubReleaseMetadata {
+				contributors: vec![],
+			},
 		},
 		Release {
 			version:   Some(String::from("v1.0.0")),
@@ -211,6 +216,10 @@ fn generate_changelog() -> Result<()> {
 			commit_id: None,
 			timestamp: 0,
 			previous:  None,
+			#[cfg(feature = "github")]
+			github: git_cliff_core::github::GitHubReleaseMetadata {
+				contributors: vec![],
+			},
 		},
 	];
 
@@ -222,11 +231,15 @@ fn generate_changelog() -> Result<()> {
 		write!(
 			out,
 			"{}",
-			template.render(&release, &[TextProcessor {
-				pattern:         Regex::new("<DATE>").unwrap(),
-				replace:         Some(String::from("2023")),
-				replace_command: None,
-			}])?
+			template.render(
+				&release,
+				Option::<HashMap<&str, String>>::None.as_ref(),
+				&[TextProcessor {
+					pattern:         Regex::new("<DATE>").unwrap(),
+					replace:         Some(String::from("2023")),
+					replace_command: None,
+				}]
+			)?
 		)
 		.unwrap();
 	}
