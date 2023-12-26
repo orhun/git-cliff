@@ -59,7 +59,9 @@ jobs:
       - name: Setup cargo-tarpaulin
         uses: taiki-e/install-action@cargo-tarpaulin
       - name: Run tests
-        run: cargo test --no-default-features
+        run: |
+          cargo test --no-default-features \
+            -- --skip "repo::test::git_upstream_remote"
       - name: Run tests
         run: |
           cargo tarpaulin --out xml --verbose --all-features \
