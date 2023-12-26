@@ -33,7 +33,27 @@ impl<'a> Release<'a> {
 			.and_then(|release| release.version.clone())
 		{
 			Some(version) => {
-				let next_version = Version::parse(version.trim_start_matches('v'))?
+				let mut semver = Version::parse(&version);
+				let mut prefix = None;
+				if semver.is_err() && version.split('.').count() >= 2 {
+					let mut found_numeric = false;
+					for (i, c) in version.chars().enumerate() {
+						if c.is_numeric() && !found_numeric {
+							found_numeric = true;
+							let version_prefix = version[..i].to_string();
+							let remaining = version[i..].to_string();
+							let version = Version::parse(&remaining);
+							if version.is_ok() {
+								semver = version;
+								prefix = Some(version_prefix);
+								break;
+							}
+						} else if !c.is_numeric() && found_numeric {
+							found_numeric = false;
+						}
+					}
+				}
+				let next_version = semver?
 					.next(
 						self.commits
 							.iter()
@@ -41,7 +61,11 @@ impl<'a> Release<'a> {
 							.collect::<Vec<String>>(),
 					)
 					.to_string();
-				Ok(next_version)
+				if let Some(prefix) = prefix {
+					Ok(format!("{prefix}{next_version}"))
+				} else {
+					Ok(next_version)
+				}
 			}
 			None => {
 				warn!("No releases found, using 0.0.1 as the next version.");
@@ -70,11 +94,39 @@ mod test {
 	use super::*;
 	#[test]
 	fn bump_version() -> Result<()> {
-		for (expected_version, commits) in [
-			("1.1.0", vec!["feat: add xyz", "fix: fix xyz"]),
-			("1.0.1", vec!["fix: add xyz", "fix: aaaaaa"]),
-			("2.0.0", vec!["feat!: add xyz", "feat: zzz"]),
-			("2.0.0", vec!["feat!: add xyz\n", "feat: zzz\n"]),
+		for (version, expected_version, commits) in [
+			("1.0.0", "1.1.0", vec!["feat: add xyz", "fix: fix xyz"]),
+			("1.0.0", "1.0.1", vec!["fix: add xyz", "fix: aaaaaa"]),
+			("1.0.0", "2.0.0", vec!["feat!: add xyz", "feat: zzz"]),
+			("1.0.0", "2.0.0", vec!["feat!: add xyz\n", "feat: zzz\n"]),
+			("2.0.0", "2.0.1", vec!["fix: something"]),
+			("foo/1.0.0", "foo/1.1.0", vec![
+				"feat: add xyz",
+				"fix: fix xyz",
+			]),
+			("bar/1.0.0", "bar/2.0.0", vec![
+				"fix: add xyz",
+				"fix!: aaaaaa",
+			]),
+			("zzz-123/test/1.0.0", "zzz-123/test/1.0.1", vec![
+				"fix: aaaaaa",
+			]),
+			("v100.0.0", "v101.0.0", vec!["feat!: something"]),
+			("v1.0.0-alpha.1", "v1.0.0-alpha.2", vec!["fix: minor"]),
+			("testing/v1.0.0-beta.1", "testing/v1.0.0-beta.2", vec![
+				"feat: nice",
+			]),
+			("tauri-v1.5.4", "tauri-v1.6.0", vec!["feat: something"]),
+			(
+				"rocket/rocket-v4.0.0-rc.1",
+				"rocket/rocket-v4.0.0-rc.2",
+				vec!["chore!: wow"],
+			),
+			(
+				"aaa#/@#$@9384!#%^#@#@!#!239432413-idk-9999.2200.5932-alpha.419",
+				"aaa#/@#$@9384!#%^#@#@!#!239432413-idk-9999.2200.5932-alpha.420",
+				vec!["feat: damn this is working"],
+			),
 		] {
 			let release = Release {
 				version:   None,
@@ -85,7 +137,7 @@ mod test {
 				commit_id: None,
 				timestamp: 0,
 				previous:  Some(Box::new(Release {
-					version: Some(String::from("1.0.0")),
+					version: Some(String::from(version)),
 					..Default::default()
 				})),
 			};
