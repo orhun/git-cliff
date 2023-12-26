@@ -6,7 +6,10 @@ use env_logger::{
 	},
 	Builder,
 };
-use git_cliff_core::error::Result;
+use git_cliff_core::error::{
+	Error,
+	Result,
+};
 #[cfg(feature = "github")]
 use git_cliff_core::github::{
 	FINISHED_FETCHING_MSG,
@@ -133,7 +136,7 @@ pub fn init() -> Result<()> {
 		builder.parse_filters(&var);
 	}
 
-	builder.try_init()?;
-
-	Ok(())
+	builder
+		.try_init()
+		.map_err(|e| Error::LoggerError(e.to_string()))
 }
