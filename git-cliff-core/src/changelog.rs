@@ -16,6 +16,10 @@ use crate::release::{
 use crate::template::Template;
 use std::collections::HashMap;
 use std::io::Write;
+use std::time::{
+	SystemTime,
+	UNIX_EPOCH,
+};
 
 /// Changelog generator.
 #[derive(Debug)]
@@ -191,6 +195,23 @@ impl<'a> Changelog<'a> {
 		}
 	}
 
+	/// Increments the version for the unreleased changes based on semver.
+	pub fn bump_version(&mut self) -> Result<Option<String>> {
+		if let Some(ref mut last_release) = self.releases.iter_mut().next() {
+			if last_release.version.is_none() {
+				let next_version = last_release.calculate_next_version()?;
+				debug!("Bumping the version to {next_version}");
+				last_release.version = Some(next_version.to_string());
+				last_release.timestamp = SystemTime::now()
+					.duration_since(UNIX_EPOCH)?
+					.as_secs()
+					.try_into()?;
+				return Ok(Some(next_version));
+			}
+		}
+		Ok(None)
+	}
+
 	/// Generates the changelog and writes it to the given output.
 	pub fn generate<W: Write>(&self, out: &mut W) -> Result<()> {
 		debug!("Generating changelog...");
@@ -205,7 +226,12 @@ impl<'a> Changelog<'a> {
 			.clone()
 			.unwrap_or_default();
 		if let Some(header) = &self.config.changelog.header {
-			write!(out, "{header}")?;
+			let write_result = write!(out, "{header}");
+			if let Err(e) = write_result {
+				if e.kind() != std::io::ErrorKind::BrokenPipe {
+					return Err(e.into());
+				}
+			}
 		}
 		let mut releases = self.releases.clone();
 		for release in releases.iter_mut() {
@@ -214,7 +240,7 @@ impl<'a> Changelog<'a> {
 				github_commits.clone(),
 				github_pull_requests.clone(),
 			)?;
-			write!(
+			let write_result = write!(
 				out,
 				"{}",
 				self.body_template.render(
@@ -222,10 +248,15 @@ impl<'a> Changelog<'a> {
 					Some(&additional_context),
 					&postprocessors
 				)?
-			)?;
+			);
+			if let Err(e) = write_result {
+				if e.kind() != std::io::ErrorKind::BrokenPipe {
+					return Err(e.into());
+				}
+			}
 		}
 		if let Some(footer_template) = &self.footer_template {
-			writeln!(
+			let write_result = writeln!(
 				out,
 				"{}",
 				footer_template.render(
@@ -235,7 +266,12 @@ impl<'a> Changelog<'a> {
 					Some(&additional_context),
 					&postprocessors,
 				)?
-			)?;
+			);
+			if let Err(e) = write_result {
+				if e.kind() != std::io::ErrorKind::BrokenPipe {
+					return Err(e.into());
+				}
+			}
 		}
 		Ok(())
 	}
@@ -288,7 +324,7 @@ mod test {
 				body:           Some(String::from(
 					r#"{% if version %}
 				## Release [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
-				({{ commit_id }}){% else %}
+				{% if commit_id %}({{ commit_id }}){% endif %}{% else %}
 				## Unreleased{% endif %}
 				{% for group, commits in commits | group_by(attribute="group") %}
 				### {{ group }}{% for group, commits in commits | group_by(attribute="scope") %}
@@ -571,13 +607,16 @@ mod test {
 	#[test]
 	fn changelog_generator() -> Result<()> {
 		let (config, releases) = get_test_data();
-		let changelog = Changelog::new(releases, &config)?;
+		let mut changelog = Changelog::new(releases, &config)?;
+		changelog.bump_version()?;
+		changelog.releases[0].timestamp = 0;
 		let mut out = Vec::new();
 		changelog.generate(&mut out)?;
 		assert_eq!(
 			String::from(
 				r#"# Changelog
-			## Unreleased
+			## Release [v1.1.0] - 1970-01-01
+
 
 			### Bug Fixes
 			#### app

@@ -69,14 +69,6 @@ fn check_new_version() {
 	}
 }
 
-/// Output of the `process_repository` call.
-enum ProcessOutput<'a> {
-	/// List of releases.
-	Releases(Vec<Release<'a>>),
-	/// Semantic version.
-	Version(String),
-}
-
 /// Processes the tags and commits for creating release entries for the
 /// changelog.
 ///
@@ -86,7 +78,7 @@ fn process_repository<'a>(
 	repository: &'static Repository,
 	config: &mut Config,
 	args: &Opt,
-) -> Result<ProcessOutput<'a>> {
+) -> Result<Vec<Release<'a>>> {
 	let mut tags = repository.tags(&config.git.tag_pattern, args.topo_order)?;
 	let skip_regex = config.git.skip_tags.as_ref();
 	let ignore_regex = config.git.ignore_tags.as_ref();
@@ -286,24 +278,7 @@ fn process_repository<'a>(
 		}
 	}
 
-	// Bump the version.
-	if (args.bump || args.bumped_version) &&
-		releases[release_index].version.is_none()
-	{
-		let next_version = releases[release_index].calculate_next_version()?;
-		if args.bumped_version {
-			return Ok(ProcessOutput::Version(next_version));
-		}
-
-		debug!("Bumping the version to {next_version}");
-		releases[release_index].version = Some(next_version.to_string());
-		releases[release_index].timestamp = SystemTime::now()
-			.duration_since(UNIX_EPOCH)?
-			.as_secs()
-			.try_into()?;
-	}
-
-	Ok(ProcessOutput::Releases(releases))
+	Ok(releases)
 }
 
 /// Runs `git-cliff`.
@@ -425,31 +400,32 @@ pub fn run(mut args: Opt) -> Result<()> {
 	// Process the repository.
 	let repositories = args.repository.clone().unwrap_or(vec![env::current_dir()?]);
 	let mut releases = Vec::<Release>::new();
-	let mut versions = Vec::<String>::new();
 	for repository in repositories {
 		let repository = Repository::init(repository)?;
-		let process_output =
-			process_repository(Box::leak(Box::new(repository)), &mut config, &args)?;
+		releases.extend(process_repository(
+			Box::leak(Box::new(repository)),
+			&mut config,
+			&args,
+		)?);
+	}
 
-		match process_output {
-			ProcessOutput::Releases(release) => releases.extend(release),
-			ProcessOutput::Version(version) => versions.push(version),
+	// Process commits and releases for the changelog.
+	let mut changelog = Changelog::new(releases, &config)?;
+
+	// Print the result.
+	if args.bump || args.bumped_version {
+		if let Some(next_version) = changelog.bump_version()? {
+			if args.bumped_version {
+				if let Some(path) = args.output {
+					let mut output = File::create(path)?;
+					output.write_all(next_version.as_bytes())?;
+				} else {
+					println!("{next_version}");
+				}
+				return Ok(());
+			}
 		}
 	}
-
-	// Generate output.
-	if !versions.is_empty() {
-		let buf = versions.join("\n");
-		if let Some(path) = args.output {
-			let mut output = File::create(path)?;
-			output.write_all(buf.as_bytes())?;
-		} else {
-			println!("{buf}");
-		};
-		return Ok(());
-	}
-
-	let changelog = Changelog::new(releases, &config)?;
 	if args.context {
 		return if let Some(path) = args.output {
 			let mut output = File::create(path)?;
