@@ -63,7 +63,7 @@ jobs:
       - name: Run tests
         run: |
           cargo tarpaulin --out xml --verbose --all-features \
-            -- --skip "git_upstream_remote"
+            -- --skip "repo::test::git_upstream_remote"
       - name: Upload reports to codecov
         uses: codecov/codecov-action@v3
         with:
