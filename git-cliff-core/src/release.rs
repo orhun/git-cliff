@@ -128,8 +128,8 @@ impl<'a> Release<'a> {
 				}
 			}
 			None => {
-				warn!("No releases found, using 0.0.1 as the next version.");
-				Ok(String::from("0.0.1"))
+				warn!("No releases found, using 0.1.0 as the next version.");
+				Ok(String::from("0.1.0"))
 			}
 		}
 	}
