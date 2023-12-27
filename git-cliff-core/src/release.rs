@@ -216,7 +216,7 @@ mod test {
 			..Default::default()
 		};
 		let next_version = empty_release.calculate_next_version()?;
-		assert_eq!("0.0.1", next_version);
+		assert_eq!("0.1.0", next_version);
 		Ok(())
 	}
 
