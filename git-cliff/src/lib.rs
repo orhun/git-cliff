@@ -402,18 +402,23 @@ pub fn run(mut args: Opt) -> Result<()> {
 		config.remote.github.repo = remote.0.repo.to_string();
 	}
 	config.git.skip_tags = config.git.skip_tags.filter(|r| !r.as_str().is_empty());
-
+	let mut skip_list = Vec::new();
 	let ignore_file = env::current_dir()?.join(IGNORE_FILE);
 	if ignore_file.exists() {
 		let contents = fs::read_to_string(ignore_file)?;
-		for sha1 in contents.lines() {
-			if let Some(commit_parsers) = config.git.commit_parsers.as_mut() {
-				commit_parsers.insert(0, CommitParser {
-					sha: Some(sha1.to_string()),
-					skip: Some(true),
-					..Default::default()
-				})
-			}
+		let commits = contents.lines().map(String::from).collect::<Vec<String>>();
+		skip_list.extend(commits);
+	}
+	if let Some(ref skip_commit) = args.skip_commit {
+		skip_list.extend(skip_commit.clone());
+	}
+	if let Some(commit_parsers) = config.git.commit_parsers.as_mut() {
+		for sha1 in skip_list {
+			commit_parsers.insert(0, CommitParser {
+				sha: Some(sha1.to_string()),
+				skip: Some(true),
+				..Default::default()
+			})
 		}
 	}
 

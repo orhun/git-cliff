@@ -137,6 +137,14 @@ pub struct Opt {
 		num_args(1..)
 	)]
 	pub with_commit:    Option<Vec<String>>,
+	/// Sets commits that will be skipped in the changelog.
+	#[arg(
+		long,
+		env = "GIT_CLIFF_SKIP_COMMIT",
+		value_name = "SHA1",
+		num_args(1..)
+	)]
+	pub skip_commit:    Option<Vec<String>>,
 	/// Prepends entries to the given changelog file.
 	#[arg(
 	    short,
