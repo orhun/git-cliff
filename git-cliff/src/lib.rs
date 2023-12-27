@@ -21,7 +21,10 @@ use args::{
 use clap::ValueEnum;
 use git_cliff_core::changelog::Changelog;
 use git_cliff_core::commit::Commit;
-use git_cliff_core::config::Config;
+use git_cliff_core::config::{
+	CommitParser,
+	Config,
+};
 use git_cliff_core::embed::{
 	BuiltinConfig,
 	EmbeddedConfig,
@@ -32,7 +35,10 @@ use git_cliff_core::error::{
 };
 use git_cliff_core::release::Release;
 use git_cliff_core::repo::Repository;
-use git_cliff_core::DEFAULT_CONFIG;
+use git_cliff_core::{
+	DEFAULT_CONFIG,
+	IGNORE_FILE,
+};
 use secrecy::Secret;
 use std::env;
 use std::fs::{
@@ -396,6 +402,20 @@ pub fn run(mut args: Opt) -> Result<()> {
 		config.remote.github.repo = remote.0.repo.to_string();
 	}
 	config.git.skip_tags = config.git.skip_tags.filter(|r| !r.as_str().is_empty());
+
+	let ignore_file = env::current_dir()?.join(IGNORE_FILE);
+	if ignore_file.exists() {
+		let contents = fs::read_to_string(ignore_file)?;
+		for sha1 in contents.lines() {
+			if let Some(commit_parsers) = config.git.commit_parsers.as_mut() {
+				commit_parsers.insert(0, CommitParser {
+					sha: Some(sha1.to_string()),
+					skip: Some(true),
+					..Default::default()
+				})
+			}
+		}
+	}
 
 	// Process the repository.
 	let repositories = args.repository.clone().unwrap_or(vec![env::current_dir()?]);
