@@ -56,13 +56,16 @@ impl<'a> Release<'a> {
 			if let Some(commit) =
 				self.commits.iter_mut().find(|commit| commit.id == v.sha)
 			{
-				commit.github.username = v.author.clone().and_then(|v| v.login);
-				commit.github.pr_number = github_pull_requests
+				let pull_request = github_pull_requests
 					.iter()
-					.find(|pr| pr.merge_commit_sha == Some(v.sha.clone()))
-					.map(|v| v.number);
+					.find(|pr| pr.merge_commit_sha == Some(v.sha.clone()));
+
+				commit.github.username = v.author.clone().and_then(|v| v.login);
+				commit.github.pr_number = pull_request.map(|v| v.number);
+				commit.github.pr_title = pull_request.and_then(|v| v.title.clone());
 				contributors.insert(GitHubContributor {
 					username:      v.author.clone().and_then(|v| v.login),
+					pr_title:      commit.github.pr_title.clone(),
 					pr_number:     commit.github.pr_number,
 					is_first_time: false,
 				});

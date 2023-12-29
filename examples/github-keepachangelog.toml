@@ -64,7 +64,11 @@ conventional_commits = true
 filter_unconventional = true
 # process each line of a commit as an individual commit
 split_commits = false
-commit_preprocessors = [{ pattern = '\((\w+\s)?#([0-9]+)\)', replace = "" }]
+# regex for preprocessing the commit messages
+commit_preprocessors = [
+    # remove issue numbers from commits
+    { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "" },
+]
 # regex for parsing and grouping commits
 commit_parsers = [
     { message = "^.*: add", group = "Added" },
