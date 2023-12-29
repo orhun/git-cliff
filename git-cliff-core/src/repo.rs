@@ -49,7 +49,7 @@ impl Repository {
 		exclude_path: Option<Vec<Pattern>>,
 	) -> Result<Vec<Commit>> {
 		let mut revwalk = self.inner.revwalk()?;
-		revwalk.set_sorting(Sort::TIME | Sort::TOPOLOGICAL)?;
+		revwalk.set_sorting(Sort::TOPOLOGICAL)?;
 		if let Some(range) = range {
 			revwalk.push_range(&range)?;
 		} else {
