@@ -137,7 +137,7 @@ impl Remote {
 }
 
 /// Parser for grouping commits.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct CommitParser {
 	/// SHA1 of the commit.
 	pub sha:           Option<String>,

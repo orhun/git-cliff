@@ -21,7 +21,10 @@ use args::{
 use clap::ValueEnum;
 use git_cliff_core::changelog::Changelog;
 use git_cliff_core::commit::Commit;
-use git_cliff_core::config::Config;
+use git_cliff_core::config::{
+	CommitParser,
+	Config,
+};
 use git_cliff_core::embed::{
 	BuiltinConfig,
 	EmbeddedConfig,
@@ -32,7 +35,10 @@ use git_cliff_core::error::{
 };
 use git_cliff_core::release::Release;
 use git_cliff_core::repo::Repository;
-use git_cliff_core::DEFAULT_CONFIG;
+use git_cliff_core::{
+	DEFAULT_CONFIG,
+	IGNORE_FILE,
+};
 use secrecy::Secret;
 use std::env;
 use std::fs::{
@@ -397,10 +403,36 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 	config.git.skip_tags = config.git.skip_tags.filter(|r| !r.as_str().is_empty());
 
-	// Process the repository.
+	// Process the repositories.
 	let repositories = args.repository.clone().unwrap_or(vec![env::current_dir()?]);
 	let mut releases = Vec::<Release>::new();
 	for repository in repositories {
+		// Skip commits
+		let mut skip_list = Vec::new();
+		let ignore_file = repository.join(IGNORE_FILE);
+		if ignore_file.exists() {
+			let contents = fs::read_to_string(ignore_file)?;
+			let commits = contents
+				.lines()
+				.filter(|v| !(v.starts_with('#') || v.trim().is_empty()))
+				.map(|v| String::from(v.trim()))
+				.collect::<Vec<String>>();
+			skip_list.extend(commits);
+		}
+		if let Some(ref skip_commit) = args.skip_commit {
+			skip_list.extend(skip_commit.clone());
+		}
+		if let Some(commit_parsers) = config.git.commit_parsers.as_mut() {
+			for sha1 in skip_list {
+				commit_parsers.insert(0, CommitParser {
+					sha: Some(sha1.to_string()),
+					skip: Some(true),
+					..Default::default()
+				})
+			}
+		}
+
+		// Process the repository.
 		let repository = Repository::init(repository)?;
 		releases.extend(process_repository(
 			Box::leak(Box::new(repository)),
