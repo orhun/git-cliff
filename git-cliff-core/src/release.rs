@@ -7,7 +7,7 @@ use crate::github::{
 	GitHubPullRequest,
 	GitHubReleaseMetadata,
 };
-use next_version::NextVersion;
+use next_version::VersionUpdater;
 use semver::Version;
 use serde::{
 	Deserialize,
@@ -113,8 +113,11 @@ impl<'a> Release<'a> {
 						}
 					}
 				}
-				let next_version = semver?
-					.next(
+				let next_version = VersionUpdater::new()
+					.with_features_always_increment_minor(true)
+					.with_breaking_always_increment_major(true)
+					.increment(
+						&semver?,
 						self.commits
 							.iter()
 							.map(|commit| commit.message.trim_end().to_string())
