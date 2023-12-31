@@ -56,13 +56,16 @@ impl<'a> Release<'a> {
 			if let Some(commit) =
 				self.commits.iter_mut().find(|commit| commit.id == v.sha)
 			{
-				commit.github.username = v.author.clone().and_then(|v| v.login);
-				commit.github.pr_number = github_pull_requests
+				let pull_request = github_pull_requests
 					.iter()
-					.find(|pr| pr.merge_commit_sha == Some(v.sha.clone()))
-					.map(|v| v.number);
+					.find(|pr| pr.merge_commit_sha == Some(v.sha.clone()));
+
+				commit.github.username = v.author.clone().and_then(|v| v.login);
+				commit.github.pr_number = pull_request.map(|v| v.number);
+				commit.github.pr_title = pull_request.and_then(|v| v.title.clone());
 				contributors.insert(GitHubContributor {
 					username:      v.author.clone().and_then(|v| v.login),
+					pr_title:      commit.github.pr_title.clone(),
 					pr_number:     commit.github.pr_number,
 					is_first_time: false,
 				});
@@ -317,30 +320,35 @@ mod test {
 			],
 			vec![
 				GitHubPullRequest {
+					title:            Some(String::from("1")),
 					number:           42,
 					merge_commit_sha: Some(String::from(
 						"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
 					)),
 				},
 				GitHubPullRequest {
+					title:            Some(String::from("2")),
 					number:           66,
 					merge_commit_sha: Some(String::from(
 						"21f6aa587fcb772de13f2fde0e92697c51f84162",
 					)),
 				},
 				GitHubPullRequest {
+					title:            Some(String::from("3")),
 					number:           53,
 					merge_commit_sha: Some(String::from(
 						"35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973",
 					)),
 				},
 				GitHubPullRequest {
+					title:            Some(String::from("4")),
 					number:           1000,
 					merge_commit_sha: Some(String::from(
 						"4d3ffe4753b923f4d7807c490e650e6624a12074",
 					)),
 				},
 				GitHubPullRequest {
+					title:            Some(String::from("5")),
 					number:           999999,
 					merge_commit_sha: Some(String::from(
 						"5a55e92e5a62dc5bf9872ffb2566959fad98bd05",
@@ -356,6 +364,7 @@ mod test {
 					message: String::from("add github integration"),
 					github: GitHubContributor {
 						username:      Some(String::from("orhun")),
+						pr_title:      Some(String::from("1")),
 						pr_number:     Some(42),
 						is_first_time: false,
 					},
@@ -366,6 +375,7 @@ mod test {
 					message: String::from("fix github integration"),
 					github: GitHubContributor {
 						username:      Some(String::from("orhun")),
+						pr_title:      Some(String::from("2")),
 						pr_number:     Some(66),
 						is_first_time: false,
 					},
@@ -376,6 +386,7 @@ mod test {
 					message: String::from("update metadata"),
 					github: GitHubContributor {
 						username:      Some(String::from("nuhro")),
+						pr_title:      Some(String::from("3")),
 						pr_number:     Some(53),
 						is_first_time: false,
 					},
@@ -386,6 +397,7 @@ mod test {
 					message: String::from("do some stuff"),
 					github: GitHubContributor {
 						username:      Some(String::from("awesome_contributor")),
+						pr_title:      Some(String::from("4")),
 						pr_number:     Some(1000),
 						is_first_time: false,
 					},
@@ -396,6 +408,7 @@ mod test {
 					message: String::from("alright"),
 					github: GitHubContributor {
 						username:      Some(String::from("orhun")),
+						pr_title:      Some(String::from("5")),
 						pr_number:     Some(999999),
 						is_first_time: false,
 					},
@@ -406,6 +419,7 @@ mod test {
 					message: String::from("should be fine"),
 					github: GitHubContributor {
 						username:      Some(String::from("someone")),
+						pr_title:      Some(String::from("6")),
 						pr_number:     None,
 						is_first_time: false,
 					},
@@ -425,21 +439,25 @@ mod test {
 				contributors: vec![
 					GitHubContributor {
 						username:      Some(String::from("someone")),
+						pr_title:      Some(String::from("6")),
 						pr_number:     None,
 						is_first_time: true,
 					},
 					GitHubContributor {
 						username:      Some(String::from("orhun")),
+						pr_title:      Some(String::from("5")),
 						pr_number:     Some(42),
 						is_first_time: true,
 					},
 					GitHubContributor {
 						username:      Some(String::from("nuhro")),
+						pr_title:      Some(String::from("3")),
 						pr_number:     Some(53),
 						is_first_time: true,
 					},
 					GitHubContributor {
 						username:      Some(String::from("awesome_contributor")),
+						pr_title:      Some(String::from("4")),
 						pr_number:     Some(1000),
 						is_first_time: true,
 					},

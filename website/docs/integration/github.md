@@ -1,7 +1,6 @@
 ---
 sidebar_position: 1
 ---
-
 # GitHub 🆕
 
 :::warning
@@ -104,6 +103,7 @@ For each commit, GitHub related values are added as a nested object (named `gith
 
   "github": {
     "username": "orhun",
+    "pr_title": "some things have changed",
     "pr_number": 420,
     "is_first_time": false
   }
@@ -142,11 +142,13 @@ For each release, following contributors data is added to the [template context]
     "contributors": [
       {
         "username": "orhun",
+        "pr_title": "some things have changed",
         "pr_number": 420,
         "is_first_time": true
       },
       {
         "username": "cliffjumper",
+        "pr_title": "I love jumping",
         "pr_number": 999,
         "is_first_time": true
       }

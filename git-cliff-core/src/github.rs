@@ -98,6 +98,8 @@ pub struct GitHubCommitAuthor {
 pub struct GitHubPullRequest {
 	/// Pull request number.
 	pub number:           i64,
+	/// Pull request title.
+	pub title:            Option<String>,
 	/// SHA of the merge commit.
 	pub merge_commit_sha: Option<String>,
 }
@@ -128,6 +130,8 @@ pub struct GitHubReleaseMetadata {
 pub struct GitHubContributor {
 	/// Username.
 	pub username:      Option<String>,
+	/// Title of the pull request.
+	pub pr_title:      Option<String>,
 	/// The pull request that the user created.
 	pub pr_number:     Option<i64>,
 	/// Whether if the user contributed for the first time.

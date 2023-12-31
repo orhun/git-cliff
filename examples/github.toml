@@ -14,7 +14,12 @@ body = """
 
 {%- if version %} in {{ version }}{%- endif -%}
 {% for commit in commits %}
-  * {{ commit.message | split(pat="\n") | first | trim }}\
+  {% if commit.github.pr_title -%}
+    {%- set commit_message = commit.github.pr_title -%}
+  {%- else -%}
+    {%- set commit_message = commit.message -%}
+  {%- endif -%}
+  * {{ commit_message | split(pat="\n") | first | trim }}\
     {% if commit.github.username %} by @{{ commit.github.username }}{%- endif -%}
     {% if commit.github.pr_number %} in #{{ commit.github.pr_number }}{%- endif %}
 {%- endfor -%}
@@ -52,7 +57,10 @@ filter_unconventional = true
 # process each line of a commit as an individual commit
 split_commits = false
 # regex for preprocessing the commit messages
-commit_preprocessors = [{ pattern = '\((\w+\s)?#([0-9]+)\)', replace = "" }]
+commit_preprocessors = [
+  # remove issue numbers from commits
+  { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "" },
+]
 # protect breaking changes from being skipped due to matching a skipping commit_parser
 protect_breaking_commits = false
 # filter out the commits that are not matched by commit parsers
