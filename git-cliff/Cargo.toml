@@ -37,7 +37,7 @@ secrecy.workspace = true
 lazy_static.workspace = true
 dirs.workspace = true
 clap = { version = "4.4.12", features = ["derive", "env", "wrap_help", "cargo"] }
-clap_complete = "4.4.5"
+clap_complete = "4.4.6"
 clap_mangen = "0.2.16"
 shellexpand = "3.1.0"
 update-informer = { version = "1.1.0", optional = true }
