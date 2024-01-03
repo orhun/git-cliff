@@ -207,8 +207,8 @@ fn process_repository<'a>(
 	let mut release_index = 0;
 	let mut previous_release = Release::default();
 	let mut first_processed_tag = None;
-	for git_commit in commits.into_iter().rev() {
-		let commit = Commit::from(&git_commit);
+	for git_commit in commits.iter().rev() {
+		let commit = Commit::from(git_commit);
 		let commit_id = commit.id.to_string();
 		if args.sort == Sort::Newest {
 			releases[release_index].commits.insert(0, commit);
@@ -278,7 +278,11 @@ fn process_repository<'a>(
 			let previous_release = Release {
 				commit_id: Some(commit_id.to_string()),
 				version: Some(version.to_string()),
-				..Release::default()
+				timestamp: repository
+					.find_commit(commit_id.to_string())
+					.map(|v| v.time().seconds())
+					.unwrap_or_default(),
+				..Default::default()
 			};
 			releases[0].previous = Some(Box::new(previous_release));
 		}

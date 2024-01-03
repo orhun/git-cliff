@@ -7,6 +7,7 @@ use git2::{
 	BranchType,
 	Commit,
 	DescribeOptions,
+	Oid,
 	Repository as GitRepository,
 	Sort,
 };
@@ -99,6 +100,16 @@ impl Repository {
 			.describe(DescribeOptions::new().describe_tags())
 			.ok()
 			.and_then(|describe| describe.format(None).ok())
+	}
+
+	/// Returns the commit object of the given ID.
+	pub fn find_commit(&self, id: String) -> Option<Commit> {
+		if let Ok(oid) = Oid::from_str(&id) {
+			if let Ok(commit) = self.inner.find_commit(oid) {
+				return Some(commit);
+			}
+		}
+		None
 	}
 
 	/// Parses and returns a commit-tag map.
