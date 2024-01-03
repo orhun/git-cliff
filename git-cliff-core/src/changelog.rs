@@ -5,6 +5,7 @@ use crate::error::Result;
 use crate::github::{
 	GitHubClient,
 	GitHubCommit,
+	GitHubFetchRange,
 	GitHubPullRequest,
 	FINISHED_FETCHING_MSG,
 	START_FETCHING_MSG,
@@ -173,6 +174,17 @@ impl<'a> Changelog<'a> {
 				.unwrap_or(false)
 		{
 			warn!("You are using an experimental feature! Please report bugs at <https://github.com/orhun/git-cliff/issues/new/choose>");
+			let range = if let (Some(since), Some(until)) = (
+				self.releases
+					.last()
+					.and_then(|v| v.previous.clone())
+					.map(|v| v.timestamp),
+				self.releases.first().map(|v| v.timestamp),
+			) {
+				Some(GitHubFetchRange { since, until })
+			} else {
+				None
+			};
 			let github_client =
 				GitHubClient::try_from(self.config.remote.github.clone())?;
 			info!("{START_FETCHING_MSG} ({})", self.config.remote.github);
@@ -181,8 +193,8 @@ impl<'a> Changelog<'a> {
 				.build()?
 				.block_on(async {
 					let (commits, pull_requests) = tokio::try_join!(
-						github_client.get_commits(),
-						github_client.get_pull_requests(),
+						github_client.get_commits(range),
+						github_client.get_pull_requests(range),
 					)?;
 					debug!("Number of GitHub commits: {}", commits.len());
 					debug!("Number of GitHub pull requests: {}", commits.len());

@@ -1,5 +1,10 @@
 use crate::config::Remote;
 use crate::error::*;
+use chrono::{
+	NaiveDateTime,
+	TimeZone,
+	Utc,
+};
 use futures::{
 	future,
 	stream,
@@ -31,7 +36,11 @@ use std::hash::{
 	Hash,
 	Hasher,
 };
-use std::time::Duration;
+use std::time::{
+	Duration,
+	SystemTime,
+	UNIX_EPOCH,
+};
 
 /// GitHub REST API url.
 const GITHUB_API_URL: &str = "https://api.github.com";
@@ -56,10 +65,52 @@ pub const START_FETCHING_MSG: &str = "Retrieving data from GitHub...";
 /// Log message to show when done fetching from GitHub.
 pub const FINISHED_FETCHING_MSG: &str = "Done fetching GitHub data.";
 
+/// Date rage for the entries to fetch.
+#[derive(Default, Debug, Clone, Copy)]
+pub struct GitHubFetchRange {
+	/// Only fetch entries that were last updated after the given time.
+	pub since: i64,
+	/// Only fetch entries before this date.
+	pub until: i64,
+}
+
+impl GitHubFetchRange {
+	/// Converts the given timestamp to RFC3339 format.
+	///
+	/// See <https://docs.rs/chrono/latest/chrono/format/strftime/index.html#fn7>
+	fn convert_to_iso8601(mut time: i64) -> Result<String> {
+		if time == 0 {
+			time = SystemTime::now()
+				.duration_since(UNIX_EPOCH)?
+				.as_secs()
+				.try_into()?;
+		}
+		let datetime = Utc.from_utc_datetime(
+			&NaiveDateTime::from_timestamp_opt(time, 0).ok_or_else(|| {
+				Error::ChronoError(String::from("failed to convert to timestamp"))
+			})?,
+		);
+		Ok(datetime.to_rfc3339())
+	}
+
+	/// Returns the formatted range.
+	pub fn formatted(self) -> Result<(String, String)> {
+		Ok((
+			Self::convert_to_iso8601(self.since)?,
+			Self::convert_to_iso8601(self.until)?,
+		))
+	}
+}
+
 /// Trait for handling the different entries returned from the GitHub API.
 trait GitHubEntry {
 	/// Returns the API URL for fetching the entries at the specified page.
-	fn url(owner: &str, repo: &str, page: i32) -> String;
+	fn url(
+		owner: &str,
+		repo: &str,
+		range: Option<GitHubFetchRange>,
+		page: i32,
+	) -> Result<String>;
 	/// Returns the request buffer size.
 	fn buffer_size() -> usize;
 }
@@ -74,12 +125,25 @@ pub struct GitHubCommit {
 }
 
 impl GitHubEntry for GitHubCommit {
-	fn url(owner: &str, repo: &str, page: i32) -> String {
-		format!(
+	fn url(
+		owner: &str,
+		repo: &str,
+		range: Option<GitHubFetchRange>,
+		page: i32,
+	) -> Result<String> {
+		Ok(format!(
 			"{GITHUB_API_URL}/repos/{}/{}/commits?per_page={MAX_PAGE_SIZE}&\
-			 page={page}",
-			owner, repo
-		)
+			 page={page}{}",
+			owner,
+			repo,
+			match range {
+				Some(range) => {
+					let (since, until) = range.formatted()?;
+					format!("&since={since}&until={until}")
+				}
+				None => String::new(),
+			}
+		))
 	}
 	fn buffer_size() -> usize {
 		10
@@ -105,12 +169,25 @@ pub struct GitHubPullRequest {
 }
 
 impl GitHubEntry for GitHubPullRequest {
-	fn url(owner: &str, repo: &str, page: i32) -> String {
-		format!(
+	fn url(
+		owner: &str,
+		repo: &str,
+		range: Option<GitHubFetchRange>,
+		page: i32,
+	) -> Result<String> {
+		Ok(format!(
 			"{GITHUB_API_URL}/repos/{}/{}/pulls?per_page={MAX_PAGE_SIZE}&\
-			 page={page}&state=closed",
-			owner, repo
-		)
+			 page={page}&state=closed{}",
+			owner,
+			repo,
+			match range {
+				Some(range) => {
+					let (since, until) = range.formatted()?;
+					format!("&since={since}&until={until}")
+				}
+				None => String::new(),
+			}
+		))
 	}
 
 	fn buffer_size() -> usize {
@@ -212,9 +289,10 @@ impl GitHubClient {
 	/// Retrieves a single page of entries.
 	async fn get_entries_with_page<T: DeserializeOwned + GitHubEntry>(
 		&self,
+		range: Option<GitHubFetchRange>,
 		page: i32,
 	) -> Result<Vec<T>> {
-		let url = T::url(&self.owner, &self.repo, page);
+		let url = T::url(&self.owner, &self.repo, range, page)?;
 		debug!("Sending request to: {url}");
 		let response = self.client.get(&url).send().await?;
 		let response_text = if response.status().is_success() {
@@ -235,9 +313,12 @@ impl GitHubClient {
 	}
 
 	/// Fetches the GitHub API returns the given entry.
-	async fn fetch<T: DeserializeOwned + GitHubEntry>(&self) -> Result<Vec<T>> {
+	async fn fetch<T: DeserializeOwned + GitHubEntry>(
+		&self,
+		range: Option<GitHubFetchRange>,
+	) -> Result<Vec<T>> {
 		let entries: Vec<Vec<T>> = stream::iter(1..)
-			.map(|i| self.get_entries_with_page(i))
+			.map(|i| self.get_entries_with_page(range, i))
 			.buffered(T::buffer_size())
 			.take_while(|page| {
 				if let Err(e) = page {
@@ -258,12 +339,18 @@ impl GitHubClient {
 	}
 
 	/// Fetches the GitHub API and returns the commits.
-	pub async fn get_commits(&self) -> Result<Vec<GitHubCommit>> {
-		self.fetch::<GitHubCommit>().await
+	pub async fn get_commits(
+		&self,
+		range: Option<GitHubFetchRange>,
+	) -> Result<Vec<GitHubCommit>> {
+		self.fetch::<GitHubCommit>(range).await
 	}
 
 	/// Fetches the GitHub API and returns the pull requests.
-	pub async fn get_pull_requests(&self) -> Result<Vec<GitHubPullRequest>> {
-		self.fetch::<GitHubPullRequest>().await
+	pub async fn get_pull_requests(
+		&self,
+		range: Option<GitHubFetchRange>,
+	) -> Result<Vec<GitHubPullRequest>> {
+		self.fetch::<GitHubPullRequest>(range).await
 	}
 }

@@ -25,6 +25,7 @@ github = [
   "dep:reqwest-middleware",
   "dep:tokio",
   "dep:futures",
+  "dep:chrono",
 ]
 
 [dependencies]
@@ -56,6 +57,7 @@ tokio = { version = "1.35.1", features = [
 ], optional = true }
 futures = { version = "0.3.30", optional = true }
 url = "2.5.0"
+chrono = { version = "0.4.31", optional = true }
 
 [dependencies.git2]
 version = "0.18.1"

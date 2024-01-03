@@ -88,7 +88,12 @@ pub enum Error {
 	HttpHeaderError(#[from] reqwest::header::InvalidHeaderValue),
 	/// Error that may occur during handling pages.
 	#[error("Pagination error: `{0}`")]
+	#[cfg(feature = "github")]
 	PaginationError(String),
+	/// Error that may occur during chrono calls.
+	#[error("Chrono error: `{0}`")]
+	#[cfg(feature = "github")]
+	ChronoError(String),
 	/// The errors that may occur while parsing URLs.
 	#[error("URL parse error: `{0}`")]
 	UrlParseError(#[from] url::ParseError),
