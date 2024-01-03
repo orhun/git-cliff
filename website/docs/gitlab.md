@@ -1,6 +1,7 @@
 ---
-sidebar_position: 9
+sidebar_position: 10
 ---
+
 # GitLab CI/CD
 
 It is possible to generate changelogs using [GitLab CI/CD](https://docs.gitlab.com/ee/ci/).
