@@ -1,5 +1,3 @@
-<!--- Thank you for contributing to git-cliff! ⛰️  -->
-
 ## Description
 
 <!--- Describe your changes in detail -->
@@ -39,3 +37,5 @@
 - [ ] I checked the lints with [clippy](https://github.com/rust-lang/rust-clippy).
 - [ ] I have added tests to cover my changes.
 - [ ] All new and existing tests passed.
+
+<!--- Thank you for contributing to git-cliff! ⛰️  -->
