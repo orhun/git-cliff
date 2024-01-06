@@ -75,13 +75,14 @@ const config = {
           },
           { to: "/blog", label: "Blog", position: "left" },
           {
-            label: "GitHub",
-            href: "https://github.com/orhun/git-cliff",
+            label: "💖 Sponsor",
+            href: "https://github.com/sponsors/MarcoIeni",
             position: "right",
           },
           {
-            label: "Sponsor",
-            href: "https://github.com/sponsors/orhun",
+            href: "https://github.com/MarcoIeni/release-plz",
+            "aria-label": "GitHub",
+            className: "header-github-link",
             position: "right",
           },
         ],
