@@ -16,7 +16,7 @@ In this post, I'm giving a brief introduction to the new features in the 1.2.0 r
 
 </center>
 
-> [**git-cliff**](https://github.com/orhun/git-cliff) is a command-line tool (written in [Rust](https://www.rust-lang.org/)) that provides a highly customizable way to generate changelogs from git history. It supports using [custom regular expressions](/docs/configuration#commit_parsers) to alter changelogs which are mostly based on [conventional commits](/docs/configuration#conventional_commits). With a single [configuration file](/docs/configuration), a big variety of formats can be applied for a changelog, thanks to the Jinja2/Django-inspired [template engine](/docs/category/templating). More information and examples can be found in the [GitHub repository](https://github.com/orhun/git-cliff).
+> [**git-cliff**](https://github.com/orhun/git-cliff) is a command-line tool (written in [Rust](https://www.rust-lang.org/)) that provides a highly customizable way to generate changelogs from git history. It supports using [custom regular expressions](/docs/configuration/git#commit_parsers) to alter changelogs which are mostly based on [conventional commits](/docs/configuration/git#conventional_commits). With a single [configuration file](/docs/configuration), a big variety of formats can be applied for a changelog, thanks to the Jinja2/Django-inspired [template engine](/docs/category/templating). More information and examples can be found in the [GitHub repository](https://github.com/orhun/git-cliff).
 
 Today, the new version of `git-cliff` (1.2.0) is released. There are a couple of major cool features that I believe are interesting and also there were some internal library changes. Let's have a look!
 
@@ -61,7 +61,7 @@ See the [documentation](https://git-cliff.org/docs/integration/python) for more 
 
 ### Better commit grouping
 
-You can now use regex values while grouping the commits via [`commit_parsers`](https://git-cliff.org/docs/configuration#commit_parsers).
+You can now use regex values while grouping the commits via [`commit_parsers`](https://git-cliff.org/docs/configuration/git#commit_parsers).
 
 Let's say we have this commit history for example:
 

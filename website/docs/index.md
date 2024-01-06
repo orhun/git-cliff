@@ -1,10 +1,9 @@
 ---
 sidebar_position: 1
 ---
-
 # Getting Started
 
-**git-cliff** can generate [changelog](https://en.wikipedia.org/wiki/Changelog) files from the [Git](https://git-scm.com/) history by utilizing [conventional commits](configuration#conventional_commits) as well as regex-powered [custom parsers](configuration#commit_parsers).
+**git-cliff** can generate [changelog](https://en.wikipedia.org/wiki/Changelog) files from the [Git](https://git-scm.com/) history by utilizing [conventional commits](/docs/configuration/git#conventional_commits) as well as regex-powered [custom parsers](/docs/configuration/git#commit_parsers).
 
 The [changelog template](category/templating) can be customized with a [configuration file](configuration) to match the desired format.
 

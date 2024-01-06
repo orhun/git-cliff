@@ -38,7 +38,7 @@
   <a href="https://git-cliff.org">Website</a>
 </h4>
 
-**git-cliff** can generate [changelog](https://en.wikipedia.org/wiki/Changelog) files from the [Git](https://git-scm.com/) history by utilizing [conventional commits](https://git-cliff.org/docs/configuration#conventional_commits) as well as regex-powered [custom parsers](https://git-cliff.org/docs/configuration#commit_parsers). The [changelog template](https://git-cliff.org/docs/category/templating) can be customized with a [configuration file](https://git-cliff.org/docs/configuration) to match the desired format.
+**git-cliff** can generate [changelog](https://en.wikipedia.org/wiki/Changelog) files from the [Git](https://git-scm.com/) history by utilizing [conventional commits](https://git-cliff.org/docs/configuration/git#conventional_commits) as well as regex-powered [custom parsers](https://git-cliff.org/docs/configuration/git#commit_parsers). The [changelog template](https://git-cliff.org/docs/category/templating) can be customized with a [configuration file](https://git-cliff.org/docs/configuration) to match the desired format.
 
 ![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)
 
