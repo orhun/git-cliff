@@ -87,11 +87,11 @@ const config = {
           { to: "/blog", label: "Blog", position: "left" },
           {
             label: "💖 Sponsor",
-            href: "https://github.com/sponsors/MarcoIeni",
+            href: "https://github.com/sponsors/orhun",
             position: "right",
           },
           {
-            href: "https://github.com/MarcoIeni/release-plz",
+            href: "https://github.com/orhun/git-cliff",
             "aria-label": "GitHub",
             className: "header-github-link",
             position: "right",
