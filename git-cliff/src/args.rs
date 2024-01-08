@@ -40,7 +40,7 @@ pub enum Sort {
     author = clap::crate_authors!("\n"),
     about,
     rename_all_env = "screaming-snake",
-	help_template = "\
+    help_template = "\
 {before-help}{name} {version}
 {author-with-newline}{about-with-newline}
 {usage-heading}
@@ -50,8 +50,8 @@ pub enum Sort {
 ",
     override_usage = "git-cliff [FLAGS] [OPTIONS] [--] [RANGE]",
     next_help_heading = Some("OPTIONS"),
-	disable_help_flag = true,
-	disable_version_flag = true,
+    disable_help_flag = true,
+    disable_version_flag = true,
 )]
 pub struct Opt {
 	#[arg(
@@ -83,6 +83,8 @@ pub struct Opt {
 	    num_args = 0..=1,
 	    required = false
 	)]
+	#[arg(long, help_heading = Some("FLAGS"))]
+    pub no_exec: bool,
 	pub init:           Option<Option<String>>,
 	/// Sets the configuration file.
 	#[arg(

@@ -21,6 +21,7 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
 -u, --unreleased      Processes the commits that do not belong to a tag
     --topo-order      Sorts the tags topologically
 -x, --context         Prints changelog context as JSON
+    --no-exec         Skip executing the commands defined in replace_command
 ```
 
 ## Options
