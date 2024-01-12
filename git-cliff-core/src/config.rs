@@ -116,7 +116,7 @@ impl fmt::Display for Remote {
 
 impl PartialEq for Remote {
 	fn eq(&self, other: &Self) -> bool {
-		self.to_string().eq(&other.to_string())
+		self.to_string() == other.to_string()
 	}
 }
 

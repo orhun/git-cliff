@@ -140,7 +140,7 @@ pub struct GitHubContributor {
 
 impl PartialEq for GitHubContributor {
 	fn eq(&self, other: &Self) -> bool {
-		self.username.eq(&other.username)
+		self.username == other.username
 	}
 }
 
