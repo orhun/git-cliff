@@ -1367,9 +1367,9 @@ dependencies = [
 
 [[package]]
 name = "next_version"
-version = "0.2.12"
+version = "0.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4cdfb2659ce2e07a6974e94cf6b9dbab569deb04363307fd0cf7d5374d4d33d6"
+checksum = "e5bf408999238083038da0be60b104a32dafebd199f69ce00faf5f954805d9cd"
 dependencies = [
  "conventional_commit_parser",
  "semver",
