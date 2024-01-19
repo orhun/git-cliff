@@ -137,15 +137,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install cargo-binstall
+        uses: taiki-e/install-action@cargo-binstall
+      - name: Install cargo-msrv
+        run: cargo binstall -y cargo-msrv
       - name: Run cargo-msrv
         shell: bash
         run: |
-          curl -s 'https://api.github.com/repos/foresterre/cargo-msrv/releases' | \
-            jq -r "[.[] | select(.prerelease == false)][0].assets[] | \
-            select(.name | ascii_downcase | test(\"linux.*x86_64|x86_64.*linux\")).browser_download_url" | \
-            wget -qi -
-          tar -xvf cargo-msrv*.tar* -C  ~/.cargo/bin/ cargo-msrv
           for package in $(cargo metadata --format-version 1 | jq -r ".workspace_members[]" | awk '{print $1}'); do
             printf "Checking MSRV for $package..."
-            cargo msrv --output-format json --manifest-path "$package/Cargo.toml" verify | tail -n 1 | jq --exit-status '.success'
+            cargo msrv --output-format json --path "$package" verify | tail -n 1 | jq --exit-status '.success'
           done
