@@ -144,7 +144,7 @@ jobs:
       - name: Run cargo-msrv
         shell: bash
         run: |
-          for package in $(cargo metadata --format-version 1 | jq -r ".workspace_members[]" | awk '{print $1}'); do
+          for package in "git-cliff" "git-cliff-core"; do
             printf "Checking MSRV for $package..."
             cargo msrv --output-format json --path "$package" verify | tail -n 1 | jq --exit-status '.success'
           done
