@@ -201,12 +201,12 @@ pub struct Opt {
 	/// Sorts the tags topologically.
 	#[arg(long, help_heading = Some("FLAGS"))]
 	pub topo_order:     bool,
-	/// Prints changelog context as JSON.
-	#[arg(short = 'x', long, help_heading = Some("FLAGS"))]
-	pub context:        bool,
 	/// Disables the external command execution.
 	#[arg(long, help_heading = Some("FLAGS"))]
 	pub no_exec:        bool,
+	/// Prints changelog context as JSON.
+	#[arg(short = 'x', long, help_heading = Some("FLAGS"))]
+	pub context:        bool,
 	/// Strips the given parts from the changelog.
 	#[arg(short, long, value_name = "PART", value_enum)]
 	pub strip:          Option<Strip>,
