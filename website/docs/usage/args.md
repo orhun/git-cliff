@@ -1,7 +1,6 @@
 ---
 sidebar_position: 1
 ---
-
 # Command-line Arguments
 
 ```
@@ -21,6 +20,7 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
 -u, --unreleased      Processes the commits that do not belong to a tag
     --topo-order      Sorts the tags topologically
 -x, --context         Prints changelog context as JSON
+    --no-exec         Disables the external command execution
 ```
 
 ## Options

@@ -405,6 +405,18 @@ pub fn run(mut args: Opt) -> Result<()> {
 		config.remote.github.owner = remote.0.owner.to_string();
 		config.remote.github.repo = remote.0.repo.to_string();
 	}
+	if args.no_exec {
+		if let Some(ref mut preprocessors) = config.git.commit_preprocessors {
+			preprocessors
+				.iter_mut()
+				.for_each(|v| v.replace_command = None);
+		}
+		if let Some(ref mut postprocessors) = config.changelog.postprocessors {
+			postprocessors
+				.iter_mut()
+				.for_each(|v| v.replace_command = None);
+		}
+	}
 	config.git.skip_tags = config.git.skip_tags.filter(|r| !r.as_str().is_empty());
 
 	// Process the repositories.
