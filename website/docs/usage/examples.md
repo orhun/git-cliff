@@ -1,7 +1,6 @@
 ---
 sidebar_position: 3
 ---
-
 # Examples
 
 To simply create a changelog at your projects git root directory:
@@ -80,4 +79,11 @@ Set/remove the changelog parts:
 
 ```bash
 git cliff --body $template --strip footer
+```
+
+Skip running the commands defined in [pre](/docs/configuration/git#commit_preprocessors)/[postprocessors](/docs/configuration/changelog#postprocessors).
+
+```bash
+# No external command execution
+git cliff --no-exec
 ```
