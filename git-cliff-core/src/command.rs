@@ -8,8 +8,11 @@ use std::process::{
 	Command,
 	Stdio,
 };
-use std::str;
 use std::thread;
+use std::{
+	env,
+	str,
+};
 
 /// Runs the given OS command and returns the output as string.
 ///
@@ -25,6 +28,7 @@ pub fn run(
 			.args(["/C", command])
 			.stdin(Stdio::piped())
 			.stdout(Stdio::piped())
+			.current_dir(env::current_dir()?)
 			.spawn()
 	} else {
 		Command::new("sh")
@@ -32,6 +36,7 @@ pub fn run(
 			.args(["-c", command])
 			.stdin(Stdio::piped())
 			.stdout(Stdio::piped())
+			.current_dir(env::current_dir()?)
 			.spawn()
 	}?;
 	if let Some(input) = input {
