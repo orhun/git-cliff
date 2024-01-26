@@ -35,7 +35,7 @@ secrecy.workspace = true
 dirs.workspace = true
 thiserror = "1.0.56"
 serde = { version = "1.0.195", features = ["derive"] }
-serde_json = "1.0.111"
+serde_json = "1.0.112"
 serde_regex = "1.1.0"
 tera = "1.19.1"
 indexmap = { version = "2.1.0", optional = true }
