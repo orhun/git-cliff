@@ -49,7 +49,7 @@ impl<'a> Release<'a> {
 		mut github_commits: Vec<GitHubCommit>,
 		github_pull_requests: Vec<GitHubPullRequest>,
 	) -> Result<()> {
-		let mut contributors = std::collections::HashSet::new();
+		let mut contributors: Vec<GitHubContributor> = Vec::new();
 		// retain the commits that are not a part of this release for later on
 		// checking the first contributors.
 		github_commits.retain(|v| {
@@ -63,12 +63,21 @@ impl<'a> Release<'a> {
 				commit.github.username = v.author.clone().and_then(|v| v.login);
 				commit.github.pr_number = pull_request.map(|v| v.number);
 				commit.github.pr_title = pull_request.and_then(|v| v.title.clone());
-				contributors.insert(GitHubContributor {
-					username:      v.author.clone().and_then(|v| v.login),
-					pr_title:      commit.github.pr_title.clone(),
-					pr_number:     commit.github.pr_number,
-					is_first_time: false,
-				});
+				commit.github.pr_labels = pull_request
+					.map(|v| v.labels.iter().map(|v| v.name.clone()).collect())
+					.unwrap_or_default();
+				if !contributors
+					.iter()
+					.any(|v| commit.github.username == v.username)
+				{
+					contributors.push(GitHubContributor {
+						username:      commit.github.username.clone(),
+						pr_title:      commit.github.pr_title.clone(),
+						pr_number:     commit.github.pr_number,
+						pr_labels:     commit.github.pr_labels.clone(),
+						is_first_time: false,
+					});
+				}
 				false
 			} else {
 				true
@@ -230,6 +239,7 @@ mod test {
 	#[test]
 	fn update_github_metadata() -> Result<()> {
 		use crate::github::GitHubCommitAuthor;
+		use crate::github::PullRequestLabel;
 
 		let mut release = Release {
 			version:   None,
@@ -325,6 +335,9 @@ mod test {
 					merge_commit_sha: Some(String::from(
 						"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
 					)),
+					labels:           vec![PullRequestLabel {
+						name: String::from("rust"),
+					}],
 				},
 				GitHubPullRequest {
 					title:            Some(String::from("2")),
@@ -332,6 +345,9 @@ mod test {
 					merge_commit_sha: Some(String::from(
 						"21f6aa587fcb772de13f2fde0e92697c51f84162",
 					)),
+					labels:           vec![PullRequestLabel {
+						name: String::from("rust"),
+					}],
 				},
 				GitHubPullRequest {
 					title:            Some(String::from("3")),
@@ -339,6 +355,9 @@ mod test {
 					merge_commit_sha: Some(String::from(
 						"35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973",
 					)),
+					labels:           vec![PullRequestLabel {
+						name: String::from("deps"),
+					}],
 				},
 				GitHubPullRequest {
 					title:            Some(String::from("4")),
@@ -346,6 +365,9 @@ mod test {
 					merge_commit_sha: Some(String::from(
 						"4d3ffe4753b923f4d7807c490e650e6624a12074",
 					)),
+					labels:           vec![PullRequestLabel {
+						name: String::from("deps"),
+					}],
 				},
 				GitHubPullRequest {
 					title:            Some(String::from("5")),
@@ -353,118 +375,126 @@ mod test {
 					merge_commit_sha: Some(String::from(
 						"5a55e92e5a62dc5bf9872ffb2566959fad98bd05",
 					)),
+					labels:           vec![PullRequestLabel {
+						name: String::from("github"),
+					}],
 				},
 			],
 		)?;
-
-		assert_eq!(
-			vec![
-				Commit {
-					id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
-					message: String::from("add github integration"),
-					github: GitHubContributor {
-						username:      Some(String::from("orhun")),
-						pr_title:      Some(String::from("1")),
-						pr_number:     Some(42),
-						is_first_time: false,
-					},
-					..Default::default()
+		let expected_commits = vec![
+			Commit {
+				id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+				message: String::from("add github integration"),
+				github: GitHubContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      Some(String::from("1")),
+					pr_number:     Some(42),
+					pr_labels:     vec![String::from("rust")],
+					is_first_time: false,
 				},
-				Commit {
-					id: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
-					message: String::from("fix github integration"),
-					github: GitHubContributor {
-						username:      Some(String::from("orhun")),
-						pr_title:      Some(String::from("2")),
-						pr_number:     Some(66),
-						is_first_time: false,
-					},
-					..Default::default()
+				..Default::default()
+			},
+			Commit {
+				id: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
+				message: String::from("fix github integration"),
+				github: GitHubContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      Some(String::from("2")),
+					pr_number:     Some(66),
+					pr_labels:     vec![String::from("rust")],
+					is_first_time: false,
 				},
-				Commit {
-					id: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
-					message: String::from("update metadata"),
-					github: GitHubContributor {
-						username:      Some(String::from("nuhro")),
-						pr_title:      Some(String::from("3")),
-						pr_number:     Some(53),
-						is_first_time: false,
-					},
-					..Default::default()
+				..Default::default()
+			},
+			Commit {
+				id: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
+				message: String::from("update metadata"),
+				github: GitHubContributor {
+					username:      Some(String::from("nuhro")),
+					pr_title:      Some(String::from("3")),
+					pr_number:     Some(53),
+					pr_labels:     vec![String::from("deps")],
+					is_first_time: false,
 				},
-				Commit {
-					id: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
-					message: String::from("do some stuff"),
-					github: GitHubContributor {
-						username:      Some(String::from("awesome_contributor")),
-						pr_title:      Some(String::from("4")),
-						pr_number:     Some(1000),
-						is_first_time: false,
-					},
-					..Default::default()
+				..Default::default()
+			},
+			Commit {
+				id: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
+				message: String::from("do some stuff"),
+				github: GitHubContributor {
+					username:      Some(String::from("awesome_contributor")),
+					pr_title:      Some(String::from("4")),
+					pr_number:     Some(1000),
+					pr_labels:     vec![String::from("deps")],
+					is_first_time: false,
 				},
-				Commit {
-					id: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
-					message: String::from("alright"),
-					github: GitHubContributor {
-						username:      Some(String::from("orhun")),
-						pr_title:      Some(String::from("5")),
-						pr_number:     Some(999999),
-						is_first_time: false,
-					},
-					..Default::default()
+				..Default::default()
+			},
+			Commit {
+				id: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
+				message: String::from("alright"),
+				github: GitHubContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      Some(String::from("5")),
+					pr_number:     Some(999999),
+					pr_labels:     vec![String::from("github")],
+					is_first_time: false,
 				},
-				Commit {
-					id: String::from("6c34967147560ea09658776d4901709139b4ad66"),
-					message: String::from("should be fine"),
-					github: GitHubContributor {
-						username:      Some(String::from("someone")),
-						pr_title:      Some(String::from("6")),
-						pr_number:     None,
-						is_first_time: false,
-					},
-					..Default::default()
-				}
-			],
-			release.commits
-		);
+				..Default::default()
+			},
+			Commit {
+				id: String::from("6c34967147560ea09658776d4901709139b4ad66"),
+				message: String::from("should be fine"),
+				github: GitHubContributor {
+					username:      Some(String::from("someone")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				},
+				..Default::default()
+			},
+		];
+		assert_eq!(expected_commits, release.commits);
 
 		release
 			.github
 			.contributors
 			.sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
 
-		assert_eq!(
-			GitHubReleaseMetadata {
-				contributors: vec![
-					GitHubContributor {
-						username:      Some(String::from("someone")),
-						pr_title:      Some(String::from("6")),
-						pr_number:     None,
-						is_first_time: true,
-					},
-					GitHubContributor {
-						username:      Some(String::from("orhun")),
-						pr_title:      Some(String::from("5")),
-						pr_number:     Some(42),
-						is_first_time: true,
-					},
-					GitHubContributor {
-						username:      Some(String::from("nuhro")),
-						pr_title:      Some(String::from("3")),
-						pr_number:     Some(53),
-						is_first_time: true,
-					},
-					GitHubContributor {
-						username:      Some(String::from("awesome_contributor")),
-						pr_title:      Some(String::from("4")),
-						pr_number:     Some(1000),
-						is_first_time: true,
-					},
-				],
-			},
-			release.github
-		);
+		let expected_metadata = GitHubReleaseMetadata {
+			contributors: vec![
+				GitHubContributor {
+					username:      Some(String::from("someone")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: true,
+				},
+				GitHubContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      Some(String::from("1")),
+					pr_number:     Some(42),
+					pr_labels:     vec![String::from("rust")],
+					is_first_time: true,
+				},
+				GitHubContributor {
+					username:      Some(String::from("nuhro")),
+					pr_title:      Some(String::from("3")),
+					pr_number:     Some(53),
+					pr_labels:     vec![String::from("deps")],
+					is_first_time: true,
+				},
+				GitHubContributor {
+					username:      Some(String::from("awesome_contributor")),
+					pr_title:      Some(String::from("4")),
+					pr_number:     Some(1000),
+					pr_labels:     vec![String::from("deps")],
+					is_first_time: true,
+				},
+			],
+		};
+		assert_eq!(expected_metadata, release.github);
 
 		Ok(())
 	}

@@ -93,6 +93,14 @@ pub struct GitHubCommitAuthor {
 	pub login: Option<String>,
 }
 
+/// Label of the pull request.
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PullRequestLabel {
+	/// Name of the label.
+	pub name: String,
+}
+
 /// Representation of a single pull request.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitHubPullRequest {
@@ -102,6 +110,8 @@ pub struct GitHubPullRequest {
 	pub title:            Option<String>,
 	/// SHA of the merge commit.
 	pub merge_commit_sha: Option<String>,
+	/// Labels of the pull request.
+	pub labels:           Vec<PullRequestLabel>,
 }
 
 impl GitHubEntry for GitHubPullRequest {
@@ -126,7 +136,7 @@ pub struct GitHubReleaseMetadata {
 }
 
 /// Representation of a GitHub contributor.
-#[derive(Debug, Default, Clone, Eq, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
 pub struct GitHubContributor {
 	/// Username.
 	pub username:      Option<String>,
@@ -134,14 +144,10 @@ pub struct GitHubContributor {
 	pub pr_title:      Option<String>,
 	/// The pull request that the user created.
 	pub pr_number:     Option<i64>,
+	/// Labels of the pull request.
+	pub pr_labels:     Vec<String>,
 	/// Whether if the user contributed for the first time.
 	pub is_first_time: bool,
-}
-
-impl PartialEq for GitHubContributor {
-	fn eq(&self, other: &Self) -> bool {
-		self.username == other.username
-	}
 }
 
 impl Hash for GitHubContributor {
