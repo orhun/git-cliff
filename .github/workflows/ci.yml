@@ -67,7 +67,7 @@ jobs:
           cargo tarpaulin --out xml --verbose --all-features \
             -- --skip "repo::test::git_upstream_remote"
       - name: Upload reports to codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           name: code-coverage-report
           file: cobertura.xml
