@@ -49,6 +49,6 @@ Then strip the tags in the template with the series of filters:
 [git]
 commit_preprocessors = [
   # Remove gitmoji, both actual UTF emoji and :emoji:
-  { pattern = ' *(:\w+:|[\p{Emoji_Presentation}\p{Extended_Pictographic}\u{200D}]) *', replace = "" },
+  { pattern = ' *(:\w+:|[\p{Emoji_Presentation}\p{Extended_Pictographic}](?:\u{FE0F})?\u{200D}?) *', replace = "" },
 ]
 ```
