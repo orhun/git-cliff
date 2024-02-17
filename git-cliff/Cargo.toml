@@ -41,7 +41,7 @@ clap_complete = "4.4.10"
 clap_mangen = "0.2.19"
 shellexpand = "3.1.0"
 update-informer = { version = "1.1.0", optional = true }
-indicatif = { version = "0.17.7", optional = true }
+indicatif = { version = "0.17.8", optional = true }
 env_logger = "0.10.2"
 
 [dependencies.git-cliff-core]
