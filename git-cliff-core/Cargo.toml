@@ -58,7 +58,7 @@ futures = { version = "0.3.30", optional = true }
 url = "2.5.0"
 
 [dependencies.git2]
-version = "0.18.1"
+version = "0.18.2"
 default-features = false
 optional = true
 
