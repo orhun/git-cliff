@@ -53,7 +53,8 @@ Learn how to use **git-cliff** from the [documentation](https://git-cliff.org/do
 
 ## In The Media
 
-- **git-cliff** was featured in [Console #141 - The Open Source Newsletter](https://console.substack.com/p/console-141)
+- [Turning Git commits into changelog with git-cliff](https://www.youtube.com/watch?v=RWh8qbiLRts) - RustLab 2023 (Talk)
+- [An Interview with Orhun of git-cliff](https://console.substack.com/p/console-141) - Console #141 (Newsletter)
 
 ## Editor Support
 
