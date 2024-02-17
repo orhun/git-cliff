@@ -26,7 +26,9 @@ body = """
     {%- for commit in commits %}
         - {{ commit.message | upper_first | trim }}\
             {% if commit.github.username %} by @{{ commit.github.username }}{%- endif -%}
-            {% if commit.github.pr_number %} in #{{ commit.github.pr_number }}{%- endif -%}
+            {% if commit.github.pr_number %} in \
+              [#{{ commit.github.pr_number }}](https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}/pull/{{ commit.github.pr_number }}) \
+            {%- endif -%}
     {% endfor %}
 {% endfor %}
 
@@ -35,7 +37,10 @@ body = """
 {%- endif -%}
 
 {% for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
-  * @{{ contributor.username }} made their first contribution in #{{ contributor.pr_number }}\
+  * @{{ contributor.username }} made their first contribution
+    {%- if contributor.pr_number %} in \
+      [#{{ contributor.pr_number }}](https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}/pull/{{ contributor.pr_number }}) \
+    {%- endif %}
 {%- endfor %}\n
 """
 # template for the changelog footer
