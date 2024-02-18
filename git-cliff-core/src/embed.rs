@@ -40,7 +40,7 @@ impl EmbeddedConfig {
 ///
 /// Embeds the files under `/examples/` into the binary.
 #[derive(RustEmbed)]
-#[folder = "../examples"]
+#[folder = "../examples/"]
 pub struct BuiltinConfig;
 
 impl BuiltinConfig {

@@ -451,6 +451,9 @@ jobs:
           mkdir git-cliff-core/config/
           cp config/cliff.toml git-cliff-core/config/
           sed -i 's|"../config/"|"config/"|' git-cliff-core/src/embed.rs
+          mkdir git-cliff-core/examples/
+          cp -r examples git-cliff-core
+          sed -i 's|"../examples/"|"examples/"|' git-cliff-core/src/embed.rs
       - name: Publish the library
         run: |
           cargo publish --allow-dirty --manifest-path git-cliff-core/Cargo.toml \
