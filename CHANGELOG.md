@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.0.0-rc.0](https://github.com/orhun/git-cliff/compare/v1.4.0..v2.0.0-rc.0) - 2024-02-18
+## [2.0.0-rc.1](https://github.com/orhun/git-cliff/compare/v1.4.0..v2.0.0-rc.1) - 2024-02-18
 
 ### ⛰️  Features
 
@@ -26,6 +26,8 @@ All notable changes to this project will be documented in this file.
 
 ### 🐛 Bug Fixes
 
+- *(cd)* Avoid creating artifacts with the same name - ([1647fd8](https://github.com/orhun/git-cliff/commit/1647fd82e901f66e3ca00fae2688fd31fe238149))
+- *(cd)* Fix embedding examples for crates.io release - ([46b7d88](https://github.com/orhun/git-cliff/commit/46b7d880cf4f6e2ed30946f7f10a46d82f96af9a))
 - *(changelog)* Fix previous version links ([#364](https://github.com/orhun/git-cliff/issues/364)) - ([44c93b7](https://github.com/orhun/git-cliff/commit/44c93b7c704b01d371eb826fc9ffcb459f7370b1))
 - *(changelog)* Set the correct previous tag when a custom tag is given - ([6203f77](https://github.com/orhun/git-cliff/commit/6203f77dab5c19981f9dc8f8408c97344eb73003))
 - *(ci)* Update cargo-msrv arguments - ([131dd10](https://github.com/orhun/git-cliff/commit/131dd10c53087ce1ceaea07f030478fca393c253))
@@ -81,10 +83,12 @@ All notable changes to this project will be documented in this file.
 - *(config)* Use postprocessors for checking the typos - ([5212cc9](https://github.com/orhun/git-cliff/commit/5212cc9446bc1389274516ed3d7eb7b334b1b606))
 - *(dependabot)* Group the dependency updates for creating less PRs - ([c6a92bf](https://github.com/orhun/git-cliff/commit/c6a92bf6871a436e60ca9774d0b0df770727e664))
 - *(docker)* Update versions in Dockerfile - ([51198a5](https://github.com/orhun/git-cliff/commit/51198a5a56ca1f8a09d527c37695231520a130d4))
+- *(embed)* Do not allow missing docs - ([7754cab](https://github.com/orhun/git-cliff/commit/7754cab1c8a53ce8703596bbc921a2a3867a4155))
 - *(example)* Use full links in GitHub templates ([#503](https://github.com/orhun/git-cliff/issues/503)) - ([a521891](https://github.com/orhun/git-cliff/commit/a521891b557772451f37a791bde04067d3f20626))
 - *(example)* Remove limited commits example - ([8e1e0d7](https://github.com/orhun/git-cliff/commit/8e1e0d73c3bb7a0294bc20c01a0a6800ebbfbb1a))
 - *(github)* Update templates about GitHub integration - ([3f5107a](https://github.com/orhun/git-cliff/commit/3f5107a02c3bb50bbd7712e81c95eeb7344e01f6))
 - *(mergify)* Don't update PRs for the main branch - ([96a220c](https://github.com/orhun/git-cliff/commit/96a220c8e9b665f96c6794ca423f04464007fe0f))
+- *(project)* Add readme to core package - ([9e6bad2](https://github.com/orhun/git-cliff/commit/9e6bad28db23b39311c4231c96f1d7805296c3b9))
 - *(project)* Bump MSRV to 1.74.1 - ([bd5e4d2](https://github.com/orhun/git-cliff/commit/bd5e4d2217c307177f6f1de99cae5f5ae5024b33))
 - *(project)* Update copyright years - ([edc6bc0](https://github.com/orhun/git-cliff/commit/edc6bc0adbf2952b8a532a44ccf11f6f1b5448f2))
 - *(website)* Fix URLs in navigation bar ([#438](https://github.com/orhun/git-cliff/issues/438)) - ([70cab99](https://github.com/orhun/git-cliff/commit/70cab990cce4ba4e9077fb69cef385e2ec209080))
