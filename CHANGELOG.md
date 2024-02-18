@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.0.0-rc.1](https://github.com/orhun/git-cliff/compare/v1.4.0..v2.0.0-rc.1) - 2024-02-18
+## [2.0.0-rc.2](https://github.com/orhun/git-cliff/compare/v1.4.0..v2.0.0-rc.2) - 2024-02-18
 
 ### ⛰️  Features
 
@@ -26,6 +26,8 @@ All notable changes to this project will be documented in this file.
 
 ### 🐛 Bug Fixes
 
+- *(cd)* Use workaround for linux-arm64-glibc maturin builds - ([dc79ed5](https://github.com/orhun/git-cliff/commit/dc79ed5fe25afd6255b2d93d06d2b47016769c4b))
+- *(cd)* Disable PyPI publish for linux-arm64-glibc - ([e24af12](https://github.com/orhun/git-cliff/commit/e24af123dbd2c242f2aa98c67f98cc82ae9a3f78))
 - *(cd)* Avoid creating artifacts with the same name - ([1647fd8](https://github.com/orhun/git-cliff/commit/1647fd82e901f66e3ca00fae2688fd31fe238149))
 - *(cd)* Fix embedding examples for crates.io release - ([46b7d88](https://github.com/orhun/git-cliff/commit/46b7d880cf4f6e2ed30946f7f10a46d82f96af9a))
 - *(changelog)* Fix previous version links ([#364](https://github.com/orhun/git-cliff/issues/364)) - ([44c93b7](https://github.com/orhun/git-cliff/commit/44c93b7c704b01d371eb826fc9ffcb459f7370b1))
