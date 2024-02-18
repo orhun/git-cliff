@@ -1,5 +1,3 @@
-#![allow(missing_docs)] // RustEmbed generated functions does not have doc comments
-
 use crate::config::Config;
 use crate::error::{
 	Error,
