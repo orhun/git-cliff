@@ -4,6 +4,7 @@ version = "2.0.0-rc.0" # managed by release.sh
 description = "Core library of git-cliff"
 authors = ["git-cliff contributors <git-cliff@protonmail.com>"]
 license = "MIT OR Apache-2.0"
+readme = "../README.md"
 homepage = "https://github.com/orhun/git-cliff"
 repository = "https://github.com/orhun/git-cliff"
 keywords = ["changelog", "generator", "conventional", "commit"]
