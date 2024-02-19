@@ -7,3 +7,4 @@
 3. Check if [Continuous Integration](https://github.com/orhun/git-cliff/actions) workflow is completed successfully.
 4. Push the tags: `git push --tags`
 5. Wait for [Continuous Deployment](https://github.com/orhun/git-cliff/actions) workflow to finish.
+   - Do not forget to set `vars.USE_TESTPYPI` variable to `false` before release.
