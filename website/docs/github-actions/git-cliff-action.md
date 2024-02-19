@@ -9,7 +9,7 @@ It is possible to generate changelogs using [GitHub Actions](https://github.com/
     fetch-depth: 0
 
 - name: Generate a changelog
-  uses: orhun/git-cliff-action@v2
+  uses: orhun/git-cliff-action@v3
   with:
     config: cliff.toml
     args: --verbose
