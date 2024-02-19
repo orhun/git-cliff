@@ -447,7 +447,6 @@ impl Serialize for Commit<'_> {
 #[cfg(test)]
 mod test {
 	use super::*;
-	use regex::Regex;
 	#[test]
 	fn conventional_commit() -> Result<()> {
 		let test_cases = vec![
