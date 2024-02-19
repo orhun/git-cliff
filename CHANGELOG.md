@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.0.0-rc.2](https://github.com/orhun/git-cliff/compare/v1.4.0..v2.0.0-rc.2) - 2024-02-18
+## [2.0.0](https://github.com/orhun/git-cliff/compare/v1.4.0..v2.0.0) - 2024-02-19
 
 ### ⛰️  Features
 
@@ -46,6 +46,7 @@ All notable changes to this project will be documented in this file.
 - *(changelog)* Support `--bump` for processed releases ([#408](https://github.com/orhun/git-cliff/issues/408)) - ([89e4c72](https://github.com/orhun/git-cliff/commit/89e4c729a915d456c1b83f666637bf85c7125350))
 - *(ci)* Use hardcoded workspace members for cargo-msrv command - ([ec6035a](https://github.com/orhun/git-cliff/commit/ec6035a7e77c60e8b7f752619aeee36f08c80aad))
 - *(ci)* Simplify cargo-msrv installation - ([f04bf6e](https://github.com/orhun/git-cliff/commit/f04bf6eca155eec32f82aca482e5c00ab16d61a9))
+- *(clippy)* Apply clippy suggestions - ([b23dd3e](https://github.com/orhun/git-cliff/commit/b23dd3e3b9565ca2288481d6725276348bcca06e))
 - *(clippy)* Apply clippy suggestions - ([a38c3fa](https://github.com/orhun/git-cliff/commit/a38c3faad61009ab7eba86dfd2f1d75f95696985))
 - *(config)* Use postprocessors for checking the typos - ([764e858](https://github.com/orhun/git-cliff/commit/764e858a1e948dbc507cde3264a72e3458c98833))
 - *(config)* Remove unnecessary newline from configs - ([8edec7f](https://github.com/orhun/git-cliff/commit/8edec7fd50f703811d55f14a3c5f0fd02b43d9e7))
@@ -56,6 +57,8 @@ All notable changes to this project will be documented in this file.
 - *(fixtures)* Add instructions for adding new fixtures - ([8290769](https://github.com/orhun/git-cliff/commit/82907693c19a38699c57f9206564e8a9c7d9d705))
 - *(readme)* Mention RustLab 2023 talk - ([668a957](https://github.com/orhun/git-cliff/commit/668a95774c076b53f719cdd0708b9385168dbc6e))
 - *(readme)* Use the raw link for the animation - ([2c524b8](https://github.com/orhun/git-cliff/commit/2c524b8e64a8d248a6345b4eee3afbde21bf38a8))
+- *(security)* Update security policy - ([fcaa502](https://github.com/orhun/git-cliff/commit/fcaa5021083ff7cb8f70044801fff19e1b012493))
+- *(website)* Add highlights for 2.0.0 ([#504](https://github.com/orhun/git-cliff/issues/504)) - ([49684d0](https://github.com/orhun/git-cliff/commit/49684d0fd8a6876cf09f29f3b860c2851fe7a992))
 - *(website)* Improve matching gitmoji tip ([#486](https://github.com/orhun/git-cliff/issues/486)) - ([0731646](https://github.com/orhun/git-cliff/commit/0731646c26142a92f90a6b567dfeee877d45f3c5))
 - *(website)* Add tips and tricks section - ([82e93c2](https://github.com/orhun/git-cliff/commit/82e93c26deaa0eeebe0f46f91fa2d35154bcfe2c))
 - *(website)* Add tip about link parsers - ([4bd47a6](https://github.com/orhun/git-cliff/commit/4bd47a69e9d0fbd2656fb43abab930225411259b))
