@@ -84,7 +84,7 @@ const config = {
             label: "Documentation",
             position: "left",
           },
-          { to: "/blog", label: "Blog", position: "left" },
+          { to: "/blog", label: "News", position: "left" },
           {
             label: "💖 Sponsor",
             href: "https://github.com/sponsors/orhun",
@@ -114,7 +114,7 @@ const config = {
                 to: "/docs/",
               },
               {
-                label: "Blog",
+                label: "News",
                 to: "/blog",
               },
             ],
