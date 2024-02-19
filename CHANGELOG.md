@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.2](https://github.com/orhun/git-cliff/compare/v2.0.1..v2.0.2) - 2024-02-19
+
+### 📚 Documentation
+
+- *(release)* Add note about GitHub variables - ([54e21de](https://github.com/orhun/git-cliff/commit/54e21de5eebe61f23328e92c6fb8f8de7fd900fd))
+
 ## [2.0.1](https://github.com/orhun/git-cliff/compare/v2.0.0..v2.0.1) - 2024-02-19
 
 ### ⚙️ Miscellaneous Tasks
