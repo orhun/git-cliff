@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.1](https://github.com/orhun/git-cliff/compare/v2.0.0..v2.0.1) - 2024-02-19
+
+### ⚙️ Miscellaneous Tasks
+
+- *(cd)* Disable PyPI builds for linux-x86-glibc - ([30d8e41](https://github.com/orhun/git-cliff/commit/30d8e41b06e2b277e700731fe193906e49e2509a))
+
 ## [2.0.0](https://github.com/orhun/git-cliff/compare/v1.4.0..v2.0.0) - 2024-02-19
 
 ### ⛰️  Features
