@@ -57,7 +57,7 @@ jobs:
               TOOLCHAIN: stable,
               TARGET: i686-unknown-linux-gnu,
               NPM_PUBLISH: false,
-              PYPI_PUBLISH: true,
+              PYPI_PUBLISH: false,
             }
           - {
               NAME: linux-x86-musl,
