@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.3](https://github.com/orhun/git-cliff/compare/v2.0.2..v2.0.3) - 2024-02-21
+
+### ⛰️  Features
+
+- *(docker)* Enable github feature for the docker image - ([bc882e3](https://github.com/orhun/git-cliff/commit/bc882e3884ca8ce1391fc70e3dcaa02204de0dd4))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(website)* Bump the version of git-cliff-action - ([f255ad3](https://github.com/orhun/git-cliff/commit/f255ad38b2640b3f42a40eda3b76cddb6c06d2ff))
+- *(website)* Add announcement bar for the new release - ([1d32a14](https://github.com/orhun/git-cliff/commit/1d32a14175355ef83dbaa0dd80f17a9c2493e7de))
+
 ## [2.0.2](https://github.com/orhun/git-cliff/compare/v2.0.1..v2.0.2) - 2024-02-19
 
 ### 📚 Documentation
