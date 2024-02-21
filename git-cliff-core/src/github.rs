@@ -34,7 +34,7 @@ use std::hash::{
 use std::time::Duration;
 
 /// GitHub REST API url.
-const GITHUB_API_URL: &str = "https://api.github.com";
+const GITHUB_API_URL: &str = env!("GITHUB_API_URL", "https://api.github.com");
 
 /// User agent for interacting with the GitHub API.
 ///
