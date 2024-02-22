@@ -21,7 +21,7 @@ jobs:
         id: git-cliff
         with:
           config: cliff.toml
-          args: -vv --latest --strip header --no-exec
+          args: -vv --latest --no-exec
         env:
           OUTPUT: CHANGES.md
 

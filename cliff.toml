@@ -8,8 +8,7 @@
 [changelog]
 # changelog header
 header = """
-# Changelog\n
-All notable changes to this project will be documented in this file.\n
+[![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)\n
 """
 # template for the changelog body
 # https://keats.github.io/tera/docs/#introduction
