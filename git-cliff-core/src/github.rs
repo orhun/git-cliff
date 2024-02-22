@@ -27,6 +27,7 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
+use std::env;
 use std::hash::{
 	Hash,
 	Hasher,
@@ -35,6 +36,9 @@ use std::time::Duration;
 
 /// GitHub REST API url.
 const GITHUB_API_URL: &str = "https://api.github.com";
+
+/// Environment variable for overriding the GitHub REST API url.
+const GITHUB_API_URL_ENV: &str = "GITHUB_API_URL";
 
 /// User agent for interacting with the GitHub API.
 ///
@@ -56,6 +60,13 @@ pub const START_FETCHING_MSG: &str = "Retrieving data from GitHub...";
 /// Log message to show when done fetching from GitHub.
 pub const FINISHED_FETCHING_MSG: &str = "Done fetching GitHub data.";
 
+/// Returns the GitHub API url either from environment or from default value.
+fn get_github_api_url() -> String {
+	env::var(GITHUB_API_URL_ENV)
+		.ok()
+		.unwrap_or_else(|| GITHUB_API_URL.to_string())
+}
+
 /// Trait for handling the different entries returned from the GitHub API.
 trait GitHubEntry {
 	/// Returns the API URL for fetching the entries at the specified page.
@@ -76,9 +87,10 @@ pub struct GitHubCommit {
 impl GitHubEntry for GitHubCommit {
 	fn url(owner: &str, repo: &str, page: i32) -> String {
 		format!(
-			"{GITHUB_API_URL}/repos/{}/{}/commits?per_page={MAX_PAGE_SIZE}&\
-			 page={page}",
-			owner, repo
+			"{}/repos/{}/{}/commits?per_page={MAX_PAGE_SIZE}&page={page}",
+			get_github_api_url(),
+			owner,
+			repo
 		)
 	}
 	fn buffer_size() -> usize {
@@ -117,9 +129,10 @@ pub struct GitHubPullRequest {
 impl GitHubEntry for GitHubPullRequest {
 	fn url(owner: &str, repo: &str, page: i32) -> String {
 		format!(
-			"{GITHUB_API_URL}/repos/{}/{}/pulls?per_page={MAX_PAGE_SIZE}&\
-			 page={page}&state=closed",
-			owner, repo
+			"{}/repos/{}/{}/pulls?per_page={MAX_PAGE_SIZE}&page={page}&state=closed",
+			get_github_api_url(),
+			owner,
+			repo
 		)
 	}
 
