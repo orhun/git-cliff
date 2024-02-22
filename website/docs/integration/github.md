@@ -63,6 +63,12 @@ For example:
 GITHUB_TOKEN="***" git cliff --github-repo "orhun/git-cliff"
 ```
 
+:::tip
+
+You can use the [`GITHUB_API_URL`](https://docs.github.com/en/actions/learn-github-actions/variables) environment variable want to override the API URL. This is useful if you are using GitHub enterprise.
+
+:::
+
 ## Templating
 
 :::tip
