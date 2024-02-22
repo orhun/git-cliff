@@ -1,15 +1,23 @@
-# Changelog
+[![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)
 
-All notable changes to this project will be documented in this file.
-
-## [2.0.3](https://github.com/orhun/git-cliff/compare/v2.0.2..v2.0.3) - 2024-02-21
+## [2.0.4](https://github.com/orhun/git-cliff/compare/v2.0.2..v2.0.4) - 2024-02-22
 
 ### ⛰️  Features
 
 - *(docker)* Enable github feature for the docker image - ([bc882e3](https://github.com/orhun/git-cliff/commit/bc882e3884ca8ce1391fc70e3dcaa02204de0dd4))
+- *(github)* Support overriding the GitHub API URL ([#512](https://github.com/orhun/git-cliff/issues/512)) - ([8199699](https://github.com/orhun/git-cliff/commit/819969924bbad25484971c84a4c8d02ae48f1db9))
+
+### 🐛 Bug Fixes
+
+- *(cd)* Do not execute commands for the release changelog - ([1aaa9b2](https://github.com/orhun/git-cliff/commit/1aaa9b2150f539116007afc199f57a61bbe4ee20))
+
+### 📚 Documentation
+
+- *(website)* Add instructions for installing from conda-forge ([#511](https://github.com/orhun/git-cliff/issues/511)) - ([75a04bb](https://github.com/orhun/git-cliff/commit/75a04bb1b0d929f03a2bd224fc728dcf14b6e896))
 
 ### ⚙️ Miscellaneous Tasks
 
+- *(config)* Add animation to the header of the changelog - ([4f741a7](https://github.com/orhun/git-cliff/commit/4f741a7c9ebd52404503c60dc91e053f1b9c0171))
 - *(website)* Bump the version of git-cliff-action - ([f255ad3](https://github.com/orhun/git-cliff/commit/f255ad38b2640b3f42a40eda3b76cddb6c06d2ff))
 - *(website)* Add announcement bar for the new release - ([1d32a14](https://github.com/orhun/git-cliff/commit/1d32a14175355ef83dbaa0dd80f17a9c2493e7de))
 
