@@ -42,7 +42,7 @@ tera = "1.19.1"
 indexmap = { version = "2.2.3", optional = true }
 toml = "0.8.10"
 lazy-regex = "3.1.0"
-next_version = "0.2.13"
+next_version = "0.2.14"
 semver = "1.0.22"
 document-features = { version = "0.2.8", optional = true }
 reqwest = { version = "0.11.24", default-features = false, features = [
