@@ -1,7 +1,7 @@
 ---
 sidebar_position: 8
 ---
-# WinGEt
+# WinGrt
 
 On Windows, **git-cliff** can be installed via [WinGet](https://winstall.app/apps/orhun.git-cliff/):
 
