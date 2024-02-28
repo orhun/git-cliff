@@ -18,6 +18,7 @@ use git_cliff_core::{
 	DEFAULT_OUTPUT,
 };
 use glob::Pattern;
+use secrecy::SecretString;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
@@ -227,7 +228,7 @@ pub struct Opt {
 		value_name = "TOKEN",
 		hide_env_values = true
 	)]
-	pub github_token:   Option<String>,
+	pub github_token:   Option<SecretString>,
 	/// Sets the GitHub repository.
 	#[arg(
 	    long,

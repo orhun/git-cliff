@@ -39,7 +39,6 @@ use git_cliff_core::{
 	DEFAULT_CONFIG,
 	IGNORE_FILE,
 };
-use secrecy::Secret;
 use std::env;
 use std::fs::{
 	self,
@@ -126,8 +125,8 @@ fn process_repository<'a>(
 	}
 
 	// Print debug information about configuration and arguments.
-	log::trace!("{:#?}", args);
-	log::trace!("{:#?}", config);
+	log::trace!("Arguments: {:#?}", args);
+	log::trace!("Config: {:#?}", config);
 
 	// Parse commits.
 	let mut commit_range = args.range.clone();
@@ -399,7 +398,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 	}
 	if args.github_token.is_some() {
-		config.remote.github.token = args.github_token.clone().map(Secret::new);
+		config.remote.github.token = args.github_token.clone();
 	}
 	if let Some(ref remote) = args.github_repo {
 		config.remote.github.owner = remote.0.owner.to_string();
