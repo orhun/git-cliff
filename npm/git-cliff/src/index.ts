@@ -1,4 +1,4 @@
-import { execa } from "execa";
+import { execa, type ExecaReturnValue } from "execa";
 import { fileURLToPath } from "node:url";
 import { getExePath } from "./getExePath.js";
 import type { Options } from "./options.js";
@@ -15,7 +15,9 @@ export type { Options } from "./options.js";
  * - Values that are `false` or `null` will be ignored.
  * - All other values will be passed as options (`--option value`).
  */
-export async function runGitCliff(options: Options): Promise<void>;
+export async function runGitCliff(
+  options: Options
+): Promise<ExecaReturnValue<string>>;
 /**
  * Runs the `git-cliff` with the provided arguments.
  *
@@ -43,15 +45,18 @@ export async function runGitCliff(options: Options): Promise<void>;
  * await runGitCliff(["--tag", "1.0.0", "--config", "github", "--topo-order"]);
  * ```
  */
-export async function runGitCliff(args: string[]): Promise<void>;
-export async function runGitCliff(argsOrOptions: Options | string[]) {
+export async function runGitCliff(
+  args: string[]
+): Promise<ExecaReturnValue<string>>;
+export async function runGitCliff(
+  argsOrOptions: Options | string[]
+): Promise<ExecaReturnValue<string>> {
   const exePath = await getExePath();
   const args = Array.isArray(argsOrOptions)
     ? argsOrOptions
     : optionsToStringArgs(argsOrOptions);
 
-  const processResult = await execa(fileURLToPath(exePath), args, {
+  return execa(fileURLToPath(exePath), args, {
     stdio: "inherit",
   });
-  process.exit(processResult.exitCode ?? 0);
 }

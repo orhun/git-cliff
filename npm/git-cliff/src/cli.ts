@@ -2,6 +2,11 @@
 
 import { runGitCliff } from "./index.js";
 
-const args = process.argv.slice(2);
+async function run() {
+  const args = process.argv.slice(2);
+  const processResult = await runGitCliff(args);
 
-void runGitCliff(args);
+  process.exit(processResult.exitCode ?? 0);
+}
+
+void run();
