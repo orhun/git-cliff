@@ -172,7 +172,7 @@ impl<'a> Changelog<'a> {
 				.map(|v| v.contains_github_variable())
 				.unwrap_or(false)
 		{
-			warn!("You are using an experimental feature! Please report bugs at <https://github.com/orhun/git-cliff/issues/new/choose>");
+			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
 			let github_client =
 				GitHubClient::try_from(self.config.remote.github.clone())?;
 			info!("{START_FETCHING_MSG} ({})", self.config.remote.github);
