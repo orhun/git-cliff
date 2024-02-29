@@ -17,3 +17,19 @@ npm install git-cliff --save-dev
 ```
 
 Afterwards, you can run **git-cliff** via `npm exec git-cliff` or `npx git-cliff@latest`.
+
+## Programmatic API
+
+**git-cliff** also provides a fully typed programmatic API. You can use it to integrate **git-cliff** into your own tooling.
+
+```typescript
+import { runGitCliff, type Options } from 'git-cliff';
+
+const options: Options = {
+  // ...
+};
+
+runGitCliff(options);
+```
+
+Under the hood this will parse the options, set up the environment and call the **git-cliff** binary for you.

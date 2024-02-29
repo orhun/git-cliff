@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
     "target": "es2016",
-    "module": "commonjs",
+    "module": "node16",
+    "moduleResolution": "node16",
     "esModuleInterop": true,
-    "baseUrl": "./",
-    "outDir": "lib",
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "skipLibCheck": true
+    "resolveJsonModule": true,
+    "noEmit": true
   }
 }

@@ -1,39 +1,57 @@
-#!/usr/bin/env node
+import { execa } from "execa";
+import { fileURLToPath } from "node:url";
+import { getExePath } from "./getExePath.js";
+import type { Options } from "./options.js";
+import { optionsToStringArgs } from "./optionsToStringArgs.js";
 
-import { spawnSync } from "child_process"
-
-/**
-  * Returns the executable path for git-cliff located inside node_modules
-  * The naming convention is git-cliff-${os}-${arch}
-  * If the platform is `win32` or `cygwin`, executable will include a `.exe` extension
-  * @see https://nodejs.org/api/os.html#osarch
-  * @see https://nodejs.org/api/os.html#osplatform
-  * @example "x/xx/node_modules/git-cliff-darwin-arm64"
-  */
-function getExePath() {
-  const arch = process.arch;
-  let os = process.platform as string;
-  let extension = '';
-  if (['win32', 'cygwin'].includes(process.platform)) {
-    os = 'windows';
-    extension = '.exe';
-  }
-
-  try {
-    // Since the bin will be located inside `node_modules`, we can simply call require.resolve
-    return require.resolve(`git-cliff-${os}-${arch}/bin/git-cliff${extension}`)
-  } catch (e) {
-    throw new Error(`Couldn't find git-cliff binary inside node_modules for ${os}-${arch}`)
-  }
-}
+export type { Options } from "./options.js";
 
 /**
-  * Runs `git-cliff` with args using nodejs spawn
-  */
-function runGitCliff() {
-  const args = process.argv.slice(2)
-  const processResult = spawnSync(getExePath(), args, { stdio: "inherit" })
-  process.exit(processResult.status ?? 0)
-}
+ * Runs `git-cliff` with the provided options as a JavaScript object.
+ *
+ * @param options - The options to pass to `git-cliff`.
+ * These get transformed into an array strings.
+ * - Values that are `true` will be passed as flags (`--flag`).
+ * - Values that are `false` or `null` will be ignored.
+ * - All other values will be passed as options (`--option value`).
+ */
+export async function runGitCliff(options: Options): Promise<void>;
+/**
+ * Runs the `git-cliff` with the provided arguments.
+ *
+ * @param args - The arguments to pass to `git-cliff`.
+ * These should be in an array of string format.
+ * Every option and their value should be its own entry in the array.
+ *
+ * @returns A promise that resolves when the `git-cliff` has finished running.
+ *
+ * @example
+ * Options with values
+ * ```typescript
+ * await runGitCliff(["--tag", "1.0.0", "--config", "github"]);
+ * ```
+ *
+ * @example
+ * Boolean flags
+ * ```typescript
+ * await runGitCliff(["--unreleased", "--topo-order"]);
+ * ```
+ *
+ * @example
+ * Combining options and flags
+ * ```typescript
+ * await runGitCliff(["--tag", "1.0.0", "--config", "github", "--topo-order"]);
+ * ```
+ */
+export async function runGitCliff(args: string[]): Promise<void>;
+export async function runGitCliff(argsOrOptions: Options | string[]) {
+  const exePath = await getExePath();
+  const args = Array.isArray(argsOrOptions)
+    ? argsOrOptions
+    : optionsToStringArgs(argsOrOptions);
 
-runGitCliff()
+  const processResult = await execa(fileURLToPath(exePath), args, {
+    stdio: "inherit",
+  });
+  process.exit(processResult.exitCode ?? 0);
+}

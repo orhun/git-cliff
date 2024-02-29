@@ -2,12 +2,31 @@
   "name": "git-cliff",
   "version": "2.1.0-rc.0",
   "description": "A highly customizable Changelog Generator that follows Conventional Commit specifications ⛰️",
-  "bin": "lib/index.js",
+  "type": "module",
+  "main": "lib/cjs/index.d.cts",
+  "module": "lib/esm/index.d.ts",
+  "types": "lib/cjs/index.d.cts",
+  "bin": "lib/cli/cli.js",
+  "exports": {
+    "./cli": {
+      "import": "./lib/cli/cli.js"
+    },
+    ".": {
+      "import": {
+        "types": "./lib/esm/index.d.ts",
+        "default": "./lib/esm/index.js"
+      },
+      "require": {
+        "types": "./lib/cjs/index.d.cts",
+        "default": "./lib/cjs/index.cjs"
+      }
+    }
+  },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "build": "tsc",
+    "build": "tsup",
     "dev": "yarn build && node lib/index.js"
   },
   "repository": {
@@ -54,12 +73,16 @@
     "url": "https://github.com/orhun/git-cliff/issues"
   },
   "homepage": "https://github.com/orhun/git-cliff#readme",
+  "dependencies": {
+    "execa": "^8.0.1"
+  },
   "devDependencies": {
-    "@types/node": "^18.11.18",
-    "@typescript-eslint/eslint-plugin": "^5.48.0",
-    "@typescript-eslint/parser": "^5.48.0",
-    "eslint": "^8.31.0",
-    "typescript": "^4.9.4"
+    "@types/node": "^20.11.22",
+    "@typescript-eslint/eslint-plugin": "^7.1.0",
+    "@typescript-eslint/parser": "^7.1.0",
+    "eslint": "^8.57.0",
+    "tsup": "^8.0.2",
+    "typescript": "^5.3.3"
   },
   "optionalDependencies": {
     "git-cliff-linux-x64": "2.1.0-rc.0",
@@ -82,5 +105,6 @@
       "lib/*"
     ],
     "root": true
-  }
+  },
+  "packageManager": "yarn@4.1.0"
 }
