@@ -1,4 +1,4 @@
-import { execa, type ExecaReturnValue } from "execa";
+import { execa, type Options as ExecaOptions, type ExecaReturnValue, } from "execa";
 import { fileURLToPath } from "node:url";
 import { getExePath } from "./getExePath.js";
 import type { Options } from "./options.js";
@@ -14,16 +14,18 @@ export type { Options } from "./options.js";
  * - Values that are `true` will be passed as flags (`--flag`).
  * - Values that are `false` or `null` will be ignored.
  * - All other values will be passed as options (`--option value`).
+ *
+ * @param execaOptions - Options to pass to {@link execa}.
  */
-export async function runGitCliff(
-  options: Options
-): Promise<ExecaReturnValue<string>>;
+export async function runGitCliff(options: Options, execaOptions?: ExecaOptions): Promise<ExecaReturnValue<string>>;
 /**
  * Runs the `git-cliff` with the provided arguments.
  *
  * @param args - The arguments to pass to `git-cliff`.
  * These should be in an array of string format.
  * Every option and their value should be its own entry in the array.
+ *
+ * @param execaOptions - Options to pass to {@link execa}.
  *
  * @returns A promise that resolves when the `git-cliff` has finished running.
  *
@@ -45,12 +47,8 @@ export async function runGitCliff(
  * await runGitCliff(["--tag", "1.0.0", "--config", "github", "--topo-order"]);
  * ```
  */
-export async function runGitCliff(
-  args: string[]
-): Promise<ExecaReturnValue<string>>;
-export async function runGitCliff(
-  argsOrOptions: Options | string[]
-): Promise<ExecaReturnValue<string>> {
+export async function runGitCliff(args: string[], execaOptions?: ExecaOptions): Promise<ExecaReturnValue<string>>;
+export async function runGitCliff(argsOrOptions: Options | string[], execaOptions?: ExecaOptions): Promise<ExecaReturnValue<string>> {
   const exePath = await getExePath();
   const args = Array.isArray(argsOrOptions)
     ? argsOrOptions
@@ -58,5 +56,6 @@ export async function runGitCliff(
 
   return execa(fileURLToPath(exePath), args, {
     stdio: "inherit",
+    ...execaOptions,
   });
 }
