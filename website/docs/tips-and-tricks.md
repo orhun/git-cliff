@@ -43,6 +43,14 @@ Then strip the tags in the template with the series of filters:
 {% for group, commits in commits | filter(attribute="merge_commit", value=false) %}
 ```
 
+## Skip commits by PR label
+
+```jinja2
+{% if commit.github.pr_labels is containing("skip-release-notes") %}
+    {% continue %}
+{% endif %}
+```
+
 ## Remove gitmoji
 
 ```toml
