@@ -417,6 +417,9 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 	}
 	config.git.skip_tags = config.git.skip_tags.filter(|r| !r.as_str().is_empty());
+	if args.tag_pattern.is_some() {
+		config.git.tag_pattern = args.tag_pattern.clone();
+	}
 
 	// Process the repositories.
 	let repositories = args.repository.clone().unwrap_or(vec![env::current_dir()?]);

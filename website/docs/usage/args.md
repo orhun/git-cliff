@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 ---
+
 # Command-line Arguments
 
 ```
@@ -32,6 +33,7 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
 -r, --repository <PATH>...       Sets the git repository [env: GIT_CLIFF_REPOSITORY=]
     --include-path <PATTERN>...  Sets the path to include related commits [env: GIT_CLIFF_INCLUDE_PATH=]
     --exclude-path <PATTERN>...  Sets the path to exclude related commits [env: GIT_CLIFF_EXCLUDE_PATH=]
+    --tag-pattern <PATTERN>      Sets the regex for matching git tags [env: GIT_CLIFF_TAG_PATTERN=]
     --with-commit <MSG>...       Sets custom commit messages to include in the changelog [env: GIT_CLIFF_WITH_COMMIT=]
     --skip-commit <SHA1>...      Sets commits that will be skipped in the changelog [env: GIT_CLIFF_SKIP_COMMIT=]
 -p, --prepend <PATH>             Prepends entries to the given changelog file [env: GIT_CLIFF_PREPEND=]
