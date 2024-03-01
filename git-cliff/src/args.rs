@@ -18,6 +18,7 @@ use git_cliff_core::{
 	DEFAULT_OUTPUT,
 };
 use glob::Pattern;
+use regex::Regex;
 use secrecy::SecretString;
 use std::path::PathBuf;
 
@@ -130,6 +131,9 @@ pub struct Opt {
 		num_args(1..)
 	)]
 	pub exclude_path:   Option<Vec<Pattern>>,
+	/// Sets the regex for matching git tags.
+	#[arg(long, env = "GIT_CLIFF_TAG_PATTERN", value_name = "PATTERN")]
+	pub tag_pattern:    Option<Regex>,
 	/// Sets custom commit messages to include in the changelog.
 	#[arg(
 		long,

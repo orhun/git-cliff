@@ -183,6 +183,8 @@ If set to `true`, commits that are not matched by [`commit_parsers`](#commit_par
 
 A regular expression for matching the git tags.
 
+This value can be also overridden with using the `--tag-pattern` argument.
+
 ### skip_tags
 
 A regex for skip processing the matched tags.

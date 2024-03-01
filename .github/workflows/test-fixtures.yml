@@ -65,6 +65,8 @@ jobs:
             command: --skip-commit ad27b43e8032671afb4809a1a3ecf12f45c60e0e
           - fixtures-name: test-no-exec
             command: --no-exec
+          - fixtures-name: test-custom-tag-patterm
+            command: --tag-pattern "alpha.*"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
