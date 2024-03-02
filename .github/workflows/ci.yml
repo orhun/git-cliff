@@ -39,6 +39,17 @@ jobs:
       - name: Check typos
         uses: crate-ci/typos@master
 
+  semver:
+    name: Semver
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Check semver
+        uses: obi1kenobi/cargo-semver-checks-action@v2
+        with:
+          package: git-cliff-core
+
   test:
     name: Test suite
     runs-on: ubuntu-22.04
