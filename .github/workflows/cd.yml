@@ -198,7 +198,7 @@ jobs:
             --passphrase-fd 0 --detach-sign \
             git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}.tar.gz
       - name: Publish to GitHub
-        if: ${{ !contains(env.RELEASE_VERSION, 'alpha') && !contains(env.RELEASE_VERSION, 'beta') && !contains(env.RELEASE_VERSION, 'rc') }}
+        if: ${{ !contains(github.ref, '-') }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -209,7 +209,7 @@ jobs:
           release_name: "Release v${{ env.RELEASE_VERSION }}"
           body: "${{ needs.generate-changelog.outputs.release_body }}"
       - name: Publish to GitHub (pre-release)
-        if: ${{ contains(env.RELEASE_VERSION, 'alpha') || contains(env.RELEASE_VERSION, 'beta') || contains(env.RELEASE_VERSION, 'rc') }}
+        if: ${{ contains(github.ref, '-') }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -365,7 +365,7 @@ jobs:
             --passphrase-fd 0 --detach-sign \
             git-cliff-${{ env.RELEASE_VERSION }}.deb
       - name: Upload the release
-        if: ${{ !contains(env.RELEASE_VERSION, 'alpha') && !contains(env.RELEASE_VERSION, 'beta') && !contains(env.RELEASE_VERSION, 'rc') }}
+        if: ${{ !contains(github.ref, '-') }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -374,7 +374,7 @@ jobs:
           release_name: "Release v${{ env.RELEASE_VERSION }}"
           body: "${{ needs.generate-changelog.outputs.release_body }}"
       - name: Upload the pre-release
-        if: ${{ contains(env.RELEASE_VERSION, 'alpha') || contains(env.RELEASE_VERSION, 'beta') || contains(env.RELEASE_VERSION, 'rc') }}
+        if: ${{ contains(github.ref, '-') }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -416,7 +416,7 @@ jobs:
             --passphrase-fd 0 --detach-sign \
             git-cliff-${{ env.RELEASE_VERSION }}.x86_64.rpm
       - name: Upload the release
-        if: ${{ !contains(env.RELEASE_VERSION, 'alpha') && !contains(env.RELEASE_VERSION, 'beta') && !contains(env.RELEASE_VERSION, 'rc') }}
+        if: ${{ !contains(github.ref, '-') }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -425,7 +425,7 @@ jobs:
           release_name: "Release v${{ env.RELEASE_VERSION }}"
           body: "${{ needs.generate-changelog.outputs.release_body }}"
       - name: Upload the pre-release
-        if: ${{ contains(env.RELEASE_VERSION, 'alpha') || contains(env.RELEASE_VERSION, 'beta') || contains(env.RELEASE_VERSION, 'rc') }}
+        if: ${{ contains(github.ref, '-') }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -470,12 +470,12 @@ jobs:
 
   publish-homebrew:
     name: Publish Homebrew formula
+    if: ${{ !contains(github.ref, '-') }}
     runs-on: ubuntu-22.04
     permissions:
       contents: read
     steps:
       - name: Bump formula
-        if: ${{ !contains(env.RELEASE_VERSION, 'alpha') && !contains(env.RELEASE_VERSION, 'beta') && !contains(env.RELEASE_VERSION, 'rc') }}
         uses: mislav/bump-homebrew-formula-action@v3
         with:
           formula-name: git-cliff
