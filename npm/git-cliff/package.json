@@ -27,7 +27,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "build": "tsup",
-    "dev": "yarn build && node lib/index.js"
+    "dev": "yarn build && node lib/cli/cli.js"
   },
   "repository": {
     "type": "git",
