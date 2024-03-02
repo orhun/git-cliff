@@ -485,7 +485,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		};
 	}
 	if let Some(ref path) = args.prepend {
-		changelog.prepend(fs::read_to_string(&path)?, &mut File::create(path)?)?;
+		changelog.prepend(fs::read_to_string(path)?, &mut File::create(path)?)?;
 	}
 	if let Some(path) = args.output {
 		let mut output = File::create(path)?;
