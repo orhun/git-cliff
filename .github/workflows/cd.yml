@@ -161,7 +161,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --no-default-features --release --locked --target ${{ matrix.build.TARGET }}
+          args: --release --locked --target ${{ matrix.build.TARGET }} # --no-default-features
       - name: Prepare release assets
         shell: bash
         run: |
