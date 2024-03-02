@@ -479,5 +479,6 @@ jobs:
         uses: mislav/bump-homebrew-formula-action@v3
         with:
           formula-name: git-cliff
+          formula-path: Formula/g/git-cliff.rb
         env:
           COMMITTER_TOKEN: ${{ secrets.HOMEBREW_COMMITTER_TOKEN }}
