@@ -467,3 +467,17 @@ jobs:
         run: |
           cargo publish --allow-dirty --manifest-path git-cliff/Cargo.toml \
             --locked --token ${{ secrets.CARGO_TOKEN }}
+
+  publish-homebrew:
+    name: Publish Homebrew formula
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+    steps:
+      - name: Bump formula
+        if: ${{ !contains(env.RELEASE_VERSION, 'alpha') && !contains(env.RELEASE_VERSION, 'beta') && !contains(env.RELEASE_VERSION, 'rc') }}
+        uses: mislav/bump-homebrew-formula-action@v3
+        with:
+          formula-name: git-cliff
+        env:
+          COMMITTER_TOKEN: ${{ secrets.HOMEBREW_COMMITTER_TOKEN }}
