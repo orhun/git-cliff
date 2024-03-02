@@ -1,5 +1,37 @@
 [![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)
 
+## [2.1.0-rc.0](https://github.com/orhun/git-cliff/compare/v2.0.4..v2.1.0-rc.0) - 2024-03-02
+
+### ⛰️  Features
+
+- *(args)* Add `--tag-pattern` argument ([#526](https://github.com/orhun/git-cliff/issues/526)) - ([b4e7a34](https://github.com/orhun/git-cliff/commit/b4e7a3400f0675bba63339cd89513ffcb7acb688))
+
+### 🐛 Bug Fixes
+
+- *(cd)* Set the GitHub repository explicitly - ([0e46500](https://github.com/orhun/git-cliff/commit/0e46500199f9b7cc7c83a51499f6e90a2adf5888))
+- *(config)* Fix commit parser regex in the default config - ([110b9b8](https://github.com/orhun/git-cliff/commit/110b9b8d2676800ebe169287fa5d2a93c9f6b55f))
+- *(github)* Sanitize the GitHub token in debug logs - ([be34949](https://github.com/orhun/git-cliff/commit/be34949df76f9f174dce0b9e593bda594a9d33a5))
+
+### 🚜 Refactor
+
+- *(changelog)* Do not output to stdout when prepend is used - ([8ee0da1](https://github.com/orhun/git-cliff/commit/8ee0da1f74a0f2cae699ce19accc073434f5b538))
+- *(clippy)* Apply clippy suggestions - ([df57336](https://github.com/orhun/git-cliff/commit/df57336a799a9a406d25bef6926dada7e2255245))
+
+### 📚 Documentation
+
+- *(website)* Add tip about skipping commits by PR label - ([6d3354c](https://github.com/orhun/git-cliff/commit/6d3354ca1b0e401e5374f0cd28b2f96753ac4f2b))
+- *(website)* Add instructions for installing from WinGet ([#520](https://github.com/orhun/git-cliff/issues/520)) - ([eeaa406](https://github.com/orhun/git-cliff/commit/eeaa40673fbf28eafef462fbc61506e7d9f97678))
+
+### 🎨 Styling
+
+- *(website)* Use a short link for reporting issues - ([ba83c8a](https://github.com/orhun/git-cliff/commit/ba83c8ae71b838137682ff0c92424e064ca4f62e))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(ci)* Auto-bump the homebrew formula - ([61d055b](https://github.com/orhun/git-cliff/commit/61d055b9169b9eb3d5a458b1dc1cb6ff8d919807))
+- *(ci)* Enable default features for windows builds - ([18f4923](https://github.com/orhun/git-cliff/commit/18f4923897a4f54ebe9870014463a67f3a655c9d))
+- *(ci)* Check semver violations via CI - ([a25a114](https://github.com/orhun/git-cliff/commit/a25a1148d92ee07402c9069eaad74574e392339c))
+
 ## [2.0.4](https://github.com/orhun/git-cliff/compare/v2.0.2..v2.0.4) - 2024-02-22
 
 ### ⛰️  Features
@@ -116,7 +148,6 @@
 - *(command)* Explicitly set the directory of command to current dir - ([722efd6](https://github.com/orhun/git-cliff/commit/722efd6598a580f995bf282184c400c095c49eae))
 - *(config)* Skip dependabot commits for dev updates - ([7f89160](https://github.com/orhun/git-cliff/commit/7f891602e4818f612ef928e84488053c7aad56d9))
 - *(config)* Revamp the configuration files - ([9500bf8](https://github.com/orhun/git-cliff/commit/9500bf8ef88df8ff0fbfaf08d2eb531d09e472ef))
-- *(config)* Use postprocessors for checking the typos - ([5212cc9](https://github.com/orhun/git-cliff/commit/5212cc9446bc1389274516ed3d7eb7b334b1b606))
 - *(dependabot)* Group the dependency updates for creating less PRs - ([c6a92bf](https://github.com/orhun/git-cliff/commit/c6a92bf6871a436e60ca9774d0b0df770727e664))
 - *(docker)* Update versions in Dockerfile - ([51198a5](https://github.com/orhun/git-cliff/commit/51198a5a56ca1f8a09d527c37695231520a130d4))
 - *(embed)* Do not allow missing docs - ([7754cab](https://github.com/orhun/git-cliff/commit/7754cab1c8a53ce8703596bbc921a2a3867a4155))
@@ -133,6 +164,10 @@
 - *(website)* Bump docusaurus to 3.1.0 - ([af4482b](https://github.com/orhun/git-cliff/commit/af4482b4158ccdee71912d78f5fb0a1c280e6ed6))
 - *(website)* Update the titles for distro installations - ([ff2881b](https://github.com/orhun/git-cliff/commit/ff2881bebd1020420db04927b2ac7893edf973a6))
 - *(website)* Add Mastodon link to the website - ([2e761c9](https://github.com/orhun/git-cliff/commit/2e761c936dbe54b1c9a683f67d4556d2e64b2fec))
+
+### ◀️ Revert
+
+- *(config)* Use postprocessors for checking the typos - ([5212cc9](https://github.com/orhun/git-cliff/commit/5212cc9446bc1389274516ed3d7eb7b334b1b606))
 
 ## [1.4.0](https://github.com/orhun/git-cliff/compare/v1.3.1..v1.4.0) - 2023-10-29
 
