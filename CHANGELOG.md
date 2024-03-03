@@ -1,19 +1,22 @@
 [![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)
 
-## [2.1.0-rc.0](https://github.com/orhun/git-cliff/compare/v2.0.4..v2.1.0-rc.0) - 2024-03-02
+## [2.1.0-rc.1](https://github.com/orhun/git-cliff/compare/v2.0.4..v2.1.0-rc.1) - 2024-03-03
 
 ### ⛰️  Features
 
 - *(args)* Add `--tag-pattern` argument ([#526](https://github.com/orhun/git-cliff/issues/526)) - ([b4e7a34](https://github.com/orhun/git-cliff/commit/b4e7a3400f0675bba63339cd89513ffcb7acb688))
+- *(npm)* Add programmatic API for TypeScript ([#523](https://github.com/orhun/git-cliff/issues/523)) - ([8b33267](https://github.com/orhun/git-cliff/commit/8b332679677ab7690d718d0d81954bff8d4cc585))
 
 ### 🐛 Bug Fixes
 
+- *(cd)* Explicitly set the Homebrew formula path - ([8d2f1fa](https://github.com/orhun/git-cliff/commit/8d2f1fab2b70da990921dfc55202ef1413ec63f1))
 - *(cd)* Set the GitHub repository explicitly - ([0e46500](https://github.com/orhun/git-cliff/commit/0e46500199f9b7cc7c83a51499f6e90a2adf5888))
 - *(config)* Fix commit parser regex in the default config - ([110b9b8](https://github.com/orhun/git-cliff/commit/110b9b8d2676800ebe169287fa5d2a93c9f6b55f))
 - *(github)* Sanitize the GitHub token in debug logs - ([be34949](https://github.com/orhun/git-cliff/commit/be34949df76f9f174dce0b9e593bda594a9d33a5))
 
 ### 🚜 Refactor
 
+- *(cd)* Simplify checking pre-releases - ([87a04fb](https://github.com/orhun/git-cliff/commit/87a04fb437ce8d74c53461f2a46316ff611f074f))
 - *(changelog)* Do not output to stdout when prepend is used - ([8ee0da1](https://github.com/orhun/git-cliff/commit/8ee0da1f74a0f2cae699ce19accc073434f5b538))
 - *(clippy)* Apply clippy suggestions - ([df57336](https://github.com/orhun/git-cliff/commit/df57336a799a9a406d25bef6926dada7e2255245))
 
@@ -31,6 +34,7 @@
 - *(ci)* Auto-bump the homebrew formula - ([61d055b](https://github.com/orhun/git-cliff/commit/61d055b9169b9eb3d5a458b1dc1cb6ff8d919807))
 - *(ci)* Enable default features for windows builds - ([18f4923](https://github.com/orhun/git-cliff/commit/18f4923897a4f54ebe9870014463a67f3a655c9d))
 - *(ci)* Check semver violations via CI - ([a25a114](https://github.com/orhun/git-cliff/commit/a25a1148d92ee07402c9069eaad74574e392339c))
+- *(fixtures)* Enable verbose logging for output - ([2927231](https://github.com/orhun/git-cliff/commit/292723109f328f96b84a629d61fd38b02ceef4e8))
 
 ## [2.0.4](https://github.com/orhun/git-cliff/compare/v2.0.2..v2.0.4) - 2024-02-22
 
