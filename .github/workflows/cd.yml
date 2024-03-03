@@ -223,7 +223,7 @@ jobs:
         if: matrix.build.NPM_PUBLISH == true
         uses: actions/setup-node@v4
         with:
-          node-version: "16"
+          node-version: 18
           registry-url: "https://registry.npmjs.org"
       - name: Publish to NPM
         if: matrix.build.NPM_PUBLISH == true
@@ -298,7 +298,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: "16"
+          node-version: 18
           registry-url: "https://registry.npmjs.org"
       - name: Publish the package
         shell: bash
