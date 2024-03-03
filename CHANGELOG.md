@@ -1,6 +1,6 @@
 [![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)
 
-## [2.1.0](https://github.com/orhun/git-cliff/compare/v2.0.4..v2.1.0) - 2024-03-03
+## [2.1.1](https://github.com/orhun/git-cliff/compare/v2.0.4..v2.1.1) - 2024-03-03
 
 ### ⛰️  Features
 
@@ -9,6 +9,7 @@
 
 ### 🐛 Bug Fixes
 
+- *(cd)* Set node version to 18 for building NPM packages - ([5dd0d2e](https://github.com/orhun/git-cliff/commit/5dd0d2ebf8f1e9fa81d8b933c33ed62654039ce6))
 - *(cd)* Explicitly set the Homebrew formula path - ([8d2f1fa](https://github.com/orhun/git-cliff/commit/8d2f1fab2b70da990921dfc55202ef1413ec63f1))
 - *(cd)* Set the GitHub repository explicitly - ([0e46500](https://github.com/orhun/git-cliff/commit/0e46500199f9b7cc7c83a51499f6e90a2adf5888))
 - *(config)* Fix commit parser regex in the default config - ([110b9b8](https://github.com/orhun/git-cliff/commit/110b9b8d2676800ebe169287fa5d2a93c9f6b55f))

@@ -101,7 +101,7 @@ tag_pattern = "v[0-9].*"
 # regex for skipping tags
 skip_tags = "beta|alpha"
 # regex for ignoring tags
-ignore_tags = "rc"
+ignore_tags = "rc|v2.1.0"
 # sort the tags topologically
 topo_order = false
 # sort the commits inside sections by oldest/newest order
