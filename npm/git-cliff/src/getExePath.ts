@@ -23,11 +23,11 @@ export async function getExePath() {
   try {
     // Since the bin will be located inside `node_modules`, we can simply call import.meta.resolve
     return import.meta.resolve(
-      `git-cliff-${os}-${arch}/bin/git-cliff${extension}`
+      `git-cliff-${os}-${arch}/bin/git-cliff${extension}`,
     );
   } catch (e) {
     throw new Error(
-      `Couldn't find git-cliff binary inside node_modules for ${os}-${arch}`
+      `Couldn't find git-cliff binary inside node_modules for ${os}-${arch} (${e})`,
     );
   }
 }
