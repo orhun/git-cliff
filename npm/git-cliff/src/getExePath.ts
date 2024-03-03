@@ -22,8 +22,7 @@ export async function getExePath() {
 
   try {
     // Since the bin will be located inside `node_modules`, we can simply call import.meta.resolve
-    // Note that the return await is necessary here to properly handle promise rejections
-    return await import.meta.resolve(
+    return import.meta.resolve(
       `git-cliff-${os}-${arch}/bin/git-cliff${extension}`
     );
   } catch (e) {
