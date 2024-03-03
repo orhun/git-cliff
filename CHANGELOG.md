@@ -1,6 +1,6 @@
 [![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)
 
-## [2.1.1](https://github.com/orhun/git-cliff/compare/v2.0.4..v2.1.1) - 2024-03-03
+## [2.1.2](https://github.com/orhun/git-cliff/compare/v2.0.4..v2.1.2) - 2024-03-03
 
 ### ⛰️  Features
 
@@ -9,6 +9,8 @@
 
 ### 🐛 Bug Fixes
 
+- *(cd)* Set the correct GitHub repository URL - ([7f379a9](https://github.com/orhun/git-cliff/commit/7f379a9c8377baa206d05c5cb0dfc6150905b19a))
+- *(cd)* Set a flag as a workaround for the NPM package - ([717abce](https://github.com/orhun/git-cliff/commit/717abce767906f752408e2745f47d0fc9013699c))
 - *(cd)* Set node version to 18 for building NPM packages - ([5dd0d2e](https://github.com/orhun/git-cliff/commit/5dd0d2ebf8f1e9fa81d8b933c33ed62654039ce6))
 - *(cd)* Explicitly set the Homebrew formula path - ([8d2f1fa](https://github.com/orhun/git-cliff/commit/8d2f1fab2b70da990921dfc55202ef1413ec63f1))
 - *(cd)* Set the GitHub repository explicitly - ([0e46500](https://github.com/orhun/git-cliff/commit/0e46500199f9b7cc7c83a51499f6e90a2adf5888))
