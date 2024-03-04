@@ -25,6 +25,7 @@ pub fn run(
 ) -> Result<String> {
 	let mut child = if cfg!(target_os = "windows") {
 		Command::new("cmd")
+			.envs(envs)
 			.args(["/C", command])
 			.stdin(Stdio::piped())
 			.stdout(Stdio::piped())
