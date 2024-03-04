@@ -300,12 +300,6 @@ jobs:
         with:
           node-version: 18
           registry-url: "https://registry.npmjs.org"
-      - name: Check if the release is a pre-release
-        working-directory: npm/git-cliff
-        shell: bash
-        id: check_pre_release
-        run: |
-          echo "IS_PRE_RELEASE=$([[ $(jq -r '.version' package.json | grep -E '\-rc.[0-9]+') ]] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
       - name: Publish the package
         shell: bash
         working-directory: npm/git-cliff
@@ -313,7 +307,7 @@ jobs:
           yarn install
           yarn build
           cp ../../README.md .
-          if [ "${{ steps.check_pre_release.outputs.IS_PRE_RELEASE}}" = "true" ]; then
+          if [ ${{ contains(github.ref, '-') }} = "true" ]; then
             yarn npm publish --tag rc
           else
             yarn npm publish
