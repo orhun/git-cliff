@@ -29,3 +29,12 @@ Tip: you can also get the bumped version [from the context](/docs/usage/print-co
 ```bash
 git cliff --unreleased --bump --context | jq -r .[0].version
 ```
+
+## Zero-based versioning scheme
+
+When working with a zero-based versioning scheme (i.e., `0.x.y` or `0.0.x`),
+it is often desirable to preserve the leading zero even when introducing a breaking change.
+A switch from `0` to `1` should indicate a higher API stability level.
+
+You can modify the bumping rules to preserve the zero-based versioning scheme in the
+[configuration file](/docs/configuration/bump).

@@ -1,4 +1,5 @@
 use crate::commit::Commit;
+use crate::config::Bump;
 use crate::error::Result;
 #[cfg(feature = "github")]
 use crate::github::{
@@ -98,7 +99,21 @@ impl<'a> Release<'a> {
 	}
 
 	/// Calculates the next version based on the commits.
+	///
+	/// It uses the default bump version configuration to calculate the next
+	/// version.
 	pub fn calculate_next_version(&self) -> Result<String> {
+		self.calculate_next_version_with_config(&Bump::default())
+	}
+
+	/// Calculates the next version based on the commits.
+	///
+	/// It uses the given bump version configuration to calculate the next
+	/// version.
+	pub(super) fn calculate_next_version_with_config(
+		&self,
+		config: &Bump,
+	) -> Result<String> {
 		match self
 			.previous
 			.as_ref()
@@ -126,8 +141,12 @@ impl<'a> Release<'a> {
 					}
 				}
 				let next_version = VersionUpdater::new()
-					.with_features_always_increment_minor(true)
-					.with_breaking_always_increment_major(true)
+					.with_features_always_increment_minor(
+						config.features_always_bump_minor.unwrap_or(true),
+					)
+					.with_breaking_always_increment_major(
+						config.breaking_always_bump_major.unwrap_or(true),
+					)
 					.increment(
 						&semver?,
 						self.commits
@@ -169,7 +188,27 @@ mod test {
 	use super::*;
 	#[test]
 	fn bump_version() -> Result<()> {
-		for (version, expected_version, commits) in [
+		fn build_release<'a>(version: &str, commits: &'a [&str]) -> Release<'a> {
+			Release {
+				version: None,
+				commits: commits
+					.iter()
+					.map(|v| Commit::from(v.to_string()))
+					.collect(),
+				commit_id: None,
+				timestamp: 0,
+				previous: Some(Box::new(Release {
+					version: Some(String::from(version)),
+					..Default::default()
+				})),
+				#[cfg(feature = "github")]
+				github: crate::github::GitHubReleaseMetadata {
+					contributors: vec![],
+				},
+			}
+		}
+
+		let test_shared = [
 			("1.0.0", "1.1.0", vec!["feat: add xyz", "fix: fix xyz"]),
 			("1.0.0", "1.0.1", vec!["fix: add xyz", "fix: aaaaaa"]),
 			("1.0.0", "2.0.0", vec!["feat!: add xyz", "feat: zzz"]),
@@ -202,27 +241,87 @@ mod test {
 				"aaa#/@#$@9384!#%^#@#@!#!239432413-idk-9999.2200.5932-alpha.420",
 				vec!["feat: damn this is working"],
 			),
-		] {
-			let release = Release {
-				version: None,
-				commits: commits
-					.into_iter()
-					.map(|v| Commit::from(v.to_string()))
-					.collect(),
-				commit_id: None,
-				timestamp: 0,
-				previous: Some(Box::new(Release {
-					version: Some(String::from(version)),
-					..Default::default()
-				})),
-				#[cfg(feature = "github")]
-				github: crate::github::GitHubReleaseMetadata {
-					contributors: vec![],
-				},
-			};
+		];
+
+		for (version, expected_version, commits) in test_shared.iter().chain(
+			[
+				("0.0.1", "0.0.2", vec!["fix: fix xyz"]),
+				("0.0.1", "0.1.0", vec!["feat: add xyz", "fix: fix xyz"]),
+				("0.0.1", "1.0.0", vec!["feat!: add xyz", "feat: zzz"]),
+				("0.1.0", "0.1.1", vec!["fix: fix xyz"]),
+				("0.1.0", "0.2.0", vec!["feat: add xyz", "fix: fix xyz"]),
+				("0.1.0", "1.0.0", vec!["feat!: add xyz", "feat: zzz"]),
+			]
+			.iter(),
+		) {
+			let release = build_release(version, commits);
 			let next_version = release.calculate_next_version()?;
-			assert_eq!(expected_version, next_version);
+			assert_eq!(expected_version, &next_version);
+			let next_version =
+				release.calculate_next_version_with_config(&Bump::default())?;
+			assert_eq!(expected_version, &next_version);
 		}
+
+		for (version, expected_version, commits) in test_shared.iter().chain(
+			[
+				("0.0.1", "0.0.2", vec!["fix: fix xyz"]),
+				("0.0.1", "0.0.2", vec!["feat: add xyz", "fix: fix xyz"]),
+				("0.0.1", "0.0.2", vec!["feat!: add xyz", "feat: zzz"]),
+				("0.1.0", "0.1.1", vec!["fix: fix xyz"]),
+				("0.1.0", "0.1.1", vec!["feat: add xyz", "fix: fix xyz"]),
+				("0.1.0", "0.2.0", vec!["feat!: add xyz", "feat: zzz"]),
+			]
+			.iter(),
+		) {
+			let release = build_release(version, commits);
+			let next_version =
+				release.calculate_next_version_with_config(&Bump {
+					features_always_bump_minor: Some(false),
+					breaking_always_bump_major: Some(false),
+				})?;
+			assert_eq!(expected_version, &next_version);
+		}
+
+		for (version, expected_version, commits) in test_shared.iter().chain(
+			[
+				("0.0.1", "0.0.2", vec!["fix: fix xyz"]),
+				("0.0.1", "0.1.0", vec!["feat: add xyz", "fix: fix xyz"]),
+				("0.0.1", "0.1.0", vec!["feat!: add xyz", "feat: zzz"]),
+				("0.1.0", "0.1.1", vec!["fix: fix xyz"]),
+				("0.1.0", "0.2.0", vec!["feat: add xyz", "fix: fix xyz"]),
+				("0.1.0", "0.2.0", vec!["feat!: add xyz", "feat: zzz"]),
+			]
+			.iter(),
+		) {
+			let release = build_release(version, commits);
+			let next_version =
+				release.calculate_next_version_with_config(&Bump {
+					features_always_bump_minor: Some(true),
+					breaking_always_bump_major: Some(false),
+				})?;
+			assert_eq!(expected_version, &next_version);
+		}
+
+		for (version, expected_version, commits) in test_shared.iter().chain(
+			[
+				("0.0.1", "0.0.2", vec!["fix: fix xyz"]),
+				("0.0.1", "0.0.2", vec!["feat: add xyz", "fix: fix xyz"]),
+				("0.0.1", "1.0.0", vec!["feat!: add xyz", "feat: zzz"]),
+				("0.1.0", "0.1.1", vec!["fix: fix xyz"]),
+				("0.1.0", "0.1.1", vec!["feat: add xyz", "fix: fix xyz"]),
+				("0.1.0", "1.0.0", vec!["feat!: add xyz", "feat: zzz"]),
+			]
+			.iter(),
+		) {
+			let release = build_release(version, commits);
+			let next_version =
+				release.calculate_next_version_with_config(&Bump {
+					features_always_bump_minor: Some(false),
+					breaking_always_bump_major: Some(true),
+				})?;
+			assert_eq!(expected_version, &next_version);
+		}
+
 		let empty_release = Release {
 			previous: Some(Box::new(Release {
 				version: None,
@@ -230,8 +329,18 @@ mod test {
 			})),
 			..Default::default()
 		};
-		let next_version = empty_release.calculate_next_version()?;
-		assert_eq!("0.1.0", next_version);
+		assert_eq!("0.1.0", empty_release.calculate_next_version()?);
+		for (features_always_bump_minor, breaking_always_bump_major) in
+			[(true, true), (true, false), (false, true), (false, false)]
+		{
+			assert_eq!(
+				"0.1.0",
+				empty_release.calculate_next_version_with_config(&Bump {
+					features_always_bump_minor: Some(features_always_bump_minor),
+					breaking_always_bump_major: Some(breaking_always_bump_major),
+				})?
+			);
+		}
 		Ok(())
 	}
 

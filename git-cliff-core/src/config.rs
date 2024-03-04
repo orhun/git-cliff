@@ -33,6 +33,9 @@ pub struct Config {
 	/// Configuration values about remote.
 	#[serde(default)]
 	pub remote:    RemoteConfig,
+	/// Configuration values about bump version.
+	#[serde(default)]
+	pub bump:      Bump,
 }
 
 /// Changelog configuration.
@@ -134,6 +137,29 @@ impl Remote {
 	pub fn is_set(&self) -> bool {
 		!self.owner.is_empty() && !self.repo.is_empty()
 	}
+}
+
+/// Bump version configuration.
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct Bump {
+	/// Configures automatic minor version increments for feature changes.
+	///
+	/// When `true`, a feature will always trigger a minor version update.
+	/// When `false`, a feature will trigger:
+	///
+	/// - A patch version update if the major version is 0.
+	/// - A minor version update otherwise.
+	pub features_always_bump_minor: Option<bool>,
+
+	/// Configures 0 -> 1 major version increments for breaking changes.
+	///
+	/// When `true`, a breaking change commit will always trigger a major
+	/// version update (including the transition from version 0 to 1)
+	/// When `false`, a breaking change commit will trigger:
+	///
+	/// - A minor version update if the major version is 0.
+	/// - A major version update otherwise.
+	pub breaking_always_bump_major: Option<bool>,
 }
 
 /// Parser for grouping commits.
