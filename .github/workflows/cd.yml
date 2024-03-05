@@ -249,7 +249,7 @@ jobs:
           cp "../target/${{ matrix.build.TARGET }}/release/${bin}" "${node_pkg}/bin"
           cp ../README.md "${node_pkg}"
           cd "${node_pkg}"
-          npm publish --access public
+          npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Build Python wheels (linux)
@@ -302,12 +302,16 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - name: Publish the package
         shell: bash
+        working-directory: npm/git-cliff
         run: |
-          cd npm/git-cliff
           yarn install
           yarn build
           cp ../../README.md .
-          npm publish --access public
+          if [ ${{ contains(github.ref, '-') }} = "true" ]; then
+            yarn npm publish --tag rc
+          else
+            yarn npm publish
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           YARN_ENABLE_IMMUTABLE_INSTALLS: false
