@@ -43,7 +43,7 @@ body = """
 {% for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
   * @{{ contributor.username }} made their first contribution
     {%- if contributor.pr_number %} in \
-      [#{{ contributor.pr_number }}](({{ self::remote_url() }}/pull/{{ contributor.pr_number }}) \
+      [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}) \
     {%- endif %}
 {%- endfor %}\n
 """
