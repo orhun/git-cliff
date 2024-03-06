@@ -1,0 +1,5 @@
+# venv dir which might be present during testing
+.venv
+
+# where the build artifacts go
+wheels
