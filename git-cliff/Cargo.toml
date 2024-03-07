@@ -57,9 +57,6 @@ pkg-url = "{ repo }/releases/download/v{ version }/{ name }-{ version }-{ target
 bin-dir = "{ name }-{ version }/{ bin }{ binary-ext }"
 pkg-fmt = "tgz"
 
-[package.metadata.maturin]
-name = "git-cliff"
-
 [package.metadata.generate-rpm]
 assets = [
   { source = "target/release/git-cliff", dest = "/usr/bin/git-cliff", mode = "755" },
