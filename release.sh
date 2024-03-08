@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 if ! command -v typos &>/dev/null; then
-  echo "typos is not installed. Run 'cargo install typos' to install it, otherwise the typos won't be fixed"
+  echo "typos is not installed. Run 'cargo install typos-cli' to install it, otherwise the typos won't be fixed"
 fi
 
 if [ -z "$1" ]; then
