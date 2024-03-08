@@ -160,3 +160,121 @@ jobs:
             printf "Checking MSRV for $package..."
             cargo msrv --output-format json --path "$package" verify | tail -n 1 | jq --exit-status '.success'
           done
+
+  wheels:
+    name: Test that python wheels build and install
+    runs-on: ${{ matrix.build.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        build:
+          - {
+              NAME: linux-x64-glibc,
+              OS: ubuntu-22.04,
+              TOOLCHAIN: stable,
+              TARGET: x86_64-unknown-linux-gnu,
+            }
+          - {
+              NAME: linux-x64-musl,
+              OS: ubuntu-22.04,
+              TOOLCHAIN: stable,
+              TARGET: x86_64-unknown-linux-musl,
+            }
+          - {
+              NAME: linux-x86-musl,
+              OS: ubuntu-22.04,
+              TOOLCHAIN: stable,
+              TARGET: i686-unknown-linux-musl,
+            }
+          - {
+              NAME: linux-arm64-glibc,
+              OS: ubuntu-22.04,
+              TOOLCHAIN: stable,
+              TARGET: aarch64-unknown-linux-gnu,
+            }
+          - {
+              NAME: linux-arm64-musl,
+              OS: ubuntu-22.04,
+              TOOLCHAIN: stable,
+              TARGET: aarch64-unknown-linux-musl,
+            }
+          - {
+              NAME: win32-x64-mingw,
+              OS: windows-2022,
+              TOOLCHAIN: stable,
+              TARGET: x86_64-pc-windows-gnu,
+            }
+          - {
+              NAME: win32-x64-msvc,
+              OS: windows-2022,
+              TOOLCHAIN: stable,
+              TARGET: x86_64-pc-windows-msvc,
+            }
+          - {
+              NAME: win32-x86-msvc,
+              OS: windows-2022,
+              TOOLCHAIN: stable,
+              TARGET: i686-pc-windows-msvc,
+            }
+          - {
+              NAME: darwin-x64,
+              OS: macos-12,
+              TOOLCHAIN: stable,
+              TARGET: x86_64-apple-darwin,
+            }
+          - {
+              NAME: darwin-arm64,
+              OS: macos-12,
+              TOOLCHAIN: stable,
+              TARGET: aarch64-apple-darwin,
+            }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        shell: bash
+        run: |
+          if [[ "${{ matrix.build.NAME }}" = *"-musl" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends \
+              --allow-unauthenticated musl-tools
+          fi
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.build.TOOLCHAIN }}
+          target: ${{ matrix.build.TARGET }}
+          override: true
+      - name: Build Python wheels (linux)
+        if: startsWith(matrix.build.NAME, 'linux')
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: pypi
+          target: ${{ matrix.build.TARGET }}
+          args: --release --sdist --out wheels
+          sccache: "true"
+          # https://github.com/PyO3/maturin-action/issues/245
+          manylinux: ${{ matrix.build.TARGET == 'aarch64-unknown-linux-gnu' && '2_28' || 'auto' }}
+      - name: Build Python wheels (macos & windows)
+        if: |
+          matrix.build.PYPI_PUBLISH == true &&
+          (startsWith(matrix.build.OS, 'macos') || startsWith(matrix.build.OS, 'windows'))
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: pypi
+          target: ${{ matrix.build.TARGET }}
+          args: --release --sdist --out wheels
+          sccache: "true"
+      - name: Build Python wheels (musl)
+        if: endsWith(matrix.build.OS, 'musl')
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: pypi
+          target: ${{ matrix.build.TARGET }}
+          args: --release --sdist --out wheels
+          sccache: "true"
+          manylinux: musllinux_1_2
+      - name: Test wheel installation
+        run: |
+          pip install --no-index --find-links=pypi/wheels git-cliff
+          git-cliff --version
