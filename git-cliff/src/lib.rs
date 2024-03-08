@@ -464,16 +464,28 @@ pub fn run(mut args: Opt) -> Result<()> {
 
 	// Print the result.
 	if args.bump || args.bumped_version {
-		if let Some(next_version) = changelog.bump_version()? {
-			if args.bumped_version {
-				if let Some(path) = args.output {
-					let mut output = File::create(path)?;
-					output.write_all(next_version.as_bytes())?;
-				} else {
-					println!("{next_version}");
-				}
-				return Ok(());
+		let next_version = if let Some(next_version) = changelog.bump_version()? {
+			next_version
+		} else if let Some(last_version) = changelog
+			.releases
+			.iter()
+			.next()
+			.cloned()
+			.and_then(|v| v.version)
+		{
+			warn!("There is nothing to bump.");
+			last_version
+		} else {
+			return Ok(());
+		};
+		if args.bumped_version {
+			if let Some(path) = args.output {
+				let mut output = File::create(path)?;
+				output.write_all(next_version.as_bytes())?;
+			} else {
+				println!("{next_version}");
 			}
+			return Ok(());
 		}
 	}
 	if args.context {

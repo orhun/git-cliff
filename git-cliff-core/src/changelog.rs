@@ -24,7 +24,8 @@ use std::time::{
 /// Changelog generator.
 #[derive(Debug)]
 pub struct Changelog<'a> {
-	releases:        Vec<Release<'a>>,
+	/// Releases that the changelog will contain.
+	pub releases:    Vec<Release<'a>>,
 	body_template:   Template,
 	footer_template: Option<Template>,
 	config:          &'a Config,
