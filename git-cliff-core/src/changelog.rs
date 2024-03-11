@@ -200,7 +200,8 @@ impl<'a> Changelog<'a> {
 	pub fn bump_version(&mut self) -> Result<Option<String>> {
 		if let Some(ref mut last_release) = self.releases.iter_mut().next() {
 			if last_release.version.is_none() {
-				let next_version = last_release.calculate_next_version()?;
+				let next_version = last_release
+					.calculate_next_version_with_config(&self.config.bump)?;
 				debug!("Bumping the version to {next_version}");
 				last_release.version = Some(next_version.to_string());
 				last_release.timestamp = SystemTime::now()
@@ -307,6 +308,7 @@ impl<'a> Changelog<'a> {
 mod test {
 	use super::*;
 	use crate::config::{
+		Bump,
 		ChangelogConfig,
 		CommitParser,
 		GitConfig,
@@ -485,6 +487,7 @@ mod test {
 					token: None,
 				},
 			},
+			bump:      Bump::default(),
 		};
 		let test_release = Release {
 			version: Some(String::from("v1.0.0")),
