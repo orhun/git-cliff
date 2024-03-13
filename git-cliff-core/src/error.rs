@@ -40,6 +40,9 @@ pub enum Error {
 	/// Error that may occur while rendering the template.
 	#[error("Template render error:\n{0}")]
 	TemplateRenderError(String),
+	/// Error that may occur while rendering the template.
+	#[error("Template render error:\n{0}\n{1}")]
+	TemplateRenderDetailedError(String, String),
 	/// Error that may occur during more general template operations.
 	#[error("Template error: `{0}`")]
 	TemplateError(#[from] tera::Error),

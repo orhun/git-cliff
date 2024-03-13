@@ -163,8 +163,15 @@ impl Template {
 				Ok(v)
 			}
 			Err(e) => {
-				return if let Some(error_source) = e.source() {
-					Err(Error::TemplateRenderError(error_source.to_string()))
+				return if let Some(source1) = e.source() {
+					if let Some(source2) = source1.source() {
+						Err(Error::TemplateRenderDetailedError(
+							source1.to_string(),
+							source2.to_string(),
+						))
+					} else {
+						Err(Error::TemplateRenderError(source1.to_string()))
+					}
 				} else {
 					Err(Error::TemplateError(e))
 				};
