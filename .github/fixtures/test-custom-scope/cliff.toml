@@ -29,7 +29,9 @@ footer = """
 # remove the leading and trailing whitespace from the templates
 trim = true
 
-[git]
+[release]
+
+[commit]
 # regex for parsing and grouping commits
 commit_parsers = [
     { message = "^feat", group = "Features", default_scope = "app" },

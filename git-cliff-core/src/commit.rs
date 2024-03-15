@@ -1,6 +1,6 @@
 use crate::config::{
+	CommitConfig,
 	CommitParser,
-	GitConfig,
 	LinkParser,
 	TextProcessor,
 };
@@ -180,7 +180,7 @@ impl Commit<'_> {
 	/// * converts commit to a conventional commit
 	/// * sets the group for the commit
 	/// * extacts links and generates URLs
-	pub fn process(&self, config: &GitConfig) -> Result<Self> {
+	pub fn process(&self, config: &CommitConfig) -> Result<Self> {
 		let mut commit = self.clone();
 		if let Some(preprocessors) = &config.commit_preprocessors {
 			commit = commit.preprocess(preprocessors)?;
@@ -487,7 +487,7 @@ mod test {
 
 	#[test]
 	fn conventional_footers() {
-		let cfg = crate::config::GitConfig {
+		let cfg = crate::config::CommitConfig {
 			conventional_commits: Some(true),
 			..Default::default()
 		};

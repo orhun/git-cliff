@@ -30,7 +30,7 @@ postprocessors = [
     { pattern = '.*', replace_command = 'this_command_does_not_exist' },
 ]
 
-[git]
+[commit]
 # regex for parsing and grouping commits
 commit_parsers = [
     { message = "^feat", group = "Features", default_scope = "app" },

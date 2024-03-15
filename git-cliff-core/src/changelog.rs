@@ -67,7 +67,7 @@ impl<'a> Changelog<'a> {
 				.iter()
 				.cloned()
 				.flat_map(|commit| {
-					if self.config.git.split_commits.unwrap_or(false) {
+					if self.config.commit.split_commits.unwrap_or(false) {
 						commit
 							.message
 							.lines()
@@ -81,7 +81,7 @@ impl<'a> Changelog<'a> {
 						vec![commit]
 					}
 				})
-				.filter_map(|commit| match commit.process(&self.config.git) {
+				.filter_map(|commit| match commit.process(&self.config.commit) {
 					Ok(commit) => Some(commit),
 					Err(e) => {
 						trace!(
@@ -100,7 +100,7 @@ impl<'a> Changelog<'a> {
 	/// Processes the releases and filters them out based on the configuration.
 	fn process_releases(&mut self) {
 		debug!("Processing the releases...");
-		let skip_regex = self.config.git.skip_tags.as_ref();
+		let skip_regex = self.config.commit.skip_tags.as_ref();
 		let mut skipped_tags = Vec::new();
 		self.releases = self
 			.releases
@@ -310,10 +310,12 @@ mod test {
 	use crate::config::{
 		Bump,
 		ChangelogConfig,
+		CommitConfig,
 		CommitParser,
-		GitConfig,
+		ReleaseConfig,
 		Remote,
 		RemoteConfig,
+		TagsOrderBy,
 		TextProcessor,
 	};
 	use pretty_assertions::assert_eq;
@@ -346,7 +348,12 @@ mod test {
 					replace_command: None,
 				}]),
 			},
-			git:       GitConfig {
+			release:   ReleaseConfig {
+				tags_pattern:      None,
+				skip_tags_pattern: None,
+				order_by:          Some(TagsOrderBy::Time),
+			},
+			commit:    CommitConfig {
 				conventional_commits:     Some(true),
 				filter_unconventional:    Some(false),
 				split_commits:            Some(false),
@@ -472,10 +479,7 @@ mod test {
 				]),
 				protect_breaking_commits: None,
 				filter_commits:           Some(false),
-				tag_pattern:              None,
 				skip_tags:                Regex::new("v3.*").ok(),
-				ignore_tags:              None,
-				topo_order:               Some(false),
 				sort_commits:             Some(String::from("oldest")),
 				link_parsers:             None,
 				limit_commits:            None,
@@ -687,9 +691,9 @@ mod test {
 	#[test]
 	fn changelog_generator_split_commits() -> Result<()> {
 		let (mut config, mut releases) = get_test_data();
-		config.git.split_commits = Some(true);
-		config.git.filter_unconventional = Some(false);
-		config.git.protect_breaking_commits = Some(true);
+		config.commit.split_commits = Some(true);
+		config.commit.filter_unconventional = Some(false);
+		config.commit.protect_breaking_commits = Some(true);
 		releases[0].commits.push(Commit::new(
 			String::from("0bc123"),
 			String::from(

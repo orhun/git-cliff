@@ -4,8 +4,8 @@ use git_cliff_core::commit::{
 };
 use git_cliff_core::config::{
 	ChangelogConfig,
+	CommitConfig,
 	CommitParser,
-	GitConfig,
 	LinkParser,
 	TextProcessor,
 };
@@ -42,7 +42,7 @@ fn generate_changelog() -> Result<()> {
 		trim:           None,
 		postprocessors: None,
 	};
-	let git_config = GitConfig {
+	let commit_config = CommitConfig {
 		conventional_commits:     Some(true),
 		filter_unconventional:    Some(true),
 		split_commits:            Some(false),
@@ -110,10 +110,7 @@ fn generate_changelog() -> Result<()> {
 		]),
 		protect_breaking_commits: None,
 		filter_commits:           Some(true),
-		tag_pattern:              None,
 		skip_tags:                None,
-		ignore_tags:              None,
-		topo_order:               None,
 		sort_commits:             None,
 		link_parsers:             Some(vec![
 			LinkParser {
@@ -183,7 +180,7 @@ fn generate_changelog() -> Result<()> {
                 commit_with_author
 			]
 			.iter()
-			.filter_map(|c| c.process(&git_config).ok())
+			.filter_map(|c| c.process(&commit_config).ok())
 			.collect::<Vec<Commit>>(),
 			commit_id: None,
 			timestamp: 0,

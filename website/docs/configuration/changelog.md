@@ -52,4 +52,4 @@ It is useful for adding indentation to the template for readability, as shown [i
 
 An array of commit postprocessors for manipulating the changelog before outputting.
 Can e.g. be used for replacing commit author with GitHub usernames.
-Internally postprocessors and preprocessors are the same. See [commit_preprocessors](/docs/configuration/git#commit_preprocessors) for more detail and examples, it uses the same syntax.
+Internally postprocessors and preprocessors are the same. See [commit_preprocessors](/docs/configuration/commit#commit_preprocessors) for more detail and examples, it uses the same syntax.

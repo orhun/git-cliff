@@ -26,6 +26,6 @@ footer = """
 # remove the leading and trailing whitespace from the templates
 trim = true
 
-[git]
+[commit]
 # process each line of a commit as an individual commit
 split_commits = true

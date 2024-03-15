@@ -26,8 +26,12 @@ footer = """
 # remove the leading and trailing whitespace from the templates
 trim = true
 
-[git]
+[release]
+# Regex to select git tags that do not represent proper releases. Takes precedence over `release.tags_pattern`.
+# Changes belonging to these releases will be included in the next non-skipped release.
+# Example: "rc"
+skip_tags_pattern = "v.*-beta.*"
+
+[commit]
 # regex for skipping tags
 skip_tags = "v0.1.0-beta.1"
-# regex for ignoring tags
-ignore_tags = "v.*-beta.*"

@@ -31,8 +31,8 @@ To override the `footer` element:
 export GIT_CLIFF__CHANGELOG__FOOTER="<!-- footer from env -->"
 ```
 
-To override the `ignore_tags` element:
+To override the `skip_tags_pattern` element:
 
 ```bash
-export GIT_CLIFF__GIT__IGNORE_TAGS="v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+"
+export GIT_CLIFF__RELEASE__SKIP_TAGS_PATTERN="v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+"
 ```

@@ -1,5 +1,6 @@
 use crate::command;
 use crate::error::Result;
+use clap::ValueEnum;
 use regex::{
 	Regex,
 	RegexBuilder,
@@ -46,15 +47,28 @@ lazy_static::lazy_static! {
 
 }
 
+/// Options for ordering git tags.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum TagsOrderBy {
+	/// Whether to sort git tags according to their creation date.
+	Time,
+	/// Whether to sort git tags according to the git topology.
+	Topology,
+}
+
 /// Configuration values.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
 	/// Configuration values about changelog generation.
 	#[serde(default)]
 	pub changelog: ChangelogConfig,
-	/// Configuration values about git.
+	/// Configuration values about releases.
 	#[serde(default)]
-	pub git:       GitConfig,
+	pub release:   ReleaseConfig,
+	/// Configuration values about git commits.
+	#[serde(default)]
+	pub commit:    CommitConfig,
 	/// Configuration values about remote.
 	#[serde(default)]
 	pub remote:    RemoteConfig,
@@ -78,9 +92,25 @@ pub struct ChangelogConfig {
 	pub postprocessors: Option<Vec<TextProcessor>>,
 }
 
-/// Git configuration
+/// Release configuration.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct GitConfig {
+pub struct ReleaseConfig {
+	/// Regex to select git tags that represent releases.
+	/// Example: "v[0-9].*"
+	#[serde(with = "serde_regex", default)]
+	pub tags_pattern:      Option<Regex>,
+	/// Regex to select git tags that do not represent proper releases. Takes
+	/// precedence over `release.tags_pattern`. Changes belonging to these
+	/// releases will be included in the next non-skipped release. Example: "rc"
+	#[serde(with = "serde_regex", default)]
+	pub skip_tags_pattern: Option<Regex>,
+	/// Whether to order releases chronologically or topologically.
+	pub order_by:          Option<TagsOrderBy>,
+}
+
+/// Git commit configuration
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct CommitConfig {
 	/// Whether to enable parsing conventional commits.
 	pub conventional_commits:  Option<bool>,
 	/// Whether to filter out unconventional commits.
@@ -100,17 +130,9 @@ pub struct GitConfig {
 	pub link_parsers:             Option<Vec<LinkParser>>,
 	/// Whether to filter out commits.
 	pub filter_commits:           Option<bool>,
-	/// Blob pattern for git tags.
-	#[serde(with = "serde_regex", default)]
-	pub tag_pattern:              Option<Regex>,
 	/// Regex to skip matched tags.
 	#[serde(with = "serde_regex", default)]
 	pub skip_tags:                Option<Regex>,
-	/// Regex to ignore matched tags.
-	#[serde(with = "serde_regex", default)]
-	pub ignore_tags:              Option<Regex>,
-	/// Whether to sort tags topologically.
-	pub topo_order:               Option<bool>,
 	/// Sorting of the commits inside sections.
 	pub sort_commits:             Option<String>,
 	/// Limit the number of commits included in the changelog.
@@ -320,29 +342,36 @@ mod test {
 			.join(crate::DEFAULT_CONFIG);
 
 		const FOOTER_VALUE: &str = "test";
-		const TAG_PATTERN_VALUE: &str = ".*[0-9].*";
-		const IGNORE_TAGS_VALUE: &str = "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+";
+		const RELEASE_TAGS_PATTERN_VALUE: &str = ".*[0-9].*";
+		const RELEASE_SKIP_TAGS_PATTERN_VALUE: &str =
+			"v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+";
 
 		env::set_var("GIT_CLIFF__CHANGELOG__FOOTER", FOOTER_VALUE);
-		env::set_var("GIT_CLIFF__GIT__TAG_PATTERN", TAG_PATTERN_VALUE);
-		env::set_var("GIT_CLIFF__GIT__IGNORE_TAGS", IGNORE_TAGS_VALUE);
+		env::set_var(
+			"GIT_CLIFF__RELEASE__TAGS_PATTERN",
+			RELEASE_TAGS_PATTERN_VALUE,
+		);
+		env::set_var(
+			"GIT_CLIFF__RELEASE__SKIP_TAGS_PATTERN",
+			RELEASE_SKIP_TAGS_PATTERN_VALUE,
+		);
 
 		let config = Config::parse(&path)?;
 
 		assert_eq!(Some(String::from(FOOTER_VALUE)), config.changelog.footer);
 		assert_eq!(
-			Some(String::from(TAG_PATTERN_VALUE)),
+			Some(String::from(RELEASE_TAGS_PATTERN_VALUE)),
 			config
-				.git
-				.tag_pattern
-				.map(|tag_pattern| tag_pattern.to_string())
+				.release
+				.tags_pattern
+				.map(|tags_pattern| tags_pattern.to_string())
 		);
 		assert_eq!(
-			Some(String::from(IGNORE_TAGS_VALUE)),
+			Some(String::from(RELEASE_SKIP_TAGS_PATTERN_VALUE)),
 			config
-				.git
-				.ignore_tags
-				.map(|ignore_tags| ignore_tags.to_string())
+				.release
+				.skip_tags_pattern
+				.map(|skip_tags_pattern| skip_tags_pattern.to_string())
 		);
 		Ok(())
 	}

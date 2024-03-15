@@ -26,5 +26,7 @@ footer = """
 # remove the leading and trailing whitespace from the templates
 trim = true
 
-[git]
-topo_order = true
+[release]
+# Whether to order releases chronologically or topologically.
+# Must be either `time` or `topology`.
+order_by = "topology"

@@ -10,7 +10,7 @@ Context is the model that holds the required data for a template rendering. The 
 
 > conventional_commits = **true**
 
-For a [conventional commit](/docs/configuration/git#conventional_commits) like this,
+For a [conventional commit](/docs/configuration/commit#conventional_commits) like this,
 
 ```
 <type>[scope]: <description>
@@ -112,7 +112,7 @@ BREAKING CHANGE: this is a breaking change
 If the `BREAKING CHANGE:` footer is present, the footer will also be included in
 `commit.footers`.
 
-Breaking changes will be skipped if [`protect_breaking_commits`](/docs/configuration/git#protect_breaking_commits) is set to `true`, even when matched by a skipping [commit_parser](/docs/configuration/git#commit_parsers).
+Breaking changes will be skipped if [`protect_breaking_commits`](/docs/configuration/commit#protect_breaking_commits) is set to `true`, even when matched by a skipping [commit_parser](/docs/configuration/commit#commit_parsers).
 
 ### Committer vs Author
 
@@ -124,7 +124,7 @@ From [Git docs](https://git-scm.com/book/en/v2/Git-Basics-Viewing-the-Commit-His
 
 > conventional_commits = **false**
 
-If [`conventional_commits`](/docs/configuration/git#conventional_commits) is set to `false`, then some of the fields are omitted from the context or squashed into the `message` field:
+If [`conventional_commits`](/docs/configuration/commit#conventional_commits) is set to `false`, then some of the fields are omitted from the context or squashed into the `message` field:
 
 ```json
 {

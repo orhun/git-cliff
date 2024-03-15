@@ -58,7 +58,19 @@ footer = """
 # postprocessors
 postprocessors = []
 
-[git]
+[release]
+# Regex to select git tags that represent releases.
+# Example: "v[0-9].*"
+tags_pattern = "v[0-9].*"
+# Regex to select git tags that do not represent proper releases. Takes precedence over `release.tags_pattern`.
+# Changes belonging to these releases will be included in the next non-skipped release.
+# Example: "rc"
+skip_tags_pattern = "rc"
+# Whether to order releases chronologically or topologically.
+# Must be either `time` or `topology`.
+order_by = "time"
+
+[commit]
 # parse the commits based on https://www.conventionalcommits.org
 conventional_commits = false
 # filter out the commits that are not conventional
@@ -74,13 +86,7 @@ commit_preprocessors = [
 protect_breaking_commits = false
 # filter out the commits that are not matched by commit parsers
 filter_commits = false
-# regex for matching git tags
-tag_pattern = "v[0-9].*"
 # regex for skipping tags
 skip_tags = "beta|alpha"
-# regex for ignoring tags
-ignore_tags = "rc"
-# sort the tags topologically
-topo_order = false
 # sort the commits inside sections by oldest/newest order
 sort_commits = "newest"

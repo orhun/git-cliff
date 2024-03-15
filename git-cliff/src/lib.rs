@@ -24,6 +24,7 @@ use git_cliff_core::commit::Commit;
 use git_cliff_core::config::{
 	CommitParser,
 	Config,
+	TagsOrderBy,
 };
 use git_cliff_core::embed::{
 	BuiltinConfig,
@@ -84,30 +85,31 @@ fn process_repository<'a>(
 	config: &mut Config,
 	args: &Opt,
 ) -> Result<Vec<Release<'a>>> {
-	let mut tags = repository.tags(&config.git.tag_pattern, args.topo_order)?;
-	let skip_regex = config.git.skip_tags.as_ref();
-	let ignore_regex = config.git.ignore_tags.as_ref();
+	let mut tags =
+		repository.tags(&config.release.tags_pattern, &args.release_order_by)?;
+	let skip_regex = config.commit.skip_tags.as_ref();
+	let skip_release_pattern = config.release.skip_tags_pattern.as_ref();
 	tags = tags
 		.into_iter()
 		.filter(|(_, name)| {
 			// Keep skip tags to drop commits in the later stage.
 			let skip = skip_regex.map(|r| r.is_match(name)).unwrap_or_default();
 
-			let ignore = ignore_regex
+			let skip_release = skip_release_pattern
 				.map(|r| {
 					if r.as_str().trim().is_empty() {
 						return false;
 					}
 
-					let ignore_tag = r.is_match(name);
-					if ignore_tag {
+					let skip_release_tag = r.is_match(name);
+					if skip_release_tag {
 						trace!("Ignoring release: {}", name)
 					}
-					ignore_tag
+					skip_release_tag
 				})
 				.unwrap_or_default();
 
-			skip || !ignore
+			skip || !skip_release
 		})
 		.collect();
 
@@ -181,7 +183,7 @@ fn process_repository<'a>(
 		args.include_path.clone(),
 		args.exclude_path.clone(),
 	)?;
-	if let Some(commit_limit_value) = config.git.limit_commits {
+	if let Some(commit_limit_value) = config.commit.limit_commits {
 		commits = commits
 			.drain(..commits.len().min(commit_limit_value))
 			.collect();
@@ -389,14 +391,14 @@ pub fn run(mut args: Opt) -> Result<()> {
 		config.changelog.body.clone_from(&args.body);
 	}
 	if args.sort == Sort::Oldest {
-		if let Some(ref sort_commits) = config.git.sort_commits {
+		if let Some(ref sort_commits) = config.commit.sort_commits {
 			args.sort = Sort::from_str(sort_commits, true)
 				.expect("Incorrect config value for 'sort_commits'");
 		}
 	}
-	if !args.topo_order {
-		if let Some(topo_order) = config.git.topo_order {
-			args.topo_order = topo_order;
+	if args.release_order_by == TagsOrderBy::Time {
+		if let Some(release_order_by) = config.release.order_by {
+			args.release_order_by = release_order_by;
 		}
 	}
 	if args.github_token.is_some() {
@@ -407,7 +409,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		config.remote.github.repo = remote.0.repo.to_string();
 	}
 	if args.no_exec {
-		if let Some(ref mut preprocessors) = config.git.commit_preprocessors {
+		if let Some(ref mut preprocessors) = config.commit.commit_preprocessors {
 			preprocessors
 				.iter_mut()
 				.for_each(|v| v.replace_command = None);
@@ -418,9 +420,13 @@ pub fn run(mut args: Opt) -> Result<()> {
 				.for_each(|v| v.replace_command = None);
 		}
 	}
-	config.git.skip_tags = config.git.skip_tags.filter(|r| !r.as_str().is_empty());
-	if args.tag_pattern.is_some() {
-		config.git.tag_pattern.clone_from(&args.tag_pattern);
+	config.commit.skip_tags =
+		config.commit.skip_tags.filter(|r| !r.as_str().is_empty());
+	if args.release_tags_pattern.is_some() {
+		config
+			.release
+			.tags_pattern
+			.clone_from(&args.release_tags_pattern);
 	}
 
 	// Process the repositories.
@@ -442,7 +448,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		if let Some(ref skip_commit) = args.skip_commit {
 			skip_list.extend(skip_commit.clone());
 		}
-		if let Some(commit_parsers) = config.git.commit_parsers.as_mut() {
+		if let Some(commit_parsers) = config.commit.commit_parsers.as_mut() {
 			for sha1 in skip_list {
 				commit_parsers.insert(0, CommitParser {
 					sha: Some(sha1.to_string()),
