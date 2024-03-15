@@ -9,7 +9,7 @@ sidebar_position: 6
 Since the groups come out in alphabetical order, use HTML comments to force them into their desired positions:
 
 ```toml
-[git]
+[commit]
 commit_parsers = [
     { message = "^feat*", group = "<!-- 0 -->:rocket: New features" },
     { message = "^fix*", group = "<!-- 1 -->:bug: Bug fixes" },
@@ -54,8 +54,8 @@ Then strip the tags in the template with the series of filters:
 ## Remove gitmoji
 
 ```toml
-[git]
-commit_preprocessors = [
+[commit]
+message_preprocessors = [
   # Remove gitmoji, both actual UTF emoji and :emoji:
   { pattern = ' *(:\w+:|[\p{Emoji_Presentation}\p{Extended_Pictographic}](?:\u{FE0F})?\u{200D}?) *', replace = "" },
 ]

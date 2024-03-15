@@ -2,9 +2,8 @@
 # https://git-cliff.org/docs/configuration
 
 [changelog]
-# template for the changelog body
-# https://keats.github.io/tera/docs/#introduction
-body = """
+# A Tera template to be rendered for each release in the changelog (see https://keats.github.io/tera/docs/#introduction).
+body_template = """
 {% if version %}\
     ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}\
 {% else %}\

@@ -1,5 +1,5 @@
 use crate::{
-	config::TextProcessor,
+	config::models_v2::TextProcessor,
 	error::{
 		Error,
 		Result,

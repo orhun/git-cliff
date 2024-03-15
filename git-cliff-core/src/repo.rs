@@ -1,4 +1,7 @@
-use crate::config::Remote;
+use crate::config::models_v2::{
+	Remote,
+	TagsOrderBy,
+};
 use crate::error::{
 	Error,
 	Result,
@@ -118,7 +121,7 @@ impl Repository {
 	pub fn tags(
 		&self,
 		pattern: &Option<Regex>,
-		topo_order: bool,
+		order_by: &TagsOrderBy,
 	) -> Result<IndexMap<String, String>> {
 		let mut tags: Vec<(Commit, String)> = Vec::new();
 		let tag_names = self.inner.tag_names(None)?;
@@ -143,7 +146,7 @@ impl Repository {
 				}
 			}
 		}
-		if !topo_order {
+		if order_by == &TagsOrderBy::Time {
 			tags.sort_by(|a, b| a.0.time().seconds().cmp(&b.0.time().seconds()));
 		}
 		Ok(tags
@@ -262,7 +265,7 @@ mod test {
 				}
 			}
 		}
-		let tags = repository.tags(&None, false)?;
+		let tags = repository.tags(&None, &TagsOrderBy::Time)?;
 		assert_eq!(&get_last_tag()?, tags.last().expect("no tags found").1);
 		Ok(())
 	}
@@ -275,7 +278,7 @@ mod test {
 				.expect("parent directory not found")
 				.to_path_buf(),
 		)?;
-		let tags = repository.tags(&None, true)?;
+		let tags = repository.tags(&None, &TagsOrderBy::Topology)?;
 		assert_eq!(
 			tags.get("2b8b4d3535f29231e05c3572e919634b9af907b6").expect(
 				"the commit hash does not exist in the repository (tag v0.1.0)"
@@ -294,7 +297,7 @@ mod test {
 				Regex::new("^v[0-9]+\\.[0-9]+\\.[0-9]$")
 					.expect("the regex is not valid"),
 			),
-			true,
+			&TagsOrderBy::Topology,
 		)?;
 		assert_eq!(
 			tags.get("2b8b4d3535f29231e05c3572e919634b9af907b6").expect(

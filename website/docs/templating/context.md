@@ -8,9 +8,9 @@ Context is the model that holds the required data for a template rendering. The 
 
 ## Conventional Commits
 
-> conventional_commits = **true**
+> parse_conventional_commits = **true**
 
-For a [conventional commit](/docs/configuration/git#conventional_commits) like this,
+For a [conventional commit](/docs/configuration/commit#parse_conventional_commits) like this,
 
 ```
 <type>[scope]: <description>
@@ -45,7 +45,7 @@ following context is generated to use for templating:
       "conventional": true,
       "merge_commit": false,
       "links": [
-        { "text": "(set by link_parsers)", "href": "(set by link_parsers)" }
+        { "text": "(set by commit.link_parsers)", "href": "(set by commit.link_parsers)" }
       ],
       "author": {
         "name": "User Name",
@@ -112,7 +112,7 @@ BREAKING CHANGE: this is a breaking change
 If the `BREAKING CHANGE:` footer is present, the footer will also be included in
 `commit.footers`.
 
-Breaking changes will be skipped if [`protect_breaking_commits`](/docs/configuration/git#protect_breaking_commits) is set to `true`, even when matched by a skipping [commit_parser](/docs/configuration/git#commit_parsers).
+Breaking changes will not be skipped if [`commit.retain_breaking_changes`](/docs/configuration/commit#retain_breaking_changes) is set to `true`, even when matched by a skipping [commit.commit_parser](/docs/configuration/commit#commit_parsers).
 
 ### Committer vs Author
 
@@ -122,9 +122,9 @@ From [Git docs](https://git-scm.com/book/en/v2/Git-Basics-Viewing-the-Commit-His
 
 ## Non-Conventional Commits
 
-> conventional_commits = **false**
+> parse_conventional_commits = **false**
 
-If [`conventional_commits`](/docs/configuration/git#conventional_commits) is set to `false`, then some of the fields are omitted from the context or squashed into the `message` field:
+If [`commit.parse_conventional_commits`](/docs/configuration/commit#parse_conventional_commits) is set to `false`, then some of the fields are omitted from the context or squashed into the `message` field:
 
 ```json
 {
@@ -138,7 +138,7 @@ If [`conventional_commits`](/docs/configuration/git#conventional_commits) is set
       "conventional": false,
       "merge_commit": false,
       "links": [
-        { "text": "(set by link_parsers)", "href": "(set by link_parsers)" }
+        { "text": "(set by commit.link_parsers)", "href": "(set by commit.link_parsers)" }
       ],
       "author": {
         "name": "User Name",

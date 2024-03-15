@@ -1,8 +1,5 @@
 use crate::commit::Commit;
-use crate::config::{
-	Config,
-	GitConfig,
-};
+use crate::config::models_v2::Config;
 use crate::error::Result;
 #[cfg(feature = "github")]
 use crate::github::{
@@ -37,19 +34,19 @@ pub struct Changelog<'a> {
 impl<'a> Changelog<'a> {
 	/// Constructs a new instance.
 	pub fn new(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
-		let trim = config.changelog.trim.unwrap_or(true);
+		let trim = config.changelog.trim_body_whitespace.unwrap_or(true);
 		let mut changelog = Self {
 			releases,
 			body_template: Template::new(
 				config
 					.changelog
-					.body
+					.body_template
 					.as_deref()
 					.unwrap_or_default()
 					.to_string(),
 				trim,
 			)?,
-			footer_template: match &config.changelog.footer {
+			footer_template: match &config.changelog.footer_template {
 				Some(footer) => Some(Template::new(footer.to_string(), trim)?),
 				None => None,
 			},
@@ -90,7 +87,7 @@ impl<'a> Changelog<'a> {
 				.cloned()
 				.filter_map(|commit| Self::process_commit(commit, &self.config.git))
 				.flat_map(|commit| {
-					if self.config.git.split_commits.unwrap_or(false) {
+					if self.config.commit.split_by_newline.unwrap_or(false) {
 						commit
 							.message
 							.lines()
@@ -108,6 +105,26 @@ impl<'a> Changelog<'a> {
 						vec![commit]
 					}
 				})
+				.filter_map(|commit| {
+					match commit.process(&self.config.changelog, &self.config.commit)
+					{
+						Ok(commit) => Some(commit),
+						Err(e) => {
+							trace!(
+								"{} - {} ({})",
+								commit.id[..7].to_string(),
+								e,
+								commit
+									.message
+									.lines()
+									.next()
+									.unwrap_or_default()
+									.trim()
+							);
+							None
+						}
+					}
+				})
 				.collect::<Vec<Commit>>();
 		});
 	}
@@ -115,7 +132,7 @@ impl<'a> Changelog<'a> {
 	/// Processes the releases and filters them out based on the configuration.
 	fn process_releases(&mut self) {
 		debug!("Processing the releases...");
-		let skip_regex = self.config.git.skip_tags.as_ref();
+		let skip_regex = self.config.commit.exclude_tags_pattern.as_ref();
 		let mut skipped_tags = Vec::new();
 		self.releases = self
 			.releases
@@ -322,12 +339,16 @@ impl<'a> Changelog<'a> {
 #[cfg(test)]
 mod test {
 	use super::*;
-	use crate::config::{
+	use crate::config::models_v2::{
 		Bump,
 		ChangelogConfig,
+		CommitConfig,
 		CommitParser,
+		CommitSortOrder,
+		ReleaseConfig,
 		Remote,
 		RemoteConfig,
+		TagsOrderBy,
 		TextProcessor,
 	};
 	use pretty_assertions::assert_eq;
@@ -337,8 +358,8 @@ mod test {
 	fn get_test_data() -> (Config, Vec<Release<'static>>) {
 		let config = Config {
 			changelog: ChangelogConfig {
-				header:         Some(String::from("# Changelog")),
-				body:           Some(String::from(
+				header:                    Some(String::from("# Changelog")),
+				body_template:             Some(String::from(
 					r#"{% if version %}
 				## Release [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
 				{% if commit_id %}({{ commit_id }}){% endif %}{% else %}
@@ -349,22 +370,28 @@ mod test {
 				- {{ commit.message }}{% endfor %}
 				{% endfor %}{% endfor %}"#,
 				)),
-				footer:         Some(String::from(
+				footer_template:           Some(String::from(
 					r#"-- total releases: {{ releases | length }} --"#,
 				)),
-				trim:           Some(true),
-				postprocessors: Some(vec![TextProcessor {
+				trim_body_whitespace:      Some(true),
+				postprocessors:            Some(vec![TextProcessor {
 					pattern:         Regex::new("boring")
 						.expect("failed to compile regex"),
 					replace:         Some(String::from("exciting")),
 					replace_command: None,
 				}]),
+				exclude_ungrouped_changes: Some(false),
 			},
-			git:       GitConfig {
-				conventional_commits:     Some(true),
-				filter_unconventional:    Some(false),
-				split_commits:            Some(false),
-				commit_preprocessors:     Some(vec![TextProcessor {
+			release:   ReleaseConfig {
+				tags_pattern:      None,
+				skip_tags_pattern: None,
+				order_by:          Some(TagsOrderBy::Time),
+			},
+			commit:    CommitConfig {
+				parse_conventional_commits:     Some(true),
+				exclude_unconventional_commits: Some(false),
+				split_by_newline:               Some(false),
+				message_preprocessors:          Some(vec![TextProcessor {
 					pattern:         Regex::new("<preprocess>")
 						.expect("failed to compile regex"),
 					replace:         Some(String::from(
@@ -372,7 +399,7 @@ mod test {
 					)),
 					replace_command: None,
 				}]),
-				commit_parsers:           Some(vec![
+				commit_parsers:                 Some(vec![
 					CommitParser {
 						sha:           Some(String::from("tea")),
 						message:       None,
@@ -484,15 +511,11 @@ mod test {
 						pattern:       None,
 					},
 				]),
-				protect_breaking_commits: None,
-				filter_commits:           Some(false),
-				tag_pattern:              None,
-				skip_tags:                Regex::new("v3.*").ok(),
-				ignore_tags:              None,
-				topo_order:               Some(false),
-				sort_commits:             Some(String::from("oldest")),
-				link_parsers:             None,
-				limit_commits:            None,
+				retain_breaking_changes:        None,
+				exclude_tags_pattern:           Regex::new("v3.*").ok(),
+				sort_order:                     Some(CommitSortOrder::Oldest),
+				link_parsers:                   None,
+				max_commit_count:               None,
 			},
 			remote:    RemoteConfig {
 				github: Remote {
@@ -701,9 +724,9 @@ mod test {
 	#[test]
 	fn changelog_generator_split_commits() -> Result<()> {
 		let (mut config, mut releases) = get_test_data();
-		config.git.split_commits = Some(true);
-		config.git.filter_unconventional = Some(false);
-		config.git.protect_breaking_commits = Some(true);
+		config.commit.split_by_newline = Some(true);
+		config.commit.exclude_unconventional_commits = Some(false);
+		config.commit.retain_breaking_changes = Some(true);
 		releases[0].commits.push(Commit::new(
 			String::from("0bc123"),
 			String::from(

@@ -19,12 +19,12 @@ jobs:
           - fixtures-name: new-fixture-template
           - fixtures-name: test-github-integration
           - fixtures-name: test-ignore-tags
-          - fixtures-name: test-topo-order
+          - fixtures-name: test-order-by-topology
             command: --latest
           - fixtures-name: test-date-order
             command: --latest
-          - fixtures-name: test-topo-order-arg
-            command: --latest --topo-order
+          - fixtures-name: test-order-by-topology-arg
+            command: --latest --release-order-by topology
           - fixtures-name: test-latest-with-one-tag
             command: --latest
           - fixtures-name: test-commit-footers
@@ -66,7 +66,7 @@ jobs:
           - fixtures-name: test-no-exec
             command: --no-exec
           - fixtures-name: test-custom-tag-pattern
-            command: --tag-pattern "alpha.*"
+            command: --release-tags-pattern "alpha.*"
           - fixtures-name: test-configure-from-cargo-toml
     steps:
       - name: Checkout

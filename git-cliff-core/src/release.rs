@@ -1,5 +1,5 @@
 use crate::commit::Commit;
-use crate::config::Bump;
+use crate::config::models_v2::Bump;
 use crate::error::Result;
 #[cfg(feature = "github")]
 use crate::github::{

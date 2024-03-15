@@ -744,6 +744,7 @@ dependencies = [
 name = "git-cliff-core"
 version = "2.2.1"
 dependencies = [
+ "clap",
  "config",
  "dirs",
  "document-features",

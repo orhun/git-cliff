@@ -1,6 +1,7 @@
-use crate::config::{
+use crate::config::models_v2::{
+	ChangelogConfig,
+	CommitConfig,
 	CommitParser,
-	GitConfig,
 	LinkParser,
 	TextProcessor,
 };
@@ -180,13 +181,17 @@ impl Commit<'_> {
 	/// * converts commit to a conventional commit
 	/// * sets the group for the commit
 	/// * extacts links and generates URLs
-	pub fn process(&self, config: &GitConfig) -> Result<Self> {
+	pub fn process(
+		&self,
+		changelog_config: &ChangelogConfig,
+		commit_config: &CommitConfig,
+	) -> Result<Self> {
 		let mut commit = self.clone();
-		if let Some(preprocessors) = &config.commit_preprocessors {
+		if let Some(preprocessors) = &commit_config.message_preprocessors {
 			commit = commit.preprocess(preprocessors)?;
 		}
-		if config.conventional_commits.unwrap_or(true) {
-			if config.filter_unconventional.unwrap_or(true) &&
+		if config.parse_conventional_commits.unwrap_or(true) {
+			if config.exclude_unconventional_commits.unwrap_or(true) &&
 				!config.split_commits.unwrap_or(false)
 			{
 				commit = commit.into_conventional()?;
@@ -194,14 +199,14 @@ impl Commit<'_> {
 				commit = conv_commit;
 			}
 		}
-		if let Some(parsers) = &config.commit_parsers {
+		if let Some(parsers) = &commit_config.commit_parsers {
 			commit = commit.parse(
 				parsers,
-				config.protect_breaking_commits.unwrap_or(false),
-				config.filter_commits.unwrap_or(false),
+				commit_config.retain_breaking_changes.unwrap_or(false),
+				changelog_config.exclude_ungrouped_changes.unwrap_or(false),
 			)?;
 		}
-		if let Some(parsers) = &config.link_parsers {
+		if let Some(parsers) = &commit_config.link_parsers {
 			commit = commit.parse_links(parsers)?;
 		}
 		Ok(commit)
@@ -236,13 +241,13 @@ impl Commit<'_> {
 
 	/// States if the commit is skipped in the provided `CommitParser`.
 	///
-	/// Returns `false` if `protect_breaking_commits` is enabled in the config
-	/// and the commit is breaking, or the parser's `skip` field is None or
-	/// `false`. Returns `true` otherwise.
-	fn skip_commit(&self, parser: &CommitParser, protect_breaking: bool) -> bool {
+	/// Returns `false` if `commit.retain_breaking_changes` is enabled in the
+	/// config and the commit is breaking, or the parser's `skip` field is None
+	/// or `false`. Returns `true` otherwise.
+	fn skip_commit(&self, parser: &CommitParser, retain_breaking: bool) -> bool {
 		parser.skip.unwrap_or(false) &&
 			!(self.conv.as_ref().map(|c| c.breaking()).unwrap_or(false) &&
-				protect_breaking)
+				retain_breaking)
 	}
 
 	/// Parses the commit using [`CommitParser`]s.
@@ -254,8 +259,8 @@ impl Commit<'_> {
 	pub fn parse(
 		mut self,
 		parsers: &[CommitParser],
-		protect_breaking: bool,
-		filter: bool,
+		retain_breaking: bool,
+		exclude_ungrouped: bool,
 	) -> Result<Self> {
 		for parser in parsers {
 			let mut regex_checks = Vec::new();
@@ -296,7 +301,7 @@ impl Commit<'_> {
 			if parser.sha.clone().map(|v| v.to_lowercase()).as_deref() ==
 				Some(&self.id)
 			{
-				if self.skip_commit(parser, protect_breaking) {
+				if self.skip_commit(parser, retain_breaking) {
 					return Err(AppError::GroupError(String::from(
 						"Skipping commit",
 					)));
@@ -310,7 +315,7 @@ impl Commit<'_> {
 			}
 			for (regex, text) in regex_checks {
 				if regex.is_match(text.trim()) {
-					if self.skip_commit(parser, protect_breaking) {
+					if self.skip_commit(parser, retain_breaking) {
 						return Err(AppError::GroupError(String::from(
 							"Skipping commit",
 						)));
@@ -332,7 +337,7 @@ impl Commit<'_> {
 				}
 			}
 		}
-		if !filter {
+		if !exclude_ungrouped {
 			Ok(self)
 		} else {
 			Err(AppError::GroupError(String::from(
@@ -487,8 +492,11 @@ mod test {
 
 	#[test]
 	fn conventional_footers() {
-		let cfg = crate::config::GitConfig {
-			conventional_commits: Some(true),
+		let changelog_config = crate::config::models_v2::ChangelogConfig {
+			..Default::default()
+		};
+		let commit_config = crate::config::models_v2::CommitConfig {
+			parse_conventional_commits: Some(true),
 			..Default::default()
 		};
 		let test_cases = vec![
@@ -532,7 +540,9 @@ mod test {
 			),
 		];
 		for (commit, footers) in &test_cases {
-			let commit = commit.process(&cfg).expect("commit should process");
+			let commit = commit
+				.process(&changelog_config, &commit_config)
+				.expect("commit should process");
 			assert_eq!(&commit.footers().collect::<Vec<_>>(), footers);
 		}
 	}
