@@ -88,5 +88,6 @@ protect_breaking_commits = false
 filter_commits = false
 # regex for skipping tags
 skip_tags = "beta|alpha"
-# sort the commits inside sections by oldest/newest order
-sort_commits = "newest"
+# Whether to order commits newest to oldest or oldest to newest in their group.
+# Must be either `newest` or `oldest`.
+sort_order = "newest"

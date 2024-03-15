@@ -92,7 +92,8 @@ protect_breaking_commits = false
 filter_commits = false
 # regex for skipping tags
 skip_tags = "v0.1.0-beta.1"
-# sort the commits inside sections by oldest/newest order
-sort_commits = "oldest"
-# limit the number of commits included in the changelog.
-# limit_commits = 42
+# Whether to order commits newest to oldest or oldest to newest in their group.
+# Must be either `newest` or `oldest`.
+sort_order = "oldest"
+# # Whether to limit the total number of commits to be included in the changelog.
+# max_commit_count = 42

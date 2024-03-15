@@ -39,15 +39,15 @@ git cliff 4c7b043..HEAD
 git cliff HEAD~2..
 ```
 
-Sort the commits inside sections:
+Sort the commits inside groups:
 
 ```bash
 # The oldest commit will be on top.
 # (default)
-git cliff --sort oldest
+git cliff --commit-sort-order oldest
 
 # The newest commit will be on top.
-git cliff --sort newest
+git cliff --commit-sort-order newest
 ```
 
 Sort the tags in topological order:

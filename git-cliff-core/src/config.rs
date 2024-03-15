@@ -57,6 +57,16 @@ pub enum TagsOrderBy {
 	Topology,
 }
 
+/// Options for ordering commits chronologically.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum CommitSortOrder {
+	/// Whether to sort starting with the oldest element.
+	Oldest,
+	/// Whether to sort starting with the newest element.
+	Newest,
+}
+
 /// Configuration values.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -133,10 +143,12 @@ pub struct CommitConfig {
 	/// Regex to skip matched tags.
 	#[serde(with = "serde_regex", default)]
 	pub skip_tags:                Option<Regex>,
-	/// Sorting of the commits inside sections.
-	pub sort_commits:             Option<String>,
-	/// Limit the number of commits included in the changelog.
-	pub limit_commits:            Option<usize>,
+	/// Whether to order commits newest to oldest or oldest to newest in their
+	/// group.
+	pub sort_order:               Option<CommitSortOrder>,
+	/// Whether to limit the total number of commits to be included in the
+	/// changelog.
+	pub max_commit_count:         Option<usize>,
 }
 
 /// Remote configuration.

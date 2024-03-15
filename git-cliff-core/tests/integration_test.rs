@@ -111,7 +111,7 @@ fn generate_changelog() -> Result<()> {
 		protect_breaking_commits: None,
 		filter_commits:           Some(true),
 		skip_tags:                None,
-		sort_commits:             None,
+		sort_order:               None,
 		link_parsers:             Some(vec![
 			LinkParser {
 				pattern: Regex::new("#(\\d+)").unwrap(),
@@ -124,7 +124,7 @@ fn generate_changelog() -> Result<()> {
 				text:    Some(String::from("$1")),
 			},
 		]),
-		limit_commits:            None,
+		max_commit_count:         None,
 	};
 
 	let mut commit_with_author = Commit::new(

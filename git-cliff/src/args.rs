@@ -13,8 +13,11 @@ use clap::{
 	ValueEnum,
 };
 use git_cliff_core::{
-	config::Remote,
-	config::TagsOrderBy,
+	config::{
+		CommitSortOrder,
+		Remote,
+		TagsOrderBy,
+	},
 	DEFAULT_CONFIG,
 	DEFAULT_OUTPUT,
 };
@@ -28,12 +31,6 @@ pub enum Strip {
 	Header,
 	Footer,
 	All,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
-pub enum Sort {
-	Oldest,
-	Newest,
 }
 
 /// Command-line arguments to parse.
@@ -220,13 +217,13 @@ pub struct Opt {
 	/// Strips the given parts from the changelog.
 	#[arg(short, long, value_name = "PART", value_enum)]
 	pub strip:                Option<Strip>,
-	/// Sets sorting of the commits inside sections.
+	/// Sets ordering of the commits inside sections.
 	#[arg(
 		long,
 		value_enum,
-		default_value_t = Sort::Oldest
+		default_value_t = CommitSortOrder::Oldest
 	)]
-	pub sort:                 Sort,
+	pub commit_sort_order:    CommitSortOrder,
 	/// Sets the commit range to process.
 	#[arg(value_name = "RANGE", help_heading = Some("ARGS"))]
 	pub range:                Option<String>,

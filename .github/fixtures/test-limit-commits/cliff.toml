@@ -27,4 +27,5 @@ footer = """
 trim = true
 
 [commit]
-limit_commits = 2
+# Whether to limit the total number of commits to be included in the changelog.
+max_commit_count = 2

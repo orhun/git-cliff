@@ -15,14 +15,13 @@ extern crate log;
 
 use args::{
 	Opt,
-	Sort,
 	Strip,
 };
-use clap::ValueEnum;
 use git_cliff_core::changelog::Changelog;
 use git_cliff_core::commit::Commit;
 use git_cliff_core::config::{
 	CommitParser,
+	CommitSortOrder,
 	Config,
 	TagsOrderBy,
 };
@@ -183,7 +182,7 @@ fn process_repository<'a>(
 		args.include_path.clone(),
 		args.exclude_path.clone(),
 	)?;
-	if let Some(commit_limit_value) = config.commit.limit_commits {
+	if let Some(commit_limit_value) = config.commit.max_commit_count {
 		commits = commits
 			.drain(..commits.len().min(commit_limit_value))
 			.collect();
@@ -211,7 +210,7 @@ fn process_repository<'a>(
 	for git_commit in commits.iter().rev() {
 		let commit = Commit::from(git_commit);
 		let commit_id = commit.id.to_string();
-		if args.sort == Sort::Newest {
+		if args.commit_sort_order == CommitSortOrder::Newest {
 			releases[release_index].commits.insert(0, commit);
 		} else {
 			releases[release_index].commits.push(commit);
@@ -390,10 +389,9 @@ pub fn run(mut args: Opt) -> Result<()> {
 	if args.body.is_some() {
 		config.changelog.body.clone_from(&args.body);
 	}
-	if args.sort == Sort::Oldest {
-		if let Some(ref sort_commits) = config.commit.sort_commits {
-			args.sort = Sort::from_str(sort_commits, true)
-				.expect("Incorrect config value for 'sort_commits'");
+	if args.commit_sort_order == CommitSortOrder::Oldest {
+		if let Some(commit_sort_order) = config.commit.sort_order {
+			args.commit_sort_order = commit_sort_order;
 		}
 	}
 	if args.release_order_by == TagsOrderBy::Time {

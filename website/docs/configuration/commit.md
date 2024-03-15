@@ -20,12 +20,12 @@ protect_breaking_commits = false
 filter_commits = false
 
 skip_tags = "v0.1.0-beta.1"
-sort_commits = "oldest"
+sort_order = "oldest"
 link_parsers = [
     { pattern = "#(\\d+)", href = "https://github.com/orhun/git-cliff/issues/$1"},
     { pattern = "RFC(\\d+)", text = "ietf-rfc$1", href = "https://datatracker.ietf.org/doc/html/rfc$1"},
 ]
-limit_commits = 42
+max_commit_count = 42
 ```
 
 ### conventional_commits
@@ -180,16 +180,16 @@ If set to `true`, commits that are not matched by [`commit_parsers`](#commit_par
 
 A regex for skip processing the matched tags.
 
-### sort_commits
+### sort_order
 
-Sort the commits inside sections by specified order.
+Whether to order commits newest to oldest or oldest to newest in their group.
 
 Possible values:
 
 - `oldest`
 - `newest`
 
-This can also be achieved by specifying the `--sort` command line argument.
+This can also be achieved by specifying the `--commit-sort-order` command line argument.
 
 ### link_parsers
 
@@ -204,8 +204,6 @@ Examples:
 
 These extracted links can be used in the [template](/docs/templating/context) with `commits.links` variable.
 
-### limit_commits
+### max_commit_count
 
-`limit_commits` is an **optional** positive integer number that limits the number of included commits in the generated changelog.
-
-`limit_commits` is not part of the default configuration.
+Whether to limit the total number of commits to be included in the changelog. This is an optional setting.

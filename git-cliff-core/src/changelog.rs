@@ -312,6 +312,7 @@ mod test {
 		ChangelogConfig,
 		CommitConfig,
 		CommitParser,
+		CommitSortOrder,
 		ReleaseConfig,
 		Remote,
 		RemoteConfig,
@@ -480,9 +481,9 @@ mod test {
 				protect_breaking_commits: None,
 				filter_commits:           Some(false),
 				skip_tags:                Regex::new("v3.*").ok(),
-				sort_commits:             Some(String::from("oldest")),
+				sort_order:               Some(CommitSortOrder::Oldest),
 				link_parsers:             None,
-				limit_commits:            None,
+				max_commit_count:         None,
 			},
 			remote:    RemoteConfig {
 				github: Remote {
