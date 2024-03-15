@@ -27,5 +27,7 @@ footer = """
 trim = true
 
 [git]
+# filter out the commits that are not conventional
+filter_unconventional = false
 # process each line of a commit as an individual commit
 split_commits = true
