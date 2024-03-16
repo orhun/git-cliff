@@ -4,8 +4,8 @@ This section contains options regarding processing of individual git commits.
 
 ```toml
 [commit]
-conventional_commits = true
-filter_unconventional = true
+parse_conventional_commits = true
+exclude_unconventional_commits = true
 split_by_newline = false
 commit_parsers = [
     { message = "^feat", group = "Features"},
@@ -16,7 +16,7 @@ commit_parsers = [
     { message = "^style", group = "Styling"},
     { message = "^test", group = "Testing"},
 ]
-protect_breaking_commits = false
+retain_breaking_changes = false
 filter_commits = false
 
 exclude_tags_pattern = "v0.1.0-beta.1"
@@ -28,7 +28,7 @@ link_parsers = [
 max_commit_count = 42
 ```
 
-### conventional_commits
+### parse_conventional_commits
 
 If set to `true`, commits are parsed according to the [Conventional Commits specifications](https://www.conventionalcommits.org).
 
@@ -46,13 +46,14 @@ If set to `true`, commits are parsed according to the [Conventional Commits spec
 
 e.g. `feat(parser): add ability to parse arrays`
 
-### filter_unconventional
+### exclude_unconventional_commits
 
-If set to `true`, commits that are not conventional are excluded. This option can be used to generate changelogs with conventional and unconventional commits mixed together. For example:
+Whether to exclude commits that do not match the conventional commits specification from the changelog.
+This option can be used to generate changelogs with conventional and unconventional commits mixed together. For example:
 
 ```toml
-conventional_commits = true
-filter_unconventional = false
+parse_conventional_commits = true
+exclude_unconventional_commits = false
 commit_parsers = [
   { message = ".*", group = "Other", default_scope = "other"},
 ]
@@ -64,15 +65,15 @@ To completely exclude unconventional commits from the changelog:
 
 ```toml
 # default behaviour
-conventional_commits = true
-filter_unconventional = true
+parse_conventional_commits = true
+exclude_unconventional_commits = true
 ```
 
 To include any type of commit in the changelog without parsing:
 
 ```toml
-conventional_commits = false
-filter_unconventional = false
+parse_conventional_commits = false
+exclude_unconventional_commits = false
 ```
 
 ### split_by_newline
@@ -83,8 +84,8 @@ If set to `true`, each line of a commit is processed individually, as if it were
 a commit to appear multiple times in a changelog, once for each line.
 
 ```toml
-conventional_commits = true
-filter_unconventional = true
+parse_conventional_commits = true
+exclude_unconventional_commits = true
 split_by_newline = true
 commit_parsers = [
     { message = "^feat", group = "Features"},
@@ -93,7 +94,7 @@ commit_parsers = [
 
 With the configuration above, lines are parsed as conventional commits and unconventional lines are omitted.
 
-If `filter_unconventional = false`, every line will be processed as an unconventional commit, resulting in each line of
+If `exclude_unconventional_commits = false`, every line will be processed as an unconventional commit, resulting in each line of
 a commit being treated as a changelog entry.
 
 ### message_preprocessors
@@ -135,7 +136,8 @@ A more fun example would be reversing each commit message:
 
 ### commit_parsers
 
-An array of commit parsers for determining the commit groups by using regex.
+A list of parsers using regex for extracting data from the commit message.
+Sets the commits' `group` and `scope` and can decide to exclude commits from further processing.
 
 Examples:
 
@@ -167,10 +169,9 @@ Examples:
     - `committer.email`
     - `committer.name`
 
-### protect_breaking_commits
+### retain_breaking_changes
 
-If set to `true`, any breaking changes will be protected against being skipped
-due to any commit parser.
+If set to `true`, any breaking changes will be protected against being excluded by commit parsers.
 
 ### filter_commits
 
@@ -193,7 +194,7 @@ This can also be achieved by specifying the `--commit-sort-order` command line a
 
 ### link_parsers
 
-An array of link parsers for extracting external references, and turning them into URLs, using regex.
+A list of parsers using regex for extracting external references found in commit messages, and turning them into links. The gemerated links can be used in the body template as `commit.links`.
 
 Examples:
 

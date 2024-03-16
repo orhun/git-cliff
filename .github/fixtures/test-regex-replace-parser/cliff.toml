@@ -27,7 +27,8 @@ footer = """
 trim = true
 
 [commit]
-# regex for parsing and grouping commits
+# A list of parsers using regex for extracting data from the commit message.
+# Sets the commits' `group` and `scope` and can decide to exclude commits from further processing.
 commit_parsers = [
   { message = '^fix\((.*)\)', group = 'Fix (${1}) 🧰' },
   { message = '^feat\((.*)\)', group = 'Feature (${1}) 🚀' },

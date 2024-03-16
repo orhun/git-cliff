@@ -355,10 +355,10 @@ mod test {
 				order_by:          Some(TagsOrderBy::Time),
 			},
 			commit:    CommitConfig {
-				conventional_commits:     Some(true),
-				filter_unconventional:    Some(false),
-				split_by_newline:         Some(false),
-				message_preprocessors:    Some(vec![TextProcessor {
+				parse_conventional_commits:     Some(true),
+				exclude_unconventional_commits: Some(false),
+				split_by_newline:               Some(false),
+				message_preprocessors:          Some(vec![TextProcessor {
 					pattern:         Regex::new("<preprocess>")
 						.expect("failed to compile regex"),
 					replace:         Some(String::from(
@@ -366,7 +366,7 @@ mod test {
 					)),
 					replace_command: None,
 				}]),
-				commit_parsers:           Some(vec![
+				commit_parsers:                 Some(vec![
 					CommitParser {
 						sha:           Some(String::from("tea")),
 						message:       None,
@@ -478,12 +478,12 @@ mod test {
 						pattern:       None,
 					},
 				]),
-				protect_breaking_commits: None,
-				filter_commits:           Some(false),
-				exclude_tags_pattern:     Regex::new("v3.*").ok(),
-				sort_order:               Some(CommitSortOrder::Oldest),
-				link_parsers:             None,
-				max_commit_count:         None,
+				retain_breaking_changes:        None,
+				filter_commits:                 Some(false),
+				exclude_tags_pattern:           Regex::new("v3.*").ok(),
+				sort_order:                     Some(CommitSortOrder::Oldest),
+				link_parsers:                   None,
+				max_commit_count:               None,
 			},
 			remote:    RemoteConfig {
 				github: Remote {
@@ -693,8 +693,8 @@ mod test {
 	fn changelog_generator_split_commits() -> Result<()> {
 		let (mut config, mut releases) = get_test_data();
 		config.commit.split_by_newline = Some(true);
-		config.commit.filter_unconventional = Some(false);
-		config.commit.protect_breaking_commits = Some(true);
+		config.commit.exclude_unconventional_commits = Some(false);
+		config.commit.retain_breaking_changes = Some(true);
 		releases[0].commits.push(Commit::new(
 			String::from("0bc123"),
 			String::from(

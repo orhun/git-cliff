@@ -185,8 +185,8 @@ impl Commit<'_> {
 		if let Some(preprocessors) = &config.message_preprocessors {
 			commit = commit.preprocess(preprocessors)?;
 		}
-		if config.conventional_commits.unwrap_or(true) {
-			if config.filter_unconventional.unwrap_or(true) {
+		if config.parse_conventional_commits.unwrap_or(true) {
+			if config.exclude_unconventional_commits.unwrap_or(true) {
 				commit = commit.into_conventional()?;
 			} else if let Ok(conv_commit) = commit.clone().into_conventional() {
 				commit = conv_commit;
@@ -195,7 +195,7 @@ impl Commit<'_> {
 		if let Some(parsers) = &config.commit_parsers {
 			commit = commit.parse(
 				parsers,
-				config.protect_breaking_commits.unwrap_or(false),
+				config.retain_breaking_changes.unwrap_or(false),
 				config.filter_commits.unwrap_or(false),
 			)?;
 		}
@@ -234,13 +234,13 @@ impl Commit<'_> {
 
 	/// States if the commit is skipped in the provided `CommitParser`.
 	///
-	/// Returns `false` if `protect_breaking_commits` is enabled in the config
-	/// and the commit is breaking, or the parser's `skip` field is None or
-	/// `false`. Returns `true` otherwise.
-	fn skip_commit(&self, parser: &CommitParser, protect_breaking: bool) -> bool {
+	/// Returns `false` if `commit.retain_breaking_changes` is enabled in the
+	/// config and the commit is breaking, or the parser's `skip` field is None
+	/// or `false`. Returns `true` otherwise.
+	fn skip_commit(&self, parser: &CommitParser, retain_breaking: bool) -> bool {
 		parser.skip.unwrap_or(false) &&
 			!(self.conv.as_ref().map(|c| c.breaking()).unwrap_or(false) &&
-				protect_breaking)
+				retain_breaking)
 	}
 
 	/// Parses the commit using [`CommitParser`]s.
@@ -252,7 +252,7 @@ impl Commit<'_> {
 	pub fn parse(
 		mut self,
 		parsers: &[CommitParser],
-		protect_breaking: bool,
+		retain_breaking: bool,
 		filter: bool,
 	) -> Result<Self> {
 		for parser in parsers {
@@ -296,7 +296,7 @@ impl Commit<'_> {
 			if parser.sha.clone().map(|v| v.to_lowercase()).as_deref() ==
 				Some(&self.id)
 			{
-				if self.skip_commit(parser, protect_breaking) {
+				if self.skip_commit(parser, retain_breaking) {
 					return Err(AppError::GroupError(String::from(
 						"Skipping commit",
 					)));
@@ -310,7 +310,7 @@ impl Commit<'_> {
 			}
 			for (regex, text) in regex_checks {
 				if regex.is_match(&text) {
-					if self.skip_commit(parser, protect_breaking) {
+					if self.skip_commit(parser, retain_breaking) {
 						return Err(AppError::GroupError(String::from(
 							"Skipping commit",
 						)));
@@ -488,7 +488,7 @@ mod test {
 	#[test]
 	fn conventional_footers() {
 		let cfg = crate::config::CommitConfig {
-			conventional_commits: Some(true),
+			parse_conventional_commits: Some(true),
 			..Default::default()
 		};
 		let test_cases = vec![

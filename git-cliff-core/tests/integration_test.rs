@@ -43,15 +43,15 @@ fn generate_changelog() -> Result<()> {
 		postprocessors: None,
 	};
 	let commit_config = CommitConfig {
-		conventional_commits:     Some(true),
-		filter_unconventional:    Some(true),
-		split_by_newline:         Some(false),
-		message_preprocessors:    Some(vec![TextProcessor {
+		parse_conventional_commits:     Some(true),
+		exclude_unconventional_commits: Some(true),
+		split_by_newline:               Some(false),
+		message_preprocessors:          Some(vec![TextProcessor {
 			pattern:         Regex::new(r"\(fixes (#[1-9]+)\)").unwrap(),
 			replace:         Some(String::from("[closes Issue${1}]")),
 			replace_command: None,
 		}]),
-		commit_parsers:           Some(vec![
+		commit_parsers:                 Some(vec![
 			CommitParser {
 				sha:           Some(String::from("coffee")),
 				message:       None,
@@ -108,11 +108,11 @@ fn generate_changelog() -> Result<()> {
 				pattern:       Regex::new("John Doe").ok(),
 			},
 		]),
-		protect_breaking_commits: None,
-		filter_commits:           Some(true),
-		exclude_tags_pattern:     None,
-		sort_order:               None,
-		link_parsers:             Some(vec![
+		retain_breaking_changes:        None,
+		filter_commits:                 Some(true),
+		exclude_tags_pattern:           None,
+		sort_order:                     None,
+		link_parsers:                   Some(vec![
 			LinkParser {
 				pattern: Regex::new("#(\\d+)").unwrap(),
 				href:    String::from("https://github.com/$1"),
@@ -124,7 +124,7 @@ fn generate_changelog() -> Result<()> {
 				text:    Some(String::from("$1")),
 			},
 		]),
-		max_commit_count:         None,
+		max_commit_count:               None,
 	};
 
 	let mut commit_with_author = Commit::new(

@@ -121,35 +121,40 @@ pub struct ReleaseConfig {
 /// Git commit configuration
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct CommitConfig {
-	/// Whether to enable parsing conventional commits.
-	pub conventional_commits:  Option<bool>,
-	/// Whether to filter out unconventional commits.
-	pub filter_unconventional: Option<bool>,
+	/// Whether to parse commits according to the conventional commits
+	/// specification.
+	pub parse_conventional_commits:     Option<bool>,
+	/// Whether to exclude commits that do not match the conventional commits
+	/// specification from the changelog.
+	pub exclude_unconventional_commits: Option<bool>,
 	/// Whether to split commits on newlines, treating each line as an
 	/// individual commit.
-	pub split_by_newline:      Option<bool>,
+	pub split_by_newline:               Option<bool>,
 
 	/// A list of preprocessors to modify commit messages using regex prior to
 	/// further processing.
-	pub message_preprocessors:    Option<Vec<TextProcessor>>,
-	/// Git commit parsers.
-	pub commit_parsers:           Option<Vec<CommitParser>>,
-	/// Whether to protect all breaking changes from being skipped by a commit
-	/// parser.
-	pub protect_breaking_commits: Option<bool>,
-	/// Link parsers.
-	pub link_parsers:             Option<Vec<LinkParser>>,
+	pub message_preprocessors:   Option<Vec<TextProcessor>>,
+	/// A list of parsers using regex for extracting data from the commit
+	/// message.
+	pub commit_parsers:          Option<Vec<CommitParser>>,
+	/// Whether to prevent breaking changes from being excluded by commit
+	/// parsers.
+	pub retain_breaking_changes: Option<bool>,
+	/// A list of parsers using regex for extracting external references found
+	/// in commit messages, and turning them into links. The gemerated links can
+	/// be used in the body template as `commit.links`.
+	pub link_parsers:            Option<Vec<LinkParser>>,
 	/// Whether to filter out commits.
-	pub filter_commits:           Option<bool>,
+	pub filter_commits:          Option<bool>,
 	/// Regex to select git tags that should be excluded from the changelog.
 	#[serde(with = "serde_regex", default)]
-	pub exclude_tags_pattern:     Option<Regex>,
+	pub exclude_tags_pattern:    Option<Regex>,
 	/// Whether to order commits newest to oldest or oldest to newest in their
 	/// group.
-	pub sort_order:               Option<CommitSortOrder>,
+	pub sort_order:              Option<CommitSortOrder>,
 	/// Whether to limit the total number of commits to be included in the
 	/// changelog.
-	pub max_commit_count:         Option<usize>,
+	pub max_commit_count:        Option<usize>,
 }
 
 /// Remote configuration.

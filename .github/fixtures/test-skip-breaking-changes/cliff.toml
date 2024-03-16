@@ -30,10 +30,11 @@ footer = """
 trim = true
 
 [commit]
-# regex for parsing and grouping commits
+# A list of parsers using regex for extracting data from the commit message.
+# Sets the commits' `group` and `scope` and can decide to exclude commits from further processing.
 commit_parsers = [
     { message = "^feat", group = "Features", default_scope = "app", skip = true },
     { message = "^fix", group = "Bug Fixes", scope = "cli", skip = true },
 ]
-# protect breaking changes from being skipped
-protect_breaking_commits = true
+# Whether to prevent breaking changes from being excluded by commit parsers.
+retain_breaking_changes = true
