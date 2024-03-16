@@ -27,8 +27,8 @@ footer = """
 trim = true
 
 [commit]
-# regex for preprocessing the commit messages
-commit_preprocessors = [
+# A list of preprocessors to modify commit messages using regex prior to further processing.
+message_preprocessors = [
     { pattern = '\(#([0-9]+)\)', replace = "([issue#${1}](https://github.com/orhun/git-cliff/issues/${1}))" },
     { pattern = "  +", replace = " " },
 ]

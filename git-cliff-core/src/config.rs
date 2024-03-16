@@ -129,8 +129,9 @@ pub struct CommitConfig {
 	/// individual commit.
 	pub split_by_newline:      Option<bool>,
 
-	/// Git commit preprocessors.
-	pub commit_preprocessors:     Option<Vec<TextProcessor>>,
+	/// A list of preprocessors to modify commit messages using regex prior to
+	/// further processing.
+	pub message_preprocessors:    Option<Vec<TextProcessor>>,
 	/// Git commit parsers.
 	pub commit_parsers:           Option<Vec<CommitParser>>,
 	/// Whether to protect all breaking changes from being skipped by a commit

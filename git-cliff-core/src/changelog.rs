@@ -358,7 +358,7 @@ mod test {
 				conventional_commits:     Some(true),
 				filter_unconventional:    Some(false),
 				split_by_newline:         Some(false),
-				commit_preprocessors:     Some(vec![TextProcessor {
+				message_preprocessors:    Some(vec![TextProcessor {
 					pattern:         Regex::new("<preprocess>")
 						.expect("failed to compile regex"),
 					replace:         Some(String::from(

@@ -77,8 +77,8 @@ conventional_commits = false
 filter_unconventional = true
 # Whether to split commits on newlines, treating each line as an individual commit.
 split_by_newline = false
-# regex for preprocessing the commit messages
-commit_preprocessors = [
+# A list of preprocessors to modify commit messages using regex prior to further processing.
+message_preprocessors = [
   # remove issue numbers from commits
   { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "" },
 ]

@@ -55,7 +55,7 @@ Then strip the tags in the template with the series of filters:
 
 ```toml
 [commit]
-commit_preprocessors = [
+message_preprocessors = [
   # Remove gitmoji, both actual UTF emoji and :emoji:
   { pattern = ' *(:\w+:|[\p{Emoji_Presentation}\p{Extended_Pictographic}](?:\u{FE0F})?\u{200D}?) *', replace = "" },
 ]

@@ -81,7 +81,7 @@ Set/remove the changelog parts:
 git cliff --body $template --strip footer
 ```
 
-Skip running the commands defined in [pre](/docs/configuration/commit#commit_preprocessors)/[postprocessors](/docs/configuration/changelog#postprocessors).
+Skip running external commands defined in [commit.message_preprocessors](/docs/configuration/commit#message_preprocessors) and [changelog.postprocessors](/docs/configuration/changelog#postprocessors).
 
 ```bash
 # No external command execution

@@ -46,7 +46,7 @@ fn generate_changelog() -> Result<()> {
 		conventional_commits:     Some(true),
 		filter_unconventional:    Some(true),
 		split_by_newline:         Some(false),
-		commit_preprocessors:     Some(vec![TextProcessor {
+		message_preprocessors:    Some(vec![TextProcessor {
 			pattern:         Regex::new(r"\(fixes (#[1-9]+)\)").unwrap(),
 			replace:         Some(String::from("[closes Issue${1}]")),
 			replace_command: None,

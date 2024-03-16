@@ -96,7 +96,7 @@ With the configuration above, lines are parsed as conventional commits and uncon
 If `filter_unconventional = false`, every line will be processed as an unconventional commit, resulting in each line of
 a commit being treated as a changelog entry.
 
-### commit_preprocessors
+### message_preprocessors
 
 An array of commit preprocessors for manipulating the commit messages before parsing/grouping them. These regex-based preprocessors can be used for removing or selecting certain parts of the commit message/body to be used in the following processes.
 

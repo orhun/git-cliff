@@ -182,7 +182,7 @@ impl Commit<'_> {
 	/// * extacts links and generates URLs
 	pub fn process(&self, config: &CommitConfig) -> Result<Self> {
 		let mut commit = self.clone();
-		if let Some(preprocessors) = &config.commit_preprocessors {
+		if let Some(preprocessors) = &config.message_preprocessors {
 			commit = commit.preprocess(preprocessors)?;
 		}
 		if config.conventional_commits.unwrap_or(true) {

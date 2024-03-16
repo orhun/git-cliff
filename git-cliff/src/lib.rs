@@ -409,7 +409,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		config.remote.github.repo = remote.0.repo.to_string();
 	}
 	if args.no_exec {
-		if let Some(ref mut preprocessors) = config.commit.commit_preprocessors {
+		if let Some(ref mut preprocessors) = config.commit.message_preprocessors {
 			preprocessors
 				.iter_mut()
 				.for_each(|v| v.replace_command = None);
