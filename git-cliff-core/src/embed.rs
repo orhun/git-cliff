@@ -1,4 +1,4 @@
-use crate::config::Config;
+use crate::config::models_v2::Config;
 use crate::error::{
 	Error,
 	Result,

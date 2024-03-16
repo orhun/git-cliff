@@ -19,12 +19,13 @@ use args::{
 };
 use git_cliff_core::changelog::Changelog;
 use git_cliff_core::commit::Commit;
-use git_cliff_core::config::{
+use git_cliff_core::config::models_v2::{
 	CommitParser,
 	CommitSortOrder,
 	Config,
 	TagsOrderBy,
 };
+use git_cliff_core::config::parsing;
 use git_cliff_core::embed::{
 	BuiltinConfig,
 	EmbeddedConfig,
@@ -349,7 +350,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		info!("Using built-in configuration file: {name}");
 		config
 	} else if path.exists() {
-		Config::parse(&path)?
+		parsing::parse(&path)?
 	} else if let Some(contents) = Config::read_from_manifest()? {
 		Config::parse_from_str(&contents)?
 	} else {
@@ -361,9 +362,13 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 		EmbeddedConfig::parse()?
 	};
-	if config.changelog.body.is_none() && !args.context {
-		warn!("Changelog body is not specified, using the default template.");
-		config.changelog.body = EmbeddedConfig::parse()?.changelog.body;
+	if config.changelog.body_template.is_none() && !args.context {
+		warn!(
+			"Option `changelog.body_template` is not specified, using the default \
+			 template."
+		);
+		config.changelog.body_template =
+			EmbeddedConfig::parse()?.changelog.body_template;
 	}
 
 	// Update the configuration based on command line arguments and vice versa.
@@ -372,24 +377,27 @@ pub fn run(mut args: Opt) -> Result<()> {
 			config.changelog.header = None;
 		}
 		Some(Strip::Footer) => {
-			config.changelog.footer = None;
+			config.changelog.footer_template = None;
 		}
 		Some(Strip::All) => {
 			config.changelog.header = None;
-			config.changelog.footer = None;
+			config.changelog.footer_template = None;
 		}
 		None => {}
 	}
 	if args.prepend.is_some() {
-		config.changelog.footer = None;
+		config.changelog.footer_template = None;
 		if !(args.unreleased || args.latest || args.range.is_some()) {
 			return Err(Error::ArgumentError(String::from(
 				"'-u' or '-l' is not specified",
 			)));
 		}
 	}
-	if args.body.is_some() {
-		config.changelog.body.clone_from(&args.body);
+	if args.body_template.is_some() {
+		config
+			.changelog
+			.body_template
+			.clone_from(&args.body_template);
 	}
 	if args.commit_sort_order == CommitSortOrder::Oldest {
 		if let Some(commit_sort_order) = config.commit.sort_order {

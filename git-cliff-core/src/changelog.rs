@@ -1,5 +1,5 @@
 use crate::commit::Commit;
-use crate::config::Config;
+use crate::config::models_v2::Config;
 use crate::error::Result;
 #[cfg(feature = "github")]
 use crate::github::{
@@ -34,19 +34,19 @@ pub struct Changelog<'a> {
 impl<'a> Changelog<'a> {
 	/// Constructs a new instance.
 	pub fn new(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
-		let trim = config.changelog.trim.unwrap_or(true);
+		let trim = config.changelog.trim_body_whitespace.unwrap_or(true);
 		let mut changelog = Self {
 			releases,
 			body_template: Template::new(
 				config
 					.changelog
-					.body
+					.body_template
 					.as_deref()
 					.unwrap_or_default()
 					.to_string(),
 				trim,
 			)?,
-			footer_template: match &config.changelog.footer {
+			footer_template: match &config.changelog.footer_template {
 				Some(footer) => Some(Template::new(footer.to_string(), trim)?),
 				None => None,
 			},
@@ -81,16 +81,24 @@ impl<'a> Changelog<'a> {
 						vec![commit]
 					}
 				})
-				.filter_map(|commit| match commit.process(&self.config.commit) {
-					Ok(commit) => Some(commit),
-					Err(e) => {
-						trace!(
-							"{} - {} ({})",
-							commit.id[..7].to_string(),
-							e,
-							commit.message.lines().next().unwrap_or_default().trim()
-						);
-						None
+				.filter_map(|commit| {
+					match commit.process(&self.config.changelog, &self.config.commit)
+					{
+						Ok(commit) => Some(commit),
+						Err(e) => {
+							trace!(
+								"{} - {} ({})",
+								commit.id[..7].to_string(),
+								e,
+								commit
+									.message
+									.lines()
+									.next()
+									.unwrap_or_default()
+									.trim()
+							);
+							None
+						}
 					}
 				})
 				.collect::<Vec<Commit>>();
@@ -307,7 +315,7 @@ impl<'a> Changelog<'a> {
 #[cfg(test)]
 mod test {
 	use super::*;
-	use crate::config::{
+	use crate::config::models_v2::{
 		Bump,
 		ChangelogConfig,
 		CommitConfig,
@@ -326,8 +334,8 @@ mod test {
 	fn get_test_data() -> (Config, Vec<Release<'static>>) {
 		let config = Config {
 			changelog: ChangelogConfig {
-				header:         Some(String::from("# Changelog")),
-				body:           Some(String::from(
+				header:                    Some(String::from("# Changelog")),
+				body_template:             Some(String::from(
 					r#"{% if version %}
 				## Release [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
 				{% if commit_id %}({{ commit_id }}){% endif %}{% else %}
@@ -338,16 +346,17 @@ mod test {
 				- {{ commit.message }}{% endfor %}
 				{% endfor %}{% endfor %}"#,
 				)),
-				footer:         Some(String::from(
+				footer_template:           Some(String::from(
 					r#"-- total releases: {{ releases | length }} --"#,
 				)),
-				trim:           Some(true),
-				postprocessors: Some(vec![TextProcessor {
+				trim_body_whitespace:      Some(true),
+				postprocessors:            Some(vec![TextProcessor {
 					pattern:         Regex::new("boring")
 						.expect("failed to compile regex"),
 					replace:         Some(String::from("exciting")),
 					replace_command: None,
 				}]),
+				exclude_ungrouped_changes: Some(false),
 			},
 			release:   ReleaseConfig {
 				tags_pattern:      None,
@@ -479,7 +488,6 @@ mod test {
 					},
 				]),
 				retain_breaking_changes:        None,
-				filter_commits:                 Some(false),
 				exclude_tags_pattern:           Regex::new("v3.*").ok(),
 				sort_order:                     Some(CommitSortOrder::Oldest),
 				link_parsers:                   None,

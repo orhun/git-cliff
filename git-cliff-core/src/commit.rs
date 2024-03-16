@@ -1,4 +1,5 @@
-use crate::config::{
+use crate::config::models_v2::{
+	ChangelogConfig,
 	CommitConfig,
 	CommitParser,
 	LinkParser,
@@ -180,26 +181,30 @@ impl Commit<'_> {
 	/// * converts commit to a conventional commit
 	/// * sets the group for the commit
 	/// * extacts links and generates URLs
-	pub fn process(&self, config: &CommitConfig) -> Result<Self> {
+	pub fn process(
+		&self,
+		changelog_config: &ChangelogConfig,
+		commit_config: &CommitConfig,
+	) -> Result<Self> {
 		let mut commit = self.clone();
-		if let Some(preprocessors) = &config.message_preprocessors {
+		if let Some(preprocessors) = &commit_config.message_preprocessors {
 			commit = commit.preprocess(preprocessors)?;
 		}
-		if config.parse_conventional_commits.unwrap_or(true) {
-			if config.exclude_unconventional_commits.unwrap_or(true) {
+		if commit_config.parse_conventional_commits.unwrap_or(true) {
+			if commit_config.exclude_unconventional_commits.unwrap_or(true) {
 				commit = commit.into_conventional()?;
 			} else if let Ok(conv_commit) = commit.clone().into_conventional() {
 				commit = conv_commit;
 			}
 		}
-		if let Some(parsers) = &config.commit_parsers {
+		if let Some(parsers) = &commit_config.commit_parsers {
 			commit = commit.parse(
 				parsers,
-				config.retain_breaking_changes.unwrap_or(false),
-				config.filter_commits.unwrap_or(false),
+				commit_config.retain_breaking_changes.unwrap_or(false),
+				changelog_config.exclude_ungrouped_changes.unwrap_or(false),
 			)?;
 		}
-		if let Some(parsers) = &config.link_parsers {
+		if let Some(parsers) = &commit_config.link_parsers {
 			commit = commit.parse_links(parsers)?;
 		}
 		Ok(commit)
@@ -253,7 +258,7 @@ impl Commit<'_> {
 		mut self,
 		parsers: &[CommitParser],
 		retain_breaking: bool,
-		filter: bool,
+		exclude_ungrouped: bool,
 	) -> Result<Self> {
 		for parser in parsers {
 			let mut regex_checks = Vec::new();
@@ -332,7 +337,7 @@ impl Commit<'_> {
 				}
 			}
 		}
-		if !filter {
+		if !exclude_ungrouped {
 			Ok(self)
 		} else {
 			Err(AppError::GroupError(String::from(
@@ -487,7 +492,10 @@ mod test {
 
 	#[test]
 	fn conventional_footers() {
-		let cfg = crate::config::CommitConfig {
+		let changelog_config = crate::config::models_v2::ChangelogConfig {
+			..Default::default()
+		};
+		let commit_config = crate::config::models_v2::CommitConfig {
 			parse_conventional_commits: Some(true),
 			..Default::default()
 		};
@@ -532,7 +540,9 @@ mod test {
 			),
 		];
 		for (commit, footers) in &test_cases {
-			let commit = commit.process(&cfg).expect("commit should process");
+			let commit = commit
+				.process(&changelog_config, &commit_config)
+				.expect("commit should process");
 			assert_eq!(&commit.footers().collect::<Vec<_>>(), footers);
 		}
 	}

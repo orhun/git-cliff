@@ -2,7 +2,7 @@ use git_cliff_core::commit::{
 	Commit,
 	Signature,
 };
-use git_cliff_core::config::{
+use git_cliff_core::config::models_v2::{
 	ChangelogConfig,
 	CommitConfig,
 	CommitParser,
@@ -20,8 +20,8 @@ use std::fmt::Write;
 #[test]
 fn generate_changelog() -> Result<()> {
 	let changelog_config = ChangelogConfig {
-		header:         Some(String::from("this is a changelog")),
-		body:           Some(String::from(
+		header:                    Some(String::from("this is a changelog")),
+		body_template:             Some(String::from(
 			r#"
 ## Release {{ version }} - <DATE>
 {% for group, commits in commits | group_by(attribute="group") %}
@@ -38,9 +38,10 @@ fn generate_changelog() -> Result<()> {
 {% endfor -%}
 {% endfor %}"#,
 		)),
-		footer:         Some(String::from("eoc - end of changelog")),
-		trim:           None,
-		postprocessors: None,
+		footer_template:           Some(String::from("eoc - end of changelog")),
+		trim_body_whitespace:      None,
+		postprocessors:            None,
+		exclude_ungrouped_changes: Some(true),
 	};
 	let commit_config = CommitConfig {
 		parse_conventional_commits:     Some(true),
@@ -109,7 +110,6 @@ fn generate_changelog() -> Result<()> {
 			},
 		]),
 		retain_breaking_changes:        None,
-		filter_commits:                 Some(true),
 		exclude_tags_pattern:           None,
 		sort_order:                     None,
 		link_parsers:                   Some(vec![
@@ -180,7 +180,7 @@ fn generate_changelog() -> Result<()> {
                 commit_with_author
 			]
 			.iter()
-			.filter_map(|c| c.process(&commit_config).ok())
+			.filter_map(|c| c.process(&changelog_config, &commit_config).ok())
 			.collect::<Vec<Commit>>(),
 			commit_id: None,
 			timestamp: 0,
@@ -221,14 +221,15 @@ fn generate_changelog() -> Result<()> {
 	];
 
 	let out = &mut String::new();
-	let template = Template::new(changelog_config.body.unwrap(), false)?;
+	let body_template =
+		Template::new(changelog_config.body_template.unwrap(), false)?;
 
 	writeln!(out, "{}", changelog_config.header.unwrap()).unwrap();
 	for release in releases {
 		write!(
 			out,
 			"{}",
-			template.render(
+			body_template.render(
 				&release,
 				Option::<HashMap<&str, String>>::None.as_ref(),
 				&[TextProcessor {
@@ -240,7 +241,7 @@ fn generate_changelog() -> Result<()> {
 		)
 		.unwrap();
 	}
-	writeln!(out, "{}", changelog_config.footer.unwrap()).unwrap();
+	writeln!(out, "{}", changelog_config.footer_template.unwrap()).unwrap();
 
 	assert_eq!(
 		r#"this is a changelog

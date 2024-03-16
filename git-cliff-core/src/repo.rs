@@ -1,4 +1,4 @@
-use crate::config::{
+use crate::config::models_v2::{
 	Remote,
 	TagsOrderBy,
 };

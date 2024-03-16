@@ -21,7 +21,7 @@ cargo run -- --config cliff.toml --tag "$1" >CHANGELOG.md
 git add -A && git commit -m "chore(release): prepare for $1"
 git show
 # generate a changelog for the tag message
-export GIT_CLIFF_TEMPLATE="\
+export GIT_CLIFF_BODY_TEMPLATE="\
 	{% for group, commits in commits | group_by(attribute=\"group\") %}
 	{{ group | upper_first }}\
 	{% for commit in commits %}

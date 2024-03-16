@@ -13,7 +13,7 @@ use clap::{
 	ValueEnum,
 };
 use git_cliff_core::{
-	config::{
+	config::models_v2::{
 		CommitSortOrder,
 		Remote,
 		TagsOrderBy,
@@ -183,15 +183,15 @@ pub struct Opt {
 	/// Prints bumped version for unreleased changes.
 	#[arg(long, help_heading = Some("FLAGS"))]
 	pub bumped_version:       bool,
-	/// Sets the template for the changelog body.
+	/// Sets the Tera template to be rendered for each release in the changelog.
 	#[arg(
 		short,
 		long,
-		env = "GIT_CLIFF_TEMPLATE",
+		env = "GIT_CLIFF_BODY_TEMPLATE",
 		value_name = "TEMPLATE",
 		allow_hyphen_values = true
 	)]
-	pub body:                 Option<String>,
+	pub body_template:        Option<String>,
 	/// Processes the commits starting from the latest tag.
 	#[arg(short, long, help_heading = Some("FLAGS"))]
 	pub latest:               bool,

@@ -1,51 +1,13 @@
 use crate::command;
 use crate::error::Result;
 use clap::ValueEnum;
-use regex::{
-	Regex,
-	RegexBuilder,
-};
+use regex::Regex;
 use secrecy::SecretString;
 use serde::{
 	Deserialize,
 	Serialize,
 };
 use std::fmt;
-use std::fs;
-use std::path::Path;
-use std::path::PathBuf;
-
-/// Manifest file information and regex for matching contents.
-#[derive(Debug)]
-struct ManifestInfo {
-	/// Path of the manifest.
-	path:  PathBuf,
-	/// Regular expression for matching metadata in the manifest.
-	regex: Regex,
-}
-
-lazy_static::lazy_static! {
-	/// Array containing manifest information for Rust and Python projects.
-	static ref MANIFEST_INFO: Vec<ManifestInfo> = vec![
-		ManifestInfo {
-			path: PathBuf::from("Cargo.toml"),
-			regex: RegexBuilder::new(
-				r"^\[(?:workspace|package)\.metadata\.git\-cliff\.",
-			)
-			.multi_line(true)
-			.build()
-			.expect("failed to build regex"),
-		},
-		ManifestInfo {
-			path: PathBuf::from("pyproject.toml"),
-			regex: RegexBuilder::new(r"^\[(?:tool)\.git\-cliff\.")
-				.multi_line(true)
-				.build()
-				.expect("failed to build regex"),
-		},
-	];
-
-}
 
 /// Options for ordering git tags.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]
@@ -90,16 +52,20 @@ pub struct Config {
 /// Changelog configuration.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ChangelogConfig {
-	/// Changelog header.
-	pub header:         Option<String>,
-	/// Changelog body, template.
-	pub body:           Option<String>,
-	/// Changelog footer.
-	pub footer:         Option<String>,
-	/// Trim the template.
-	pub trim:           Option<bool>,
-	/// Changelog postprocessors.
-	pub postprocessors: Option<Vec<TextProcessor>>,
+	/// A static header for the changelog.
+	pub header:                    Option<String>,
+	/// A Tera template to be rendered for each release in the changelog.
+	pub body_template:             Option<String>,
+	/// A Tera template to be rendered as the changelog's footer.
+	pub footer_template:           Option<String>,
+	/// Whether to remove leading and trailing whitespaces from all lines of the
+	/// changelog's body.
+	pub trim_body_whitespace:      Option<bool>,
+	/// A list of postprocessors using regex to modify the changelog.
+	pub postprocessors:            Option<Vec<TextProcessor>>,
+	/// Whether to exclude changes that do not belong to any group from the
+	/// changelog.
+	pub exclude_ungrouped_changes: Option<bool>,
 }
 
 /// Release configuration.
@@ -144,8 +110,6 @@ pub struct CommitConfig {
 	/// in commit messages, and turning them into links. The gemerated links can
 	/// be used in the body template as `commit.links`.
 	pub link_parsers:            Option<Vec<LinkParser>>,
-	/// Whether to filter out commits.
-	pub filter_commits:          Option<bool>,
 	/// Regex to select git tags that should be excluded from the changelog.
 	#[serde(with = "serde_regex", default)]
 	pub exclude_tags_pattern:    Option<Regex>,
@@ -297,112 +261,48 @@ pub struct LinkParser {
 }
 
 impl Config {
-	/// Reads the config file contents from project manifest (e.g. Cargo.toml,
-	/// pyproject.toml)
-	pub fn read_from_manifest() -> Result<Option<String>> {
-		for info in (*MANIFEST_INFO).iter() {
-			if info.path.exists() {
-				let contents = fs::read_to_string(&info.path)?;
-				if info.regex.is_match(&contents) {
-					return Ok(Some(
-						info.regex.replace_all(&contents, "[").to_string(),
-					));
-				}
-			}
+	/// Creates a v2 Config from a deprecated v1 Config.
+	#[allow(deprecated)]
+	pub fn from(config_v1: super::models_v1::Config) -> Config {
+		Config {
+			changelog: ChangelogConfig {
+				header:                    config_v1.changelog.header,
+				body_template:             config_v1.changelog.body,
+				footer_template:           config_v1.changelog.footer,
+				trim_body_whitespace:      config_v1.changelog.trim,
+				postprocessors:            config_v1.changelog.postprocessors,
+				exclude_ungrouped_changes: config_v1.git.filter_commits,
+			},
+			release:   ReleaseConfig {
+				tags_pattern:      config_v1.git.tag_pattern,
+				skip_tags_pattern: config_v1.git.ignore_tags,
+				order_by:          Some(if config_v1.git.topo_order.unwrap() {
+					TagsOrderBy::Topology
+				} else {
+					TagsOrderBy::Time
+				}),
+			},
+			commit:    CommitConfig {
+				sort_order:                     config_v1.git.sort_commits.map(
+					|s| {
+						CommitSortOrder::from_str(&s, true)
+							.expect("Incorrect config value for 'sort_commits'")
+					},
+				),
+				max_commit_count:               config_v1.git.limit_commits,
+				split_by_newline:               config_v1.git.split_commits,
+				exclude_tags_pattern:           config_v1.git.skip_tags,
+				message_preprocessors:          config_v1.git.commit_preprocessors,
+				link_parsers:                   config_v1.git.link_parsers,
+				parse_conventional_commits:     config_v1.git.conventional_commits,
+				exclude_unconventional_commits: config_v1.git.filter_unconventional,
+				commit_parsers:                 config_v1.git.commit_parsers,
+				retain_breaking_changes:        config_v1
+					.git
+					.protect_breaking_commits,
+			},
+			remote:    config_v1.remote.clone(),
+			bump:      config_v1.bump.clone(),
 		}
-		Ok(None)
-	}
-
-	/// Parses the config file from string and returns the values.
-	pub fn parse_from_str(contents: &str) -> Result<Config> {
-		Ok(config::Config::builder()
-			.add_source(config::File::from_str(contents, config::FileFormat::Toml))
-			.add_source(
-				config::Environment::with_prefix("GIT_CLIFF").separator("__"),
-			)
-			.build()?
-			.try_deserialize()?)
-	}
-
-	/// Parses the config file and returns the values.
-	pub fn parse(path: &Path) -> Result<Config> {
-		if MANIFEST_INFO
-			.iter()
-			.any(|v| path.file_name() == v.path.file_name())
-		{
-			if let Some(contents) = Self::read_from_manifest()? {
-				return Self::parse_from_str(&contents);
-			}
-		}
-
-		Ok(config::Config::builder()
-			.add_source(config::File::from(path))
-			.add_source(
-				config::Environment::with_prefix("GIT_CLIFF").separator("__"),
-			)
-			.build()?
-			.try_deserialize()?)
-	}
-}
-
-#[cfg(test)]
-mod test {
-	use super::*;
-	use pretty_assertions::assert_eq;
-	use std::env;
-	#[test]
-	fn parse_config() -> Result<()> {
-		let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-			.parent()
-			.expect("parent directory not found")
-			.to_path_buf()
-			.join("config")
-			.join(crate::DEFAULT_CONFIG);
-
-		const FOOTER_VALUE: &str = "test";
-		const RELEASE_TAGS_PATTERN_VALUE: &str = ".*[0-9].*";
-		const RELEASE_SKIP_TAGS_PATTERN_VALUE: &str =
-			"v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+";
-
-		env::set_var("GIT_CLIFF__CHANGELOG__FOOTER", FOOTER_VALUE);
-		env::set_var(
-			"GIT_CLIFF__RELEASE__TAGS_PATTERN",
-			RELEASE_TAGS_PATTERN_VALUE,
-		);
-		env::set_var(
-			"GIT_CLIFF__RELEASE__SKIP_TAGS_PATTERN",
-			RELEASE_SKIP_TAGS_PATTERN_VALUE,
-		);
-
-		let config = Config::parse(&path)?;
-
-		assert_eq!(Some(String::from(FOOTER_VALUE)), config.changelog.footer);
-		assert_eq!(
-			Some(String::from(RELEASE_TAGS_PATTERN_VALUE)),
-			config
-				.release
-				.tags_pattern
-				.map(|tags_pattern| tags_pattern.to_string())
-		);
-		assert_eq!(
-			Some(String::from(RELEASE_SKIP_TAGS_PATTERN_VALUE)),
-			config
-				.release
-				.skip_tags_pattern
-				.map(|skip_tags_pattern| skip_tags_pattern.to_string())
-		);
-		Ok(())
-	}
-
-	#[test]
-	fn remote_config() {
-		let remote1 = Remote::new("abc", "xyz1");
-		let remote2 = Remote::new("abc", "xyz2");
-		assert!(!remote1.eq(&remote2));
-		assert_eq!("abc/xyz1", remote1.to_string());
-		assert!(remote1.is_set());
-		assert!(!Remote::new("", "test").is_set());
-		assert!(!Remote::new("test", "").is_set());
-		assert!(!Remote::new("", "").is_set());
 	}
 }

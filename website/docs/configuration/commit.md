@@ -17,7 +17,6 @@ commit_parsers = [
     { message = "^test", group = "Testing"},
 ]
 retain_breaking_changes = false
-filter_commits = false
 
 exclude_tags_pattern = "v0.1.0-beta.1"
 sort_order = "oldest"
@@ -172,10 +171,6 @@ Examples:
 ### retain_breaking_changes
 
 If set to `true`, any breaking changes will be protected against being excluded by commit parsers.
-
-### filter_commits
-
-If set to `true`, commits that are not matched by [`commit_parsers`](#commit_parsers) are filtered out.
 
 ### exclude_tags_pattern
 
