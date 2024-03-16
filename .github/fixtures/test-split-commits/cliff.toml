@@ -27,5 +27,5 @@ footer = """
 trim = true
 
 [commit]
-# process each line of a commit as an individual commit
-split_commits = true
+# Whether to split commits on newlines, treating each line as an individual commit.
+split_by_newline = true

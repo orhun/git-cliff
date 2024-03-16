@@ -125,9 +125,9 @@ pub struct CommitConfig {
 	pub conventional_commits:  Option<bool>,
 	/// Whether to filter out unconventional commits.
 	pub filter_unconventional: Option<bool>,
-	/// Whether to split commits by line, processing each line as an individual
-	/// commit.
-	pub split_commits:         Option<bool>,
+	/// Whether to split commits on newlines, treating each line as an
+	/// individual commit.
+	pub split_by_newline:      Option<bool>,
 
 	/// Git commit preprocessors.
 	pub commit_preprocessors:     Option<Vec<TextProcessor>>,
@@ -140,9 +140,9 @@ pub struct CommitConfig {
 	pub link_parsers:             Option<Vec<LinkParser>>,
 	/// Whether to filter out commits.
 	pub filter_commits:           Option<bool>,
-	/// Regex to skip matched tags.
+	/// Regex to select git tags that should be excluded from the changelog.
 	#[serde(with = "serde_regex", default)]
-	pub skip_tags:                Option<Regex>,
+	pub exclude_tags_pattern:     Option<Regex>,
 	/// Whether to order commits newest to oldest or oldest to newest in their
 	/// group.
 	pub sort_order:               Option<CommitSortOrder>,

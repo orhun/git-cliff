@@ -60,8 +60,8 @@ order_by = "time"
 conventional_commits = true
 # filter out the commits that are not conventional
 filter_unconventional = true
-# process each line of a commit as an individual commit
-split_commits = false
+# Whether to split commits on newlines, treating each line as an individual commit.
+split_by_newline = false
 # regex for parsing and grouping commits
 commit_parsers = [
     { message = "^.*: add", group = "Added" },
@@ -77,8 +77,8 @@ commit_parsers = [
 protect_breaking_commits = false
 # filter out the commits that are not matched by commit parsers
 filter_commits = true
-# regex for skipping tags
-skip_tags = "v0.1.0-beta.1"
+# Regex to select git tags that should be excluded from the changelog.
+exclude_tags_pattern = "v0.1.0-beta.1"
 # Whether to order commits newest to oldest or oldest to newest in their group.
 # Must be either `newest` or `oldest`.
 sort_order = "oldest"

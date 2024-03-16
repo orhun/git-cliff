@@ -6,7 +6,7 @@ This section contains options regarding processing of individual git commits.
 [commit]
 conventional_commits = true
 filter_unconventional = true
-split_commits = false
+split_by_newline = false
 commit_parsers = [
     { message = "^feat", group = "Features"},
     { message = "^fix", group = "Bug Fixes"},
@@ -19,7 +19,7 @@ commit_parsers = [
 protect_breaking_commits = false
 filter_commits = false
 
-skip_tags = "v0.1.0-beta.1"
+exclude_tags_pattern = "v0.1.0-beta.1"
 sort_order = "oldest"
 link_parsers = [
     { pattern = "#(\\d+)", href = "https://github.com/orhun/git-cliff/issues/$1"},
@@ -75,17 +75,17 @@ conventional_commits = false
 filter_unconventional = false
 ```
 
-### split_commits
+### split_by_newline
 
 > This flag violates "conventional commits". It should remain off by default if conventional commits is to be respected.
 
 If set to `true`, each line of a commit is processed individually, as if it were its own commit message. This may cause
-a commit to appear multiple times in a changelog, once for each match.
+a commit to appear multiple times in a changelog, once for each line.
 
 ```toml
 conventional_commits = true
 filter_unconventional = true
-split_commits = true
+split_by_newline = true
 commit_parsers = [
     { message = "^feat", group = "Features"},
 ]
@@ -176,9 +176,9 @@ due to any commit parser.
 
 If set to `true`, commits that are not matched by [`commit_parsers`](#commit_parsers) are filtered out.
 
-### skip_tags
+### exclude_tags_pattern
 
-A regex for skip processing the matched tags.
+Regex to select git tags that should be excluded from the changelog.
 
 ### sort_order
 

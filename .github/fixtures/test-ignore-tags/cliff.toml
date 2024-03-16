@@ -33,5 +33,5 @@ trim = true
 skip_tags_pattern = "v.*-beta.*"
 
 [commit]
-# regex for skipping tags
-skip_tags = "v0.1.0-beta.1"
+# Regex to select git tags that should be excluded from the changelog.
+exclude_tags_pattern = "v0.1.0-beta.1"

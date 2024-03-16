@@ -67,7 +67,7 @@ impl<'a> Changelog<'a> {
 				.iter()
 				.cloned()
 				.flat_map(|commit| {
-					if self.config.commit.split_commits.unwrap_or(false) {
+					if self.config.commit.split_by_newline.unwrap_or(false) {
 						commit
 							.message
 							.lines()
@@ -100,7 +100,7 @@ impl<'a> Changelog<'a> {
 	/// Processes the releases and filters them out based on the configuration.
 	fn process_releases(&mut self) {
 		debug!("Processing the releases...");
-		let skip_regex = self.config.commit.skip_tags.as_ref();
+		let skip_regex = self.config.commit.exclude_tags_pattern.as_ref();
 		let mut skipped_tags = Vec::new();
 		self.releases = self
 			.releases
@@ -357,7 +357,7 @@ mod test {
 			commit:    CommitConfig {
 				conventional_commits:     Some(true),
 				filter_unconventional:    Some(false),
-				split_commits:            Some(false),
+				split_by_newline:         Some(false),
 				commit_preprocessors:     Some(vec![TextProcessor {
 					pattern:         Regex::new("<preprocess>")
 						.expect("failed to compile regex"),
@@ -480,7 +480,7 @@ mod test {
 				]),
 				protect_breaking_commits: None,
 				filter_commits:           Some(false),
-				skip_tags:                Regex::new("v3.*").ok(),
+				exclude_tags_pattern:     Regex::new("v3.*").ok(),
 				sort_order:               Some(CommitSortOrder::Oldest),
 				link_parsers:             None,
 				max_commit_count:         None,
@@ -692,7 +692,7 @@ mod test {
 	#[test]
 	fn changelog_generator_split_commits() -> Result<()> {
 		let (mut config, mut releases) = get_test_data();
-		config.commit.split_commits = Some(true);
+		config.commit.split_by_newline = Some(true);
 		config.commit.filter_unconventional = Some(false);
 		config.commit.protect_breaking_commits = Some(true);
 		releases[0].commits.push(Commit::new(

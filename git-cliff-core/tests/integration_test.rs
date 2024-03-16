@@ -45,7 +45,7 @@ fn generate_changelog() -> Result<()> {
 	let commit_config = CommitConfig {
 		conventional_commits:     Some(true),
 		filter_unconventional:    Some(true),
-		split_commits:            Some(false),
+		split_by_newline:         Some(false),
 		commit_preprocessors:     Some(vec![TextProcessor {
 			pattern:         Regex::new(r"\(fixes (#[1-9]+)\)").unwrap(),
 			replace:         Some(String::from("[closes Issue${1}]")),
@@ -110,7 +110,7 @@ fn generate_changelog() -> Result<()> {
 		]),
 		protect_breaking_commits: None,
 		filter_commits:           Some(true),
-		skip_tags:                None,
+		exclude_tags_pattern:     None,
 		sort_order:               None,
 		link_parsers:             Some(vec![
 			LinkParser {

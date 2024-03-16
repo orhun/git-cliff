@@ -86,13 +86,15 @@ fn process_repository<'a>(
 ) -> Result<Vec<Release<'a>>> {
 	let mut tags =
 		repository.tags(&config.release.tags_pattern, &args.release_order_by)?;
-	let skip_regex = config.commit.skip_tags.as_ref();
+	let exclude_tags_pattern = config.commit.exclude_tags_pattern.as_ref();
 	let skip_release_pattern = config.release.skip_tags_pattern.as_ref();
 	tags = tags
 		.into_iter()
 		.filter(|(_, name)| {
 			// Keep skip tags to drop commits in the later stage.
-			let skip = skip_regex.map(|r| r.is_match(name)).unwrap_or_default();
+			let skip = exclude_tags_pattern
+				.map(|r| r.is_match(name))
+				.unwrap_or_default();
 
 			let skip_release = skip_release_pattern
 				.map(|r| {
@@ -418,8 +420,10 @@ pub fn run(mut args: Opt) -> Result<()> {
 				.for_each(|v| v.replace_command = None);
 		}
 	}
-	config.commit.skip_tags =
-		config.commit.skip_tags.filter(|r| !r.as_str().is_empty());
+	config.commit.exclude_tags_pattern = config
+		.commit
+		.exclude_tags_pattern
+		.filter(|r| !r.as_str().is_empty());
 	if args.release_tags_pattern.is_some() {
 		config
 			.release
