@@ -1,3 +1,5 @@
+/// Provide a command to migrate from old to new configuration.
+pub mod migrate;
 /// Deprecated Config models for git-cliff.
 pub mod models_v1;
 /// Current Config models for git-cliff.
