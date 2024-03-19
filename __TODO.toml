@@ -1,0 +1,78 @@
+>>> [changelog]
+>>> # A static header for the changelog.
+>>> header                            Option<String>                              // changelog.header
+>>> 
+>>> # A Tera template to be rendered for each release in the changelog (see https://keats.github.io/tera/docs/#introduction).
+>>> body_template                     Option<String>                           // changelog.body
+>>> 
+>>> # A Tera template to be rendered as the changelog's footer (see https://keats.github.io/tera/docs/#introduction).
+>>> footer_template               Option<String>                            // changelog.footer
+>>> 
+>>> # Whether to remove leading and trailing whitespaces from all lines of the changelog's body.
+>>> trim_body_whitespace              Option<String>                            // changelog.trim
+
+>>> # A list of postprocessors using regex to modify the changelog.
+>>> postprocessors                    Option<Vec<TextProcessor>>
+>>> 
+>>> # Whether to exclude changes that do not belong to any group from the changelog.
+>>> exclude_ungrouped_changes         Option<bool>                              // git.filter_commits
+
+
+>>> [release]
+>>> # Regex to select git tags that represent releases.
+>>> # Example: "v[0-9].*"
+>>> tags_pattern               String                                             // git.tag_pattern
+>>> 
+>>> # Regex to select git tags that do not represent proper releases. Takes precedence over `release.tags_pattern`.
+>>> # Changes belonging to these releases will be included in the next non-skipped release.
+>>> # Example: "rc"
+>>> skip_tags_pattern             String                                       // git.ignore_tags
+>>> 
+>>> # Whether to order releases chronologically or topologically.
+>>> # Must be either `time` or `topology`.
+>>> order_by                  Enum: "time" / "topology"                 // git.topo_order
+
+
+>>> [commit]
+>>> # Whether to order commits newest to oldest or oldest to newest in their group.
+>>> # Must be either `newest` or `oldest`.
+>>> sort_order                Enum: "newest" / "oldest"                // git.sort_commits
+>>> 
+>>> # Whether to limit the total number of commits to be included in the changelog.
+>>> max_commit_count                     Option<usize>                             // git.limit_commits
+>>> 
+>>> # Whether to split commits on newlines, treating each line as an individual commit.
+>>> split_by_newline                     Option<bool>                              // git.split_commits
+>>> 
+>>> # Regex to select git tags that should be excluded from the changelog.
+>>> exclude_tags_pattern              String                                    // git.skip_tags
+>>> 
+>>> # A list of preprocessors to modify commit messages using regex prior to further processing.
+>>> message_preprocessors             Option<Vec<TextProcessor>>         // git.commit_preprocessors
+>>> 
+>>> # A list of parsers using regex for extracting external references found in commit messages, and turning them into links. The gemerated links can be used in the body template as `commit.links`.
+>>> # Example: "RFC(\\d+)" -> "https://datatracker.ietf.org/doc/html/rfc$1"
+>>> link_parsers                      Option<Vec<LinkParser>>                // git.link_parsers
+>>> 
+>>> # Whether to parse commits according to the conventional commits specification.
+>>> # Sets the commits' `group` (= `type`), `scope`, `message` (= `description`), `body`, `breaking`, `breaking_description` and `footers`.
+>>> parse_conventional_commits         Option<bool>                             // git.conventional_commits
+
+# Whether to fail generating the changelog if the history contains commits that do not match the conventional commits specification.
+require_conventional_commits      Option<bool>
+
+>>> # Whether to exclude commits that do not match the conventional commits specification from the changelog.
+>>> exclude_unconventional_commits    Option<bool>                              // git.filter_unconventional
+>>> 
+>>> # A list of parsers using regex for extracting data from the commit message.
+>>> # Sets the commits' `group` and `scope` and can decide to exclude commits from further processing.
+>>> commit_parsers                     Option<Vec<CommitParser>>                // git.commit_parsers
+>>> 
+>>> # Whether to prevent breaking changes from being excluded by commit parsers.
+>>> retain_breaking_changes           Option<bool>                              // git.protect_breaking_commits
+
+
+[remote.github]
+owner   String
+repo    String
+token   Option<Secretstring>
