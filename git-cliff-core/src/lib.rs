@@ -39,7 +39,7 @@ pub mod template;
 extern crate log;
 
 /// Default configuration file.
-pub const DEFAULT_CONFIG: &str = "cliff.toml";
+pub const DEFAULT_CONFIG_FILENAME: &str = "cliff.toml";
 /// Default output file.
 pub const DEFAULT_OUTPUT: &str = "CHANGELOG.md";
 /// Default ignore file.

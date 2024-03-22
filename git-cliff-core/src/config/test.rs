@@ -14,7 +14,7 @@ fn parse_config() -> Result<()> {
 		.expect("parent directory not found")
 		.to_path_buf()
 		.join("config")
-		.join(crate::DEFAULT_CONFIG);
+		.join(crate::DEFAULT_CONFIG_FILENAME);
 
 	const FOOTER_VALUE: &str = "test";
 	const RELEASE_TAGS_PATTERN_VALUE: &str = ".*[0-9].*";

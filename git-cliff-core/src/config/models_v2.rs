@@ -276,11 +276,15 @@ impl Config {
 			release:   ReleaseConfig {
 				tags_pattern:      config_v1.git.tag_pattern,
 				skip_tags_pattern: config_v1.git.ignore_tags,
-				order_by:          Some(if config_v1.git.topo_order.unwrap() {
-					TagsOrderBy::Topology
-				} else {
-					TagsOrderBy::Time
-				}),
+				order_by:          Some(
+					if config_v1.git.topo_order.is_some() &&
+						config_v1.git.topo_order.unwrap()
+					{
+						TagsOrderBy::Topology
+					} else {
+						TagsOrderBy::Time
+					},
+				),
 			},
 			commit:    CommitConfig {
 				sort_order:                     config_v1.git.sort_commits.map(

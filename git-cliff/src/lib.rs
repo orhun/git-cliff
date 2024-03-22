@@ -19,6 +19,8 @@ use args::{
 };
 use git_cliff_core::changelog::Changelog;
 use git_cliff_core::commit::Commit;
+#[allow(deprecated)]
+use git_cliff_core::config::models_v1::Config as Config_v1;
 use git_cliff_core::config::models_v2::{
 	CommitParser,
 	CommitSortOrder,
@@ -37,7 +39,7 @@ use git_cliff_core::error::{
 use git_cliff_core::release::Release;
 use git_cliff_core::repo::Repository;
 use git_cliff_core::{
-	DEFAULT_CONFIG,
+	DEFAULT_CONFIG_FILENAME,
 	IGNORE_FILE,
 };
 use std::env;
@@ -49,6 +51,7 @@ use std::io::{
 	self,
 	Write,
 };
+use std::path::PathBuf;
 use std::time::{
 	SystemTime,
 	UNIX_EPOCH,
@@ -294,6 +297,62 @@ fn process_repository<'a>(
 	Ok(releases)
 }
 
+pub fn get_config_path(path: PathBuf) -> PathBuf {
+	if !path.exists() {
+		if let Some(config_path) = dirs::config_dir().map(|dir| {
+			dir.join(env!("CARGO_PKG_NAME"))
+				.join(DEFAULT_CONFIG_FILENAME)
+		}) {
+			return config_path;
+		}
+	}
+	path
+}
+
+/// Loads the configuration based on the given command line arguments.
+pub fn load_config(args: &Opt) -> Result<Config> {
+	let config_path = get_config_path(args.config.clone());
+	// If the argument `--config` matches the name of a config in
+	// ./examples, use it.
+	if let Ok((builtin_config, name)) =
+		BuiltinConfig::parse(args.config.to_string_lossy().to_string())
+	{
+		info!("Using built-in configuration file {name}.");
+		return Ok(builtin_config);
+	}
+	// If `--config` denotes an existing file, try loading it as configuration.
+	else if config_path.is_file() {
+		info!(
+			"Loading configuration from {}.",
+			args.config.to_string_lossy()
+		);
+
+		// Default to loading a v2 config.
+		if args.config_version == 2 {
+			Ok(parsing::parse::<Config>(&config_path)?)
+		}
+		// Load a v1 config and immediately convert it to v2.
+		else {
+			warn!(
+				"Configuration format v1 is deprecated. Consider migrating to v2. \
+				 Refer to https://git-cliff.org/docs/configuration/migration for more information."
+			);
+			#[allow(deprecated)]
+			let config_v1 = parsing::parse::<Config_v1>(&config_path)?;
+			Ok(Config::from(config_v1))
+		}
+	}
+	// Otherwise fall back to using the embedded configuration from
+	// ./config/cliff.toml.
+	else {
+		warn!(
+			"{:?} could not be found. Using the default configuration.",
+			args.config
+		);
+		EmbeddedConfig::parse()
+	}
+}
+
 /// Runs `git-cliff`.
 pub fn run(mut args: Opt) -> Result<()> {
 	// Check if there is a new version available.
@@ -309,15 +368,11 @@ pub fn run(mut args: Opt) -> Result<()> {
 		info!(
 			"Saving the configuration file{} to {:?}",
 			init_config.map(|v| format!(" ({v})")).unwrap_or_default(),
-			DEFAULT_CONFIG
+			DEFAULT_CONFIG_FILENAME
 		);
-		fs::write(DEFAULT_CONFIG, contents)?;
+		fs::write(DEFAULT_CONFIG_FILENAME, contents)?;
 		return Ok(());
 	}
-
-	// Retrieve the built-in configuration.
-	let builtin_config =
-		BuiltinConfig::parse(args.config.to_string_lossy().to_string());
 
 	// Set the working directory.
 	if let Some(ref workdir) = args.workdir {
@@ -335,41 +390,8 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 	}
 
-	// Parse the configuration file.
-	let mut path = args.config.clone();
-	if !path.exists() {
-		if let Some(config_path) = dirs::config_dir()
-			.map(|dir| dir.join(env!("CARGO_PKG_NAME")).join(DEFAULT_CONFIG))
-		{
-			path = config_path;
-		}
-	}
-
-	// Load the default configuration if necessary.
-	let mut config = if let Ok((config, name)) = builtin_config {
-		info!("Using built-in configuration file: {name}");
-		config
-	} else if path.exists() {
-		parsing::parse(&path)?
-	} else if let Some(contents) = Config::read_from_manifest()? {
-		Config::parse_from_str(&contents)?
-	} else {
-		if !args.context {
-			warn!(
-				"{:?} is not found, using the default configuration.",
-				args.config
-			);
-		}
-		EmbeddedConfig::parse()?
-	};
-	if config.changelog.body_template.is_none() && !args.context {
-		warn!(
-			"Option `changelog.body_template` is not specified, using the default \
-			 template."
-		);
-		config.changelog.body_template =
-			EmbeddedConfig::parse()?.changelog.body_template;
-	}
+	// Load the configuration.
+	let mut config = load_config(&args)?;
 
 	// Update the configuration based on command line arguments and vice versa.
 	match args.strip {
