@@ -363,6 +363,7 @@ mod test {
 						sha:           Some(String::from("tea")),
 						message:       None,
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("I love tea")),
 						default_scope: None,
 						scope:         None,
@@ -374,6 +375,7 @@ mod test {
 						sha:           Some(String::from("coffee")),
 						message:       None,
 						body:          None,
+						footer:        None,
 						group:         None,
 						default_scope: None,
 						scope:         None,
@@ -385,6 +387,7 @@ mod test {
 						sha:           Some(String::from("coffee2")),
 						message:       None,
 						body:          None,
+						footer:        None,
 						group:         None,
 						default_scope: None,
 						scope:         None,
@@ -396,6 +399,7 @@ mod test {
 						sha:           None,
 						message:       Regex::new(r".*merge.*").ok(),
 						body:          None,
+						footer:        None,
 						group:         None,
 						default_scope: None,
 						scope:         None,
@@ -407,6 +411,7 @@ mod test {
 						sha:           None,
 						message:       Regex::new("feat*").ok(),
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("New features")),
 						default_scope: Some(String::from("other")),
 						scope:         None,
@@ -418,6 +423,7 @@ mod test {
 						sha:           None,
 						message:       Regex::new("^fix*").ok(),
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("Bug Fixes")),
 						default_scope: None,
 						scope:         None,
@@ -429,6 +435,7 @@ mod test {
 						sha:           None,
 						message:       Regex::new("doc:").ok(),
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("Documentation")),
 						default_scope: None,
 						scope:         Some(String::from("documentation")),
@@ -440,6 +447,7 @@ mod test {
 						sha:           None,
 						message:       Regex::new("docs:").ok(),
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("Documentation")),
 						default_scope: None,
 						scope:         Some(String::from("documentation")),
@@ -451,6 +459,7 @@ mod test {
 						sha:           None,
 						message:       Regex::new(r"match\((.*)\):.*").ok(),
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("Matched ($1)")),
 						default_scope: None,
 						scope:         None,
@@ -460,8 +469,21 @@ mod test {
 					},
 					CommitParser {
 						sha:           None,
+						message:       None,
+						body:          None,
+						footer:        Regex::new("Footer:.*").ok(),
+						group:         Some(String::from("Footer")),
+						default_scope: None,
+						scope:         Some(String::from("footer")),
+						skip:          None,
+						field:         None,
+						pattern:       None,
+					},
+					CommitParser {
+						sha:           None,
 						message:       Regex::new(".*").ok(),
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("Other")),
 						default_scope: Some(String::from("other")),
 						scope:         None,
@@ -547,6 +569,10 @@ mod test {
 				Commit::new(
 					String::from("coffee"),
 					String::from("revert(app): skip this commit"),
+				),
+				Commit::new(
+					String::from("footer"),
+					String::from("misc: use footer\n\nFooter: footer text"),
 				),
 			],
 			commit_id: Some(String::from("0bc123")),
@@ -648,6 +674,10 @@ mod test {
 			#### documentation
 			- update docs
 			- add some documentation
+
+			### Footer
+			#### footer
+			- use footer
 
 			### I love tea
 			#### app
@@ -791,6 +821,7 @@ chore(deps): fix broken deps
 			#### other
 			- support unconventional commits
 			- this commit is preprocessed
+			- use footer
 			- make awesome stuff look better
 
 			#### ui
