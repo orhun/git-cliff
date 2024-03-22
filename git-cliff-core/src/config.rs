@@ -213,6 +213,9 @@ pub struct CommitParser {
 	/// Regex for matching the commit body.
 	#[serde(with = "serde_regex", default)]
 	pub body:          Option<Regex>,
+	/// Regex for matching the commit footer.
+	#[serde(with = "serde_regex", default)]
+	pub footer:        Option<Regex>,
 	/// Group of the commit.
 	pub group:         Option<String>,
 	/// Default scope of the commit.
