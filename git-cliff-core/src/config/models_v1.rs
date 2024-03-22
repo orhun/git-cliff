@@ -32,6 +32,7 @@ pub struct Config {
 }
 
 /// Changelog configuration.
+#[allow(deprecated)]
 #[deprecated(since = "3.0.0", note = "deprecated in favor of models_v2")]
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ChangelogConfig {

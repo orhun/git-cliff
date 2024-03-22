@@ -22,7 +22,7 @@ use git_cliff_core::{
 			TagsOrderBy,
 		},
 	},
-	DEFAULT_CONFIG,
+	DEFAULT_CONFIG_FILENAME,
 	DEFAULT_OUTPUT,
 };
 use glob::Pattern;
@@ -107,10 +107,19 @@ pub struct Opt {
 	    long,
 	    env = "GIT_CLIFF_CONFIG",
 	    value_name = "PATH",
-	    default_value = DEFAULT_CONFIG,
+	    default_value = DEFAULT_CONFIG_FILENAME,
 	    value_parser = Opt::parse_dir
 	)]
 	pub config: PathBuf,
+
+	/// Sets the version of the configuration file given in `--config`.
+	#[arg(
+		long,
+		env = "GIT_CLIFF_CONFIG_VERSION",
+		value_name = "VERSION",
+		default_value_t = 2
+	)]
+	pub config_version: u8,
 
 	/// Sets the working directory.
 	#[arg(
