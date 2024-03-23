@@ -347,6 +347,8 @@ pub fn run(mut args: Opt) -> Result<()> {
 		config
 	} else if path.exists() {
 		Config::parse(&path)?
+	} else if let Some(contents) = Config::read_from_manifest()? {
+		Config::parse_from_str(&contents)?
 	} else {
 		if !args.context {
 			warn!(

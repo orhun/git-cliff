@@ -748,6 +748,7 @@ dependencies = [
  "http-cache-reqwest",
  "indexmap",
  "lazy-regex",
+ "lazy_static",
  "log",
  "next_version",
  "pretty_assertions",

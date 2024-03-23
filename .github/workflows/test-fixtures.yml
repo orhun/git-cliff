@@ -67,6 +67,7 @@ jobs:
             command: --no-exec
           - fixtures-name: test-custom-tag-pattern
             command: --tag-pattern "alpha.*"
+          - fixtures-name: test-configure-from-cargo-toml
     steps:
       - name: Checkout
         uses: actions/checkout@v4
