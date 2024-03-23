@@ -309,7 +309,7 @@ impl Commit<'_> {
 				}
 			}
 			for (regex, text) in regex_checks {
-				if regex.is_match(&text) {
+				if regex.is_match(text.trim()) {
 					if self.skip_commit(parser, protect_breaking) {
 						return Err(AppError::GroupError(String::from(
 							"Skipping commit",
