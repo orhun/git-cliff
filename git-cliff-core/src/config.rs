@@ -276,7 +276,7 @@ impl Config {
 	/// Parses the config file from string and returns the values.
 	pub fn parse_from_str(contents: &str) -> Result<Config> {
 		Ok(config::Config::builder()
-			.add_source(config::File::from_str(&contents, config::FileFormat::Toml))
+			.add_source(config::File::from_str(contents, config::FileFormat::Toml))
 			.add_source(
 				config::Environment::with_prefix("GIT_CLIFF").separator("__"),
 			)
@@ -310,7 +310,6 @@ mod test {
 	use super::*;
 	use pretty_assertions::assert_eq;
 	use std::env;
-	use std::path::PathBuf;
 	#[test]
 	fn parse_config() -> Result<()> {
 		let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
