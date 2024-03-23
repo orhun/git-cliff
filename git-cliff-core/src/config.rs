@@ -9,17 +9,42 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
-use std::ffi::OsStr;
 use std::fmt;
 use std::fs;
 use std::path::Path;
+use std::path::PathBuf;
 
-/// Regex for matching the metadata in Cargo.toml
-const CARGO_METADATA_REGEX: &str =
-	r"^\[(?:workspace|package)\.metadata\.git\-cliff\.";
+/// Manifest file information and regex for matching contents.
+#[derive(Debug)]
+struct ManifestInfo {
+	/// Path of the manifest.
+	path:  PathBuf,
+	/// Regular expression for matching metadata in the manifest.
+	regex: Regex,
+}
 
-/// Regex for matching the metadata in pyproject.toml
-const PYPROJECT_METADATA_REGEX: &str = r"^\[(?:tool)\.git\-cliff\.";
+lazy_static::lazy_static! {
+	/// Array containing manifest information for Rust and Python projects.
+	static ref MANIFEST_INFO: Vec<ManifestInfo> = vec![
+		ManifestInfo {
+			path: PathBuf::from("Cargo.toml"),
+			regex: RegexBuilder::new(
+				r"^\[(?:workspace|package)\.metadata\.git\-cliff\.",
+			)
+			.multi_line(true)
+			.build()
+			.expect("failed to build regex"),
+		},
+		ManifestInfo {
+			path: PathBuf::from("pyproject.toml"),
+			regex: RegexBuilder::new(r"^\[(?:tool)\.git\-cliff\.")
+				.multi_line(true)
+				.build()
+				.expect("failed to build regex"),
+		},
+	];
+
+}
 
 /// Configuration values.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -232,30 +257,46 @@ pub struct LinkParser {
 }
 
 impl Config {
+	/// Reads the config file contents from project manifest (e.g. Cargo.toml,
+	/// pyproject.toml)
+	pub fn read_from_manifest() -> Result<Option<String>> {
+		for info in (*MANIFEST_INFO).iter() {
+			if info.path.exists() {
+				let contents = fs::read_to_string(&info.path)?;
+				if info.regex.is_match(&contents) {
+					return Ok(Some(
+						info.regex.replace_all(&contents, "[").to_string(),
+					));
+				}
+			}
+		}
+		Ok(None)
+	}
+
+	/// Parses the config file from string and returns the values.
+	pub fn parse_from_str(contents: &str) -> Result<Config> {
+		Ok(config::Config::builder()
+			.add_source(config::File::from_str(&contents, config::FileFormat::Toml))
+			.add_source(
+				config::Environment::with_prefix("GIT_CLIFF").separator("__"),
+			)
+			.build()?
+			.try_deserialize()?)
+	}
+
 	/// Parses the config file and returns the values.
 	pub fn parse(path: &Path) -> Result<Config> {
-		let config_builder = if path.file_name() == Some(OsStr::new("Cargo.toml")) ||
-			path.file_name() == Some(OsStr::new("pyproject.toml"))
+		if MANIFEST_INFO
+			.iter()
+			.any(|v| path.file_name() == v.path.file_name())
 		{
-			let contents = fs::read_to_string(path)?;
-			let metadata_regex = RegexBuilder::new(
-				if path.file_name() == Some(OsStr::new("Cargo.toml")) {
-					CARGO_METADATA_REGEX
-				} else {
-					PYPROJECT_METADATA_REGEX
-				},
-			)
-			.multi_line(true)
-			.build()?;
-			let contents = metadata_regex.replace_all(&contents, "[");
-			config::Config::builder().add_source(config::File::from_str(
-				&contents,
-				config::FileFormat::Toml,
-			))
-		} else {
-			config::Config::builder().add_source(config::File::from(path))
-		};
-		Ok(config_builder
+			if let Some(contents) = Self::read_from_manifest()? {
+				return Self::parse_from_str(&contents);
+			}
+		}
+
+		Ok(config::Config::builder()
+			.add_source(config::File::from(path))
 			.add_source(
 				config::Environment::with_prefix("GIT_CLIFF").separator("__"),
 			)
