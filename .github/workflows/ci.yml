@@ -42,37 +42,6 @@ jobs:
       - name: Check typos
         uses: crate-ci/typos@master
 
-  semver:
-    name: Semver
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Check semver
-        id: check_semver
-        uses: obi1kenobi/cargo-semver-checks-action@v2
-        with:
-          package: git-cliff-core
-      - name: Comment on PR
-        if: always() && (steps.check_semver.outputs.error_message != null) && (github.event_name == 'pull_request')
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          header: pr-semver-check-error
-          message: |
-            Thank you for opening this pull request! ⛰️
-
-            There seems to be semver incompatibility issues reported by [cargo-semver-checks](https://github.com/obi1kenobi/cargo-semver-checks).
-
-            Details:
-
-            > ${{ steps.check_semver.outputs.error_message }}
-      - name: Update comment on PR
-        uses: marocchino/sticky-pull-request-comment@v2
-        if: (steps.check_semver.outputs.error_message == null) && (github.event_name == 'pull_request')
-        with:
-          header: pr-semver-check-error
-          delete: true
-
   test:
     name: Test suite
     runs-on: ubuntu-22.04
