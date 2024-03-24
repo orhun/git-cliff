@@ -52,3 +52,23 @@ runs:
         sed -i "s/<<DATE>>/$current_date/g" expected.md
         diff --strip-trailing-cr output.md expected.md
       shell: bash
+
+    # test backwards compatibility using v1 confiuration
+    
+    - name: Generate a chanlog using v1 configuration
+      if: ${{ hashFiles(format('{0}/cliff.v1.toml', inputs.fixtures-dir)) }}
+      working-directory: ${{ inputs.fixtures-dir }}
+      run: git-cliff --config cliff.v1.toml --config-version 1 ${{ inputs.command }} > output.md
+      shell: bash
+    
+    - name: Compare the v1 configuration output with the expected output
+      if: ${{ hashFiles(format('{0}/cliff.v1.toml', inputs.fixtures-dir)) }}
+      working-directory: ${{ inputs.fixtures-dir }}
+      env:
+        IN_DATE_FORMAT: ${{ inputs.date-format }}
+      run: |
+        cat output.md
+        current_date=$(date +"$IN_DATE_FORMAT")
+        sed -i "s/<<DATE>>/$current_date/g" expected.md
+        diff --strip-trailing-cr output.md expected.md
+      shell: bash
