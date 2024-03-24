@@ -304,6 +304,8 @@ jobs:
         shell: bash
         working-directory: npm/git-cliff
         run: |
+          yarn config set npmAuthToken ${NODE_AUTH_TOKEN}
+          yarn config set npmPublishRegistry "https://registry.npmjs.org"
           yarn install
           yarn build
           cp ../../README.md .
