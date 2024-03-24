@@ -2,7 +2,10 @@ use super::models_v2::{
 	Config,
 	Remote,
 };
-use crate::config::parsing;
+use crate::config::{
+	parsing,
+	DEFAULT_CONFIG_FILENAME,
+};
 use crate::error::Result;
 use std::env;
 use std::path::PathBuf;
@@ -14,7 +17,7 @@ fn parse_config() -> Result<()> {
 		.expect("parent directory not found")
 		.to_path_buf()
 		.join("config")
-		.join(crate::DEFAULT_CONFIG_FILENAME);
+		.join(DEFAULT_CONFIG_FILENAME);
 
 	const FOOTER_VALUE: &str = "test";
 	const RELEASE_TAGS_PATTERN_VALUE: &str = ".*[0-9].*";

@@ -1,5 +1,9 @@
 use crate::commit::Commit;
-use crate::config::models_v2::Config;
+use crate::config::models_v2::{
+	ChangelogConfig,
+	CommitConfig,
+	Config,
+};
 use crate::error::Result;
 #[cfg(feature = "github")]
 use crate::github::{
@@ -60,9 +64,10 @@ impl<'a> Changelog<'a> {
 	/// Processes a single commit and returns/logs the result.
 	fn process_commit(
 		commit: Commit<'a>,
-		git_config: &GitConfig,
+		changelog_config: &ChangelogConfig,
+		commit_config: &CommitConfig,
 	) -> Option<Commit<'a>> {
-		match commit.process(git_config) {
+		match commit.process(changelog_config, commit_config) {
 			Ok(commit) => Some(commit),
 			Err(e) => {
 				trace!(
@@ -85,7 +90,13 @@ impl<'a> Changelog<'a> {
 				.commits
 				.iter()
 				.cloned()
-				.filter_map(|commit| Self::process_commit(commit, &self.config.git))
+				.filter_map(|commit| {
+					Self::process_commit(
+						commit,
+						&self.config.changelog,
+						&self.config.commit,
+					)
+				})
 				.flat_map(|commit| {
 					if self.config.commit.split_by_newline.unwrap_or(false) {
 						commit
@@ -95,7 +106,11 @@ impl<'a> Changelog<'a> {
 								let mut c = commit.clone();
 								c.message = line.to_string();
 								if !c.message.is_empty() {
-									Self::process_commit(c, &self.config.git)
+									Self::process_commit(
+										c,
+										&self.config.changelog,
+										&self.config.commit,
+									)
 								} else {
 									None
 								}

@@ -20,8 +20,6 @@ pub mod command;
 pub mod commit;
 /// Config file parser.
 pub mod config;
-/// Embedded file handler.
-pub mod embed;
 /// Error handling.
 pub mod error;
 /// GitHub client.
@@ -38,8 +36,6 @@ pub mod template;
 #[macro_use]
 extern crate log;
 
-/// Default configuration file.
-pub const DEFAULT_CONFIG_FILENAME: &str = "cliff.toml";
 /// Default output file.
 pub const DEFAULT_OUTPUT: &str = "CHANGELOG.md";
 /// Default ignore file.

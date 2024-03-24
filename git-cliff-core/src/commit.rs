@@ -190,9 +190,9 @@ impl Commit<'_> {
 		if let Some(preprocessors) = &commit_config.message_preprocessors {
 			commit = commit.preprocess(preprocessors)?;
 		}
-		if config.parse_conventional_commits.unwrap_or(true) {
-			if config.exclude_unconventional_commits.unwrap_or(true) &&
-				!config.split_commits.unwrap_or(false)
+		if commit_config.parse_conventional_commits.unwrap_or(true) {
+			if commit_config.exclude_unconventional_commits.unwrap_or(true) &&
+				!commit_config.split_by_newline.unwrap_or(false)
 			{
 				commit = commit.into_conventional()?;
 			} else if let Ok(conv_commit) = commit.clone().into_conventional() {
