@@ -1,6 +1,6 @@
 [![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)
 
-## [2.2.0-rc.0](https://github.com/orhun/git-cliff/compare/v2.1.2..v2.2.0-rc.0) - 2024-03-24
+## [2.2.0-rc.1](https://github.com/orhun/git-cliff/compare/v2.1.2..v2.2.0-rc.1) - 2024-03-24
 
 ### ⛰️  Features
 
@@ -15,6 +15,7 @@
 - *(command)* Add missing environment variables for Windows ([#532](https://github.com/orhun/git-cliff/issues/532)) - ([9722784](https://github.com/orhun/git-cliff/commit/972278439613d6187699fec02db8e1c4826ec92b))
 - *(commit)* Trim the text before matching with commit parser ([#573](https://github.com/orhun/git-cliff/issues/573)) - ([4971b23](https://github.com/orhun/git-cliff/commit/4971b236ace1d6a8af96f4527256ceeb8c8c4551))
 - *(config)* Drop extra '(' in first commit URL in github-keepachangelog ([#535](https://github.com/orhun/git-cliff/issues/535)) - ([8b3d09f](https://github.com/orhun/git-cliff/commit/8b3d09f7766f8dc2ae5ac1f5afab0dc51283ef3d))
+- *(npm)* Fix authenticating for `yarn npm publish` ([#574](https://github.com/orhun/git-cliff/issues/574)) - ([5a0ce6a](https://github.com/orhun/git-cliff/commit/5a0ce6acc1dab99698db73315215322d922dfde3))
 - *(release)* Fix typo in the installation of typos-cli ([#545](https://github.com/orhun/git-cliff/issues/545)) - ([700281a](https://github.com/orhun/git-cliff/commit/700281a25be52d896329027672a26b722c359283))
 
 ### 📚 Documentation
