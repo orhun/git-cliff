@@ -10,11 +10,19 @@ use clap::{
 	},
 	ArgAction,
 	Parser,
+	Subcommand,
 	ValueEnum,
 };
 use git_cliff_core::{
-	config::Remote,
-	DEFAULT_CONFIG,
+	config::{
+		migrate::MigrateArgs,
+		models_v2::{
+			CommitSortOrder,
+			Remote,
+			TagsOrderBy,
+		},
+	},
+	DEFAULT_CONFIG_FILENAME,
 	DEFAULT_OUTPUT,
 };
 use glob::Pattern;
@@ -29,10 +37,9 @@ pub enum Strip {
 	All,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
-pub enum Sort {
-	Oldest,
-	Newest,
+#[derive(Debug, Subcommand)]
+pub enum SubCommands {
+	MigrateConfig(MigrateArgs),
 }
 
 /// Command-line arguments to parse.
@@ -42,7 +49,7 @@ pub enum Sort {
     author = clap::crate_authors!("\n"),
     about,
     rename_all_env = "screaming-snake",
-	help_template = "\
+	  help_template = "\
 {before-help}{name} {version}
 {author-with-newline}{about-with-newline}
 {usage-heading}
@@ -52,10 +59,14 @@ pub enum Sort {
 ",
     override_usage = "git-cliff [FLAGS] [OPTIONS] [--] [RANGE]",
     next_help_heading = Some("OPTIONS"),
-	disable_help_flag = true,
-	disable_version_flag = true,
+	  disable_help_flag = true,
+	  disable_version_flag = true,
+	  propagate_version = true,
 )]
 pub struct Opt {
+	#[command(subcommand)]
+	pub subcommand: Option<SubCommands>,
+
 	#[arg(
 		short,
 		long,
@@ -64,7 +75,8 @@ pub struct Opt {
 		help = "Prints help information",
 		help_heading = "FLAGS"
 	)]
-	pub help:           Option<bool>,
+	pub help: Option<bool>,
+
 	#[arg(
 		short = 'V',
 		long,
@@ -73,10 +85,12 @@ pub struct Opt {
 		help = "Prints version information",
 		help_heading = "FLAGS"
 	)]
-	pub version:        Option<bool>,
+	pub version: Option<bool>,
+
 	/// Increases the logging verbosity.
 	#[arg(short, long, action = ArgAction::Count, alias = "debug", help_heading = Some("FLAGS"))]
-	pub verbose:        u8,
+	pub verbose: u8,
+
 	/// Writes the default configuration file to cliff.toml
 	#[arg(
 	    short,
@@ -85,17 +99,28 @@ pub struct Opt {
 	    num_args = 0..=1,
 	    required = false
 	)]
-	pub init:           Option<Option<String>>,
+	pub init: Option<Option<String>>,
+
 	/// Sets the configuration file.
 	#[arg(
 	    short,
 	    long,
 	    env = "GIT_CLIFF_CONFIG",
 	    value_name = "PATH",
-	    default_value = DEFAULT_CONFIG,
+	    default_value = DEFAULT_CONFIG_FILENAME,
 	    value_parser = Opt::parse_dir
 	)]
-	pub config:         PathBuf,
+	pub config: PathBuf,
+
+	/// Sets the version of the configuration file given in `--config`.
+	#[arg(
+		long,
+		env = "GIT_CLIFF_CONFIG_VERSION",
+		value_name = "VERSION",
+		default_value_t = 2
+	)]
+	pub config_version: u8,
+
 	/// Sets the working directory.
 	#[arg(
 	    short,
@@ -104,7 +129,8 @@ pub struct Opt {
 	    value_name = "PATH",
 	    value_parser = Opt::parse_dir
 	)]
-	pub workdir:        Option<PathBuf>,
+	pub workdir: Option<PathBuf>,
+
 	/// Sets the git repository.
 	#[arg(
 		short,
@@ -114,7 +140,8 @@ pub struct Opt {
 		num_args(1..),
 		value_parser = Opt::parse_dir
 	)]
-	pub repository:     Option<Vec<PathBuf>>,
+	pub repository: Option<Vec<PathBuf>>,
+
 	/// Sets the path to include related commits.
 	#[arg(
 		long,
@@ -122,7 +149,8 @@ pub struct Opt {
 		value_name = "PATTERN",
 		num_args(1..)
 	)]
-	pub include_path:   Option<Vec<Pattern>>,
+	pub include_path: Option<Vec<Pattern>>,
+
 	/// Sets the path to exclude related commits.
 	#[arg(
 		long,
@@ -130,10 +158,12 @@ pub struct Opt {
 		value_name = "PATTERN",
 		num_args(1..)
 	)]
-	pub exclude_path:   Option<Vec<Pattern>>,
-	/// Sets the regex for matching git tags.
-	#[arg(long, env = "GIT_CLIFF_TAG_PATTERN", value_name = "PATTERN")]
-	pub tag_pattern:    Option<Regex>,
+	pub exclude_path: Option<Vec<Pattern>>,
+
+	/// Sets the regex to select git tags that represent releases.
+	#[arg(long, env = "GIT_CLIFF_RELEASE_TAGS_PATTERN", value_name = "PATTERN")]
+	pub release_tags_pattern: Option<Regex>,
+
 	/// Sets custom commit messages to include in the changelog.
 	#[arg(
 		long,
@@ -141,7 +171,8 @@ pub struct Opt {
 		value_name = "MSG",
 		num_args(1..)
 	)]
-	pub with_commit:    Option<Vec<String>>,
+	pub with_commit: Option<Vec<String>>,
+
 	/// Sets commits that will be skipped in the changelog.
 	#[arg(
 		long,
@@ -149,7 +180,8 @@ pub struct Opt {
 		value_name = "SHA1",
 		num_args(1..)
 	)]
-	pub skip_commit:    Option<Vec<String>>,
+	pub skip_commit: Option<Vec<String>>,
+
 	/// Prepends entries to the given changelog file.
 	#[arg(
 	    short,
@@ -158,7 +190,8 @@ pub struct Opt {
 	    value_name = "PATH",
 	    value_parser = Opt::parse_dir
 	)]
-	pub prepend:        Option<PathBuf>,
+	pub prepend: Option<PathBuf>,
+
 	/// Writes output to the given file.
 	#[arg(
 	    short,
@@ -169,7 +202,8 @@ pub struct Opt {
 	    num_args = 0..=1,
 	    default_missing_value = DEFAULT_OUTPUT
 	)]
-	pub output:         Option<PathBuf>,
+	pub output: Option<PathBuf>,
+
 	/// Sets the tag for the latest version.
 	#[arg(
 		short,
@@ -178,53 +212,70 @@ pub struct Opt {
 		value_name = "TAG",
 		allow_hyphen_values = true
 	)]
-	pub tag:            Option<String>,
+	pub tag: Option<String>,
+
 	/// Bumps the version for unreleased changes.
 	#[arg(long, help_heading = Some("FLAGS"))]
-	pub bump:           bool,
+	pub bump: bool,
+
 	/// Prints bumped version for unreleased changes.
 	#[arg(long, help_heading = Some("FLAGS"))]
 	pub bumped_version: bool,
-	/// Sets the template for the changelog body.
+
+	/// Sets the Tera template to be rendered for each release in the changelog.
 	#[arg(
 		short,
 		long,
-		env = "GIT_CLIFF_TEMPLATE",
+		env = "GIT_CLIFF_BODY_TEMPLATE",
 		value_name = "TEMPLATE",
 		allow_hyphen_values = true
 	)]
-	pub body:           Option<String>,
+	pub body_template: Option<String>,
+
 	/// Processes the commits starting from the latest tag.
 	#[arg(short, long, help_heading = Some("FLAGS"))]
-	pub latest:         bool,
+	pub latest: bool,
+
 	/// Processes the commits that belong to the current tag.
 	#[arg(long, help_heading = Some("FLAGS"))]
-	pub current:        bool,
+	pub current: bool,
+
 	/// Processes the commits that do not belong to a tag.
 	#[arg(short, long, help_heading = Some("FLAGS"))]
-	pub unreleased:     bool,
-	/// Sorts the tags topologically.
-	#[arg(long, help_heading = Some("FLAGS"))]
-	pub topo_order:     bool,
-	/// Disables the external command execution.
-	#[arg(long, help_heading = Some("FLAGS"))]
-	pub no_exec:        bool,
-	/// Prints changelog context as JSON.
-	#[arg(short = 'x', long, help_heading = Some("FLAGS"))]
-	pub context:        bool,
-	/// Strips the given parts from the changelog.
-	#[arg(short, long, value_name = "PART", value_enum)]
-	pub strip:          Option<Strip>,
-	/// Sets sorting of the commits inside sections.
+	pub unreleased: bool,
+
+	/// Sets sorting of releases.
 	#[arg(
 		long,
 		value_enum,
-		default_value_t = Sort::Oldest
+		default_value_t = TagsOrderBy::Time
 	)]
-	pub sort:           Sort,
+	pub release_order_by: TagsOrderBy,
+
+	/// Disables the external command execution.
+	#[arg(long, help_heading = Some("FLAGS"))]
+	pub no_exec: bool,
+
+	/// Prints changelog context as JSON.
+	#[arg(short = 'x', long, help_heading = Some("FLAGS"))]
+	pub context: bool,
+
+	/// Strips the given parts from the changelog.
+	#[arg(short, long, value_name = "PART", value_enum)]
+	pub strip: Option<Strip>,
+
+	/// Sets ordering of the commits inside sections.
+	#[arg(
+		long,
+		value_enum,
+		default_value_t = CommitSortOrder::Oldest
+	)]
+	pub commit_sort_order: CommitSortOrder,
+
 	/// Sets the commit range to process.
 	#[arg(value_name = "RANGE", help_heading = Some("ARGS"))]
-	pub range:          Option<String>,
+	pub range: Option<String>,
+
 	/// Sets the GitHub API token.
 	#[arg(
 		long,
@@ -232,7 +283,8 @@ pub struct Opt {
 		value_name = "TOKEN",
 		hide_env_values = true
 	)]
-	pub github_token:   Option<SecretString>,
+	pub github_token: Option<SecretString>,
+
 	/// Sets the GitHub repository.
 	#[arg(
 	    long,
@@ -240,7 +292,7 @@ pub struct Opt {
 	    value_parser = clap::value_parser!(RemoteValue),
 	    value_name = "OWNER/REPO"
 	)]
-	pub github_repo:    Option<RemoteValue>,
+	pub github_repo: Option<RemoteValue>,
 }
 
 /// Custom type for the remote value.

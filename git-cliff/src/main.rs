@@ -1,12 +1,16 @@
 use clap::Parser;
 use git_cliff::args::Opt;
+use git_cliff::args::SubCommands;
 use git_cliff::logger;
 use git_cliff_core::error::Result;
 use std::env;
 use std::process;
 
 fn main() -> Result<()> {
-	let args = Opt::parse();
+	// parse command line arguments
+	let args: Opt = Opt::parse();
+
+	// set log level
 	if args.verbose == 1 {
 		env::set_var("RUST_LOG", "debug");
 	} else if args.verbose > 1 {
@@ -15,7 +19,18 @@ fn main() -> Result<()> {
 		env::set_var("RUST_LOG", "info");
 	}
 	logger::init()?;
-	match git_cliff::run(args) {
+
+	// run the command or subcommand
+	let result = match &args.subcommand {
+		Some(sub_command) => match sub_command {
+			SubCommands::MigrateConfig(migrate_args) => {
+				git_cliff_core::config::migrate::run(migrate_args)
+			}
+		},
+		None => git_cliff::run(args),
+	};
+
+	match result {
 		Ok(_) => process::exit(0),
 		Err(e) => {
 			log::error!("{}", e);

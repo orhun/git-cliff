@@ -15,16 +15,19 @@ extern crate log;
 
 use args::{
 	Opt,
-	Sort,
 	Strip,
 };
-use clap::ValueEnum;
 use git_cliff_core::changelog::Changelog;
 use git_cliff_core::commit::Commit;
-use git_cliff_core::config::{
+#[allow(deprecated)]
+use git_cliff_core::config::models_v1::Config as Config_v1;
+use git_cliff_core::config::models_v2::{
 	CommitParser,
+	CommitSortOrder,
 	Config,
+	TagsOrderBy,
 };
+use git_cliff_core::config::parsing;
 use git_cliff_core::embed::{
 	BuiltinConfig,
 	EmbeddedConfig,
@@ -36,7 +39,7 @@ use git_cliff_core::error::{
 use git_cliff_core::release::Release;
 use git_cliff_core::repo::Repository;
 use git_cliff_core::{
-	DEFAULT_CONFIG,
+	DEFAULT_CONFIG_FILENAME,
 	IGNORE_FILE,
 };
 use std::env;
@@ -48,6 +51,7 @@ use std::io::{
 	self,
 	Write,
 };
+use std::path::PathBuf;
 use std::time::{
 	SystemTime,
 	UNIX_EPOCH,
@@ -84,30 +88,33 @@ fn process_repository<'a>(
 	config: &mut Config,
 	args: &Opt,
 ) -> Result<Vec<Release<'a>>> {
-	let mut tags = repository.tags(&config.git.tag_pattern, args.topo_order)?;
-	let skip_regex = config.git.skip_tags.as_ref();
-	let ignore_regex = config.git.ignore_tags.as_ref();
+	let mut tags =
+		repository.tags(&config.release.tags_pattern, &args.release_order_by)?;
+	let exclude_tags_pattern = config.commit.exclude_tags_pattern.as_ref();
+	let skip_release_pattern = config.release.skip_tags_pattern.as_ref();
 	tags = tags
 		.into_iter()
 		.filter(|(_, name)| {
 			// Keep skip tags to drop commits in the later stage.
-			let skip = skip_regex.map(|r| r.is_match(name)).unwrap_or_default();
+			let skip = exclude_tags_pattern
+				.map(|r| r.is_match(name))
+				.unwrap_or_default();
 
-			let ignore = ignore_regex
+			let skip_release = skip_release_pattern
 				.map(|r| {
 					if r.as_str().trim().is_empty() {
 						return false;
 					}
 
-					let ignore_tag = r.is_match(name);
-					if ignore_tag {
+					let skip_release_tag = r.is_match(name);
+					if skip_release_tag {
 						trace!("Ignoring release: {}", name)
 					}
-					ignore_tag
+					skip_release_tag
 				})
 				.unwrap_or_default();
 
-			skip || !ignore
+			skip || !skip_release
 		})
 		.collect();
 
@@ -181,7 +188,7 @@ fn process_repository<'a>(
 		args.include_path.clone(),
 		args.exclude_path.clone(),
 	)?;
-	if let Some(commit_limit_value) = config.git.limit_commits {
+	if let Some(commit_limit_value) = config.commit.max_commit_count {
 		commits = commits
 			.drain(..commits.len().min(commit_limit_value))
 			.collect();
@@ -209,7 +216,7 @@ fn process_repository<'a>(
 	for git_commit in commits.iter().rev() {
 		let commit = Commit::from(git_commit);
 		let commit_id = commit.id.to_string();
-		if args.sort == Sort::Newest {
+		if args.commit_sort_order == CommitSortOrder::Newest {
 			releases[release_index].commits.insert(0, commit);
 		} else {
 			releases[release_index].commits.push(commit);
@@ -290,6 +297,62 @@ fn process_repository<'a>(
 	Ok(releases)
 }
 
+pub fn get_config_path(path: PathBuf) -> PathBuf {
+	if !path.exists() {
+		if let Some(config_path) = dirs::config_dir().map(|dir| {
+			dir.join(env!("CARGO_PKG_NAME"))
+				.join(DEFAULT_CONFIG_FILENAME)
+		}) {
+			return config_path;
+		}
+	}
+	path
+}
+
+/// Loads the configuration based on the given command line arguments.
+pub fn load_config(args: &Opt) -> Result<Config> {
+	let config_path = get_config_path(args.config.clone());
+	// If the argument `--config` matches the name of a config in
+	// ./examples, use it.
+	if let Ok((builtin_config, name)) =
+		BuiltinConfig::parse(args.config.to_string_lossy().to_string())
+	{
+		info!("Using built-in configuration file {name}.");
+		return Ok(builtin_config);
+	}
+	// If `--config` denotes an existing file, try loading it as configuration.
+	else if config_path.is_file() {
+		info!(
+			"Loading configuration from {}.",
+			args.config.to_string_lossy()
+		);
+
+		// Default to loading a v2 config.
+		if args.config_version == 2 {
+			Ok(parsing::parse::<Config>(&config_path)?)
+		}
+		// Load a v1 config and immediately convert it to v2.
+		else {
+			warn!(
+				"Configuration format v1 is deprecated. Consider migrating to v2. \
+				 Refer to https://git-cliff.org/docs/configuration/migration for more information."
+			);
+			#[allow(deprecated)]
+			let config_v1 = parsing::parse::<Config_v1>(&config_path)?;
+			Ok(Config::from(config_v1))
+		}
+	}
+	// Otherwise fall back to using the embedded configuration from
+	// ./config/cliff.toml.
+	else {
+		warn!(
+			"{:?} could not be found. Using the default configuration.",
+			args.config
+		);
+		EmbeddedConfig::parse()
+	}
+}
+
 /// Runs `git-cliff`.
 pub fn run(mut args: Opt) -> Result<()> {
 	// Check if there is a new version available.
@@ -305,15 +368,11 @@ pub fn run(mut args: Opt) -> Result<()> {
 		info!(
 			"Saving the configuration file{} to {:?}",
 			init_config.map(|v| format!(" ({v})")).unwrap_or_default(),
-			DEFAULT_CONFIG
+			DEFAULT_CONFIG_FILENAME
 		);
-		fs::write(DEFAULT_CONFIG, contents)?;
+		fs::write(DEFAULT_CONFIG_FILENAME, contents)?;
 		return Ok(());
 	}
-
-	// Retrieve the built-in configuration.
-	let builtin_config =
-		BuiltinConfig::parse(args.config.to_string_lossy().to_string());
 
 	// Set the working directory.
 	if let Some(ref workdir) = args.workdir {
@@ -331,37 +390,8 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 	}
 
-	// Parse the configuration file.
-	let mut path = args.config.clone();
-	if !path.exists() {
-		if let Some(config_path) = dirs::config_dir()
-			.map(|dir| dir.join(env!("CARGO_PKG_NAME")).join(DEFAULT_CONFIG))
-		{
-			path = config_path;
-		}
-	}
-
-	// Load the default configuration if necessary.
-	let mut config = if let Ok((config, name)) = builtin_config {
-		info!("Using built-in configuration file: {name}");
-		config
-	} else if path.exists() {
-		Config::parse(&path)?
-	} else if let Some(contents) = Config::read_from_manifest()? {
-		Config::parse_from_str(&contents)?
-	} else {
-		if !args.context {
-			warn!(
-				"{:?} is not found, using the default configuration.",
-				args.config
-			);
-		}
-		EmbeddedConfig::parse()?
-	};
-	if config.changelog.body.is_none() && !args.context {
-		warn!("Changelog body is not specified, using the default template.");
-		config.changelog.body = EmbeddedConfig::parse()?.changelog.body;
-	}
+	// Load the configuration.
+	let mut config = load_config(&args)?;
 
 	// Update the configuration based on command line arguments and vice versa.
 	match args.strip {
@@ -369,34 +399,36 @@ pub fn run(mut args: Opt) -> Result<()> {
 			config.changelog.header = None;
 		}
 		Some(Strip::Footer) => {
-			config.changelog.footer = None;
+			config.changelog.footer_template = None;
 		}
 		Some(Strip::All) => {
 			config.changelog.header = None;
-			config.changelog.footer = None;
+			config.changelog.footer_template = None;
 		}
 		None => {}
 	}
 	if args.prepend.is_some() {
-		config.changelog.footer = None;
+		config.changelog.footer_template = None;
 		if !(args.unreleased || args.latest || args.range.is_some()) {
 			return Err(Error::ArgumentError(String::from(
 				"'-u' or '-l' is not specified",
 			)));
 		}
 	}
-	if args.body.is_some() {
-		config.changelog.body.clone_from(&args.body);
+	if args.body_template.is_some() {
+		config
+			.changelog
+			.body_template
+			.clone_from(&args.body_template);
 	}
-	if args.sort == Sort::Oldest {
-		if let Some(ref sort_commits) = config.git.sort_commits {
-			args.sort = Sort::from_str(sort_commits, true)
-				.expect("Incorrect config value for 'sort_commits'");
+	if args.commit_sort_order == CommitSortOrder::Oldest {
+		if let Some(commit_sort_order) = config.commit.sort_order {
+			args.commit_sort_order = commit_sort_order;
 		}
 	}
-	if !args.topo_order {
-		if let Some(topo_order) = config.git.topo_order {
-			args.topo_order = topo_order;
+	if args.release_order_by == TagsOrderBy::Time {
+		if let Some(release_order_by) = config.release.order_by {
+			args.release_order_by = release_order_by;
 		}
 	}
 	if args.github_token.is_some() {
@@ -407,7 +439,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		config.remote.github.repo = remote.0.repo.to_string();
 	}
 	if args.no_exec {
-		if let Some(ref mut preprocessors) = config.git.commit_preprocessors {
+		if let Some(ref mut preprocessors) = config.commit.message_preprocessors {
 			preprocessors
 				.iter_mut()
 				.for_each(|v| v.replace_command = None);
@@ -418,9 +450,15 @@ pub fn run(mut args: Opt) -> Result<()> {
 				.for_each(|v| v.replace_command = None);
 		}
 	}
-	config.git.skip_tags = config.git.skip_tags.filter(|r| !r.as_str().is_empty());
-	if args.tag_pattern.is_some() {
-		config.git.tag_pattern.clone_from(&args.tag_pattern);
+	config.commit.exclude_tags_pattern = config
+		.commit
+		.exclude_tags_pattern
+		.filter(|r| !r.as_str().is_empty());
+	if args.release_tags_pattern.is_some() {
+		config
+			.release
+			.tags_pattern
+			.clone_from(&args.release_tags_pattern);
 	}
 
 	// Process the repositories.
@@ -442,7 +480,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		if let Some(ref skip_commit) = args.skip_commit {
 			skip_list.extend(skip_commit.clone());
 		}
-		if let Some(commit_parsers) = config.git.commit_parsers.as_mut() {
+		if let Some(commit_parsers) = config.commit.commit_parsers.as_mut() {
 			for sha1 in skip_list {
 				commit_parsers.insert(0, CommitParser {
 					sha: Some(sha1.to_string()),

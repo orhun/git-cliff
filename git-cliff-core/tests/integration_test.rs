@@ -2,10 +2,10 @@ use git_cliff_core::commit::{
 	Commit,
 	Signature,
 };
-use git_cliff_core::config::{
+use git_cliff_core::config::models_v2::{
 	ChangelogConfig,
+	CommitConfig,
 	CommitParser,
-	GitConfig,
 	LinkParser,
 	TextProcessor,
 };
@@ -20,8 +20,8 @@ use std::fmt::Write;
 #[test]
 fn generate_changelog() -> Result<()> {
 	let changelog_config = ChangelogConfig {
-		header:         Some(String::from("this is a changelog")),
-		body:           Some(String::from(
+		header:                    Some(String::from("this is a changelog")),
+		body_template:             Some(String::from(
 			r#"
 ## Release {{ version }} - <DATE>
 {% for group, commits in commits | group_by(attribute="group") %}
@@ -38,20 +38,21 @@ fn generate_changelog() -> Result<()> {
 {% endfor -%}
 {% endfor %}"#,
 		)),
-		footer:         Some(String::from("eoc - end of changelog")),
-		trim:           None,
-		postprocessors: None,
+		footer_template:           Some(String::from("eoc - end of changelog")),
+		trim_body_whitespace:      None,
+		postprocessors:            None,
+		exclude_ungrouped_changes: Some(true),
 	};
-	let git_config = GitConfig {
-		conventional_commits:     Some(true),
-		filter_unconventional:    Some(true),
-		split_commits:            Some(false),
-		commit_preprocessors:     Some(vec![TextProcessor {
+	let commit_config = CommitConfig {
+		parse_conventional_commits:     Some(true),
+		exclude_unconventional_commits: Some(true),
+		split_by_newline:               Some(false),
+		message_preprocessors:          Some(vec![TextProcessor {
 			pattern:         Regex::new(r"\(fixes (#[1-9]+)\)").unwrap(),
 			replace:         Some(String::from("[closes Issue${1}]")),
 			replace_command: None,
 		}]),
-		commit_parsers:           Some(vec![
+		commit_parsers:                 Some(vec![
 			CommitParser {
 				sha:           Some(String::from("coffee")),
 				message:       None,
@@ -108,14 +109,10 @@ fn generate_changelog() -> Result<()> {
 				pattern:       Regex::new("John Doe").ok(),
 			},
 		]),
-		protect_breaking_commits: None,
-		filter_commits:           Some(true),
-		tag_pattern:              None,
-		skip_tags:                None,
-		ignore_tags:              None,
-		topo_order:               None,
-		sort_commits:             None,
-		link_parsers:             Some(vec![
+		retain_breaking_changes:        None,
+		exclude_tags_pattern:           None,
+		sort_order:                     None,
+		link_parsers:                   Some(vec![
 			LinkParser {
 				pattern: Regex::new("#(\\d+)").unwrap(),
 				href:    String::from("https://github.com/$1"),
@@ -127,7 +124,7 @@ fn generate_changelog() -> Result<()> {
 				text:    Some(String::from("$1")),
 			},
 		]),
-		limit_commits:            None,
+		max_commit_count:               None,
 	};
 
 	let mut commit_with_author = Commit::new(
@@ -183,7 +180,7 @@ fn generate_changelog() -> Result<()> {
                 commit_with_author
 			]
 			.iter()
-			.filter_map(|c| c.process(&git_config).ok())
+			.filter_map(|c| c.process(&changelog_config, &commit_config).ok())
 			.collect::<Vec<Commit>>(),
 			commit_id: None,
 			timestamp: 0,
@@ -224,14 +221,15 @@ fn generate_changelog() -> Result<()> {
 	];
 
 	let out = &mut String::new();
-	let template = Template::new(changelog_config.body.unwrap(), false)?;
+	let body_template =
+		Template::new(changelog_config.body_template.unwrap(), false)?;
 
 	writeln!(out, "{}", changelog_config.header.unwrap()).unwrap();
 	for release in releases {
 		write!(
 			out,
 			"{}",
-			template.render(
+			body_template.render(
 				&release,
 				Option::<HashMap<&str, String>>::None.as_ref(),
 				&[TextProcessor {
@@ -243,7 +241,7 @@ fn generate_changelog() -> Result<()> {
 		)
 		.unwrap();
 	}
-	writeln!(out, "{}", changelog_config.footer.unwrap()).unwrap();
+	writeln!(out, "{}", changelog_config.footer_template.unwrap()).unwrap();
 
 	assert_eq!(
 		r#"this is a changelog
