@@ -186,7 +186,9 @@ impl Commit<'_> {
 			commit = commit.preprocess(preprocessors)?;
 		}
 		if config.conventional_commits.unwrap_or(true) {
-			if config.filter_unconventional.unwrap_or(true) {
+			if config.filter_unconventional.unwrap_or(true) &&
+				!config.split_commits.unwrap_or(false)
+			{
 				commit = commit.into_conventional()?;
 			} else if let Ok(conv_commit) = commit.clone().into_conventional() {
 				commit = conv_commit;

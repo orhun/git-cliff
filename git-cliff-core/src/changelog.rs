@@ -1,5 +1,8 @@
 use crate::commit::Commit;
-use crate::config::Config;
+use crate::config::{
+	Config,
+	GitConfig,
+};
 use crate::error::Result;
 #[cfg(feature = "github")]
 use crate::github::{
@@ -57,6 +60,25 @@ impl<'a> Changelog<'a> {
 		Ok(changelog)
 	}
 
+	/// Processes a single commit and returns/logs the result.
+	fn process_commit(
+		commit: Commit<'a>,
+		git_config: &GitConfig,
+	) -> Option<Commit<'a>> {
+		match commit.process(git_config) {
+			Ok(commit) => Some(commit),
+			Err(e) => {
+				trace!(
+					"{} - {} ({})",
+					commit.id[..7].to_string(),
+					e,
+					commit.message.lines().next().unwrap_or_default().trim()
+				);
+				None
+			}
+		}
+	}
+
 	/// Processes the commits and omits the ones that doesn't match the
 	/// criteria set by configuration file.
 	fn process_commits(&mut self) {
@@ -66,31 +88,20 @@ impl<'a> Changelog<'a> {
 				.commits
 				.iter()
 				.cloned()
+				.filter_map(|commit| Self::process_commit(commit, &self.config.git))
 				.flat_map(|commit| {
 					if self.config.git.split_commits.unwrap_or(false) {
 						commit
 							.message
 							.lines()
-							.map(|line| {
+							.flat_map(|line| {
 								let mut c = commit.clone();
 								c.message = line.to_string();
-								c
+								Self::process_commit(c, &self.config.git)
 							})
 							.collect()
 					} else {
 						vec![commit]
-					}
-				})
-				.filter_map(|commit| match commit.process(&self.config.git) {
-					Ok(commit) => Some(commit),
-					Err(e) => {
-						trace!(
-							"{} - {} ({})",
-							commit.id[..7].to_string(),
-							e,
-							commit.message.lines().next().unwrap_or_default().trim()
-						);
-						None
 					}
 				})
 				.collect::<Vec<Commit>>();
@@ -311,7 +322,6 @@ mod test {
 		Bump,
 		ChangelogConfig,
 		CommitParser,
-		GitConfig,
 		Remote,
 		RemoteConfig,
 		TextProcessor,
