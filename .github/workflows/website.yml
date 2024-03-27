@@ -43,6 +43,11 @@ jobs:
       - name: Build
         working-directory: ./website
         run: yarn build
+      - name: Deploy preview
+        if: github.event_name == 'pull_request'
+        uses: rossjrw/pr-preview-action@v1
+        with:
+          source-dir: ./build/
 
   deploy:
     name: Deploy website
