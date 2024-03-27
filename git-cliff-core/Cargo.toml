@@ -1,6 +1,6 @@
 [package]
 name = "git-cliff-core"
-version = "2.2.0-rc.0" # managed by release.sh
+version = "2.2.0-rc.1" # managed by release.sh
 description = "Core library of git-cliff"
 authors = ["git-cliff contributors <git-cliff@protonmail.com>"]
 license = "MIT OR Apache-2.0"
@@ -37,10 +37,10 @@ dirs.workspace = true
 lazy_static.workspace = true
 thiserror = "1.0.58"
 serde = { version = "1.0.197", features = ["derive"] }
-serde_json = "1.0.114"
+serde_json = "1.0.115"
 serde_regex = "1.1.0"
 tera = "1.19.1"
-indexmap = { version = "2.2.5", optional = true }
+indexmap = { version = "2.2.6", optional = true }
 toml = "0.8.12"
 lazy-regex = "3.1.0"
 next_version = "0.2.15"
