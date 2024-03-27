@@ -268,6 +268,13 @@ impl Commit<'_> {
 			) {
 				regex_checks.push((body_regex, body.to_string()))
 			}
+			if let (Some(footer_regex), Some(footers)) = (
+				parser.footer.as_ref(),
+				self.conv.as_ref().map(|v| v.footers()),
+			) {
+				regex_checks
+					.extend(footers.iter().map(|f| (footer_regex, f.to_string())));
+			}
 			if let (Some(field_name), Some(pattern_regex)) =
 				(parser.field.as_ref(), parser.pattern.as_ref())
 			{
@@ -472,6 +479,7 @@ mod test {
 				sha:           None,
 				message:       Regex::new("test*").ok(),
 				body:          None,
+				footer:        None,
 				group:         Some(String::from("test_group")),
 				default_scope: Some(String::from("test_scope")),
 				scope:         None,
@@ -645,6 +653,7 @@ mod test {
 				sha:           None,
 				message:       None,
 				body:          None,
+				footer:        None,
 				group:         Some(String::from("Test group")),
 				default_scope: None,
 				scope:         None,
@@ -673,6 +682,7 @@ mod test {
 				)),
 				message:       None,
 				body:          None,
+				footer:        None,
 				group:         None,
 				default_scope: None,
 				scope:         None,
@@ -692,6 +702,7 @@ mod test {
 				)),
 				message:       None,
 				body:          None,
+				footer:        None,
 				group:         Some(String::from("Test group")),
 				default_scope: None,
 				scope:         None,
