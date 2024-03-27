@@ -42,6 +42,12 @@ jobs:
       - name: Install dependencies
         working-directory: ./website
         run: yarn install --frozen-lockfile --non-interactive
+      # TODO: is there an easier way of changing the base URL?
+      - name: Change base URL
+        if: github.event_name == 'pull_request'
+        run: |
+          sed -i "s|baseUrl: \"/\"|baseUrl: \"https:\/\/git-cliff.org\/pr-preview\/pr-${{ github.event.number }}/\"|g" \
+            website/docusaurus.config.js
       - name: Build
         working-directory: ./website
         run: yarn build
