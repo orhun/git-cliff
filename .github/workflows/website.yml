@@ -46,7 +46,7 @@ jobs:
 
   deploy:
     name: Deploy website
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: ${{ startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-22.04
     environment:
       name: github-pages
