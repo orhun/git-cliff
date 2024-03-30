@@ -28,8 +28,6 @@ jobs:
     name: Test deployment
     if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-22.04
-    permissions:
-      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,20 +40,9 @@ jobs:
       - name: Install dependencies
         working-directory: ./website
         run: yarn install --frozen-lockfile --non-interactive
-      # TODO: is there an easier way of changing the base URL?
-      - name: Change base URL
-        if: github.event_name == 'pull_request'
-        run: |
-          sed -i "s|baseUrl: \"/\"|baseUrl: \"https:\/\/git-cliff.org\/pr-preview\/pr-${{ github.event.number }}/\"|g" \
-            website/docusaurus.config.js
       - name: Build
         working-directory: ./website
         run: yarn build
-      - name: Deploy preview
-        if: github.event_name == 'pull_request'
-        uses: rossjrw/pr-preview-action@v1
-        with:
-          source-dir: ./website/build/
 
   deploy:
     name: Deploy website
