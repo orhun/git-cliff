@@ -1,6 +1,6 @@
 [![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)
 
-## [2.2.0-rc.1](https://github.com/orhun/git-cliff/compare/v2.1.2..v2.2.0-rc.1) - 2024-03-24
+## [2.2.0-rc.2](https://github.com/orhun/git-cliff/compare/v2.1.2..v2.2.0-rc.2) - 2024-03-30
 
 ### ⛰️  Features
 
@@ -29,10 +29,13 @@
 - *(ci)* Temporarily disable semver checks - ([f26fbe0](https://github.com/orhun/git-cliff/commit/f26fbe09ffc4ad0bf24260d7bd8a93d991817a2a))
 - *(ci)* Comment on pull requests about semver checks - ([ccdc152](https://github.com/orhun/git-cliff/commit/ccdc15217cfcc1c1c3bf09d4d997f7f99526b10e))
 - *(config)* Skip clippy commits in changelog - ([830528c](https://github.com/orhun/git-cliff/commit/830528c0c0c8d45362869df54c835afab2936c90))
+- *(github)* Remove cname - ([679aa46](https://github.com/orhun/git-cliff/commit/679aa4671984c8a5c1f5ea6929afa3fc26f667fc))
 - *(github)* Update funding options - ([4bedf76](https://github.com/orhun/git-cliff/commit/4bedf764e33454d44db9020a0dd3149df09489e2))
 - *(github)* Use form based issue templates ([#529](https://github.com/orhun/git-cliff/issues/529)) - ([8f8e221](https://github.com/orhun/git-cliff/commit/8f8e2215636262b21074963ac0d846edc55a80ab))
 - *(npm)* Publish rc version for prereleases ([#528](https://github.com/orhun/git-cliff/issues/528)) - ([16bea51](https://github.com/orhun/git-cliff/commit/16bea5179a89af26dd0bfb07c7d6b7d1efa3c54e))
 - *(pypi)* Update maturin version ([#539](https://github.com/orhun/git-cliff/issues/539)) - ([10b7ab8](https://github.com/orhun/git-cliff/commit/10b7ab829f30beba19d13437ebafc35b9bb38476))
+- *(website)* Allow deploying website manually - ([0b64bc0](https://github.com/orhun/git-cliff/commit/0b64bc032523f6565e47352cccd0d92f8bf9eae9))
+- *(website)* Only deploy website when there is a new release - ([8651832](https://github.com/orhun/git-cliff/commit/8651832926afa83dac4b9cbb5d298bbea5e7af6d))
 
 ## [2.1.2](https://github.com/orhun/git-cliff/compare/v2.0.4..v2.1.2) - 2024-03-03
 
