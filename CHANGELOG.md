@@ -1,6 +1,6 @@
 [![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)
 
-## [2.2.0-rc.2](https://github.com/orhun/git-cliff/compare/v2.1.2..v2.2.0-rc.2) - 2024-03-30
+## [2.2.0](https://github.com/orhun/git-cliff/compare/v2.1.2..v2.2.0) - 2024-03-30
 
 ### ⛰️  Features
 
@@ -20,6 +20,7 @@
 
 ### 📚 Documentation
 
+- *(website)* Add highlights for 2.2.0 ([#575](https://github.com/orhun/git-cliff/issues/575)) - ([2e81ad0](https://github.com/orhun/git-cliff/commit/2e81ad0022e6354a5af2d6110ea10e0e46079429))
 - *(website)* Fix the documentation for `--include-path` ([#567](https://github.com/orhun/git-cliff/issues/567)) - ([4a7aa7e](https://github.com/orhun/git-cliff/commit/4a7aa7e91f78d8d436842d289f5f61a4bd8e5a2f))
 - *(website)* Update setup-git-cliff action documentation - ([4f46396](https://github.com/orhun/git-cliff/commit/4f4639647bc73428c71ab1944b3e330023961924))
 - *(website)* Add documentation for taiki-e/install-action ([#563](https://github.com/orhun/git-cliff/issues/563)) - ([85db777](https://github.com/orhun/git-cliff/commit/85db77760914a2ac5e35d919613b744af15d0b05))
