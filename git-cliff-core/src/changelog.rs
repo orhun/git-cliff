@@ -356,8 +356,6 @@ mod test {
 	use super::*;
 	use crate::config::models_v2::{
 		Bump,
-		ChangelogConfig,
-		CommitConfig,
 		CommitParser,
 		CommitSortOrder,
 		ReleaseConfig,

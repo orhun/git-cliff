@@ -53,11 +53,14 @@ pub fn read_from_manifest() -> Result<Option<String>> {
 		if info.path.exists() {
 			let contents = fs::read_to_string(&info.path)?;
 			if info.regex.is_match(&contents) {
+				info!("Using configuration from manifest in {:?}.", info.path);
 				return Ok(Some(info.regex.replace_all(&contents, "[").to_string()));
 			}
 		}
 	}
-	Ok(None)
+	Err(Error::EmbeddedError(String::from(
+		"Could not read config from manifest.",
+	)))
 }
 
 /// Default configuration file embedder/extractor.

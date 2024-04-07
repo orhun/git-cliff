@@ -7,7 +7,7 @@ Example:
 
 - `git-cliff migrate-config --in cliff.toml --out cliff-new.toml`
 
-## Backwards compatability
+## Backwards compatibility
 While configuration version 1 is deprecated, the cli argument `--config-version` can be used to make git-cliff use old configuration files. Keep in mind that new features might not be supported when using the old configuration format.
 
 Example:

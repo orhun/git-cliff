@@ -65,7 +65,7 @@ pub fn load_config(args: &Opt) -> Result<Config_v2> {
 	// If `--config` denotes an existing file, load it from there.
 	else if config_arg.is_file() {
 		info!(
-			"Loading configuration from {}",
+			"Loading configuration from {}.",
 			config_arg.to_string_lossy()
 		);
 		fs::read_to_string(config_arg)?
@@ -74,6 +74,7 @@ pub fn load_config(args: &Opt) -> Result<Config_v2> {
 	else if let Some(contents) =
 		git_cliff_core::config::embed::read_from_manifest()?
 	{
+		info!("Loading configuration from manifest.");
 		contents
 	}
 	// Otherwise fall back to using the embedded configuration from
@@ -90,7 +91,7 @@ pub fn load_config(args: &Opt) -> Result<Config_v2> {
 	// `--config-version` and the option `meta.version`.
 	let raw_config = config_str.parse::<toml::Table>()?;
 	let config_version = determine_config_version(args, raw_config);
-	info!("Loading config version {config_version}.");
+	info!("Loading configuration version {config_version}.");
 
 	// load the file using https://docs.rs/config
 	let raw_config = config::Config::builder()
@@ -109,7 +110,7 @@ pub fn load_config(args: &Opt) -> Result<Config_v2> {
 		return Ok(raw_config.try_deserialize::<Config_v2>()?);
 	} else {
 		return Err(Error::ArgumentError(format!(
-			"Config version {} is not supported.",
+			"Configuration version {} is not supported.",
 			config_version
 		)));
 	}

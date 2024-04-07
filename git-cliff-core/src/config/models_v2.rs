@@ -277,8 +277,10 @@ impl Config {
 				tags_pattern:      config_v1.git.tag_pattern,
 				skip_tags_pattern: config_v1.git.ignore_tags,
 				order_by:          Some(
-					if config_v1.git.topo_order.is_some() &&
-						config_v1.git.topo_order.unwrap()
+					if config_v1
+						.git
+						.topo_order
+						.is_some_and(|topo_order| topo_order)
 					{
 						TagsOrderBy::Topology
 					} else {

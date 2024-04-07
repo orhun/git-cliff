@@ -27,7 +27,10 @@ pub fn run(args: &MigrateArgs) -> Result<()> {
 	if !args.in_path.exists() {
 		return Err(Error::ArgumentError(format!(
 			"File {0} does not exist.",
-			&args.in_path.to_str().unwrap()
+			&args
+				.in_path
+				.to_str()
+				.expect("could not unwrap argument 'in_path'")
 		)));
 	}
 
@@ -36,7 +39,8 @@ pub fn run(args: &MigrateArgs) -> Result<()> {
 
 	// convert to the new config format
 	let new_config = super::models_v2::Config::from(old_config);
-	let new_toml = toml::to_string(&new_config).unwrap();
+	let new_toml = toml::to_string(&new_config)
+		.expect("could not serialize migrated config into toml");
 
 	// write the new config file
 	let mut new_config_file = fs::OpenOptions::new()

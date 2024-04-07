@@ -68,6 +68,9 @@ jobs:
           - fixtures-name: test-custom-tag-pattern
             command: --release-tags-pattern "alpha.*"
           - fixtures-name: test-configure-from-cargo-toml
+          - fixtures-name: test-v1-config-meta
+          - fixtures-name: test-v1-config-arg
+            command: --config-version 1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
