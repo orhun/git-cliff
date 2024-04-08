@@ -16,6 +16,7 @@ msg="# managed by release.sh"
 sed -E -i "s/^version = .* $msg$/version = \"${1#v}\" $msg/" git-cliff*/Cargo.toml
 sed -E -i "s/\"version\": \".+\"/\"version\": \"${1#v}\"/" npm/git-cliff/package.json
 sed -E -i "s/\"(git-cliff-.+)\": \".+\"/\"\1\": \"${1#v}\"/g" npm/git-cliff/package.json
+pushd npm/git-cliff && yarn install && popd
 # update the changelog
 cargo run -- --config cliff.toml --tag "$1" >CHANGELOG.md
 git add -A && git commit -m "chore(release): prepare for $1"
