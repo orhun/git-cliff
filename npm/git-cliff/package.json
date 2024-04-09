@@ -22,6 +22,9 @@
       }
     }
   },
+  "files": [
+    "lib"
+  ],
   "scripts": {
     "typecheck": "tsc",
     "lint": "eslint .",
