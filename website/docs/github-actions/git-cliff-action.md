@@ -15,6 +15,7 @@ It is possible to generate changelogs using [GitHub Actions](https://github.com/
     args: --verbose
   env:
     OUTPUT: CHANGELOG.md
+    GITHUB_REPO: ${{ github.repository }}
 ```
 
 See the [repository](https://github.com/orhun/git-cliff-action) for other [examples](https://github.com/orhun/git-cliff-action#examples).
