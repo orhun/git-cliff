@@ -87,11 +87,22 @@ fn process_repository<'a>(
 	let mut tags = repository.tags(&config.git.tag_pattern, args.topo_order)?;
 	let skip_regex = config.git.skip_tags.as_ref();
 	let ignore_regex = config.git.ignore_tags.as_ref();
+	let count_tags = config.git.count_tags.as_ref();
 	tags = tags
 		.into_iter()
 		.filter(|(_, name)| {
 			// Keep skip tags to drop commits in the later stage.
 			let skip = skip_regex.map(|r| r.is_match(name)).unwrap_or_default();
+
+			let count = count_tags
+				.map(|r| {
+					let count_tag = r.is_match(name);
+					if count_tag {
+						trace!("Counting release: {}", name)
+					}
+					count_tag
+				})
+				.unwrap_or(true);
 
 			let ignore = ignore_regex
 				.map(|r| {
@@ -107,7 +118,7 @@ fn process_repository<'a>(
 				})
 				.unwrap_or_default();
 
-			skip || !ignore
+			skip || (count && !ignore)
 		})
 		.collect();
 
