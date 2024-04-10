@@ -715,7 +715,7 @@ checksum = "4271d37baee1b8c7e4b708028c57d816cf9d2434acb33a549475f78c181f6253"
 
 [[package]]
 name = "git-cliff"
-version = "2.2.0"
+version = "2.2.1"
 dependencies = [
  "clap",
  "clap_complete",
@@ -736,7 +736,7 @@ dependencies = [
 
 [[package]]
 name = "git-cliff-core"
-version = "2.2.0"
+version = "2.2.1"
 dependencies = [
  "config",
  "dirs",

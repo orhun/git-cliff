@@ -1,6 +1,6 @@
 [package]
 name = "git-cliff"
-version = "2.2.0" # managed by release.sh
+version = "2.2.1" # managed by release.sh
 description = "A highly customizable changelog generator ⛰️"
 authors = ["git-cliff contributors <git-cliff@protonmail.com>"]
 license = "MIT OR Apache-2.0"
@@ -45,7 +45,7 @@ indicatif = { version = "0.17.8", optional = true }
 env_logger = "0.10.2"
 
 [dependencies.git-cliff-core]
-version = "2.2.0" # managed by release.sh
+version = "2.2.1" # managed by release.sh
 path = "../git-cliff-core"
 
 [dev-dependencies]
