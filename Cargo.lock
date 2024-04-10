@@ -760,7 +760,7 @@ dependencies = [
  "pretty_assertions",
  "regex",
  "reqwest 0.12.3",
- "reqwest-middleware",
+ "reqwest-middleware 0.3.0",
  "rust-embed",
  "secrecy",
  "semver",
@@ -956,7 +956,7 @@ dependencies = [
  "http-cache",
  "http-cache-semantics",
  "reqwest 0.11.27",
- "reqwest-middleware",
+ "reqwest-middleware 0.2.5",
  "serde",
  "task-local-extensions",
  "url",
@@ -1913,6 +1913,21 @@ dependencies = [
  "serde",
  "task-local-extensions",
  "thiserror",
+]
+
+[[package]]
+name = "reqwest-middleware"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0209efb52486ad88136190094ee214759ef7507068b27992256ed6610eb71a01"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "http 1.1.0",
+ "reqwest 0.12.3",
+ "serde",
+ "thiserror",
+ "tower-service",
 ]
 
 [[package]]
