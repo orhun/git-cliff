@@ -1,5 +1,21 @@
 [![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)
 
+## [2.2.1](https://github.com/orhun/git-cliff/compare/v2.2.0..v2.2.1) - 2024-04-10
+
+### 🐛 Bug Fixes
+
+- *(npm)* Include the proper files in the npm tarball ([#594](https://github.com/orhun/git-cliff/issues/594)) - ([800c896](https://github.com/orhun/git-cliff/commit/800c8964933deda12ef17a27c566dde430a7cae9))
+
+### 📚 Documentation
+
+- *(readme)* Mention git-changelog-command-line tool ([#589](https://github.com/orhun/git-cliff/issues/589)) - ([d65b443](https://github.com/orhun/git-cliff/commit/d65b4433ce784a713355f47b30096031c7dc05f4))
+- *(website)* Add GITHUB_REPO variable to GitHub action ([#597](https://github.com/orhun/git-cliff/issues/597)) - ([3b74254](https://github.com/orhun/git-cliff/commit/3b742548cccf7a55bc071a7614fa224b41078aa2))
+- *(website)* Update release date - ([45132da](https://github.com/orhun/git-cliff/commit/45132da64284eb60330021ab8ca6d1db07206610))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(ci)* Remove audit check - ([6ba6809](https://github.com/orhun/git-cliff/commit/6ba6809ea1ff9b34f192b387e77da06cf0570606))
+
 ## [2.2.0](https://github.com/orhun/git-cliff/compare/v2.1.2..v2.2.0) - 2024-03-30
 
 ### ⛰️  Features
