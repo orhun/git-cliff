@@ -61,7 +61,7 @@ commit_preprocessors = [
 ]
 ```
 
-## Skip empty body
+## Skip commits with an empty body
 
 ```toml
 [git]
