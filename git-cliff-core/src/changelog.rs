@@ -94,10 +94,14 @@ impl<'a> Changelog<'a> {
 						commit
 							.message
 							.lines()
-							.flat_map(|line| {
+							.filter_map(|line| {
 								let mut c = commit.clone();
 								c.message = line.to_string();
-								Self::process_commit(c, &self.config.git)
+								if !c.message.is_empty() {
+									Self::process_commit(c, &self.config.git)
+								} else {
+									None
+								}
 							})
 							.collect()
 					} else {
@@ -722,6 +726,7 @@ style: make awesome stuff look better
 			String::from("123abc"),
 			String::from(
 				"chore(deps): bump some deps
+
 chore(deps): bump some more deps
 chore(deps): fix broken deps
 ",
