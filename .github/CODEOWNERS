@@ -6,3 +6,7 @@
 
 # Core
 * @orhun
+
+# NodeJS specific subsection
+/npm/git-cliff/ @orhun @favna
+website/docs/installation/npm.md @orhun @favna
