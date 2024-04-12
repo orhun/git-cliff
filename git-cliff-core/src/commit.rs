@@ -262,11 +262,13 @@ impl Commit<'_> {
 			if let Some(message_regex) = parser.message.as_ref() {
 				regex_checks.push((message_regex, self.message.to_string()))
 			}
-			if let (Some(body_regex), Some(body)) = (
-				parser.body.as_ref(),
-				self.conv.as_ref().and_then(|v| v.body()),
-			) {
-				regex_checks.push((body_regex, body.to_string()))
+			let body = self
+				.conv
+				.as_ref()
+				.and_then(|v| v.body())
+				.map(|v| v.to_string());
+			if let Some(body_regex) = parser.body.as_ref() {
+				regex_checks.push((body_regex, body.clone().unwrap_or_default()))
 			}
 			if let (Some(field_name), Some(pattern_regex)) =
 				(parser.field.as_ref(), parser.pattern.as_ref())
@@ -276,11 +278,7 @@ impl Commit<'_> {
 					match field_name.as_str() {
 						"id" => Some(self.id.clone()),
 						"message" => Some(self.message.clone()),
-						"body" => self
-							.conv
-							.as_ref()
-							.and_then(|v| v.body())
-							.map(|v| v.to_string()),
+						"body" => body,
 						"author.name" => self.author.name.clone(),
 						"author.email" => self.author.email.clone(),
 						"committer.name" => self.committer.name.clone(),
