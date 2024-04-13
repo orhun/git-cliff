@@ -25,12 +25,6 @@
         <img src="https://img.shields.io/docsrs/git-cliff-core?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=Rust&logoColor=BEC5C9">
     </a>
     <br>
-    <a href="https://matrix.to/#/#git-cliff:matrix.org">
-        <img src="https://img.shields.io/matrix/git-cliff:matrix.org?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=matrix&logoColor=BEC5C9&label=join%20matrix">
-    </a>
-    <a href="https://discord.gg/W3mAwMDWH4">
-        <img src="https://img.shields.io/discord/1093977388892819553?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=discord&logoColor=BEC5C9&label=join%20discord">
-    </a>
 </p>
 
 <h4 align="center">
@@ -81,6 +75,25 @@ Thanks goes to these wonderful people ✨
 </a>
 
 Made with [contrib.rocks](https://contrib.rocks).
+
+## Socials
+
+<a href="https://discord.gg/W3mAwMDWH4">
+    <img src="https://discord.com/api/guilds/1093977388892819553/embed.png?style=banner2">
+</a>
+<br>
+<a href="https://matrix.to/#/#git-cliff:matrix.org">
+    <img src="https://img.shields.io/matrix/git-cliff:matrix.org?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=matrix&logoColor=BEC5C9&label=join%20matrix">
+</a>
+<a href="https://discord.gg/W3mAwMDWH4">
+    <img src="https://img.shields.io/discord/1093977388892819553?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=discord&logoColor=BEC5C9&label=join%20discord">
+</a>
+<a href="https://twitter.com/git_cliff">
+    <img src="https://img.shields.io/twitter/follow/git_cliff?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=twitter&logoColor=BEC5C9">
+</a>
+<a href="https://fosstodon.org/@git_cliff">
+    <img src="https://img.shields.io/mastodon/follow/111545487385097711?domain=https%3A%2F%2Ffosstodon.org&style=flat&labelColor=1C2C2E&color=BEC5C9&logo=mastodon&logoColor=BEC5C9">
+</a>
 
 ## License
 
