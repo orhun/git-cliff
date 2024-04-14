@@ -8,6 +8,13 @@ use crate::github::{
 	GitHubPullRequest,
 	GitHubReleaseMetadata,
 };
+#[cfg(feature = "gitlab")]
+use crate::gitlab::{
+	GitLabCommit,
+	GitLabContributor,
+	GitLabMergeRequest,
+	GitLabReleaseMetadata,
+};
 use next_version::VersionUpdater;
 use semver::Version;
 use serde::{
@@ -33,6 +40,9 @@ pub struct Release<'a> {
 	/// Contributors.
 	#[cfg(feature = "github")]
 	pub github:    GitHubReleaseMetadata,
+	/// Contributors.
+	#[cfg(feature = "gitlab")]
+	pub gitlab:    GitLabReleaseMetadata,
 }
 
 impl<'a> Release<'a> {
@@ -92,6 +102,71 @@ impl<'a> Release<'a> {
 					.iter()
 					.map(|v| v.author.clone().and_then(|v| v.login))
 					.any(|login| login == v.username);
+				v
+			})
+			.collect();
+		Ok(())
+	}
+	/// Updates the GitLab metadata that is contained in the release.
+	///
+	/// This function takes two arguments:
+	///
+	/// - GitLab commits: needed for associating the Git user with GitLab
+	///   username.
+	/// - GitLab merge requests: needed for generating the contributor list for
+	///   the release.
+	#[cfg(feature = "gitlab")]
+	pub fn update_gitlab_metadata(
+		&mut self,
+		mut gitlab_commits: Vec<GitLabCommit>,
+		gitlab_merge_requests: Vec<GitLabMergeRequest>,
+	) -> Result<()> {
+		let mut contributors: Vec<GitLabContributor> = Vec::new();
+		// retain the commits that are not a part of this release for later on
+		// checking the first contributors.
+		gitlab_commits.retain(|gitlab_commit| {
+			if let Some(commit) = self
+				.commits
+				.iter_mut()
+				.find(|commit| commit.id == gitlab_commit.id)
+			{
+				let merge_request = gitlab_merge_requests.iter().find(|pr| {
+					pr.merge_commit_sha == Some(gitlab_commit.id.clone())
+				});
+
+				commit.gitlab.username = Some(gitlab_commit.author_name.clone());
+				commit.gitlab.pr_number = merge_request
+					.map(|gitlab_merge_request| gitlab_merge_request.iid);
+				commit.gitlab.pr_title = merge_request
+					.map(|gitlab_merge_request| gitlab_merge_request.title.clone());
+				commit.gitlab.pr_labels = merge_request
+					.map(|merge_request| merge_request.labels.clone())
+					.unwrap_or_default();
+
+				if !contributors.iter().any(|gitlab_user| {
+					commit.gitlab.username == gitlab_user.username
+				}) {
+					contributors.push(GitLabContributor {
+						username:      commit.gitlab.username.clone(),
+						pr_title:      commit.gitlab.pr_title.clone(),
+						pr_number:     commit.gitlab.pr_number,
+						pr_labels:     commit.gitlab.pr_labels.clone(),
+						is_first_time: false,
+					});
+				}
+				false
+			} else {
+				true
+			}
+		});
+		// mark contributors as first-time
+		self.gitlab.contributors = contributors
+			.into_iter()
+			.map(|mut v| {
+				v.is_first_time = !gitlab_commits
+					.iter()
+					.map(|v| v.author_name.clone())
+					.any(|login| login == v.username.clone().unwrap_or_default());
 				v
 			})
 			.collect();
@@ -203,6 +278,10 @@ mod test {
 				})),
 				#[cfg(feature = "github")]
 				github: crate::github::GitHubReleaseMetadata {
+					contributors: vec![],
+				},
+				#[cfg(feature = "gitlab")]
+				gitlab: crate::gitlab::GitLabReleaseMetadata {
 					contributors: vec![],
 				},
 			}
@@ -381,6 +460,9 @@ mod test {
 				..Default::default()
 			})),
 			github:    GitHubReleaseMetadata {
+				contributors: vec![],
+			},
+			gitlab:    GitLabReleaseMetadata {
 				contributors: vec![],
 			},
 		};
@@ -604,6 +686,332 @@ mod test {
 			],
 		};
 		assert_eq!(expected_metadata, release.github);
+
+		Ok(())
+	}
+
+	#[cfg(feature = "gitlab")]
+	#[test]
+	fn update_gitlab_metadata() -> Result<()> {
+		use crate::gitlab::GitLabUser;
+
+		let mut release = Release {
+			version:   None,
+			commits:   vec![
+				Commit::from(String::from(
+					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \
+					 integration",
+				)),
+				Commit::from(String::from(
+					"21f6aa587fcb772de13f2fde0e92697c51f84162 fix github \
+					 integration",
+				)),
+				Commit::from(String::from(
+					"35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973 update metadata",
+				)),
+				Commit::from(String::from(
+					"4d3ffe4753b923f4d7807c490e650e6624a12074 do some stuff",
+				)),
+				Commit::from(String::from(
+					"5a55e92e5a62dc5bf9872ffb2566959fad98bd05 alright",
+				)),
+				Commit::from(String::from(
+					"6c34967147560ea09658776d4901709139b4ad66 should be fine",
+				)),
+			],
+			commit_id: None,
+			timestamp: 0,
+			previous:  Some(Box::new(Release {
+				version: Some(String::from("1.0.0")),
+				..Default::default()
+			})),
+			github:    GitHubReleaseMetadata {
+				contributors: vec![],
+			},
+			gitlab:    GitLabReleaseMetadata {
+				contributors: vec![],
+			},
+		};
+		release.update_gitlab_metadata(
+			vec![
+				GitLabCommit {
+					id:              String::from(
+						"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
+					),
+					author_name:     String::from("orhun"),
+					short_id:        String::from(""),
+					title:           String::from(""),
+					author_email:    String::from(""),
+					authored_date:   String::from(""),
+					committer_name:  String::from(""),
+					committer_email: String::from(""),
+					committed_date:  String::from(""),
+					created_at:      String::from(""),
+					message:         String::from(""),
+					parent_ids:      vec![],
+					web_url:         String::from(""),
+				},
+				GitLabCommit {
+					id:              String::from(
+						"21f6aa587fcb772de13f2fde0e92697c51f84162",
+					),
+					author_name:     String::from("orhun"),
+					short_id:        String::from(""),
+					title:           String::from(""),
+					author_email:    String::from(""),
+					authored_date:   String::from(""),
+					committer_name:  String::from(""),
+					committer_email: String::from(""),
+					committed_date:  String::from(""),
+					created_at:      String::from(""),
+					message:         String::from(""),
+					parent_ids:      vec![],
+					web_url:         String::from(""),
+				},
+				GitLabCommit {
+					id:              String::from(
+						"35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973",
+					),
+					author_name:     String::from("nuhro"),
+					short_id:        String::from(""),
+					title:           String::from(""),
+					author_email:    String::from(""),
+					authored_date:   String::from(""),
+					committer_name:  String::from(""),
+					committer_email: String::from(""),
+					committed_date:  String::from(""),
+					created_at:      String::from(""),
+					message:         String::from(""),
+					parent_ids:      vec![],
+					web_url:         String::from(""),
+				},
+				GitLabCommit {
+					id:              String::from(
+						"4d3ffe4753b923f4d7807c490e650e6624a12074",
+					),
+					author_name:     String::from("awesome_contributor"),
+					short_id:        String::from(""),
+					title:           String::from(""),
+					author_email:    String::from(""),
+					authored_date:   String::from(""),
+					committer_name:  String::from(""),
+					committer_email: String::from(""),
+					committed_date:  String::from(""),
+					created_at:      String::from(""),
+					message:         String::from(""),
+					parent_ids:      vec![],
+					web_url:         String::from(""),
+				},
+				GitLabCommit {
+					id:              String::from(
+						"5a55e92e5a62dc5bf9872ffb2566959fad98bd05",
+					),
+					author_name:     String::from("orhun"),
+					short_id:        String::from(""),
+					title:           String::from(""),
+					author_email:    String::from(""),
+					authored_date:   String::from(""),
+					committer_name:  String::from(""),
+					committer_email: String::from(""),
+					committed_date:  String::from(""),
+					created_at:      String::from(""),
+					message:         String::from(""),
+					parent_ids:      vec![],
+					web_url:         String::from(""),
+				},
+				GitLabCommit {
+					id:              String::from(
+						"6c34967147560ea09658776d4901709139b4ad66",
+					),
+					author_name:     String::from("someone"),
+					short_id:        String::from(""),
+					title:           String::from(""),
+					author_email:    String::from(""),
+					authored_date:   String::from(""),
+					committer_name:  String::from(""),
+					committer_email: String::from(""),
+					committed_date:  String::from(""),
+					created_at:      String::from(""),
+					message:         String::from(""),
+					parent_ids:      vec![],
+					web_url:         String::from(""),
+				},
+				GitLabCommit {
+					id:              String::from(
+						"0c34967147560e809658776d4901709139b4ad68",
+					),
+					author_name:     String::from("idk"),
+					short_id:        String::from(""),
+					title:           String::from(""),
+					author_email:    String::from(""),
+					authored_date:   String::from(""),
+					committer_name:  String::from(""),
+					committer_email: String::from(""),
+					committed_date:  String::from(""),
+					created_at:      String::from(""),
+					message:         String::from(""),
+					parent_ids:      vec![],
+					web_url:         String::from(""),
+				},
+				GitLabCommit {
+					id:              String::from(
+						"kk34967147560e809658776d4901709139b4ad68",
+					),
+					author_name:     String::from("orhun"),
+					short_id:        String::from(""),
+					title:           String::from(""),
+					author_email:    String::from(""),
+					authored_date:   String::from(""),
+					committer_name:  String::from(""),
+					committer_email: String::from(""),
+					committed_date:  String::from(""),
+					created_at:      String::from(""),
+					message:         String::from(""),
+					parent_ids:      vec![],
+					web_url:         String::from(""),
+				},
+			],
+			vec![GitLabMergeRequest {
+				title:             String::from("1"),
+				merge_commit_sha:  Some(String::from(
+					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
+				)),
+				id:                1,
+				iid:               1,
+				project_id:        1,
+				description:       String::from(""),
+				state:             String::from(""),
+				created_at:        String::from(""),
+				author:            GitLabUser {
+					id:         1,
+					name:       String::from("42"),
+					username:   String::from("42"),
+					state:      String::from("42"),
+					avatar_url: None,
+					web_url:    String::from("42"),
+				},
+				sha:               String::from(
+					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
+				),
+				web_url:           String::from(""),
+				squash_commit_sha: None,
+				labels:            vec![String::from("rust")],
+			}],
+		)?;
+		let expected_commits = vec![
+			Commit {
+				id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+				message: String::from("add github integration"),
+				gitlab: GitLabContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      Some(String::from("1")),
+					pr_number:     Some(1),
+					pr_labels:     vec![String::from("rust")],
+					is_first_time: false,
+				},
+				..Default::default()
+			},
+			Commit {
+				id: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
+				message: String::from("fix github integration"),
+				gitlab: GitLabContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				},
+				..Default::default()
+			},
+			Commit {
+				id: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
+				message: String::from("update metadata"),
+				gitlab: GitLabContributor {
+					username:      Some(String::from("nuhro")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				},
+				..Default::default()
+			},
+			Commit {
+				id: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
+				message: String::from("do some stuff"),
+				gitlab: GitLabContributor {
+					username:      Some(String::from("awesome_contributor")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				},
+				..Default::default()
+			},
+			Commit {
+				id: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
+				message: String::from("alright"),
+				gitlab: GitLabContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				},
+				..Default::default()
+			},
+			Commit {
+				id: String::from("6c34967147560ea09658776d4901709139b4ad66"),
+				message: String::from("should be fine"),
+				gitlab: GitLabContributor {
+					username:      Some(String::from("someone")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				},
+				..Default::default()
+			},
+		];
+		assert_eq!(expected_commits, release.commits);
+
+		release
+			.github
+			.contributors
+			.sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+
+		let expected_metadata = GitLabReleaseMetadata {
+			contributors: vec![
+				GitLabContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      Some(String::from("1")),
+					pr_number:     Some(1),
+					pr_labels:     vec![String::from("rust")],
+					is_first_time: false,
+				},
+				GitLabContributor {
+					username:      Some(String::from("nuhro")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: true,
+				},
+				GitLabContributor {
+					username:      Some(String::from("awesome_contributor")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: true,
+				},
+				GitLabContributor {
+					username:      Some(String::from("someone")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: true,
+				},
+			],
+		};
+		assert_eq!(expected_metadata, release.gitlab);
 
 		Ok(())
 	}

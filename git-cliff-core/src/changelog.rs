@@ -12,6 +12,12 @@ use crate::github::{
 	FINISHED_FETCHING_MSG,
 	START_FETCHING_MSG,
 };
+#[cfg(feature = "gitlab")]
+use crate::gitlab::{
+	GitLabClient,
+	GitLabCommit,
+	GitLabMergeRequest,
+};
 use crate::release::{
 	Release,
 	Releases,
@@ -211,6 +217,73 @@ impl<'a> Changelog<'a> {
 		}
 	}
 
+	/// Returns the GitLab metadata needed for the changelog.
+	///
+	/// This function creates a multithread async runtime for handling the
+	///
+	/// requests. The following are fetched from the GitLab REST API:
+	///
+	/// - Commits
+	/// - Marge requests
+	///
+	/// Each of these are paginated requests so they are being run in parallel
+	/// for speedup.
+	///
+	///
+	/// If no GitLab related variable is used in the template then this function
+	/// returns empty vectors.
+	#[cfg(feature = "gitlab")]
+	fn get_gitlab_metadata(
+		&self,
+	) -> Result<(Vec<GitLabCommit>, Vec<GitLabMergeRequest>)> {
+		use crate::gitlab;
+
+		if self.body_template.contains_gitlab_variable() ||
+			self.footer_template
+				.as_ref()
+				.map(|v| v.contains_gitlab_variable())
+				.unwrap_or(false)
+		{
+			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
+			let gitlab_client =
+				GitLabClient::try_from(self.config.remote.gitlab.clone())?;
+			info!(
+				"{} ({})",
+				gitlab::START_FETCHING_MSG,
+				self.config.remote.gitlab
+			);
+			let data = tokio::runtime::Builder::new_multi_thread()
+				.enable_all()
+				.build()?
+				.block_on(async {
+					// Map repo/owner to gitlab id
+					let project_id = match tokio::join!(gitlab_client.get_project())
+					{
+						(Ok(project),) => project.id,
+						(Err(err),) => {
+							error!("Failed to lookup project! {}", err);
+							return Err(err);
+						}
+					};
+					let (commits, merge_requests) = tokio::try_join!(
+						// Send id to these functions
+						gitlab_client.get_commits(project_id),
+						gitlab_client.get_merge_requests(project_id),
+					)?;
+					debug!("Number of GitLab commits: {}", commits.len());
+					debug!(
+						"Number of GitLab merge requests: {}",
+						merge_requests.len()
+					);
+					Ok((commits, merge_requests))
+				});
+			info!("{}", gitlab::FINISHED_FETCHING_MSG);
+			data
+		} else {
+			Ok((vec![], vec![]))
+		}
+	}
+
 	/// Increments the version for the unreleased changes based on semver.
 	pub fn bump_version(&mut self) -> Result<Option<String>> {
 		if let Some(ref mut last_release) = self.releases.iter_mut().next() {
@@ -235,7 +308,19 @@ impl<'a> Changelog<'a> {
 		let mut additional_context = HashMap::new();
 		additional_context.insert("remote", self.config.remote.clone());
 		#[cfg(feature = "github")]
-		let (github_commits, github_pull_requests) = self.get_github_metadata()?;
+		let (github_commits, github_pull_requests) = if self.config.remote.github.is_set() {
+			self.get_github_metadata()
+				.expect("Could not get github metadata")
+		} else {
+			(vec![], vec![])
+		};
+		#[cfg(feature = "gitlab")]
+		let (gitlab_commits, gitlab_merge_request) = if self.config.remote.gitlab.is_set() {
+			self.get_gitlab_metadata()
+				.expect("Could not get gitlab metadata")
+		} else {
+			(vec![], vec![])
+		};
 		let postprocessors = self
 			.config
 			.changelog
@@ -256,6 +341,11 @@ impl<'a> Changelog<'a> {
 			release.update_github_metadata(
 				github_commits.clone(),
 				github_pull_requests.clone(),
+			)?;
+			#[cfg(feature = "gitlab")]
+			release.update_gitlab_metadata(
+				gitlab_commits.clone(),
+				gitlab_merge_request.clone(),
 			)?;
 			let write_result = write!(
 				out,
@@ -500,6 +590,11 @@ mod test {
 					repo:  String::from("awesome"),
 					token: None,
 				},
+				gitlab: Remote {
+					owner: String::from("coolguy"),
+					repo:  String::from("awesome"),
+					token: None,
+				},
 			},
 			bump:      Bump::default(),
 		};
@@ -570,6 +665,10 @@ mod test {
 			github: crate::github::GitHubReleaseMetadata {
 				contributors: vec![],
 			},
+			#[cfg(feature = "gitlab")]
+			gitlab: crate::gitlab::GitLabReleaseMetadata {
+				contributors: vec![],
+			},
 		};
 		let releases = vec![
 			test_release.clone(),
@@ -615,6 +714,10 @@ mod test {
 				previous: Some(Box::new(test_release)),
 				#[cfg(feature = "github")]
 				github: crate::github::GitHubReleaseMetadata {
+					contributors: vec![],
+				},
+				#[cfg(feature = "gitlab")]
+				gitlab: crate::gitlab::GitLabReleaseMetadata {
 					contributors: vec![],
 				},
 			},

@@ -241,6 +241,22 @@ pub struct Opt {
 	    value_name = "OWNER/REPO"
 	)]
 	pub github_repo:    Option<RemoteValue>,
+	/// Sets the GitLab API token.
+	#[arg(
+		long,
+		env = "GITLAB_TOKEN",
+		value_name = "TOKEN",
+		hide_env_values = true
+	)]
+	pub gitlab_token:   Option<SecretString>,
+	/// Sets the GitLab repository.
+	#[arg(
+			long,
+			env = "GITLAB_REPO",
+			value_parser = clap::value_parser!(RemoteValue),
+			value_name = "OWNER/REPO"
+	)]
+	pub gitlab_repo:    Option<RemoteValue>,
 }
 
 /// Custom type for the remote value.

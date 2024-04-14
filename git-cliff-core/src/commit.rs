@@ -10,6 +10,8 @@ use crate::error::{
 };
 #[cfg(feature = "github")]
 use crate::github::GitHubContributor;
+#[cfg(feature = "gitlab")]
+use crate::gitlab::GitLabContributor;
 #[cfg(feature = "repo")]
 use git2::{
 	Commit as GitCommit,
@@ -127,6 +129,9 @@ pub struct Commit<'a> {
 	/// GitHub metadata of the commit.
 	#[cfg(feature = "github")]
 	pub github:        GitHubContributor,
+	/// GitLab metadata of the commit.
+	#[cfg(feature = "gitlab")]
+	pub gitlab:        GitLabContributor,
 }
 
 impl<'a> From<String> for Commit<'a> {
@@ -440,6 +445,8 @@ impl Serialize for Commit<'_> {
 		commit.serialize_field("merge_commit", &self.merge_commit)?;
 		#[cfg(feature = "github")]
 		commit.serialize_field("github", &self.github)?;
+		#[cfg(feature = "gitlab")]
+		commit.serialize_field("gitlab", &self.gitlab)?;
 		commit.end()
 	}
 }

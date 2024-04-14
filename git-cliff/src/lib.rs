@@ -119,7 +119,18 @@ fn process_repository<'a>(
 				config.remote.github.repo = remote.repo;
 			}
 			Err(e) => {
-				debug!("Failed to get remote from repository: {:?}", e);
+				debug!("Failed to get remote from GitHub repository: {:?}", e);
+			}
+		}
+	} else if !config.remote.gitlab.is_set() {
+		match repository.upstream_remote() {
+			Ok(remote) => {
+				debug!("No GitLab remote is set, using remote: {}", remote);
+				config.remote.gitlab.owner = remote.owner;
+				config.remote.gitlab.repo = remote.repo;
+			}
+			Err(e) => {
+				debug!("Failed to get remote from GitLab repository: {:?}", e);
 			}
 		}
 	}
@@ -402,9 +413,16 @@ pub fn run(mut args: Opt) -> Result<()> {
 	if args.github_token.is_some() {
 		config.remote.github.token.clone_from(&args.github_token);
 	}
+	if args.gitlab_token.is_some() {
+		config.remote.gitlab.token.clone_from(&args.gitlab_token);
+	}
 	if let Some(ref remote) = args.github_repo {
 		config.remote.github.owner = remote.0.owner.to_string();
 		config.remote.github.repo = remote.0.repo.to_string();
+	}
+	if let Some(ref remote) = args.gitlab_repo {
+		config.remote.gitlab.owner = remote.0.owner.to_string();
+		config.remote.gitlab.repo = remote.0.repo.to_string();
 	}
 	if args.no_exec {
 		if let Some(ref mut preprocessors) = config.git.commit_preprocessors {

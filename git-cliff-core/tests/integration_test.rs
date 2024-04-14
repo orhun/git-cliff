@@ -192,6 +192,10 @@ fn generate_changelog() -> Result<()> {
 			github: git_cliff_core::github::GitHubReleaseMetadata {
 				contributors: vec![],
 			},
+			#[cfg(feature = "gitlab")]
+			gitlab: git_cliff_core::gitlab::GitLabReleaseMetadata {
+				contributors: vec![],
+			},
 		},
 		Release {
 			version:   Some(String::from("v1.0.0")),
@@ -218,6 +222,10 @@ fn generate_changelog() -> Result<()> {
 			previous:  None,
 			#[cfg(feature = "github")]
 			github: git_cliff_core::github::GitHubReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "gitlab")]
+			gitlab: git_cliff_core::gitlab::GitLabReleaseMetadata {
 				contributors: vec![],
 			},
 		},

@@ -141,6 +141,16 @@ impl Template {
 			.iter()
 			.any(|v| v.starts_with("github") || v.starts_with("commit.github"))
 	}
+	/// Returns `true` if the template contains GitLab related variables.
+	///
+	/// Note that this checks the variables starting with "gitlab" and
+	/// "commit.gitlab" and ignores "remote.gitlab" values.
+	#[cfg(feature = "gitlab")]
+	pub(crate) fn contains_gitlab_variable(&self) -> bool {
+		self.variables
+			.iter()
+			.any(|v| v.starts_with("gitlab") || v.starts_with("commit.gitlab"))
+	}
 
 	/// Renders the template.
 	pub fn render<C: Serialize, T: Serialize, S: Into<String> + Copy>(
@@ -229,6 +239,10 @@ mod test {
 					previous: None,
 					#[cfg(feature = "github")]
 					github: crate::github::GitHubReleaseMetadata {
+						contributors: vec![],
+					},
+					#[cfg(feature = "gitlab")]
+					gitlab: crate::gitlab::GitLabReleaseMetadata {
 						contributors: vec![],
 					},
 				},
