@@ -922,7 +922,7 @@ chore(deps): fix broken deps
     - make good stuff
     -- total releases: 2 --
 "#]]
-		.assert_eq(&str::from_utf8(&out).unwrap_or_default());
+		.assert_eq(str::from_utf8(&out).unwrap_or_default());
 		Ok(())
 	}
 }
