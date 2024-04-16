@@ -842,4 +842,87 @@ chore(deps): fix broken deps
 		);
 		Ok(())
 	}
+
+	#[test]
+	fn changelog_adds_additional_context() -> Result<()> {
+		let (mut config, releases) = get_test_data();
+		// add `{{ custom_field }}` to the template
+		config.changelog.body = Some(
+			r#"{% if version %}
+				## {{ custom_field }} [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+				{% if commit_id %}({{ commit_id }}){% endif %}{% else %}
+				## Unreleased{% endif %}
+				{% for group, commits in commits | group_by(attribute="group") %}
+				### {{ group }}{% for group, commits in commits | group_by(attribute="scope") %}
+				#### {{ group }}{% for commit in commits %}
+				- {{ commit.message }}{% endfor %}
+				{% endfor %}{% endfor %}"#
+				.to_string(),
+		);
+		let mut changelog = Changelog::new(releases, &config)?;
+		changelog.add_context("custom_field", "Hello").unwrap();
+		let mut out = Vec::new();
+		changelog.generate(&mut out)?;
+		expect_test::expect![[r#"
+    # Changelog
+    ## Unreleased
+
+    ### Bug Fixes
+    #### app
+    - fix abc
+
+    ### New features
+    #### app
+    - add xyz
+
+    ### Other
+    #### app
+    - document zyx
+
+    #### ui
+    - do exciting stuff
+
+    ## Hello [v1.0.0] - 1971-08-02
+    (0bc123)
+
+    ### Bug Fixes
+    #### ui
+    - fix more stuff
+
+    ### Documentation
+    #### documentation
+    - update docs
+    - add some documentation
+
+    ### I love tea
+    #### app
+    - damn right
+
+    ### Matched (group)
+    #### group
+    - support regex-replace for groups
+
+    ### New features
+    #### app
+    - add cool features
+
+    #### other
+    - support unscoped commits
+    - support breaking commits
+
+    ### Other
+    #### app
+    - do nothing
+
+    #### other
+    - support unconventional commits
+    - this commit is preprocessed
+
+    #### ui
+    - make good stuff
+    -- total releases: 2 --
+"#]]
+		.assert_eq(&str::from_utf8(&out).unwrap());
+		Ok(())
+	}
 }
