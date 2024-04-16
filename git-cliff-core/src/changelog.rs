@@ -28,10 +28,13 @@ use std::time::{
 #[derive(Debug)]
 pub struct Changelog<'a> {
 	/// Releases that the changelog will contain.
-	pub releases:    Vec<Release<'a>>,
-	body_template:   Template,
-	footer_template: Option<Template>,
-	config:          &'a Config,
+	pub releases:       Vec<Release<'a>>,
+	body_template:      Template,
+	footer_template:    Option<Template>,
+	config:             &'a Config,
+	/// Context to be injected into the tera template as key-value pairs.
+	/// The value is [`serde_json::Value`] because it needs to be serializable.
+	additional_context: HashMap<String, serde_json::Value>,
 }
 
 impl<'a> Changelog<'a> {
@@ -54,10 +57,28 @@ impl<'a> Changelog<'a> {
 				None => None,
 			},
 			config,
+			additional_context: HashMap::new(),
 		};
 		changelog.process_commits();
 		changelog.process_releases();
 		Ok(changelog)
+	}
+
+	/// Adds a key value pair to the template context.
+	///
+	/// These values will be used when generating the changelog.
+	///
+	/// # Errors
+	///
+	/// This operation fails if the deserialization fails.
+	pub fn add_context(
+		&mut self,
+		key: impl Into<String>,
+		value: impl serde::Serialize,
+	) -> Result<()> {
+		self.additional_context
+			.insert(key.into(), serde_json::to_value(value)?);
+		Ok(())
 	}
 
 	/// Processes a single commit and returns/logs the result.
@@ -232,8 +253,11 @@ impl<'a> Changelog<'a> {
 	/// Generates the changelog and writes it to the given output.
 	pub fn generate<W: Write>(&self, out: &mut W) -> Result<()> {
 		debug!("Generating changelog...");
-		let mut additional_context = HashMap::new();
-		additional_context.insert("remote", self.config.remote.clone());
+		let mut additional_context = self.additional_context.clone();
+		additional_context.insert(
+			"remote".to_string(),
+			serde_json::to_value(self.config.remote.clone())?,
+		);
 		#[cfg(feature = "github")]
 		let (github_commits, github_pull_requests) = self.get_github_metadata()?;
 		let postprocessors = self
