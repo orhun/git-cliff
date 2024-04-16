@@ -860,7 +860,7 @@ chore(deps): fix broken deps
 				.to_string(),
 		);
 		let mut changelog = Changelog::new(releases, &config)?;
-		changelog.add_context("custom_field", "Hello").unwrap();
+		changelog.add_context("custom_field", "Hello")?;
 		let mut out = Vec::new();
 		changelog.generate(&mut out)?;
 		expect_test::expect![[r#"
