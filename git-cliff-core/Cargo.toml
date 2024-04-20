@@ -36,7 +36,7 @@ secrecy.workspace = true
 dirs.workspace = true
 lazy_static.workspace = true
 thiserror = "1.0.58"
-serde = { version = "1.0.197", features = ["derive"] }
+serde = { version = "1.0.198", features = ["derive"] }
 serde_json = "1.0.116"
 serde_regex = "1.1.0"
 tera = "1.19.1"
