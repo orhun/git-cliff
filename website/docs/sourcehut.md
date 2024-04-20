@@ -32,11 +32,11 @@ tasks:
 
 1. Generate a new SSH-key for SourceHut builds:
    `ssh-keygen -t ed25519 -C "builds.sr.ht" -f ~/.ssh/builds-srht`
-1. Add the newly generated public key to your
+2. Add the newly generated public key to your
    [SourceHut account](https://meta.sr.ht/keys).
-1. Add the private key as a secret to your
+3. Add the private key as a secret to your
    [Sourcehut Builds](https://builds.sr.ht/secrets).
-1. Replace all the placeholders in you `.build.yml`:
+4. Replace all the placeholders in your `.build.yml`:
    - `<your-builds.sr.ht-secret>`
    - `<username>`
    - `<repo-name>`
