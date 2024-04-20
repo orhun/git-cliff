@@ -1,4 +1,4 @@
-use crate::config::Remote;
+use crate::config::models_v2::Remote;
 use crate::error::*;
 use futures::{
 	future,

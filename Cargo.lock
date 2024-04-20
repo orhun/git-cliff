@@ -740,6 +740,7 @@ dependencies = [
  "clap",
  "clap_complete",
  "clap_mangen",
+ "config",
  "dirs",
  "env_logger",
  "git-cliff-core",
@@ -751,6 +752,7 @@ dependencies = [
  "regex",
  "secrecy",
  "shellexpand",
+ "toml",
  "update-informer",
 ]
 
@@ -758,6 +760,7 @@ dependencies = [
 name = "git-cliff-core"
 version = "2.2.1"
 dependencies = [
+ "clap",
  "config",
  "dirs",
  "document-features",

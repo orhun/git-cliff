@@ -29,6 +29,7 @@ github = [
 ]
 
 [dependencies]
+clap = { version = "4.5.3", features = ["derive", "env", "wrap_help", "cargo"] }
 glob = { workspace = true, optional = true }
 regex.workspace = true
 log.workspace = true
