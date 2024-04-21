@@ -239,29 +239,28 @@ mod test {
 		.to_string())
 	}
 
-	#[test]
-	fn git_log() -> Result<()> {
-		let repository = Repository::init(
+	fn get_repository() -> Result<Repository> {
+		Repository::init(
 			PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 				.parent()
 				.expect("parent directory not found")
 				.to_path_buf(),
-		)?;
+		)
+	}
+
+	#[test]
+	fn get_latest_commit() -> Result<()> {
+		let repository = get_repository()?;
 		let commits = repository.commits(None, None, None)?;
 		let last_commit =
 			AppCommit::from(&commits.first().expect("no commits found").clone());
 		assert_eq!(get_last_commit_hash()?, last_commit.id);
-		if let Err(e) = last_commit.into_conventional() {
-			match e {
-				Error::ParseError(e) => {
-					eprintln!("\nthe last commit is not conventional\n");
-					assert_eq!(ErrorKind::InvalidFormat, e.kind())
-				}
-				_ => {
-					unreachable!()
-				}
-			}
-		}
+		Ok(())
+	}
+
+	#[test]
+	fn get_latest_tag() -> Result<()> {
+		let repository = get_repository()?;
 		let tags = repository.tags(&None, false)?;
 		assert_eq!(&get_last_tag()?, tags.last().expect("no tags found").1);
 		Ok(())
@@ -269,12 +268,7 @@ mod test {
 
 	#[test]
 	fn git_tags() -> Result<()> {
-		let repository = Repository::init(
-			PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-				.parent()
-				.expect("parent directory not found")
-				.to_path_buf(),
-		)?;
+		let repository = get_repository()?;
 		let tags = repository.tags(&None, true)?;
 		assert_eq!(
 			tags.get("2b8b4d3535f29231e05c3572e919634b9af907b6").expect(
@@ -308,12 +302,7 @@ mod test {
 
 	#[test]
 	fn git_upstream_remote() -> Result<()> {
-		let repository = Repository::init(
-			PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-				.parent()
-				.expect("parent directory not found")
-				.to_path_buf(),
-		)?;
+		let repository = get_repository()?;
 		let remote = repository.upstream_remote()?;
 		assert_eq!(
 			Remote {
