@@ -28,10 +28,11 @@ use std::time::{
 #[derive(Debug)]
 pub struct Changelog<'a> {
 	/// Releases that the changelog will contain.
-	pub releases:    Vec<Release<'a>>,
-	body_template:   Template,
-	footer_template: Option<Template>,
-	config:          &'a Config,
+	pub releases:       Vec<Release<'a>>,
+	body_template:      Template,
+	footer_template:    Option<Template>,
+	config:             &'a Config,
+	additional_context: HashMap<String, serde_json::Value>,
 }
 
 impl<'a> Changelog<'a> {
@@ -54,10 +55,28 @@ impl<'a> Changelog<'a> {
 				None => None,
 			},
 			config,
+			additional_context: HashMap::new(),
 		};
 		changelog.process_commits();
 		changelog.process_releases();
 		Ok(changelog)
+	}
+
+	/// Adds a key value pair to the template context.
+	///
+	/// These values will be used when generating the changelog.
+	///
+	/// # Errors
+	///
+	/// This operation fails if the deserialization fails.
+	pub fn add_context(
+		&mut self,
+		key: impl Into<String>,
+		value: impl serde::Serialize,
+	) -> Result<()> {
+		self.additional_context
+			.insert(key.into(), serde_json::to_value(value)?);
+		Ok(())
 	}
 
 	/// Processes a single commit and returns/logs the result.
@@ -232,8 +251,11 @@ impl<'a> Changelog<'a> {
 	/// Generates the changelog and writes it to the given output.
 	pub fn generate<W: Write>(&self, out: &mut W) -> Result<()> {
 		debug!("Generating changelog...");
-		let mut additional_context = HashMap::new();
-		additional_context.insert("remote", self.config.remote.clone());
+		let mut additional_context = self.additional_context.clone();
+		additional_context.insert(
+			"remote".to_string(),
+			serde_json::to_value(self.config.remote.clone())?,
+		);
 		#[cfg(feature = "github")]
 		let (github_commits, github_pull_requests) = self.get_github_metadata()?;
 		let postprocessors = self
@@ -816,6 +838,89 @@ chore(deps): fix broken deps
 			.replace("			", ""),
 			str::from_utf8(&out).unwrap_or_default()
 		);
+		Ok(())
+	}
+
+	#[test]
+	fn changelog_adds_additional_context() -> Result<()> {
+		let (mut config, releases) = get_test_data();
+		// add `{{ custom_field }}` to the template
+		config.changelog.body = Some(
+			r#"{% if version %}
+				## {{ custom_field }} [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+				{% if commit_id %}({{ commit_id }}){% endif %}{% else %}
+				## Unreleased{% endif %}
+				{% for group, commits in commits | group_by(attribute="group") %}
+				### {{ group }}{% for group, commits in commits | group_by(attribute="scope") %}
+				#### {{ group }}{% for commit in commits %}
+				- {{ commit.message }}{% endfor %}
+				{% endfor %}{% endfor %}"#
+				.to_string(),
+		);
+		let mut changelog = Changelog::new(releases, &config)?;
+		changelog.add_context("custom_field", "Hello")?;
+		let mut out = Vec::new();
+		changelog.generate(&mut out)?;
+		expect_test::expect![[r#"
+    # Changelog
+    ## Unreleased
+
+    ### Bug Fixes
+    #### app
+    - fix abc
+
+    ### New features
+    #### app
+    - add xyz
+
+    ### Other
+    #### app
+    - document zyx
+
+    #### ui
+    - do exciting stuff
+
+    ## Hello [v1.0.0] - 1971-08-02
+    (0bc123)
+
+    ### Bug Fixes
+    #### ui
+    - fix more stuff
+
+    ### Documentation
+    #### documentation
+    - update docs
+    - add some documentation
+
+    ### I love tea
+    #### app
+    - damn right
+
+    ### Matched (group)
+    #### group
+    - support regex-replace for groups
+
+    ### New features
+    #### app
+    - add cool features
+
+    #### other
+    - support unscoped commits
+    - support breaking commits
+
+    ### Other
+    #### app
+    - do nothing
+
+    #### other
+    - support unconventional commits
+    - this commit is preprocessed
+
+    #### ui
+    - make good stuff
+    -- total releases: 2 --
+"#]]
+		.assert_eq(str::from_utf8(&out).unwrap_or_default());
 		Ok(())
 	}
 }

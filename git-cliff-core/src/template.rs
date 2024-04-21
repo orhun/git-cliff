@@ -143,7 +143,7 @@ impl Template {
 	}
 
 	/// Renders the template.
-	pub fn render<C: Serialize, T: Serialize, S: Into<String> + Copy>(
+	pub fn render<C: Serialize, T: Serialize, S: Into<String> + Clone>(
 		&self,
 		context: &C,
 		additional_context: Option<&HashMap<S, T>>,
@@ -152,7 +152,7 @@ impl Template {
 		let mut context = TeraContext::from_serialize(context)?;
 		if let Some(additional_context) = additional_context {
 			for (key, value) in additional_context {
-				context.insert(*key, &value);
+				context.insert(key.clone(), &value);
 			}
 		}
 		match self.tera.render("template", &context) {

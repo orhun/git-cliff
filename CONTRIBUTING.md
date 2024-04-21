@@ -31,7 +31,13 @@ cargo build
 cargo test
 ```
 
-6. Make sure [rustfmt](https://github.com/rust-lang/rustfmt) and [clippy](https://github.com/rust-lang/rust-clippy) don't complain about your changes.
+6. If needed, update the snapshot tests (i.e. tests using `expect_test`):
+
+```sh
+env UPDATE_EXPECT=1 cargo test
+```
+
+7. Make sure [rustfmt](https://github.com/rust-lang/rustfmt) and [clippy](https://github.com/rust-lang/rust-clippy) don't complain about your changes.
 
 We use the `nightly` channel for `rustfmt` so please set the appropriate settings for your editor/IDE for that.
 

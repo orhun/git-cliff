@@ -80,6 +80,7 @@ features = ["debug-embed", "compression"]
 
 [dev-dependencies]
 pretty_assertions = "1.4.0"
+expect-test = "1.5.0"
 
 [package.metadata.docs.rs]
 all-features = true
