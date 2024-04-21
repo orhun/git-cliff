@@ -33,8 +33,8 @@ cargo test
 
 6. If needed, update the snapshot tests (i.e. tests using `expect_test`):
 
-```
-env UPDATE_EXPECT=1 cargo t
+```sh
+env UPDATE_EXPECT=1 cargo test
 ```
 
 7. Make sure [rustfmt](https://github.com/rust-lang/rustfmt) and [clippy](https://github.com/rust-lang/rust-clippy) don't complain about your changes.

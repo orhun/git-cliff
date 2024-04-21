@@ -32,8 +32,6 @@ pub struct Changelog<'a> {
 	body_template:      Template,
 	footer_template:    Option<Template>,
 	config:             &'a Config,
-	/// Context to be injected into the tera template as key-value pairs.
-	/// The value is [`serde_json::Value`] because it needs to be serializable.
 	additional_context: HashMap<String, serde_json::Value>,
 }
 
