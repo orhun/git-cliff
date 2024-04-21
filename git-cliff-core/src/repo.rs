@@ -210,7 +210,6 @@ impl Repository {
 mod test {
 	use super::*;
 	use crate::commit::Commit as AppCommit;
-	use git_conventional::ErrorKind;
 	use std::env;
 	use std::process::Command;
 	use std::str;
