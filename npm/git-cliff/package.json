@@ -112,5 +112,8 @@
   "packageManager": "yarn@4.1.0",
   "publishConfig": {
     "access": "public"
+  },
+  "engines": {
+    "node": ">=18.19 || >=20.6 || >=21"
   }
 }

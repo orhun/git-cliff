@@ -33,3 +33,9 @@ runGitCliff(options);
 ```
 
 Under the hood this will parse the options, set up the environment and call the **git-cliff** binary for you.
+
+## Supported Node.js Versions
+The following minimum versions of Node are currently supported:
+- 18.19.0
+- 20.6.0
+- 21.0.0
