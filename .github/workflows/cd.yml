@@ -87,7 +87,7 @@ jobs:
               TOOLCHAIN: stable,
               TARGET: x86_64-pc-windows-gnu,
               NPM_PUBLISH: false,
-              PYPI_PUBLISH: true,
+              PYPI_PUBLISH: false,
             }
           - {
               NAME: win32-x64-msvc,
