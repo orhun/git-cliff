@@ -41,3 +41,11 @@ The following minimum versions of Node are currently supported:
 - `>=18.19`
 - `>=20.6`
 - `>=21`
+
+## Supported Platforms
+
+NPM packages are distributed for the following platforms:
+
+- Linux (x64, arm64)
+- Windows (x64, arm64)
+- macOS (x64, arm64)
