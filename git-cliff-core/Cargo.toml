@@ -37,7 +37,7 @@ dirs.workspace = true
 lazy_static.workspace = true
 thiserror = "1.0.60"
 serde = { version = "1.0.201", features = ["derive"] }
-serde_json = "1.0.116"
+serde_json = "1.0.117"
 serde_regex = "1.1.0"
 tera = "1.19.1"
 indexmap = { version = "2.2.6", optional = true }
