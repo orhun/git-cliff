@@ -48,6 +48,7 @@ use std::io::{
 	self,
 	Write,
 };
+use std::path::PathBuf;
 use std::time::{
 	SystemTime,
 	UNIX_EPOCH,
@@ -498,7 +499,11 @@ pub fn run(mut args: Opt) -> Result<()> {
 		changelog.prepend(fs::read_to_string(path)?, &mut File::create(path)?)?;
 	}
 	if let Some(path) = args.output {
-		let mut output = File::create(path)?;
+		let mut output: Box<dyn Write> = if path == PathBuf::from("-") {
+			Box::new(io::stdout())
+		} else {
+			Box::new(File::create(path)?)
+		};
 		if args.context {
 			changelog.write_context(&mut output)
 		} else {
