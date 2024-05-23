@@ -34,25 +34,13 @@ use std::hash::{
 };
 use std::time::Duration;
 
+use super::*;
+
 /// GitHub REST API url.
 const GITHUB_API_URL: &str = "https://api.github.com";
 
 /// Environment variable for overriding the GitHub REST API url.
 const GITHUB_API_URL_ENV: &str = "GITHUB_API_URL";
-
-/// User agent for interacting with the GitHub API.
-///
-/// This is needed since GitHub API does not accept empty user agent.
-const USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
-
-/// Request timeout value in seconds.
-const REQUEST_TIMEOUT: u64 = 30;
-
-/// TCP keeplive value in seconds.
-const REQUEST_KEEP_ALIVE: u64 = 60;
-
-/// Maximum number of entries to fetch in a single page.
-const MAX_PAGE_SIZE: usize = 100;
 
 /// Log message to show while fetching data from GitHub.
 pub const START_FETCHING_MSG: &str = "Retrieving data from GitHub...";
@@ -61,18 +49,10 @@ pub const START_FETCHING_MSG: &str = "Retrieving data from GitHub...";
 pub const FINISHED_FETCHING_MSG: &str = "Done fetching GitHub data.";
 
 /// Returns the GitHub API url either from environment or from default value.
-fn get_github_api_url() -> String {
+fn get_api_url() -> String {
 	env::var(GITHUB_API_URL_ENV)
 		.ok()
 		.unwrap_or_else(|| GITHUB_API_URL.to_string())
-}
-
-/// Trait for handling the different entries returned from the GitHub API.
-trait GitHubEntry {
-	/// Returns the API URL for fetching the entries at the specified page.
-	fn url(owner: &str, repo: &str, page: i32) -> String;
-	/// Returns the request buffer size.
-	fn buffer_size() -> usize;
 }
 
 /// Representation of a single commit.
@@ -84,11 +64,11 @@ pub struct GitHubCommit {
 	pub author: Option<GitHubCommitAuthor>,
 }
 
-impl GitHubEntry for GitHubCommit {
-	fn url(owner: &str, repo: &str, page: i32) -> String {
+impl RemoteEntry for GitHubCommit {
+	fn url(_id: i64, owner: &str, repo: &str, page: i32) -> String {
 		format!(
 			"{}/repos/{}/{}/commits?per_page={MAX_PAGE_SIZE}&page={page}",
-			get_github_api_url(),
+			get_api_url(),
 			owner,
 			repo
 		)
@@ -126,11 +106,11 @@ pub struct GitHubPullRequest {
 	pub labels:           Vec<PullRequestLabel>,
 }
 
-impl GitHubEntry for GitHubPullRequest {
-	fn url(owner: &str, repo: &str, page: i32) -> String {
+impl RemoteEntry for GitHubPullRequest {
+	fn url(_id: i64, owner: &str, repo: &str, page: i32) -> String {
 		format!(
 			"{}/repos/{}/{}/pulls?per_page={MAX_PAGE_SIZE}&page={page}&state=closed",
-			get_github_api_url(),
+			get_api_url(),
 			owner,
 			repo
 		)
@@ -229,11 +209,11 @@ impl TryFrom<Remote> for GitHubClient {
 
 impl GitHubClient {
 	/// Retrieves a single page of entries.
-	async fn get_entries_with_page<T: DeserializeOwned + GitHubEntry>(
+	async fn get_entries_with_page<T: DeserializeOwned + RemoteEntry>(
 		&self,
 		page: i32,
 	) -> Result<Vec<T>> {
-		let url = T::url(&self.owner, &self.repo, page);
+		let url = T::url(0, &self.owner, &self.repo, page);
 		debug!("Sending request to: {url}");
 		let response = self.client.get(&url).send().await?;
 		let response_text = if response.status().is_success() {
@@ -254,7 +234,7 @@ impl GitHubClient {
 	}
 
 	/// Fetches the GitHub API returns the given entry.
-	async fn fetch<T: DeserializeOwned + GitHubEntry>(&self) -> Result<Vec<T>> {
+	async fn fetch<T: DeserializeOwned + RemoteEntry>(&self) -> Result<Vec<T>> {
 		let entries: Vec<Vec<T>> = stream::iter(1..)
 			.map(|i| self.get_entries_with_page(i))
 			.buffered(T::buffer_size())

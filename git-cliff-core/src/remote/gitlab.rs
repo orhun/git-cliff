@@ -37,25 +37,13 @@ use std::hash::{
 };
 use std::time::Duration;
 
+use super::*;
+
 /// GitLab REST API url.
 const GITLAB_API_URL: &str = "https://gitlab.com/api/v4";
 
 /// Environment variable for overriding the GitLab REST API url.
 const GITLAB_API_URL_ENV: &str = "GITLAB_API_URL";
-
-/// User agent for interacting with the GitLab API.
-///
-/// This is needed since GitLab API does not accept empty user agent.
-const USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
-
-/// Request timeout value in seconds.
-const REQUEST_TIMEOUT: u64 = 30;
-
-/// TCP keeplive value in seconds.
-const REQUEST_KEEP_ALIVE: u64 = 60;
-
-/// Maximum number of entries to fetch in a single page.
-const MAX_PAGE_SIZE: usize = 100;
 
 /// Log message to show while fetching data from GitLab.
 pub const START_FETCHING_MSG: &str = "Retrieving data from GitLab...";
@@ -64,18 +52,10 @@ pub const START_FETCHING_MSG: &str = "Retrieving data from GitLab...";
 pub const FINISHED_FETCHING_MSG: &str = "Done fetching GitLab data.";
 
 /// Returns the GitLab API url either from environment or from default value.
-fn get_gitlab_api_url() -> String {
+fn get_api_url() -> String {
 	env::var(GITLAB_API_URL_ENV)
 		.ok()
 		.unwrap_or_else(|| GITLAB_API_URL.to_string())
-}
-
-/// Trait for handling the different entries returned from the GitLab API.
-trait GitLabEntry {
-	/// Returns the API URL for fetching the entries at the specified page.
-	fn url(id: i64, repo: &str, owner: &str, page: i32) -> String;
-	/// Returns the request buffer size.
-	fn buffer_size() -> usize;
 }
 
 /// https://docs.gitlab.com/ee/api/projects.html#get-single-project
@@ -98,9 +78,9 @@ pub struct GitLabProject {
 	pub default_branch:      String,
 }
 
-impl GitLabEntry for GitLabProject {
+impl RemoteEntry for GitLabProject {
 	fn url(_id: i64, repo: &str, owner: &str, _page: i32) -> String {
-		format!("{}/projects/{}%2F{}", get_gitlab_api_url(), owner, repo)
+		format!("{}/projects/{}%2F{}", get_api_url(), owner, repo)
 	}
 	fn buffer_size() -> usize {
 		1
@@ -139,13 +119,13 @@ pub struct GitLabCommit {
 	pub web_url:         String,
 }
 
-impl GitLabEntry for GitLabCommit {
+impl RemoteEntry for GitLabCommit {
 	fn url(id: i64, _repo: &str, _owner: &str, page: i32) -> String {
 		let commit_page = page + 1;
 		format!(
 			"{}/projects/{}/repository/commits?per_page={MAX_PAGE_SIZE}&\
 			 page={commit_page}",
-			get_gitlab_api_url(),
+			get_api_url(),
 			id
 		)
 	}
@@ -186,12 +166,12 @@ pub struct GitLabMergeRequest {
 	pub labels:            Vec<String>,
 }
 
-impl GitLabEntry for GitLabMergeRequest {
+impl RemoteEntry for GitLabMergeRequest {
 	fn url(id: i64, _repo: &str, _owner: &str, page: i32) -> String {
 		format!(
 			"{}/projects/{}/merge_requests?per_page={MAX_PAGE_SIZE}&page={page}&\
 			 state=merged",
-			get_gitlab_api_url(),
+			get_api_url(),
 			id
 		)
 	}
@@ -317,7 +297,7 @@ impl TryFrom<Remote> for GitLabClient {
 
 impl GitLabClient {
 	/// Retrieves a single page of entries.
-	async fn get_entries_with_page<T: DeserializeOwned + GitLabEntry>(
+	async fn get_entries_with_page<T: DeserializeOwned + RemoteEntry>(
 		&self,
 		project_id: i64,
 		page: i32,
@@ -343,7 +323,7 @@ impl GitLabClient {
 	}
 
 	/// Fetches the GitLab API returns the given entry.
-	async fn fetch<T: DeserializeOwned + GitLabEntry>(
+	async fn fetch<T: DeserializeOwned + RemoteEntry>(
 		&self,
 		project_id: i64,
 	) -> Result<Vec<T>> {
@@ -369,7 +349,7 @@ impl GitLabClient {
 	}
 
 	/// Retrieves a single object.
-	async fn get_entry<T: DeserializeOwned + GitLabEntry>(&self) -> Result<T> {
+	async fn get_entry<T: DeserializeOwned + RemoteEntry>(&self) -> Result<T> {
 		let url = T::url(0, &self.repo, &self.owner, 1);
 		debug!("Sending request to: {url}");
 		let response = self.client.get(&url).send().await?;
