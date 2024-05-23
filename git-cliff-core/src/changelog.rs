@@ -207,10 +207,11 @@ impl<'a> Changelog<'a> {
 	fn get_github_metadata(
 		&self,
 	) -> Result<(Vec<GitHubCommit>, Vec<GitHubPullRequest>)> {
-		if self.body_template.contains_github_variable() ||
+		let variables = &["github", "commit.github"];
+		if self.body_template.contains_variable(variables) ||
 			self.footer_template
 				.as_ref()
-				.map(|v| v.contains_github_variable())
+				.map(|v| v.contains_variable(variables))
 				.unwrap_or(false)
 		{
 			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
@@ -257,10 +258,11 @@ impl<'a> Changelog<'a> {
 	) -> Result<(Vec<GitLabCommit>, Vec<GitLabMergeRequest>)> {
 		use crate::gitlab;
 
-		if self.body_template.contains_gitlab_variable() ||
+		let variables = &["gitlab", "commit.gitlab"];
+		if self.body_template.contains_variable(variables) ||
 			self.footer_template
 				.as_ref()
-				.map(|v| v.contains_gitlab_variable())
+				.map(|v| v.contains_variable(variables))
 				.unwrap_or(false)
 		{
 			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");

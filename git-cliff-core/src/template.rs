@@ -131,25 +131,12 @@ impl Template {
 		Ok(variables.into_iter().collect())
 	}
 
-	/// Returns `true` if the template contains GitHub related variables.
-	///
-	/// Note that this checks the variables starting with "github" and
-	/// "commit.github" and ignores "remote.github" values.
-	#[cfg(feature = "github")]
-	pub(crate) fn contains_github_variable(&self) -> bool {
-		self.variables
+	/// Returns `true` if the template contains one of the given variables.
+	#[cfg(any(feature = "github", feature = "gitlab"))]
+	pub(crate) fn contains_variable(&self, variables: &[&str]) -> bool {
+		variables
 			.iter()
-			.any(|v| v.starts_with("github") || v.starts_with("commit.github"))
-	}
-	/// Returns `true` if the template contains GitLab related variables.
-	///
-	/// Note that this checks the variables starting with "gitlab" and
-	/// "commit.gitlab" and ignores "remote.gitlab" values.
-	#[cfg(feature = "gitlab")]
-	pub(crate) fn contains_gitlab_variable(&self) -> bool {
-		self.variables
-			.iter()
-			.any(|v| v.starts_with("gitlab") || v.starts_with("commit.gitlab"))
+			.any(|var| self.variables.iter().any(|v| v.starts_with(var)))
 	}
 
 	/// Renders the template.
