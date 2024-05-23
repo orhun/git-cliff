@@ -41,7 +41,7 @@ use std::time::Duration;
 const GITLAB_API_URL: &str = "https://gitlab.com/api/v4";
 
 /// Environment variable for overriding the GitLab REST API url.
-const GITLAB_API_URL_ENV: &str = "GITLAB_API_URL_ENV";
+const GITLAB_API_URL_ENV: &str = "GITLAB_API_URL";
 
 /// User agent for interacting with the GitLab API.
 ///
