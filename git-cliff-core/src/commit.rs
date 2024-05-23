@@ -9,9 +9,9 @@ use crate::error::{
 	Result,
 };
 #[cfg(feature = "github")]
-use crate::github::GitHubContributor;
+use crate::remote::github::GitHubContributor;
 #[cfg(feature = "gitlab")]
-use crate::gitlab::GitLabContributor;
+use crate::remote::gitlab::GitLabContributor;
 #[cfg(feature = "repo")]
 use git2::{
 	Commit as GitCommit,

@@ -4,8 +4,12 @@ use crate::config::{
 	GitConfig,
 };
 use crate::error::Result;
+use crate::release::{
+	Release,
+	Releases,
+};
 #[cfg(feature = "github")]
-use crate::github::{
+use crate::remote::github::{
 	GitHubClient,
 	GitHubCommit,
 	GitHubPullRequest,
@@ -13,14 +17,10 @@ use crate::github::{
 	START_FETCHING_MSG,
 };
 #[cfg(feature = "gitlab")]
-use crate::gitlab::{
+use crate::remote::gitlab::{
 	GitLabClient,
 	GitLabCommit,
 	GitLabMergeRequest,
-};
-use crate::release::{
-	Release,
-	Releases,
 };
 use crate::template::Template;
 use std::collections::HashMap;
@@ -256,7 +256,7 @@ impl<'a> Changelog<'a> {
 	fn get_gitlab_metadata(
 		&self,
 	) -> Result<(Vec<GitLabCommit>, Vec<GitLabMergeRequest>)> {
-		use crate::gitlab;
+		use crate::remote::gitlab;
 
 		let variables = &["gitlab", "commit.gitlab"];
 		if self.body_template.contains_variable(variables) ||
@@ -686,11 +686,11 @@ mod test {
 			timestamp: 50000000,
 			previous: None,
 			#[cfg(feature = "github")]
-			github: crate::github::GitHubReleaseMetadata {
+			github: crate::remote::github::GitHubReleaseMetadata {
 				contributors: vec![],
 			},
 			#[cfg(feature = "gitlab")]
-			gitlab: crate::gitlab::GitLabReleaseMetadata {
+			gitlab: crate::remote::gitlab::GitLabReleaseMetadata {
 				contributors: vec![],
 			},
 		};
@@ -737,11 +737,11 @@ mod test {
 				timestamp: 1000,
 				previous: Some(Box::new(test_release)),
 				#[cfg(feature = "github")]
-				github: crate::github::GitHubReleaseMetadata {
+				github: crate::remote::github::GitHubReleaseMetadata {
 					contributors: vec![],
 				},
 				#[cfg(feature = "gitlab")]
-				gitlab: crate::gitlab::GitLabReleaseMetadata {
+				gitlab: crate::remote::gitlab::GitLabReleaseMetadata {
 					contributors: vec![],
 				},
 			},

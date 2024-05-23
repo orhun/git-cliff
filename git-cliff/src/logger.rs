@@ -109,17 +109,20 @@ pub fn init() -> Result<()> {
 		#[cfg(any(feature = "github", feature = "gitlab"))]
 		{
 			let message = record.args().to_string();
-			if message.starts_with(git_cliff_core::github::START_FETCHING_MSG) ||
-				message.starts_with(git_cliff_core::gitlab::START_FETCHING_MSG)
-			{
+			if message
+				.starts_with(git_cliff_core::remote::github::START_FETCHING_MSG) ||
+				message.starts_with(
+					git_cliff_core::remote::gitlab::START_FETCHING_MSG,
+				) {
 				PROGRESS_BAR
 					.enable_steady_tick(std::time::Duration::from_millis(80));
 				PROGRESS_BAR.set_message(message);
 				Ok(())
 			} else if message
-				.starts_with(git_cliff_core::github::FINISHED_FETCHING_MSG) ||
-				message.starts_with(git_cliff_core::gitlab::FINISHED_FETCHING_MSG)
-			{
+				.starts_with(git_cliff_core::remote::github::FINISHED_FETCHING_MSG) ||
+				message.starts_with(
+					git_cliff_core::remote::gitlab::FINISHED_FETCHING_MSG,
+				) {
 				PROGRESS_BAR.finish_and_clear();
 				Ok(())
 			} else {

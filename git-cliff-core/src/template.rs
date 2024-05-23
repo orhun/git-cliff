@@ -225,11 +225,11 @@ mod test {
 					timestamp: 0,
 					previous: None,
 					#[cfg(feature = "github")]
-					github: crate::github::GitHubReleaseMetadata {
+					github: crate::remote::github::GitHubReleaseMetadata {
 						contributors: vec![],
 					},
 					#[cfg(feature = "gitlab")]
-					gitlab: crate::gitlab::GitLabReleaseMetadata {
+					gitlab: crate::remote::gitlab::GitLabReleaseMetadata {
 						contributors: vec![],
 					},
 				},
@@ -253,7 +253,8 @@ mod test {
 			template.variables
 		);
 		#[cfg(feature = "github")]
-		assert!(!template.contains_github_variable());
+		assert!(!template.contains_variable(&["commit.github"]));
+		assert!(template.contains_variable(&["commit.group"]));
 		Ok(())
 	}
 }

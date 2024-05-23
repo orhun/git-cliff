@@ -24,16 +24,13 @@ pub mod config;
 pub mod embed;
 /// Error handling.
 pub mod error;
-/// GitHub client.
-#[cfg(feature = "github")]
-pub mod github;
-/// GitLab client.
-#[cfg(feature = "gitlab")]
-pub mod gitlab;
 /// Common release type.
 pub mod release;
-#[cfg(feature = "repo")]
+/// Remote integration.
+#[cfg(any(feature = "github", feature = "gitlab"))]
+pub mod remote;
 /// Git repository.
+#[cfg(feature = "repo")]
 pub mod repo;
 /// Template engine.
 pub mod template;

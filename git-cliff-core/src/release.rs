@@ -2,14 +2,14 @@ use crate::commit::Commit;
 use crate::config::Bump;
 use crate::error::Result;
 #[cfg(feature = "github")]
-use crate::github::{
+use crate::remote::github::{
 	GitHubCommit,
 	GitHubContributor,
 	GitHubPullRequest,
 	GitHubReleaseMetadata,
 };
 #[cfg(feature = "gitlab")]
-use crate::gitlab::{
+use crate::remote::gitlab::{
 	GitLabCommit,
 	GitLabContributor,
 	GitLabMergeRequest,
@@ -277,11 +277,11 @@ mod test {
 					..Default::default()
 				})),
 				#[cfg(feature = "github")]
-				github: crate::github::GitHubReleaseMetadata {
+				github: crate::remote::github::GitHubReleaseMetadata {
 					contributors: vec![],
 				},
 				#[cfg(feature = "gitlab")]
-				gitlab: crate::gitlab::GitLabReleaseMetadata {
+				gitlab: crate::remote::gitlab::GitLabReleaseMetadata {
 					contributors: vec![],
 				},
 			}
@@ -426,8 +426,8 @@ mod test {
 	#[cfg(feature = "github")]
 	#[test]
 	fn update_github_metadata() -> Result<()> {
-		use crate::github::GitHubCommitAuthor;
-		use crate::github::PullRequestLabel;
+		use crate::remote::github::GitHubCommitAuthor;
+		use crate::remote::github::PullRequestLabel;
 
 		let mut release = Release {
 			version:   None,
@@ -693,7 +693,7 @@ mod test {
 	#[cfg(feature = "gitlab")]
 	#[test]
 	fn update_gitlab_metadata() -> Result<()> {
-		use crate::gitlab::GitLabUser;
+		use crate::remote::gitlab::GitLabUser;
 
 		let mut release = Release {
 			version:   None,
