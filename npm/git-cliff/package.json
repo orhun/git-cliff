@@ -1,6 +1,6 @@
 {
   "name": "git-cliff",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "A highly customizable Changelog Generator that follows Conventional Commit specifications ⛰️",
   "type": "module",
   "main": "lib/cjs/index.d.cts",
@@ -88,12 +88,12 @@
     "typescript": "^5.3.3"
   },
   "optionalDependencies": {
-    "git-cliff-darwin-arm64": "2.2.1",
-    "git-cliff-darwin-x64": "2.2.1",
-    "git-cliff-linux-arm64": "2.2.1",
-    "git-cliff-linux-x64": "2.2.1",
-    "git-cliff-windows-arm64": "2.2.1",
-    "git-cliff-windows-x64": "2.2.1"
+    "git-cliff-darwin-arm64": "2.2.2",
+    "git-cliff-darwin-x64": "2.2.2",
+    "git-cliff-linux-arm64": "2.2.2",
+    "git-cliff-linux-x64": "2.2.2",
+    "git-cliff-windows-arm64": "2.2.2",
+    "git-cliff-windows-x64": "2.2.2"
   },
   "eslintConfig": {
     "extends": [
@@ -112,5 +112,8 @@
   "packageManager": "yarn@4.1.0",
   "publishConfig": {
     "access": "public"
+  },
+  "engines": {
+    "node": ">=18.19 || >=20.6 || >=21"
   }
 }

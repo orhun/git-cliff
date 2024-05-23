@@ -1,5 +1,29 @@
 [![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)
 
+## [2.2.2](https://github.com/orhun/git-cliff/compare/v2.2.1..v2.2.2) - 2024-05-11
+
+### ⛰️  Features
+
+- *(changelog)* Allow adding custom context ([#613](https://github.com/orhun/git-cliff/issues/613)) - ([522bd53](https://github.com/orhun/git-cliff/commit/522bd536a4ad63dfbfbaebcac8a92202b32b202f))
+
+### 🐛 Bug Fixes
+
+- *(changelog)* Ignore empty lines when using `split_commits` ([#608](https://github.com/orhun/git-cliff/issues/608)) - ([b8fb852](https://github.com/orhun/git-cliff/commit/b8fb85220e86138ad8b129ebf1e0599ce8aa5938))
+- *(parser)* Allow matching empty commit body ([#605](https://github.com/orhun/git-cliff/issues/605)) - ([1d1b3b8](https://github.com/orhun/git-cliff/commit/1d1b3b80e163baf34113456f24e3fbbc203e355d))
+
+### 📚 Documentation
+
+- *(readme)* Add social media badges - ([d53b905](https://github.com/orhun/git-cliff/commit/d53b9051840b46f41ccaeca6de3c37c1379a6e5a))
+- *(website)* Add note about supported platforms for NPM - ([4e4d7cd](https://github.com/orhun/git-cliff/commit/4e4d7cdbfced3618bdfaf392dbe0a3f4bbbba799))
+- *(website)* Add SourceHut builds example ([#617](https://github.com/orhun/git-cliff/issues/617)) - ([f636cfc](https://github.com/orhun/git-cliff/commit/f636cfc5ce0fdbe07d9010c1690876abcc017d29))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(npm)* Add minimum supported Node versions ([#621](https://github.com/orhun/git-cliff/issues/621)) - ([95bdf2d](https://github.com/orhun/git-cliff/commit/95bdf2db3724715f76a7b649367541ace5ca9d1f))
+- *(npm)* Update yarn.lock - ([adc5c5b](https://github.com/orhun/git-cliff/commit/adc5c5ba876281cdeab0d7e7150a32d959f90886))
+- *(pypi)* Disable PyPi builds for x86_64-pc-windows-gnu - ([f675b0b](https://github.com/orhun/git-cliff/commit/f675b0b5bdbe57437e39dbe4c0b78e7c4f373936))
+- *(tests)* Don't check last commit ([#619](https://github.com/orhun/git-cliff/issues/619)) - ([68b9839](https://github.com/orhun/git-cliff/commit/68b98393e72d4a38a2e9166477784a9e1a55c9cf))
+
 ## [2.2.1](https://github.com/orhun/git-cliff/compare/v2.2.0..v2.2.1) - 2024-04-10
 
 ### 🐛 Bug Fixes
