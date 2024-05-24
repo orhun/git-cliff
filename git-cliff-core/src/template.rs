@@ -253,8 +253,10 @@ mod test {
 			template.variables
 		);
 		#[cfg(feature = "github")]
-		assert!(!template.contains_variable(&["commit.github"]));
-		assert!(template.contains_variable(&["commit.group"]));
+		{
+			assert!(!template.contains_variable(&["commit.github"]));
+			assert!(template.contains_variable(&["commit.group"]));
+		}
 		Ok(())
 	}
 }
