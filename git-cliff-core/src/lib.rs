@@ -26,14 +26,15 @@ pub mod embed;
 pub mod error;
 /// Common release type.
 pub mod release;
-/// Remote integration.
-#[cfg(any(feature = "github", feature = "gitlab"))]
-pub mod remote;
 /// Git repository.
 #[cfg(feature = "repo")]
 pub mod repo;
 /// Template engine.
 pub mod template;
+
+#[cfg(any(feature = "github", feature = "gitlab"))]
+#[allow(async_fn_in_trait)]
+pub mod remote;
 
 #[macro_use]
 extern crate log;

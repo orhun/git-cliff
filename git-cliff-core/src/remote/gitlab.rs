@@ -24,8 +24,9 @@ pub const FINISHED_FETCHING_MSG: &str = "Done fetching GitLab data.";
 /// Template variables related to this remote.
 pub const TEMPLATE_VARIABLES: &[&str] = &["gitlab", "commit.gitlab"];
 
-/// https://docs.gitlab.com/ee/api/projects.html#get-single-project
 /// Representation of a single GitLab Project.
+///
+/// <https://docs.gitlab.com/ee/api/projects.html#get-single-project>
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitLabProject {
 	/// GitLab id for project
@@ -53,8 +54,9 @@ impl RemoteEntry for GitLabProject {
 	}
 }
 
-/// https://docs.gitlab.com/ee/api/commits.html
 /// Representation of a single commit.
+///
+/// <https://docs.gitlab.com/ee/api/commits.html>
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitLabCommit {
 	/// Sha
@@ -109,8 +111,9 @@ impl RemoteEntry for GitLabCommit {
 	}
 }
 
-/// https://docs.gitlab.com/ee/api/merge_requests.html
 /// Representation of a single pull request.
+///
+/// <https://docs.gitlab.com/ee/api/merge_requests.html>
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitLabMergeRequest {
 	/// Id

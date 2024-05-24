@@ -1,3 +1,11 @@
+//! This module abstracts away the implementation details of Git hosting
+//! platforms such as GitHub and GitLab.
+//!
+//! Mainly, you can use these traits/types for creating a client for fetching
+//! commits and pull requests from a server.
+//!
+//! See [`github`] or [`gitlab`] modules for an example.
+
 /// GitHub client.
 #[cfg(feature = "github")]
 pub mod github;
@@ -61,7 +69,7 @@ pub(crate) const REQUEST_KEEP_ALIVE: u64 = 60;
 pub(crate) const MAX_PAGE_SIZE: usize = 100;
 
 /// Trait for handling the different entries returned from the remote.
-pub(crate) trait RemoteEntry {
+pub trait RemoteEntry {
 	/// Returns the API URL for fetching the entries at the specified page.
 	fn url(project_id: i64, api_url: &str, remote: &Remote, page: i32) -> String;
 	/// Returns the request buffer size.
@@ -167,7 +175,8 @@ fn create_remote_client(
 	Ok(client)
 }
 
-pub(crate) trait RemoteClient {
+/// Trait for handling the API connection and fetching.
+pub trait RemoteClient {
 	/// Returns the API url.
 	fn api_url() -> String;
 
@@ -248,6 +257,7 @@ pub(crate) trait RemoteClient {
 }
 
 /// Generates a function for updating the release metadata for a remote.
+#[doc(hidden)]
 #[macro_export]
 macro_rules! update_release_metadata {
 	($remote: ident, $fn: ident) => {
