@@ -106,33 +106,49 @@ pub fn init() -> Result<()> {
 			value: target,
 			width: max_width,
 		});
-		#[cfg(any(feature = "github", feature = "gitlab"))]
+
+		#[cfg(feature = "github")]
 		{
 			let message = record.args().to_string();
 			if message
-				.starts_with(git_cliff_core::remote::github::START_FETCHING_MSG) ||
-				message.starts_with(
-					git_cliff_core::remote::gitlab::START_FETCHING_MSG,
-				) {
+				.starts_with(git_cliff_core::remote::github::START_FETCHING_MSG)
+			{
 				PROGRESS_BAR
 					.enable_steady_tick(std::time::Duration::from_millis(80));
 				PROGRESS_BAR.set_message(message);
-				Ok(())
 			} else if message
-				.starts_with(git_cliff_core::remote::github::FINISHED_FETCHING_MSG) ||
-				message.starts_with(
-					git_cliff_core::remote::gitlab::FINISHED_FETCHING_MSG,
-				) {
+				.starts_with(git_cliff_core::remote::github::FINISHED_FETCHING_MSG)
+			{
 				PROGRESS_BAR.finish_and_clear();
-				Ok(())
 			} else {
-				writeln!(f, " {} {} > {}", level, target, record.args(),)
+				writeln!(f, " {} {} > {}", level, target, record.args())?;
 			}
 		}
+
+		#[cfg(feature = "gitlab")]
+		{
+			let message = record.args().to_string();
+			if message
+				.starts_with(git_cliff_core::remote::gitlab::START_FETCHING_MSG)
+			{
+				PROGRESS_BAR
+					.enable_steady_tick(std::time::Duration::from_millis(80));
+				PROGRESS_BAR.set_message(message);
+			} else if message
+				.starts_with(git_cliff_core::remote::gitlab::FINISHED_FETCHING_MSG)
+			{
+				PROGRESS_BAR.finish_and_clear();
+			} else {
+				writeln!(f, " {} {} > {}", level, target, record.args())?;
+			}
+		}
+
 		#[cfg(not(any(feature = "github", feature = "gitlab")))]
 		{
-			writeln!(f, " {} {} > {}", level, target, record.args(),)
+			writeln!(f, " {} {} > {}", level, target, record.args())?;
 		}
+
+		Ok(())
 	});
 
 	if let Ok(var) = env::var(LOGGER_ENV) {
