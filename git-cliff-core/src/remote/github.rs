@@ -1,34 +1,11 @@
 use crate::config::Remote;
 use crate::error::*;
-use futures::{
-	future,
-	stream,
-	StreamExt,
-};
-use http_cache_reqwest::{
-	CACacheManager,
-	Cache,
-	CacheMode,
-	HttpCache,
-	HttpCacheOptions,
-};
-use reqwest::header::{
-	HeaderMap,
-	HeaderValue,
-};
-use reqwest::Client;
-use reqwest_middleware::{
-	ClientBuilder,
-	ClientWithMiddleware,
-};
-use secrecy::ExposeSecret;
-use serde::de::DeserializeOwned;
+use reqwest_middleware::ClientWithMiddleware;
 use serde::{
 	Deserialize,
 	Serialize,
 };
 use std::env;
-use std::time::Duration;
 
 use super::*;
 
@@ -46,13 +23,6 @@ pub const FINISHED_FETCHING_MSG: &str = "Done fetching GitHub data.";
 
 /// Template variables related to this remote.
 pub const TEMPLATE_VARIABLES: &[&str] = &["github", "commit.github"];
-
-/// Returns the GitHub API url either from environment or from default value.
-fn get_api_url() -> String {
-	env::var(GITHUB_API_URL_ENV)
-		.ok()
-		.unwrap_or_else(|| GITHUB_API_URL.to_string())
-}
 
 /// Representation of a single commit.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -74,12 +44,10 @@ impl RemoteCommit for GitHubCommit {
 }
 
 impl RemoteEntry for GitHubCommit {
-	fn url(_id: i64, owner: &str, repo: &str, page: i32) -> String {
+	fn url(_id: i64, api_url: &str, remote: &Remote, page: i32) -> String {
 		format!(
 			"{}/repos/{}/{}/commits?per_page={MAX_PAGE_SIZE}&page={page}",
-			get_api_url(),
-			owner,
-			repo
+			api_url, remote.owner, remote.repo
 		)
 	}
 	fn buffer_size() -> usize {
@@ -134,12 +102,10 @@ impl RemotePullRequest for GitHubPullRequest {
 }
 
 impl RemoteEntry for GitHubPullRequest {
-	fn url(_id: i64, owner: &str, repo: &str, page: i32) -> String {
+	fn url(_id: i64, api_url: &str, remote: &Remote, page: i32) -> String {
 		format!(
 			"{}/repos/{}/{}/pulls?per_page={MAX_PAGE_SIZE}&page={page}&state=closed",
-			get_api_url(),
-			owner,
-			repo
+			api_url, remote.owner, remote.repo
 		)
 	}
 
@@ -151,10 +117,8 @@ impl RemoteEntry for GitHubPullRequest {
 /// HTTP client for handling GitHub REST API requests.
 #[derive(Debug, Clone)]
 pub struct GitHubClient {
-	/// Owner of the repository.
-	owner:  String,
-	/// GitHub repository.
-	repo:   String,
+	/// Remote.
+	remote: Remote,
 	/// HTTP client.
 	client: ClientWithMiddleware,
 }
@@ -163,102 +127,34 @@ pub struct GitHubClient {
 impl TryFrom<Remote> for GitHubClient {
 	type Error = Error;
 	fn try_from(remote: Remote) -> Result<Self> {
-		if !remote.is_set() {
-			return Err(Error::RemoteNotSetError);
-		}
-		let mut headers = HeaderMap::new();
-		headers.insert(
-			reqwest::header::ACCEPT,
-			HeaderValue::from_static("application/vnd.github+json"),
-		);
-		if let Some(token) = remote.token {
-			headers.insert(
-				reqwest::header::AUTHORIZATION,
-				format!("Bearer {}", token.expose_secret()).parse()?,
-			);
-		}
-		headers.insert(reqwest::header::USER_AGENT, USER_AGENT.parse()?);
-		let client = Client::builder()
-			.timeout(Duration::from_secs(REQUEST_TIMEOUT))
-			.tcp_keepalive(Duration::from_secs(REQUEST_KEEP_ALIVE))
-			.default_headers(headers)
-			.build()?;
-		let client = ClientBuilder::new(client)
-			.with(Cache(HttpCache {
-				mode:    CacheMode::Default,
-				manager: CACacheManager {
-					path: dirs::cache_dir()
-						.ok_or_else(|| {
-							Error::DirsError(String::from(
-								"failed to find the user's cache directory",
-							))
-						})?
-						.join(env!("CARGO_PKG_NAME")),
-				},
-				options: HttpCacheOptions::default(),
-			}))
-			.build();
 		Ok(Self {
-			owner: remote.owner,
-			repo: remote.repo,
-			client,
+			client: create_remote_client(&remote, "application/vnd.github+json")?,
+			remote,
 		})
 	}
 }
 
+impl RemoteClient for GitHubClient {
+	fn api_url() -> String {
+		env::var(GITHUB_API_URL_ENV)
+			.ok()
+			.unwrap_or_else(|| GITHUB_API_URL.to_string())
+	}
+
+	fn remote(&self) -> Remote {
+		self.remote.clone()
+	}
+
+	fn client(&self) -> ClientWithMiddleware {
+		self.client.clone()
+	}
+}
+
 impl GitHubClient {
-	/// Retrieves a single page of entries.
-	async fn get_entries_with_page<T: DeserializeOwned + RemoteEntry>(
-		&self,
-		page: i32,
-	) -> Result<Vec<T>> {
-		let url = T::url(0, &self.owner, &self.repo, page);
-		debug!("Sending request to: {url}");
-		let response = self.client.get(&url).send().await?;
-		let response_text = if response.status().is_success() {
-			let text = response.text().await?;
-			trace!("Response: {:?}", text);
-			text
-		} else {
-			let text = response.text().await?;
-			error!("Request error: {}", text);
-			text
-		};
-		let response = serde_json::from_str::<Vec<T>>(&response_text)?;
-		if response.is_empty() {
-			Err(Error::PaginationError(String::from("end of entries")))
-		} else {
-			Ok(response)
-		}
-	}
-
-	/// Fetches the GitHub API returns the given entry.
-	async fn fetch<T: DeserializeOwned + RemoteEntry>(&self) -> Result<Vec<T>> {
-		let entries: Vec<Vec<T>> = stream::iter(1..)
-			.map(|i| self.get_entries_with_page(i))
-			.buffered(T::buffer_size())
-			.take_while(|page| {
-				if let Err(e) = page {
-					debug!("Error while fetching page: {:?}", e);
-				}
-				future::ready(page.is_ok())
-			})
-			.map(|page| match page {
-				Ok(v) => v,
-				Err(ref e) => {
-					log::error!("{:#?}", e);
-					page.expect("failed to fetch page: {}")
-				}
-			})
-			.collect()
-			.await;
-		Ok(entries.into_iter().flatten().collect())
-	}
-
 	/// Fetches the GitHub API and returns the commits.
 	pub async fn get_commits(&self) -> Result<Vec<Box<dyn RemoteCommit>>> {
 		Ok(self
-			.fetch::<GitHubCommit>()
+			.fetch::<GitHubCommit>(0)
 			.await?
 			.into_iter()
 			.map(|v| Box::new(v) as Box<dyn RemoteCommit>)
@@ -270,7 +166,7 @@ impl GitHubClient {
 		&self,
 	) -> Result<Vec<Box<dyn RemotePullRequest>>> {
 		Ok(self
-			.fetch::<GitHubPullRequest>()
+			.fetch::<GitHubPullRequest>(0)
 			.await?
 			.into_iter()
 			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
