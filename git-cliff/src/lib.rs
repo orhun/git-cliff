@@ -386,6 +386,11 @@ pub fn run(mut args: Opt) -> Result<()> {
 			)));
 		}
 	}
+	if args.output.is_some() && args.prepend.is_some() {
+		return Err(Error::ArgumentError(String::from(
+			"'-o' and '-p' cannot be used together",
+		)));
+	}
 	if args.body.is_some() {
 		config.changelog.body.clone_from(&args.body);
 	}
