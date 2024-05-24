@@ -6,6 +6,7 @@ pub mod github;
 #[cfg(feature = "gitlab")]
 pub mod gitlab;
 
+use dyn_clone::DynClone;
 use serde::{
 	Deserialize,
 	Serialize,
@@ -64,4 +65,101 @@ pub(crate) trait RemoteEntry {
 	fn url(project_id: i64, repo: &str, owner: &str, page: i32) -> String;
 	/// Returns the request buffer size.
 	fn buffer_size() -> usize;
+}
+
+/// Trait for handling remote commits.
+pub trait RemoteCommit: DynClone {
+	/// Commit SHA.
+	fn id(&self) -> String;
+	/// Commit author.
+	fn username(&self) -> Option<String>;
+}
+
+dyn_clone::clone_trait_object!(RemoteCommit);
+
+/// Trait for handling remote pull requests.
+pub trait RemotePullRequest: DynClone {
+	/// Number.
+	fn number(&self) -> i64;
+	/// Title.
+	fn title(&self) -> Option<String>;
+	/// Labels of the pull request.
+	fn labels(&self) -> Vec<String>;
+	/// Merge commit SHA.
+	fn merge_commit(&self) -> Option<String>;
+}
+
+dyn_clone::clone_trait_object!(RemotePullRequest);
+
+/// Result of a remote metadata.
+pub type RemoteMetadata =
+	(Vec<Box<dyn RemoteCommit>>, Vec<Box<dyn RemotePullRequest>>);
+
+/// Generates a function for updating the release metadata for a remote.
+#[macro_export]
+macro_rules! update_release_metadata {
+	($remote: ident, $fn: ident) => {
+		impl<'a> Release<'a> {
+			/// Updates the remote metadata that is contained in the release.
+			///
+			/// This function takes two arguments:
+			///
+			/// - Commits: needed for associating the Git user with the GitHub
+			///   username.
+			/// - Pull requests: needed for generating the contributor list for the
+			///   release.
+			pub fn $fn(
+				&mut self,
+				mut commits: Vec<Box<dyn RemoteCommit>>,
+				pull_requests: Vec<Box<dyn RemotePullRequest>>,
+			) -> Result<()> {
+				let mut contributors: Vec<RemoteContributor> = Vec::new();
+				// retain the commits that are not a part of this release for later
+				// on checking the first contributors.
+				commits.retain(|v| {
+					if let Some(commit) =
+						self.commits.iter_mut().find(|commit| commit.id == v.id())
+					{
+						let pull_request = pull_requests
+							.iter()
+							.find(|pr| pr.merge_commit() == Some(v.id().clone()));
+						commit.$remote.username = v.username();
+						commit.$remote.pr_number = pull_request.map(|v| v.number());
+						commit.$remote.pr_title =
+							pull_request.and_then(|v| v.title().clone());
+						commit.$remote.pr_labels = pull_request
+							.map(|v| v.labels().clone())
+							.unwrap_or_default();
+						if !contributors
+							.iter()
+							.any(|v| commit.$remote.username == v.username)
+						{
+							contributors.push(RemoteContributor {
+								username:      commit.$remote.username.clone(),
+								pr_title:      commit.$remote.pr_title.clone(),
+								pr_number:     commit.$remote.pr_number,
+								pr_labels:     commit.$remote.pr_labels.clone(),
+								is_first_time: false,
+							});
+						}
+						false
+					} else {
+						true
+					}
+				});
+				// mark contributors as first-time
+				self.$remote.contributors = contributors
+					.into_iter()
+					.map(|mut v| {
+						v.is_first_time = !commits
+							.iter()
+							.map(|v| v.username())
+							.any(|login| login == v.username);
+						v
+					})
+					.collect();
+				Ok(())
+			}
+		}
+	};
 }

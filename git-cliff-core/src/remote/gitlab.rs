@@ -115,6 +115,16 @@ pub struct GitLabCommit {
 	pub web_url:         String,
 }
 
+impl RemoteCommit for GitLabCommit {
+	fn id(&self) -> String {
+		self.id.clone()
+	}
+
+	fn username(&self) -> Option<String> {
+		Some(self.author_name.clone())
+	}
+}
+
 impl RemoteEntry for GitLabCommit {
 	fn url(id: i64, _repo: &str, _owner: &str, page: i32) -> String {
 		let commit_page = page + 1;
@@ -160,6 +170,24 @@ pub struct GitLabMergeRequest {
 	pub web_url:           String,
 	/// Labels
 	pub labels:            Vec<String>,
+}
+
+impl RemotePullRequest for GitLabMergeRequest {
+	fn number(&self) -> i64 {
+		self.iid
+	}
+
+	fn title(&self) -> Option<String> {
+		Some(self.title.clone())
+	}
+
+	fn labels(&self) -> Vec<String> {
+		self.labels.clone()
+	}
+
+	fn merge_commit(&self) -> Option<String> {
+		self.merge_commit_sha.clone()
+	}
 }
 
 impl RemoteEntry for GitLabMergeRequest {
@@ -339,15 +367,28 @@ impl GitLabClient {
 	}
 
 	/// Fetches the GitLab API and returns the commits.
-	pub async fn get_commits(&self, project_id: i64) -> Result<Vec<GitLabCommit>> {
-		self.fetch::<GitLabCommit>(project_id).await
+	pub async fn get_commits(
+		&self,
+		project_id: i64,
+	) -> Result<Vec<Box<dyn RemoteCommit>>> {
+		Ok(self
+			.fetch::<GitLabCommit>(project_id)
+			.await?
+			.into_iter()
+			.map(|v| Box::new(v) as Box<dyn RemoteCommit>)
+			.collect())
 	}
 
 	/// Fetches the GitLab API and returns the pull requests.
 	pub async fn get_merge_requests(
 		&self,
 		project_id: i64,
-	) -> Result<Vec<GitLabMergeRequest>> {
-		self.fetch::<GitLabMergeRequest>(project_id).await
+	) -> Result<Vec<Box<dyn RemotePullRequest>>> {
+		Ok(self
+			.fetch::<GitLabMergeRequest>(project_id)
+			.await?
+			.into_iter()
+			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
+			.collect())
 	}
 }

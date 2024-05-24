@@ -60,6 +60,16 @@ pub struct GitHubCommit {
 	pub author: Option<GitHubCommitAuthor>,
 }
 
+impl RemoteCommit for GitHubCommit {
+	fn id(&self) -> String {
+		self.sha.clone()
+	}
+
+	fn username(&self) -> Option<String> {
+		self.author.clone().and_then(|v| v.login)
+	}
+}
+
 impl RemoteEntry for GitHubCommit {
 	fn url(_id: i64, owner: &str, repo: &str, page: i32) -> String {
 		format!(
@@ -100,6 +110,24 @@ pub struct GitHubPullRequest {
 	pub merge_commit_sha: Option<String>,
 	/// Labels of the pull request.
 	pub labels:           Vec<PullRequestLabel>,
+}
+
+impl RemotePullRequest for GitHubPullRequest {
+	fn number(&self) -> i64 {
+		self.number
+	}
+
+	fn title(&self) -> Option<String> {
+		self.title.clone()
+	}
+
+	fn labels(&self) -> Vec<String> {
+		self.labels.iter().map(|v| v.name.clone()).collect()
+	}
+
+	fn merge_commit(&self) -> Option<String> {
+		self.merge_commit_sha.clone()
+	}
 }
 
 impl RemoteEntry for GitHubPullRequest {
@@ -225,12 +253,24 @@ impl GitHubClient {
 	}
 
 	/// Fetches the GitHub API and returns the commits.
-	pub async fn get_commits(&self) -> Result<Vec<GitHubCommit>> {
-		self.fetch::<GitHubCommit>().await
+	pub async fn get_commits(&self) -> Result<Vec<Box<dyn RemoteCommit>>> {
+		Ok(self
+			.fetch::<GitHubCommit>()
+			.await?
+			.into_iter()
+			.map(|v| Box::new(v) as Box<dyn RemoteCommit>)
+			.collect())
 	}
 
 	/// Fetches the GitHub API and returns the pull requests.
-	pub async fn get_pull_requests(&self) -> Result<Vec<GitHubPullRequest>> {
-		self.fetch::<GitHubPullRequest>().await
+	pub async fn get_pull_requests(
+		&self,
+	) -> Result<Vec<Box<dyn RemotePullRequest>>> {
+		Ok(self
+			.fetch::<GitHubPullRequest>()
+			.await?
+			.into_iter()
+			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
+			.collect())
 	}
 }

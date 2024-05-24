@@ -1,19 +1,11 @@
 use crate::commit::Commit;
 use crate::config::Bump;
 use crate::error::Result;
-#[cfg(feature = "github")]
-use crate::remote::github::{
-	GitHubCommit,
-	GitHubPullRequest,
-};
-#[cfg(feature = "gitlab")]
-use crate::remote::gitlab::{
-	GitLabCommit,
-	GitLabMergeRequest,
-};
 #[cfg(any(feature = "github", feature = "gitlab"))]
 use crate::remote::{
+	RemoteCommit,
 	RemoteContributor,
+	RemotePullRequest,
 	RemoteReleaseMetadata,
 };
 use next_version::VersionUpdater;
@@ -46,132 +38,13 @@ pub struct Release<'a> {
 	pub gitlab:    RemoteReleaseMetadata,
 }
 
+#[cfg(feature = "github")]
+crate::update_release_metadata!(github, update_github_metadata);
+
+#[cfg(feature = "gitlab")]
+crate::update_release_metadata!(gitlab, update_gitlab_metadata);
+
 impl<'a> Release<'a> {
-	/// Updates the GitHub metadata that is contained in the release.
-	///
-	/// This function takes two arguments:
-	///
-	/// - GitHub commits: needed for associating the Git user with the GitHub
-	///   username.
-	/// - GitHub pull requests: needed for generating the contributor list for
-	///   the release.
-	#[cfg(feature = "github")]
-	pub fn update_github_metadata(
-		&mut self,
-		mut github_commits: Vec<GitHubCommit>,
-		github_pull_requests: Vec<GitHubPullRequest>,
-	) -> Result<()> {
-		let mut contributors: Vec<RemoteContributor> = Vec::new();
-		// retain the commits that are not a part of this release for later on
-		// checking the first contributors.
-		github_commits.retain(|v| {
-			if let Some(commit) =
-				self.commits.iter_mut().find(|commit| commit.id == v.sha)
-			{
-				let pull_request = github_pull_requests
-					.iter()
-					.find(|pr| pr.merge_commit_sha == Some(v.sha.clone()));
-
-				commit.github.username = v.author.clone().and_then(|v| v.login);
-				commit.github.pr_number = pull_request.map(|v| v.number);
-				commit.github.pr_title = pull_request.and_then(|v| v.title.clone());
-				commit.github.pr_labels = pull_request
-					.map(|v| v.labels.iter().map(|v| v.name.clone()).collect())
-					.unwrap_or_default();
-				if !contributors
-					.iter()
-					.any(|v| commit.github.username == v.username)
-				{
-					contributors.push(RemoteContributor {
-						username:      commit.github.username.clone(),
-						pr_title:      commit.github.pr_title.clone(),
-						pr_number:     commit.github.pr_number,
-						pr_labels:     commit.github.pr_labels.clone(),
-						is_first_time: false,
-					});
-				}
-				false
-			} else {
-				true
-			}
-		});
-		// mark contributors as first-time
-		self.github.contributors = contributors
-			.into_iter()
-			.map(|mut v| {
-				v.is_first_time = !github_commits
-					.iter()
-					.map(|v| v.author.clone().and_then(|v| v.login))
-					.any(|login| login == v.username);
-				v
-			})
-			.collect();
-		Ok(())
-	}
-	/// Updates the GitLab metadata that is contained in the release.
-	///
-	/// This function takes two arguments:
-	///
-	/// - GitLab commits: needed for associating the Git user with GitLab
-	///   username.
-	/// - GitLab merge requests: needed for generating the contributor list for
-	///   the release.
-	#[cfg(feature = "gitlab")]
-	pub fn update_gitlab_metadata(
-		&mut self,
-		mut gitlab_commits: Vec<GitLabCommit>,
-		gitlab_merge_requests: Vec<GitLabMergeRequest>,
-	) -> Result<()> {
-		let mut contributors: Vec<RemoteContributor> = Vec::new();
-		// retain the commits that are not a part of this release for later on
-		// checking the first contributors.
-		gitlab_commits.retain(|v| {
-			if let Some(commit) =
-				self.commits.iter_mut().find(|commit| commit.id == v.id)
-			{
-				let merge_request = gitlab_merge_requests
-					.iter()
-					.find(|pr| pr.merge_commit_sha == Some(v.id.clone()));
-
-				commit.gitlab.username = Some(v.author_name.clone());
-				commit.gitlab.pr_number = merge_request
-					.map(|gitlab_merge_request| gitlab_merge_request.iid);
-				commit.gitlab.pr_title = merge_request
-					.map(|gitlab_merge_request| gitlab_merge_request.title.clone());
-				commit.gitlab.pr_labels = merge_request
-					.map(|merge_request| merge_request.labels.clone())
-					.unwrap_or_default();
-
-				if !contributors.iter().any(|gitlab_user| {
-					commit.gitlab.username == gitlab_user.username
-				}) {
-					contributors.push(RemoteContributor {
-						username:      commit.gitlab.username.clone(),
-						pr_title:      commit.gitlab.pr_title.clone(),
-						pr_number:     commit.gitlab.pr_number,
-						pr_labels:     commit.gitlab.pr_labels.clone(),
-						is_first_time: false,
-					});
-				}
-				false
-			} else {
-				true
-			}
-		});
-		// mark contributors as first-time
-		self.gitlab.contributors = contributors
-			.into_iter()
-			.map(|mut v| {
-				v.is_first_time = !gitlab_commits
-					.iter()
-					.map(|v| v.author_name.clone())
-					.any(|login| login == v.username.clone().unwrap_or_default());
-				v
-			})
-			.collect();
-		Ok(())
-	}
-
 	/// Calculates the next version based on the commits.
 	///
 	/// It uses the default bump version configuration to calculate the next
@@ -425,8 +298,12 @@ mod test {
 	#[cfg(feature = "github")]
 	#[test]
 	fn update_github_metadata() -> Result<()> {
-		use crate::remote::github::GitHubCommitAuthor;
-		use crate::remote::github::PullRequestLabel;
+		use crate::remote::github::{
+			GitHubCommit,
+			GitHubCommitAuthor,
+			GitHubPullRequest,
+			PullRequestLabel,
+		};
 
 		let mut release = Release {
 			version:   None,
@@ -517,7 +394,10 @@ mod test {
 					sha:    String::new(),
 					author: None,
 				},
-			],
+			]
+			.into_iter()
+			.map(|v| Box::new(v) as Box<dyn RemoteCommit>)
+			.collect(),
 			vec![
 				GitHubPullRequest {
 					title:            Some(String::from("1")),
@@ -569,7 +449,10 @@ mod test {
 						name: String::from("github"),
 					}],
 				},
-			],
+			]
+			.into_iter()
+			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
+			.collect(),
 		)?;
 		let expected_commits = vec![
 			Commit {
@@ -692,7 +575,11 @@ mod test {
 	#[cfg(feature = "gitlab")]
 	#[test]
 	fn update_gitlab_metadata() -> Result<()> {
-		use crate::remote::gitlab::GitLabUser;
+		use crate::remote::gitlab::{
+			GitLabCommit,
+			GitLabMergeRequest,
+			GitLabUser,
+		};
 
 		let mut release = Release {
 			version:   None,
@@ -869,8 +756,11 @@ mod test {
 					parent_ids:      vec![],
 					web_url:         String::from(""),
 				},
-			],
-			vec![GitLabMergeRequest {
+			]
+			.into_iter()
+			.map(|v| Box::new(v) as Box<dyn RemoteCommit>)
+			.collect(),
+			vec![Box::new(GitLabMergeRequest {
 				title:             String::from("1"),
 				merge_commit_sha:  Some(String::from(
 					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
@@ -895,7 +785,7 @@ mod test {
 				web_url:           String::from(""),
 				squash_commit_sha: None,
 				labels:            vec![String::from("rust")],
-			}],
+			})],
 		)?;
 		let expected_commits = vec![
 			Commit {

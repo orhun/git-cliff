@@ -9,19 +9,9 @@ use crate::release::{
 	Releases,
 };
 #[cfg(feature = "github")]
-use crate::remote::github::{
-	GitHubClient,
-	GitHubCommit,
-	GitHubPullRequest,
-	FINISHED_FETCHING_MSG,
-	START_FETCHING_MSG,
-};
+use crate::remote::github::GitHubClient;
 #[cfg(feature = "gitlab")]
-use crate::remote::gitlab::{
-	GitLabClient,
-	GitLabCommit,
-	GitLabMergeRequest,
-};
+use crate::remote::gitlab::GitLabClient;
 use crate::template::Template;
 use std::collections::HashMap;
 use std::io::Write;
@@ -204,9 +194,8 @@ impl<'a> Changelog<'a> {
 	/// If no GitHub related variable is used in the template then this function
 	/// returns empty vectors.
 	#[cfg(feature = "github")]
-	fn get_github_metadata(
-		&self,
-	) -> Result<(Vec<GitHubCommit>, Vec<GitHubPullRequest>)> {
+	fn get_github_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
+		use crate::remote::github;
 		let variables = &["github", "commit.github"];
 		if self.body_template.contains_variable(variables) ||
 			self.footer_template
@@ -217,7 +206,11 @@ impl<'a> Changelog<'a> {
 			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
 			let github_client =
 				GitHubClient::try_from(self.config.remote.github.clone())?;
-			info!("{START_FETCHING_MSG} ({})", self.config.remote.github);
+			info!(
+				"{} ({})",
+				github::START_FETCHING_MSG,
+				self.config.remote.github
+			);
 			let data = tokio::runtime::Builder::new_multi_thread()
 				.enable_all()
 				.build()?
@@ -230,7 +223,7 @@ impl<'a> Changelog<'a> {
 					debug!("Number of GitHub pull requests: {}", commits.len());
 					Ok((commits, pull_requests))
 				});
-			info!("{FINISHED_FETCHING_MSG}");
+			info!("{}", github::FINISHED_FETCHING_MSG);
 			data
 		} else {
 			Ok((vec![], vec![]))
@@ -253,11 +246,8 @@ impl<'a> Changelog<'a> {
 	/// If no GitLab related variable is used in the template then this function
 	/// returns empty vectors.
 	#[cfg(feature = "gitlab")]
-	fn get_gitlab_metadata(
-		&self,
-	) -> Result<(Vec<GitLabCommit>, Vec<GitLabMergeRequest>)> {
+	fn get_gitlab_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
 		use crate::remote::gitlab;
-
 		let variables = &["gitlab", "commit.gitlab"];
 		if self.body_template.contains_variable(variables) ||
 			self.footer_template
