@@ -47,6 +47,9 @@ pub const START_FETCHING_MSG: &str = "Retrieving data from GitLab...";
 /// Log message to show when done fetching from GitLab.
 pub const FINISHED_FETCHING_MSG: &str = "Done fetching GitLab data.";
 
+/// Template variables related to this remote.
+pub const TEMPLATE_VARIABLES: &[&str] = &["gitlab", "commit.gitlab"];
+
 /// Returns the GitLab API url either from environment or from default value.
 fn get_api_url() -> String {
 	env::var(GITLAB_API_URL_ENV)

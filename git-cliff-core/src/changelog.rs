@@ -196,11 +196,12 @@ impl<'a> Changelog<'a> {
 	#[cfg(feature = "github")]
 	fn get_github_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
 		use crate::remote::github;
-		let variables = &["github", "commit.github"];
-		if self.body_template.contains_variable(variables) ||
+		if self
+			.body_template
+			.contains_variable(github::TEMPLATE_VARIABLES) ||
 			self.footer_template
 				.as_ref()
-				.map(|v| v.contains_variable(variables))
+				.map(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
 				.unwrap_or(false)
 		{
 			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
@@ -248,11 +249,12 @@ impl<'a> Changelog<'a> {
 	#[cfg(feature = "gitlab")]
 	fn get_gitlab_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
 		use crate::remote::gitlab;
-		let variables = &["gitlab", "commit.gitlab"];
-		if self.body_template.contains_variable(variables) ||
+		if self
+			.body_template
+			.contains_variable(gitlab::TEMPLATE_VARIABLES) ||
 			self.footer_template
 				.as_ref()
-				.map(|v| v.contains_variable(variables))
+				.map(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
 				.unwrap_or(false)
 		{
 			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");

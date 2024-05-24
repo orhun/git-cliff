@@ -44,6 +44,9 @@ pub const START_FETCHING_MSG: &str = "Retrieving data from GitHub...";
 /// Log message to show when done fetching from GitHub.
 pub const FINISHED_FETCHING_MSG: &str = "Done fetching GitHub data.";
 
+/// Template variables related to this remote.
+pub const TEMPLATE_VARIABLES: &[&str] = &["github", "commit.github"];
+
 /// Returns the GitHub API url either from environment or from default value.
 fn get_api_url() -> String {
 	env::var(GITHUB_API_URL_ENV)
