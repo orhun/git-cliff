@@ -92,6 +92,7 @@ lazy_static::lazy_static! {
 ///
 /// This method also creates a progress bar which is triggered
 /// by the network operations that are related to GitHub.
+#[allow(unreachable_code, clippy::needless_return)]
 pub fn init() -> Result<()> {
 	let mut builder = Builder::new();
 	builder.format(move |f, record| {
@@ -116,12 +117,12 @@ pub fn init() -> Result<()> {
 				PROGRESS_BAR
 					.enable_steady_tick(std::time::Duration::from_millis(80));
 				PROGRESS_BAR.set_message(message);
+				return Ok(());
 			} else if message
 				.starts_with(git_cliff_core::remote::github::FINISHED_FETCHING_MSG)
 			{
 				PROGRESS_BAR.finish_and_clear();
-			} else {
-				writeln!(f, " {} {} > {}", level, target, record.args())?;
+				return Ok(());
 			}
 		}
 
@@ -134,21 +135,16 @@ pub fn init() -> Result<()> {
 				PROGRESS_BAR
 					.enable_steady_tick(std::time::Duration::from_millis(80));
 				PROGRESS_BAR.set_message(message);
+				return Ok(());
 			} else if message
 				.starts_with(git_cliff_core::remote::gitlab::FINISHED_FETCHING_MSG)
 			{
 				PROGRESS_BAR.finish_and_clear();
-			} else {
-				writeln!(f, " {} {} > {}", level, target, record.args())?;
+				return Ok(());
 			}
 		}
 
-		#[cfg(not(any(feature = "github", feature = "gitlab")))]
-		{
-			writeln!(f, " {} {} > {}", level, target, record.args())?;
-		}
-
-		Ok(())
+		writeln!(f, " {} {} > {}", level, target, record.args())
 	});
 
 	if let Ok(var) = env::var(LOGGER_ENV) {
