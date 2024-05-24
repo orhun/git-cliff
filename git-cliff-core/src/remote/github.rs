@@ -28,10 +28,6 @@ use serde::{
 	Serialize,
 };
 use std::env;
-use std::hash::{
-	Hash,
-	Hasher,
-};
 use std::time::Duration;
 
 use super::*;
@@ -118,34 +114,6 @@ impl RemoteEntry for GitHubPullRequest {
 
 	fn buffer_size() -> usize {
 		5
-	}
-}
-
-/// Metadata of a GitHub release.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
-pub struct GitHubReleaseMetadata {
-	/// Contributors.
-	pub contributors: Vec<GitHubContributor>,
-}
-
-/// Representation of a GitHub contributor.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
-pub struct GitHubContributor {
-	/// Username.
-	pub username:      Option<String>,
-	/// Title of the pull request.
-	pub pr_title:      Option<String>,
-	/// The pull request that the user created.
-	pub pr_number:     Option<i64>,
-	/// Labels of the pull request.
-	pub pr_labels:     Vec<String>,
-	/// Whether if the user contributed for the first time.
-	pub is_first_time: bool,
-}
-
-impl Hash for GitHubContributor {
-	fn hash<H: Hasher>(&self, state: &mut H) {
-		self.username.hash(state);
 	}
 }
 

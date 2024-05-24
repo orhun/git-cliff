@@ -225,11 +225,11 @@ mod test {
 					timestamp: 0,
 					previous: None,
 					#[cfg(feature = "github")]
-					github: crate::remote::github::GitHubReleaseMetadata {
+					github: crate::remote::RemoteReleaseMetadata {
 						contributors: vec![],
 					},
 					#[cfg(feature = "gitlab")]
-					gitlab: crate::remote::gitlab::GitLabReleaseMetadata {
+					gitlab: crate::remote::RemoteReleaseMetadata {
 						contributors: vec![],
 					},
 				},

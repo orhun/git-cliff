@@ -686,11 +686,11 @@ mod test {
 			timestamp: 50000000,
 			previous: None,
 			#[cfg(feature = "github")]
-			github: crate::remote::github::GitHubReleaseMetadata {
+			github: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
 			#[cfg(feature = "gitlab")]
-			gitlab: crate::remote::gitlab::GitLabReleaseMetadata {
+			gitlab: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
 		};
@@ -737,11 +737,11 @@ mod test {
 				timestamp: 1000,
 				previous: Some(Box::new(test_release)),
 				#[cfg(feature = "github")]
-				github: crate::remote::github::GitHubReleaseMetadata {
+				github: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
 				},
 				#[cfg(feature = "gitlab")]
-				gitlab: crate::remote::gitlab::GitLabReleaseMetadata {
+				gitlab: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
 				},
 			},

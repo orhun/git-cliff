@@ -31,10 +31,6 @@ use serde::{
 	Serialize,
 };
 use std::env;
-use std::hash::{
-	Hash,
-	Hasher,
-};
 use std::time::Duration;
 
 use super::*;
@@ -196,34 +192,6 @@ pub struct GitLabUser {
 	pub avatar_url: Option<String>,
 	/// Web Url
 	pub web_url:    String,
-}
-
-/// Metadata of a GitLab release.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
-pub struct GitLabReleaseMetadata {
-	/// Contributors.
-	pub contributors: Vec<GitLabContributor>,
-}
-
-/// Representation of a GitLab contributor.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
-pub struct GitLabContributor {
-	/// Username.
-	pub username:      Option<String>,
-	/// Title of the pull request.
-	pub pr_title:      Option<String>,
-	/// The pull request that the user created.
-	pub pr_number:     Option<i64>,
-	/// Labels of the pull request.
-	pub pr_labels:     Vec<String>,
-	/// Whether if the user contributed for the first time.
-	pub is_first_time: bool,
-}
-
-impl Hash for GitLabContributor {
-	fn hash<H: Hasher>(&self, state: &mut H) {
-		self.username.hash(state);
-	}
 }
 
 /// Representation of a GitLab Reference.

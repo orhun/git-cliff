@@ -189,11 +189,11 @@ fn generate_changelog() -> Result<()> {
 			timestamp: 0,
 			previous:  None,
 			#[cfg(feature = "github")]
-			github: git_cliff_core::remote::github::GitHubReleaseMetadata {
+			github: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
 			#[cfg(feature = "gitlab")]
-			gitlab: git_cliff_core::remote::gitlab::GitLabReleaseMetadata {
+			gitlab: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
 		},
@@ -221,11 +221,11 @@ fn generate_changelog() -> Result<()> {
 			timestamp: 0,
 			previous:  None,
 			#[cfg(feature = "github")]
-			github: git_cliff_core::remote::github::GitHubReleaseMetadata {
+			github: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
 			#[cfg(feature = "gitlab")]
-			gitlab: git_cliff_core::remote::gitlab::GitLabReleaseMetadata {
+			gitlab: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
 		},
