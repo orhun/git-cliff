@@ -1,11 +1,3 @@
-//! This module abstracts away the implementation details of Git hosting
-//! platforms such as GitHub and GitLab.
-//!
-//! Mainly, you can use these traits/types for creating a client for fetching
-//! commits and pull requests from a server.
-//!
-//! See [`github`] or [`gitlab`] modules for an example.
-
 /// GitHub client.
 #[cfg(feature = "github")]
 pub mod github;
