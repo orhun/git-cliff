@@ -9,11 +9,24 @@ repo = "git-cliff"
 token = ""
 ```
 
-Currently, only GitHub (`remote.github`) is supported.
-
 :::tip
 
 See the [GitHub integration](/docs/integration/github).
+
+:::
+
+Or if you are using GitLab:
+
+```toml
+[remote.gitlab]
+owner = "orhun"
+repo = "git-cliff"
+token = ""
+```
+
+:::tip
+
+See the [GitLab integration](/docs/integration/gitlab).
 
 :::
 
@@ -33,6 +46,8 @@ e.g.
 git cliff --github-repo orhun/git-cliff
 ```
 
+Same applies for GitLab with `--gitlab-repo` and `GITLAB_REPO` environment variables.
+
 ### token
 
 Sets the access token for the remote.
@@ -42,3 +57,5 @@ If you are using GitHub, then you can also pass this value via `--github-token` 
 ```bash
 git cliff --github-token <TOKEN>
 ```
+
+Same applies for GitLab with `--gitlab-token` and `GITLAB_TOKEN` environment variables.
