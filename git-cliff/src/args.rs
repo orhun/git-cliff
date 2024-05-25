@@ -230,15 +230,17 @@ pub struct Opt {
 		long,
 		env = "GITHUB_TOKEN",
 		value_name = "TOKEN",
-		hide_env_values = true
+		hide_env_values = true,
+		hide = !cfg!(feature = "github"),
 	)]
 	pub github_token:   Option<SecretString>,
 	/// Sets the GitHub repository.
 	#[arg(
-	    long,
-	    env = "GITHUB_REPO",
-	    value_parser = clap::value_parser!(RemoteValue),
-	    value_name = "OWNER/REPO"
+		long,
+		env = "GITHUB_REPO",
+		value_parser = clap::value_parser!(RemoteValue),
+		value_name = "OWNER/REPO",
+		hide = !cfg!(feature = "github"),
 	)]
 	pub github_repo:    Option<RemoteValue>,
 	/// Sets the GitLab API token.
@@ -246,15 +248,17 @@ pub struct Opt {
 		long,
 		env = "GITLAB_TOKEN",
 		value_name = "TOKEN",
-		hide_env_values = true
+		hide_env_values = true,
+		hide = !cfg!(feature = "gitlab"),
 	)]
 	pub gitlab_token:   Option<SecretString>,
 	/// Sets the GitLab repository.
 	#[arg(
-			long,
-			env = "GITLAB_REPO",
-			value_parser = clap::value_parser!(RemoteValue),
-			value_name = "OWNER/REPO"
+		long,
+		env = "GITLAB_REPO",
+		value_parser = clap::value_parser!(RemoteValue),
+		value_name = "OWNER/REPO",
+		hide = !cfg!(feature = "gitlab"),
 	)]
 	pub gitlab_repo:    Option<RemoteValue>,
 }
