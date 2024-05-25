@@ -27,6 +27,16 @@ github = [
   "dep:tokio",
   "dep:futures",
 ]
+## Enable integration with GitLab.
+## You can turn this off if you don't use GitLab and don't want
+## to make network requests to the GitLab API.
+gitlab = [
+  "dep:reqwest",
+  "dep:http-cache-reqwest",
+  "dep:reqwest-middleware",
+  "dep:tokio",
+  "dep:futures",
+]
 
 [dependencies]
 glob = { workspace = true, optional = true }
@@ -59,6 +69,7 @@ tokio = { version = "1.37.0", features = [
 ], optional = true }
 futures = { version = "0.3.30", optional = true }
 url = "2.5.0"
+dyn-clone = "1.0.17"
 
 [dependencies.git2]
 version = "0.18.3"

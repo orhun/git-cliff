@@ -131,15 +131,12 @@ impl Template {
 		Ok(variables.into_iter().collect())
 	}
 
-	/// Returns `true` if the template contains GitHub related variables.
-	///
-	/// Note that this checks the variables starting with "github" and
-	/// "commit.github" and ignores "remote.github" values.
-	#[cfg(feature = "github")]
-	pub(crate) fn contains_github_variable(&self) -> bool {
-		self.variables
+	/// Returns `true` if the template contains one of the given variables.
+	#[cfg(any(feature = "github", feature = "gitlab"))]
+	pub(crate) fn contains_variable(&self, variables: &[&str]) -> bool {
+		variables
 			.iter()
-			.any(|v| v.starts_with("github") || v.starts_with("commit.github"))
+			.any(|var| self.variables.iter().any(|v| v.starts_with(var)))
 	}
 
 	/// Renders the template.
@@ -228,7 +225,11 @@ mod test {
 					timestamp: 0,
 					previous: None,
 					#[cfg(feature = "github")]
-					github: crate::github::GitHubReleaseMetadata {
+					github: crate::remote::RemoteReleaseMetadata {
+						contributors: vec![],
+					},
+					#[cfg(feature = "gitlab")]
+					gitlab: crate::remote::RemoteReleaseMetadata {
 						contributors: vec![],
 					},
 				},
@@ -252,7 +253,10 @@ mod test {
 			template.variables
 		);
 		#[cfg(feature = "github")]
-		assert!(!template.contains_github_variable());
+		{
+			assert!(!template.contains_variable(&["commit.github"]));
+			assert!(template.contains_variable(&["commit.group"]));
+		}
 		Ok(())
 	}
 }

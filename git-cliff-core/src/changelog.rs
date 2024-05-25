@@ -4,18 +4,14 @@ use crate::config::{
 	GitConfig,
 };
 use crate::error::Result;
-#[cfg(feature = "github")]
-use crate::github::{
-	GitHubClient,
-	GitHubCommit,
-	GitHubPullRequest,
-	FINISHED_FETCHING_MSG,
-	START_FETCHING_MSG,
-};
 use crate::release::{
 	Release,
 	Releases,
 };
+#[cfg(feature = "github")]
+use crate::remote::github::GitHubClient;
+#[cfg(feature = "gitlab")]
+use crate::remote::gitlab::GitLabClient;
 use crate::template::Template;
 use std::collections::HashMap;
 use std::io::Write;
@@ -198,19 +194,24 @@ impl<'a> Changelog<'a> {
 	/// If no GitHub related variable is used in the template then this function
 	/// returns empty vectors.
 	#[cfg(feature = "github")]
-	fn get_github_metadata(
-		&self,
-	) -> Result<(Vec<GitHubCommit>, Vec<GitHubPullRequest>)> {
-		if self.body_template.contains_github_variable() ||
+	fn get_github_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
+		use crate::remote::github;
+		if self
+			.body_template
+			.contains_variable(github::TEMPLATE_VARIABLES) ||
 			self.footer_template
 				.as_ref()
-				.map(|v| v.contains_github_variable())
+				.map(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
 				.unwrap_or(false)
 		{
 			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
 			let github_client =
 				GitHubClient::try_from(self.config.remote.github.clone())?;
-			info!("{START_FETCHING_MSG} ({})", self.config.remote.github);
+			info!(
+				"{} ({})",
+				github::START_FETCHING_MSG,
+				self.config.remote.github
+			);
 			let data = tokio::runtime::Builder::new_multi_thread()
 				.enable_all()
 				.build()?
@@ -223,7 +224,73 @@ impl<'a> Changelog<'a> {
 					debug!("Number of GitHub pull requests: {}", commits.len());
 					Ok((commits, pull_requests))
 				});
-			info!("{FINISHED_FETCHING_MSG}");
+			info!("{}", github::FINISHED_FETCHING_MSG);
+			data
+		} else {
+			Ok((vec![], vec![]))
+		}
+	}
+
+	/// Returns the GitLab metadata needed for the changelog.
+	///
+	/// This function creates a multithread async runtime for handling the
+	///
+	/// requests. The following are fetched from the GitLab REST API:
+	///
+	/// - Commits
+	/// - Marge requests
+	///
+	/// Each of these are paginated requests so they are being run in parallel
+	/// for speedup.
+	///
+	///
+	/// If no GitLab related variable is used in the template then this function
+	/// returns empty vectors.
+	#[cfg(feature = "gitlab")]
+	fn get_gitlab_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
+		use crate::remote::gitlab;
+		if self
+			.body_template
+			.contains_variable(gitlab::TEMPLATE_VARIABLES) ||
+			self.footer_template
+				.as_ref()
+				.map(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
+				.unwrap_or(false)
+		{
+			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
+			let gitlab_client =
+				GitLabClient::try_from(self.config.remote.gitlab.clone())?;
+			info!(
+				"{} ({})",
+				gitlab::START_FETCHING_MSG,
+				self.config.remote.gitlab
+			);
+			let data = tokio::runtime::Builder::new_multi_thread()
+				.enable_all()
+				.build()?
+				.block_on(async {
+					// Map repo/owner to gitlab id
+					let project_id = match tokio::join!(gitlab_client.get_project())
+					{
+						(Ok(project),) => project.id,
+						(Err(err),) => {
+							error!("Failed to lookup project! {}", err);
+							return Err(err);
+						}
+					};
+					let (commits, merge_requests) = tokio::try_join!(
+						// Send id to these functions
+						gitlab_client.get_commits(project_id),
+						gitlab_client.get_merge_requests(project_id),
+					)?;
+					debug!("Number of GitLab commits: {}", commits.len());
+					debug!(
+						"Number of GitLab merge requests: {}",
+						merge_requests.len()
+					);
+					Ok((commits, merge_requests))
+				});
+			info!("{}", gitlab::FINISHED_FETCHING_MSG);
 			data
 		} else {
 			Ok((vec![], vec![]))
@@ -257,7 +324,19 @@ impl<'a> Changelog<'a> {
 			serde_json::to_value(self.config.remote.clone())?,
 		);
 		#[cfg(feature = "github")]
-		let (github_commits, github_pull_requests) = self.get_github_metadata()?;
+		let (github_commits, github_pull_requests) = if self.config.remote.github.is_set() {
+			self.get_github_metadata()
+				.expect("Could not get github metadata")
+		} else {
+			(vec![], vec![])
+		};
+		#[cfg(feature = "gitlab")]
+		let (gitlab_commits, gitlab_merge_request) = if self.config.remote.gitlab.is_set() {
+			self.get_gitlab_metadata()
+				.expect("Could not get gitlab metadata")
+		} else {
+			(vec![], vec![])
+		};
 		let postprocessors = self
 			.config
 			.changelog
@@ -278,6 +357,11 @@ impl<'a> Changelog<'a> {
 			release.update_github_metadata(
 				github_commits.clone(),
 				github_pull_requests.clone(),
+			)?;
+			#[cfg(feature = "gitlab")]
+			release.update_gitlab_metadata(
+				gitlab_commits.clone(),
+				gitlab_merge_request.clone(),
 			)?;
 			let write_result = write!(
 				out,
@@ -522,6 +606,11 @@ mod test {
 					repo:  String::from("awesome"),
 					token: None,
 				},
+				gitlab: Remote {
+					owner: String::from("coolguy"),
+					repo:  String::from("awesome"),
+					token: None,
+				},
 			},
 			bump:      Bump::default(),
 		};
@@ -589,7 +678,11 @@ mod test {
 			timestamp: 50000000,
 			previous: None,
 			#[cfg(feature = "github")]
-			github: crate::github::GitHubReleaseMetadata {
+			github: crate::remote::RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "gitlab")]
+			gitlab: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
 		};
@@ -636,7 +729,11 @@ mod test {
 				timestamp: 1000,
 				previous: Some(Box::new(test_release)),
 				#[cfg(feature = "github")]
-				github: crate::github::GitHubReleaseMetadata {
+				github: crate::remote::RemoteReleaseMetadata {
+					contributors: vec![],
+				},
+				#[cfg(feature = "gitlab")]
+				gitlab: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
 				},
 			},

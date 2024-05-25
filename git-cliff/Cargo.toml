@@ -11,7 +11,7 @@ keywords = ["changelog", "generator", "conventional", "commit"]
 categories = ["command-line-utilities"]
 default-run = "git-cliff"
 edition = "2021"
-rust-version = "1.74.1"
+rust-version = "1.75.0"
 
 [[bin]]
 name = "git-cliff-completions"
@@ -23,11 +23,13 @@ path = "src/bin/mangen.rs"
 
 [features]
 # check for new versions
-default = ["update-informer", "github"]
+default = ["update-informer", "github", "gitlab"]
 # inform about new releases
 update-informer = ["dep:update-informer"]
 # enable GitHub integration
 github = ["git-cliff-core/github", "dep:indicatif"]
+# enable GitLab integration
+gitlab = ["git-cliff-core/gitlab", "dep:indicatif"]
 
 [dependencies]
 glob.workspace = true

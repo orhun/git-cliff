@@ -10,12 +10,7 @@ use git_cliff_core::error::{
 	Error,
 	Result,
 };
-#[cfg(feature = "github")]
-use git_cliff_core::github::{
-	FINISHED_FETCHING_MSG,
-	START_FETCHING_MSG,
-};
-#[cfg(feature = "github")]
+#[cfg(any(feature = "github", feature = "gitlab"))]
 use indicatif::{
 	ProgressBar,
 	ProgressStyle,
@@ -71,7 +66,7 @@ fn colored_level(style: &mut Style, level: Level) -> StyledValue<'_, &'static st
 	}
 }
 
-#[cfg(feature = "github")]
+#[cfg(any(feature = "github", feature = "gitlab"))]
 lazy_static::lazy_static! {
 	/// Lazily initialized progress bar.
 	pub static ref PROGRESS_BAR: ProgressBar = {
@@ -97,6 +92,7 @@ lazy_static::lazy_static! {
 ///
 /// This method also creates a progress bar which is triggered
 /// by the network operations that are related to GitHub.
+#[allow(unreachable_code, clippy::needless_return)]
 pub fn init() -> Result<()> {
 	let mut builder = Builder::new();
 	builder.format(move |f, record| {
@@ -111,25 +107,44 @@ pub fn init() -> Result<()> {
 			value: target,
 			width: max_width,
 		});
+
 		#[cfg(feature = "github")]
 		{
 			let message = record.args().to_string();
-			if message.starts_with(START_FETCHING_MSG) {
+			if message
+				.starts_with(git_cliff_core::remote::github::START_FETCHING_MSG)
+			{
 				PROGRESS_BAR
 					.enable_steady_tick(std::time::Duration::from_millis(80));
 				PROGRESS_BAR.set_message(message);
-				Ok(())
-			} else if message.starts_with(FINISHED_FETCHING_MSG) {
+				return Ok(());
+			} else if message
+				.starts_with(git_cliff_core::remote::github::FINISHED_FETCHING_MSG)
+			{
 				PROGRESS_BAR.finish_and_clear();
-				Ok(())
-			} else {
-				writeln!(f, " {} {} > {}", level, target, record.args(),)
+				return Ok(());
 			}
 		}
-		#[cfg(not(feature = "github"))]
+
+		#[cfg(feature = "gitlab")]
 		{
-			writeln!(f, " {} {} > {}", level, target, record.args(),)
+			let message = record.args().to_string();
+			if message
+				.starts_with(git_cliff_core::remote::gitlab::START_FETCHING_MSG)
+			{
+				PROGRESS_BAR
+					.enable_steady_tick(std::time::Duration::from_millis(80));
+				PROGRESS_BAR.set_message(message);
+				return Ok(());
+			} else if message
+				.starts_with(git_cliff_core::remote::gitlab::FINISHED_FETCHING_MSG)
+			{
+				PROGRESS_BAR.finish_and_clear();
+				return Ok(());
+			}
 		}
+
+		writeln!(f, " {} {} > {}", level, target, record.args())
 	});
 
 	if let Ok(var) = env::var(LOGGER_ENV) {
