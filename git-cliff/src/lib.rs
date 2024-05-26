@@ -386,9 +386,13 @@ pub fn run(mut args: Opt) -> Result<()> {
 			)));
 		}
 	}
-	if args.output.is_some() && args.prepend.is_some() {
+	if args.output.is_some() &&
+		args.prepend.is_some() &&
+		args.output.as_ref() == args.prepend.as_ref()
+	{
 		return Err(Error::ArgumentError(String::from(
-			"'-o' and '-p' cannot be used together",
+			"'-o' and '-p' can only be used together if they point to different \
+			 files",
 		)));
 	}
 	if args.body.is_some() {
