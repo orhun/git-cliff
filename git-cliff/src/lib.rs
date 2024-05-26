@@ -397,6 +397,15 @@ pub fn run(mut args: Opt) -> Result<()> {
 			)));
 		}
 	}
+	if args.output.is_some() &&
+		args.prepend.is_some() &&
+		args.output.as_ref() == args.prepend.as_ref()
+	{
+		return Err(Error::ArgumentError(String::from(
+			"'-o' and '-p' can only be used together if they point to different \
+			 files",
+		)));
+	}
 	if args.body.is_some() {
 		config.changelog.body.clone_from(&args.body);
 	}
