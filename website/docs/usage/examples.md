@@ -1,6 +1,7 @@
 ---
 sidebar_position: 3
 ---
+
 # Examples
 
 To simply create a changelog at your projects git root directory:
@@ -32,11 +33,16 @@ git cliff --current
 # generate changelog for unreleased commits
 git cliff --unreleased
 git cliff --unreleased --tag 1.0.0
+```
 
-# generate changelog for a specific commit range
+Generate a changelog for a specific commit range (based on [git ranges](https://git-scm.com/docs/git-range-diff)):
+
+```bash
 git cliff 4c7b043..a440c6e
 git cliff 4c7b043..HEAD
 git cliff HEAD~2..
+git cliff v2.2.1..
+git cliff v0.1.0..HEAD
 ```
 
 Sort the commits inside sections:
