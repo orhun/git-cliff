@@ -128,6 +128,9 @@ pub struct Commit<'a> {
 	/// GitLab metadata of the commit.
 	#[cfg(feature = "gitlab")]
 	pub gitlab:        crate::remote::RemoteContributor,
+	/// Bitbucket metadata of the commit.
+	#[cfg(feature = "bitbucket")]
+	pub bitbucket:     crate::remote::RemoteContributor,
 }
 
 impl<'a> From<String> for Commit<'a> {
@@ -443,6 +446,8 @@ impl Serialize for Commit<'_> {
 		commit.serialize_field("github", &self.github)?;
 		#[cfg(feature = "gitlab")]
 		commit.serialize_field("gitlab", &self.gitlab)?;
+		#[cfg(feature = "bitbucket")]
+		commit.serialize_field("bitbucket", &self.bitbucket)?;
 		commit.end()
 	}
 }

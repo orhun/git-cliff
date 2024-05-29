@@ -37,6 +37,16 @@ gitlab = [
   "dep:tokio",
   "dep:futures",
 ]
+## Enable integration with Bitbucket.
+## You can turn this off if you don't use Bitbucket and don't want
+## to make network requests to the Bitbucket API.
+bitbucket = [
+  "dep:reqwest",
+  "dep:http-cache-reqwest",
+  "dep:reqwest-middleware",
+  "dep:tokio",
+  "dep:futures",
+]
 
 [dependencies]
 glob = { workspace = true, optional = true }

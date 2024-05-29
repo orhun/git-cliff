@@ -122,10 +122,13 @@ pub struct GitConfig {
 pub struct RemoteConfig {
 	/// GitHub remote.
 	#[serde(default)]
-	pub github: Remote,
+	pub github:    Remote,
 	/// GitLab remote.
 	#[serde(default)]
-	pub gitlab: Remote,
+	pub gitlab:    Remote,
+	/// Bitbucket remote.
+	#[serde(default)]
+	pub bitbucket: Remote,
 }
 
 /// A single remote.

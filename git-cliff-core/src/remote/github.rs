@@ -53,6 +53,10 @@ impl RemoteEntry for GitHubCommit {
 	fn buffer_size() -> usize {
 		10
 	}
+
+	fn early_exit(&self) -> bool {
+		false
+	}
 }
 
 /// Author of the commit.
@@ -112,6 +116,10 @@ impl RemoteEntry for GitHubPullRequest {
 	fn buffer_size() -> usize {
 		5
 	}
+
+	fn early_exit(&self) -> bool {
+		false
+	}
 }
 
 /// HTTP client for handling GitHub REST API requests.
@@ -147,6 +155,10 @@ impl RemoteClient for GitHubClient {
 
 	fn client(&self) -> ClientWithMiddleware {
 		self.client.clone()
+	}
+
+	fn early_exit<T: DeserializeOwned + RemoteEntry>(&self, page: &T) -> bool {
+		page.early_exit()
 	}
 }
 

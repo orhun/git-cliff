@@ -1,7 +1,7 @@
 use crate::commit::Commit;
 use crate::config::Bump;
 use crate::error::Result;
-#[cfg(any(feature = "github", feature = "gitlab"))]
+#[cfg(any(feature = "github", feature = "gitlab", feature = "bitbucket"))]
 use crate::remote::{
 	RemoteCommit,
 	RemoteContributor,
@@ -36,6 +36,9 @@ pub struct Release<'a> {
 	/// Contributors.
 	#[cfg(feature = "gitlab")]
 	pub gitlab:    RemoteReleaseMetadata,
+	/// Contributors.
+	#[cfg(feature = "bitbucket")]
+	pub bitbucket: RemoteReleaseMetadata,
 }
 
 #[cfg(feature = "github")]
@@ -43,6 +46,9 @@ crate::update_release_metadata!(github, update_github_metadata);
 
 #[cfg(feature = "gitlab")]
 crate::update_release_metadata!(gitlab, update_gitlab_metadata);
+
+#[cfg(feature = "bitbucket")]
+crate::update_release_metadata!(bitbucket, update_bitbucket_metadata);
 
 impl<'a> Release<'a> {
 	/// Calculates the next version based on the commits.
@@ -154,6 +160,10 @@ mod test {
 				},
 				#[cfg(feature = "gitlab")]
 				gitlab: crate::remote::RemoteReleaseMetadata {
+					contributors: vec![],
+				},
+				#[cfg(feature = "bitbucket")]
+				bitbucket: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
 				},
 			}
@@ -339,6 +349,9 @@ mod test {
 				contributors: vec![],
 			},
 			gitlab:    RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			bitbucket: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
 		};
@@ -615,6 +628,9 @@ mod test {
 				contributors: vec![],
 			},
 			gitlab:    RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			bitbucket: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
 		};

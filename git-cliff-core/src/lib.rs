@@ -27,7 +27,7 @@ pub mod error;
 /// Common release type.
 pub mod release;
 /// Remote handler.
-#[cfg(any(feature = "github", feature = "gitlab"))]
+#[cfg(any(feature = "github", feature = "gitlab", feature = "bitbucket"))]
 #[allow(async_fn_in_trait)]
 pub mod remote;
 /// Git repository.

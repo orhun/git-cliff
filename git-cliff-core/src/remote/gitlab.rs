@@ -52,6 +52,10 @@ impl RemoteEntry for GitLabProject {
 	fn buffer_size() -> usize {
 		1
 	}
+
+	fn early_exit(&self) -> bool {
+		false
+	}
 }
 
 /// Representation of a single commit.
@@ -108,6 +112,10 @@ impl RemoteEntry for GitLabCommit {
 	}
 	fn buffer_size() -> usize {
 		10
+	}
+
+	fn early_exit(&self) -> bool {
+		false
 	}
 }
 
@@ -174,6 +182,10 @@ impl RemoteEntry for GitLabMergeRequest {
 	fn buffer_size() -> usize {
 		5
 	}
+
+	fn early_exit(&self) -> bool {
+		false
+	}
 }
 
 /// Representation of a GitLab User.
@@ -238,12 +250,16 @@ impl RemoteClient for GitLabClient {
 	fn client(&self) -> ClientWithMiddleware {
 		self.client.clone()
 	}
+
+	fn early_exit<T: DeserializeOwned + RemoteEntry>(&self, page: &T) -> bool {
+		page.early_exit()
+	}
 }
 
 impl GitLabClient {
 	/// Fetches the GitLab API and returns the pull requests.
 	pub async fn get_project(&self) -> Result<GitLabProject> {
-		self.get_entry::<GitLabProject>().await
+		self.get_entry::<GitLabProject>(0, 1).await
 	}
 
 	/// Fetches the GitLab API and returns the commits.
