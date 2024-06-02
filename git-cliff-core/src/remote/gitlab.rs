@@ -49,8 +49,13 @@ impl RemoteEntry for GitLabProject {
 	fn url(_id: i64, api_url: &str, remote: &Remote, _page: i32) -> String {
 		format!("{}/projects/{}%2F{}", api_url, remote.owner, remote.repo)
 	}
+
 	fn buffer_size() -> usize {
 		1
+	}
+
+	fn early_exit(&self) -> bool {
+		false
 	}
 }
 
@@ -108,6 +113,10 @@ impl RemoteEntry for GitLabCommit {
 	}
 	fn buffer_size() -> usize {
 		10
+	}
+
+	fn early_exit(&self) -> bool {
+		false
 	}
 }
 
@@ -174,6 +183,10 @@ impl RemoteEntry for GitLabMergeRequest {
 	fn buffer_size() -> usize {
 		5
 	}
+
+	fn early_exit(&self) -> bool {
+		false
+	}
 }
 
 /// Representation of a GitLab User.
@@ -213,7 +226,7 @@ pub struct GitLabClient {
 	client: ClientWithMiddleware,
 }
 
-/// Constructs a GitHub client from the remote configuration.
+/// Constructs a GitLab client from the remote configuration.
 impl TryFrom<Remote> for GitLabClient {
 	type Error = Error;
 	fn try_from(remote: Remote) -> Result<Self> {
@@ -243,7 +256,7 @@ impl RemoteClient for GitLabClient {
 impl GitLabClient {
 	/// Fetches the GitLab API and returns the pull requests.
 	pub async fn get_project(&self) -> Result<GitLabProject> {
-		self.get_entry::<GitLabProject>().await
+		self.get_entry::<GitLabProject>(0, 1).await
 	}
 
 	/// Fetches the GitLab API and returns the commits.

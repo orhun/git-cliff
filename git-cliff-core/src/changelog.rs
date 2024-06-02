@@ -8,6 +8,8 @@ use crate::release::{
 	Release,
 	Releases,
 };
+#[cfg(feature = "bitbucket")]
+use crate::remote::bitbucket::BitbucketClient;
 #[cfg(feature = "github")]
 use crate::remote::github::GitHubClient;
 #[cfg(feature = "gitlab")]
@@ -297,6 +299,62 @@ impl<'a> Changelog<'a> {
 		}
 	}
 
+	/// Returns the Bitbucket metadata needed for the changelog.
+	///
+	/// This function creates a multithread async runtime for handling the
+	///
+	/// requests. The following are fetched from the bitbucket REST API:
+	///
+	/// - Commits
+	/// - Pull requests
+	///
+	/// Each of these are paginated requests so they are being run in parallel
+	/// for speedup.
+	///
+	///
+	/// If no bitbucket related variable is used in the template then this
+	/// function returns empty vectors.
+	#[cfg(feature = "bitbucket")]
+	fn get_bitbucket_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
+		use crate::remote::bitbucket;
+		if self
+			.body_template
+			.contains_variable(bitbucket::TEMPLATE_VARIABLES) ||
+			self.footer_template
+				.as_ref()
+				.map(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
+				.unwrap_or(false)
+		{
+			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
+			let bitbucket_client =
+				BitbucketClient::try_from(self.config.remote.bitbucket.clone())?;
+			info!(
+				"{} ({})",
+				bitbucket::START_FETCHING_MSG,
+				self.config.remote.bitbucket
+			);
+			let data = tokio::runtime::Builder::new_multi_thread()
+				.enable_all()
+				.build()?
+				.block_on(async {
+					let (commits, pull_requests) = tokio::try_join!(
+						bitbucket_client.get_commits(),
+						bitbucket_client.get_pull_requests()
+					)?;
+					debug!("Number of Bitbucket commits: {}", commits.len());
+					debug!(
+						"Number of Bitbucket pull requests: {}",
+						pull_requests.len()
+					);
+					Ok((commits, pull_requests))
+				});
+			info!("{}", bitbucket::FINISHED_FETCHING_MSG);
+			data
+		} else {
+			Ok((vec![], vec![]))
+		}
+	}
+
 	/// Increments the version for the unreleased changes based on semver.
 	pub fn bump_version(&mut self) -> Result<Option<String>> {
 		if let Some(ref mut last_release) = self.releases.iter_mut().next() {
@@ -337,6 +395,14 @@ impl<'a> Changelog<'a> {
 		} else {
 			(vec![], vec![])
 		};
+		#[cfg(feature = "bitbucket")]
+		let (bitbucket_commits, bitbucket_pull_request) =
+			if self.config.remote.bitbucket.is_set() {
+				self.get_bitbucket_metadata()
+					.expect("Could not get bitbucket metadata")
+			} else {
+				(vec![], vec![])
+			};
 		let postprocessors = self
 			.config
 			.changelog
@@ -362,6 +428,11 @@ impl<'a> Changelog<'a> {
 			release.update_gitlab_metadata(
 				gitlab_commits.clone(),
 				gitlab_merge_request.clone(),
+			)?;
+			#[cfg(feature = "bitbucket")]
+			release.update_bitbucket_metadata(
+				bitbucket_commits.clone(),
+				bitbucket_pull_request.clone(),
 			)?;
 			let write_result = write!(
 				out,
@@ -601,12 +672,17 @@ mod test {
 				limit_commits:            None,
 			},
 			remote:    RemoteConfig {
-				github: Remote {
+				github:    Remote {
 					owner: String::from("coolguy"),
 					repo:  String::from("awesome"),
 					token: None,
 				},
-				gitlab: Remote {
+				gitlab:    Remote {
+					owner: String::from("coolguy"),
+					repo:  String::from("awesome"),
+					token: None,
+				},
+				bitbucket: Remote {
 					owner: String::from("coolguy"),
 					repo:  String::from("awesome"),
 					token: None,
@@ -685,6 +761,10 @@ mod test {
 			gitlab: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
+			#[cfg(feature = "bitbucket")]
+			bitbucket: crate::remote::RemoteReleaseMetadata {
+				contributors: vec![],
+			},
 		};
 		let releases = vec![
 			test_release.clone(),
@@ -734,6 +814,10 @@ mod test {
 				},
 				#[cfg(feature = "gitlab")]
 				gitlab: crate::remote::RemoteReleaseMetadata {
+					contributors: vec![],
+				},
+				#[cfg(feature = "bitbucket")]
+				bitbucket: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
 				},
 			},

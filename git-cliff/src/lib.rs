@@ -134,6 +134,17 @@ fn process_repository<'a>(
 				debug!("Failed to get remote from GitLab repository: {:?}", e);
 			}
 		}
+	} else if !config.remote.bitbucket.is_set() {
+		match repository.upstream_remote() {
+			Ok(remote) => {
+				debug!("No Bitbucket remote is set, using remote: {}", remote);
+				config.remote.bitbucket.owner = remote.owner;
+				config.remote.bitbucket.repo = remote.repo;
+			}
+			Err(e) => {
+				debug!("Failed to get remote from Bitbucket repository: {:?}", e);
+			}
+		}
 	}
 
 	// Print debug information about configuration and arguments.
@@ -426,6 +437,13 @@ pub fn run(mut args: Opt) -> Result<()> {
 	if args.gitlab_token.is_some() {
 		config.remote.gitlab.token.clone_from(&args.gitlab_token);
 	}
+	if args.bitbucket_token.is_some() {
+		config
+			.remote
+			.bitbucket
+			.token
+			.clone_from(&args.bitbucket_token);
+	}
 	if let Some(ref remote) = args.github_repo {
 		config.remote.github.owner = remote.0.owner.to_string();
 		config.remote.github.repo = remote.0.repo.to_string();
@@ -433,6 +451,10 @@ pub fn run(mut args: Opt) -> Result<()> {
 	if let Some(ref remote) = args.gitlab_repo {
 		config.remote.gitlab.owner = remote.0.owner.to_string();
 		config.remote.gitlab.repo = remote.0.repo.to_string();
+	}
+	if let Some(ref remote) = args.bitbucket_repo {
+		config.remote.bitbucket.owner = remote.0.owner.to_string();
+		config.remote.bitbucket.repo = remote.0.repo.to_string();
 	}
 	if args.no_exec {
 		if let Some(ref mut preprocessors) = config.git.commit_preprocessors {

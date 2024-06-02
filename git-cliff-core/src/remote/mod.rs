@@ -6,6 +6,10 @@ pub mod github;
 #[cfg(feature = "gitlab")]
 pub mod gitlab;
 
+/// Bitbucket client.
+#[cfg(feature = "bitbucket")]
+pub mod bitbucket;
+
 use crate::config::Remote;
 use crate::error::{
 	Error,
@@ -66,6 +70,8 @@ pub trait RemoteEntry {
 	fn url(project_id: i64, api_url: &str, remote: &Remote, page: i32) -> String;
 	/// Returns the request buffer size.
 	fn buffer_size() -> usize;
+	/// Whether if exit early.
+	fn early_exit(&self) -> bool;
 }
 
 /// Trait for handling remote commits.
@@ -178,6 +184,32 @@ pub trait RemoteClient {
 	/// Returns the HTTP client for making requests.
 	fn client(&self) -> ClientWithMiddleware;
 
+	/// Returns true if the client should early exit.
+	fn early_exit<T: DeserializeOwned + RemoteEntry>(&self, page: &T) -> bool {
+		page.early_exit()
+	}
+
+	/// Retrieves a single object.
+	async fn get_entry<T: DeserializeOwned + RemoteEntry>(
+		&self,
+		project_id: i64,
+		page: i32,
+	) -> Result<T> {
+		let url = T::url(project_id, &Self::api_url(), &self.remote(), page);
+		debug!("Sending request to: {url}");
+		let response = self.client().get(&url).send().await?;
+		let response_text = if response.status().is_success() {
+			let text = response.text().await?;
+			trace!("Response: {:?}", text);
+			text
+		} else {
+			let text = response.text().await?;
+			error!("Request error: {}", text);
+			text
+		};
+		Ok(serde_json::from_str::<T>(&response_text)?)
+	}
+
 	/// Retrieves a single page of entries.
 	async fn get_entries_with_page<T: DeserializeOwned + RemoteEntry>(
 		&self,
@@ -205,6 +237,8 @@ pub trait RemoteClient {
 	}
 
 	/// Fetches the remote API and returns the given entry.
+	///
+	/// See `fetch_with_early_exit` for the early exit version of this method.
 	async fn fetch<T: DeserializeOwned + RemoteEntry>(
 		&self,
 		project_id: i64,
@@ -230,21 +264,36 @@ pub trait RemoteClient {
 		Ok(entries.into_iter().flatten().collect())
 	}
 
-	/// Retrieves a single object.
-	async fn get_entry<T: DeserializeOwned + RemoteEntry>(&self) -> Result<T> {
-		let url = T::url(0, &Self::api_url(), &self.remote(), 1);
-		debug!("Sending request to: {url}");
-		let response = self.client().get(&url).send().await?;
-		let response_text = if response.status().is_success() {
-			let text = response.text().await?;
-			trace!("Response: {:?}", text);
-			text
-		} else {
-			let text = response.text().await?;
-			error!("Request error: {}", text);
-			text
-		};
-		Ok(serde_json::from_str::<T>(&response_text)?)
+	/// Fetches the remote API and returns the given entry.
+	///
+	/// Early exits based on the response.
+	async fn fetch_with_early_exit<T: DeserializeOwned + RemoteEntry>(
+		&self,
+		project_id: i64,
+	) -> Result<Vec<T>> {
+		let entries: Vec<T> = stream::iter(0..)
+			.map(|i| self.get_entry::<T>(project_id, i))
+			.buffered(T::buffer_size())
+			.take_while(|page| {
+				let status = match page {
+					Ok(v) => !self.early_exit(v),
+					Err(e) => {
+						debug!("Error while fetching page: {:?}", e);
+						true
+					}
+				};
+				future::ready(status && page.is_ok())
+			})
+			.map(|page| match page {
+				Ok(v) => v,
+				Err(ref e) => {
+					log::error!("{:#?}", e);
+					page.expect("failed to fetch page: {}")
+				}
+			})
+			.collect()
+			.await;
+		Ok(entries)
 	}
 }
 
