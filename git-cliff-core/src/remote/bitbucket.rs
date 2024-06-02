@@ -16,7 +16,7 @@ const BITBUCKET_API_URL: &str = "https://api.bitbucket.org/2.0/repositories";
 const BITBUCKET_API_URL_ENV: &str = "BITBUCKET_API_URL";
 
 /// Log message to show while fetching data from Bitbucket.
-pub const START_FETCHING_MSG: &str = "Retrieving data from BITBUCKET...";
+pub const START_FETCHING_MSG: &str = "Retrieving data from Bitbucket...";
 
 /// Log message to show when done fetching from Bitbucket.
 pub const FINISHED_FETCHING_MSG: &str = "Done fetching Bitbucket data.";
@@ -46,7 +46,7 @@ impl RemoteCommit for BitbucketCommit {
 	}
 }
 
-/// https://developer.atlassian.com/cloud/bitbucket/rest/api-group-commits/#api-repositories-workspace-repo-slug-commits-get
+/// <https://developer.atlassian.com/cloud/bitbucket/rest/api-group-commits/#api-repositories-workspace-repo-slug-commits-get>
 impl RemoteEntry for BitbucketPagination<BitbucketCommit> {
 	fn url(_id: i64, api_url: &str, remote: &Remote, page: i32) -> String {
 		let commit_page = page + 1;
@@ -55,16 +55,19 @@ impl RemoteEntry for BitbucketPagination<BitbucketCommit> {
 			api_url, remote.owner, remote.repo
 		)
 	}
+
 	fn buffer_size() -> usize {
 		10
 	}
+
 	fn early_exit(&self) -> bool {
 		self.values.is_empty()
 	}
 }
 
 /// Bitbucket Pagination Header
-/// https://developer.atlassian.com/cloud/bitbucket/rest/intro/#pagination
+///
+/// <https://developer.atlassian.com/cloud/bitbucket/rest/intro/#pagination>
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BitbucketPagination<T> {
 	/// Total number of objects in the response.
@@ -136,7 +139,7 @@ impl RemotePullRequest for BitbucketPullRequest {
 	}
 }
 
-/// https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/#api-repositories-workspace-repo-slug-pullrequests-get
+/// <https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/#api-repositories-workspace-repo-slug-pullrequests-get>
 impl RemoteEntry for BitbucketPagination<BitbucketPullRequest> {
 	fn url(_id: i64, api_url: &str, remote: &Remote, page: i32) -> String {
 		let pr_page = page + 1;
@@ -156,7 +159,7 @@ impl RemoteEntry for BitbucketPagination<BitbucketPullRequest> {
 	}
 }
 
-/// HTTP client for handling GitHub REST API requests.
+/// HTTP client for handling Bitbucket REST API requests.
 #[derive(Debug, Clone)]
 pub struct BitbucketClient {
 	/// Remote.
@@ -165,7 +168,7 @@ pub struct BitbucketClient {
 	client: ClientWithMiddleware,
 }
 
-/// Constructs a GitHub client from the remote configuration.
+/// Constructs a Bitbucket client from the remote configuration.
 impl TryFrom<Remote> for BitbucketClient {
 	type Error = Error;
 	fn try_from(remote: Remote) -> Result<Self> {
@@ -190,17 +193,13 @@ impl RemoteClient for BitbucketClient {
 	fn client(&self) -> ClientWithMiddleware {
 		self.client.clone()
 	}
-
-	fn early_exit<T: DeserializeOwned + RemoteEntry>(&self, page: &T) -> bool {
-		page.early_exit()
-	}
 }
 
 impl BitbucketClient {
 	/// Fetches the Bitbucket API and returns the commits.
 	pub async fn get_commits(&self) -> Result<Vec<Box<dyn RemoteCommit>>> {
 		Ok(self
-			.fetch_obj::<BitbucketPagination<BitbucketCommit>>(0)
+			.fetch_with_early_exit::<BitbucketPagination<BitbucketCommit>>(0)
 			.await?
 			.into_iter()
 			.flat_map(|v| v.values)
@@ -213,7 +212,7 @@ impl BitbucketClient {
 		&self,
 	) -> Result<Vec<Box<dyn RemotePullRequest>>> {
 		Ok(self
-			.fetch_obj::<BitbucketPagination<BitbucketPullRequest>>(0)
+			.fetch_with_early_exit::<BitbucketPagination<BitbucketPullRequest>>(0)
 			.await?
 			.into_iter()
 			.flat_map(|v| v.values)

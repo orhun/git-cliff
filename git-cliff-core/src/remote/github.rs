@@ -156,10 +156,6 @@ impl RemoteClient for GitHubClient {
 	fn client(&self) -> ClientWithMiddleware {
 		self.client.clone()
 	}
-
-	fn early_exit<T: DeserializeOwned + RemoteEntry>(&self, page: &T) -> bool {
-		page.early_exit()
-	}
 }
 
 impl GitHubClient {

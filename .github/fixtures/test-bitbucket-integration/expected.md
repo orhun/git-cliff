@@ -1,8 +1,12 @@
 ## What's Changed
 * feat(config): support multiple file formats by @orhun <orhun@archlinux.org>
-* feat(cache): use cache while fetching pages by @orhun <orhun@archlinux.org>## What's Changed in v1.0.1
+* feat(cache): use cache while fetching pages by @orhun <orhun@archlinux.org>
+
+## What's Changed in v1.0.1
 * refactor(parser): expose string functions by @orhun <orhun@archlinux.org>
-* chore(release): add release script by @orhun <orhun@archlinux.org>## What's Changed in v1.0.0
+* chore(release): add release script by @orhun <orhun@archlinux.org>
+
+## What's Changed in v1.0.0
 * Initial commit by @orhun <orhun@archlinux.org>
 * docs(project): add README.md by @orhun <orhun@archlinux.org>
 * feat(parser): add ability to parse arrays by @orhun <orhun@archlinux.org>

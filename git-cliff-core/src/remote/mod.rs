@@ -70,7 +70,7 @@ pub trait RemoteEntry {
 	fn url(project_id: i64, api_url: &str, remote: &Remote, page: i32) -> String;
 	/// Returns the request buffer size.
 	fn buffer_size() -> usize;
-	/// When to exit early
+	/// Whether if exit early.
 	fn early_exit(&self) -> bool;
 }
 
@@ -184,8 +184,31 @@ pub trait RemoteClient {
 	/// Returns the HTTP client for making requests.
 	fn client(&self) -> ClientWithMiddleware;
 
-	/// Returns the HTTP client for making requests.
-	fn early_exit<T: DeserializeOwned + RemoteEntry>(&self, page: &T) -> bool;
+	/// Returns true if the client should early exit.
+	fn early_exit<T: DeserializeOwned + RemoteEntry>(&self, page: &T) -> bool {
+		page.early_exit()
+	}
+
+	/// Retrieves a single object.
+	async fn get_entry<T: DeserializeOwned + RemoteEntry>(
+		&self,
+		project_id: i64,
+		page: i32,
+	) -> Result<T> {
+		let url = T::url(project_id, &Self::api_url(), &self.remote(), page);
+		debug!("Sending request to: {url}");
+		let response = self.client().get(&url).send().await?;
+		let response_text = if response.status().is_success() {
+			let text = response.text().await?;
+			trace!("Response: {:?}", text);
+			text
+		} else {
+			let text = response.text().await?;
+			error!("Request error: {}", text);
+			text
+		};
+		Ok(serde_json::from_str::<T>(&response_text)?)
+	}
 
 	/// Retrieves a single page of entries.
 	async fn get_entries_with_page<T: DeserializeOwned + RemoteEntry>(
@@ -214,6 +237,8 @@ pub trait RemoteClient {
 	}
 
 	/// Fetches the remote API and returns the given entry.
+	///
+	/// See `fetch_with_early_exit` for the early exit version of this method.
 	async fn fetch<T: DeserializeOwned + RemoteEntry>(
 		&self,
 		project_id: i64,
@@ -240,7 +265,9 @@ pub trait RemoteClient {
 	}
 
 	/// Fetches the remote API and returns the given entry.
-	async fn fetch_obj<T: DeserializeOwned + RemoteEntry>(
+	///
+	/// Early exits based on the response.
+	async fn fetch_with_early_exit<T: DeserializeOwned + RemoteEntry>(
 		&self,
 		project_id: i64,
 	) -> Result<Vec<T>> {
@@ -267,27 +294,6 @@ pub trait RemoteClient {
 			.collect()
 			.await;
 		Ok(entries)
-	}
-
-	/// Retrieves a single object.
-	async fn get_entry<T: DeserializeOwned + RemoteEntry>(
-		&self,
-		project_id: i64,
-		page: i32,
-	) -> Result<T> {
-		let url = T::url(project_id, &Self::api_url(), &self.remote(), page);
-		debug!("Sending request to: {url}");
-		let response = self.client().get(&url).send().await?;
-		let response_text = if response.status().is_success() {
-			let text = response.text().await?;
-			trace!("Response: {:?}", text);
-			text
-		} else {
-			let text = response.text().await?;
-			error!("Request error: {}", text);
-			text
-		};
-		Ok(serde_json::from_str::<T>(&response_text)?)
 	}
 }
 
