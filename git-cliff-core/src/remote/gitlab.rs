@@ -49,6 +49,7 @@ impl RemoteEntry for GitLabProject {
 	fn url(_id: i64, api_url: &str, remote: &Remote, _page: i32) -> String {
 		format!("{}/projects/{}%2F{}", api_url, remote.owner, remote.repo)
 	}
+
 	fn buffer_size() -> usize {
 		1
 	}
@@ -225,7 +226,7 @@ pub struct GitLabClient {
 	client: ClientWithMiddleware,
 }
 
-/// Constructs a GitHub client from the remote configuration.
+/// Constructs a GitLab client from the remote configuration.
 impl TryFrom<Remote> for GitLabClient {
 	type Error = Error;
 	fn try_from(remote: Remote) -> Result<Self> {
@@ -249,10 +250,6 @@ impl RemoteClient for GitLabClient {
 
 	fn client(&self) -> ClientWithMiddleware {
 		self.client.clone()
-	}
-
-	fn early_exit<T: DeserializeOwned + RemoteEntry>(&self, page: &T) -> bool {
-		page.early_exit()
 	}
 }
 

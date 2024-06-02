@@ -1,5 +1,5 @@
 name: Integration ⚙️
-description: Report a bug or request a feature about GitHub/GitLab integration
+description: Report a bug or request a feature about an integration (e.g GitHub/GitLab/Bitbucket)
 labels: ["integration"]
 assignees:
   - orhun
@@ -8,7 +8,7 @@ body:
     attributes:
       value: |
         Thanks for taking the time to fill out this bug report!
-        Please see https://git-cliff.org/docs/category/integration for more information about GitHub/GitLab integration.
+        Please see https://git-cliff.org/docs/category/integration for more information about integrations.
   - type: checkboxes
     id: new-bug
     attributes:

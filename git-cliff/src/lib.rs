@@ -142,7 +142,7 @@ fn process_repository<'a>(
 				config.remote.bitbucket.repo = remote.repo;
 			}
 			Err(e) => {
-				debug!("Failed to get remote from bitbucket repository: {:?}", e);
+				debug!("Failed to get remote from Bitbucket repository: {:?}", e);
 			}
 		}
 	}

@@ -2,6 +2,8 @@
 
 This section contains the Git remote related configuration options.
 
+You can configure a remote for GitHub, GitLab or Bitbucket as follows:
+
 ```toml
 [remote.github]
 owner = "orhun"
@@ -9,24 +11,13 @@ repo = "git-cliff"
 token = ""
 ```
 
-:::tip
-
-See the [GitHub integration](/docs/integration/github).
-
-:::
-
-Or if you are using GitLab:
-
-```toml
-[remote.gitlab]
-owner = "orhun"
-repo = "git-cliff"
-token = ""
-```
+Change this to `remote.gitlab` or `remote.bitbucket` accordingly to your project.
 
 :::tip
 
-See the [GitLab integration](/docs/integration/gitlab).
+- See the [GitHub integration](/docs/integration/github).
+- See the [GitLab integration](/docs/integration/gitlab).
+- See the [Bitbucket integration](/docs/integration/bitbucket).
 
 :::
 
@@ -46,7 +37,7 @@ e.g.
 git cliff --github-repo orhun/git-cliff
 ```
 
-Same applies for GitLab with `--gitlab-repo` and `GITLAB_REPO` environment variables.
+Same applies for GitLab/Bitbucket with `--gitlab-repo`/`--bitbucket-repo` and `GITLAB_REPO`/`BITBUCKET_REPO` environment variables.
 
 ### token
 
@@ -58,4 +49,4 @@ If you are using GitHub, then you can also pass this value via `--github-token` 
 git cliff --github-token <TOKEN>
 ```
 
-Same applies for GitLab with `--gitlab-token` and `GITLAB_TOKEN` environment variables.
+Same applies for GitLab/Bitbucket with `--gitlab-token`/`--bitbucket-token` and `GITLAB_TOKEN`/`BITBUCKET_TOKEN` environment variables.

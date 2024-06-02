@@ -261,7 +261,7 @@ pub struct Opt {
 		hide = !cfg!(feature = "gitlab"),
 	)]
 	pub gitlab_repo:     Option<RemoteValue>,
-	/// Sets the bitbucket API token.
+	/// Sets the Bitbucket API token.
 	#[arg(
 		long,
 		env = "BITBUCKET_TOKEN",
@@ -270,7 +270,7 @@ pub struct Opt {
 		hide = !cfg!(feature = "bitbucket"),
 	)]
 	pub bitbucket_token: Option<SecretString>,
-	/// Sets the bitbucket repository.
+	/// Sets the Bitbucket repository.
 	#[arg(
 		long,
 		env = "BITBUCKET_REPO",
