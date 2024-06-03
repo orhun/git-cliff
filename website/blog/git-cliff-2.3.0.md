@@ -96,10 +96,16 @@ You can simply use `-` instead instead of `-o /dev/stdout`. It can also be used 
 - _(nix)_ Add installation instructions for Nix ([#669](https://github.com/orhun/git-cliff/issues/669)) - ([63c8ad4](https://github.com/orhun/git-cliff/commit/63c8ad43e9ecaa825ef1f0a67164265497f3a1dd))
 - _(website)_ Add more git range examples ([#655](https://github.com/orhun/git-cliff/issues/655)) - ([d451252](https://github.com/orhun/git-cliff/commit/d4512521fbcfb971c94aa7794d78bced1ddec7a1))
 - _(args)_ Allow -o and -p together if they point to different files ([#653](https://github.com/orhun/git-cliff/issues/653)) - ([076f859](https://github.com/orhun/git-cliff/commit/076f85915386c4769c838ca9a359d216249d2a97))
+- _(example)_ Allow using github template without github variables ([#672](https://github.com/orhun/git-cliff/issues/672)) - ([6a9feba](https://github.com/orhun/git-cliff/commit/6a9feba98f36de1980bab313f6b0a861f5009d71))
 
 ---
 
 ## Contributions 👥
+
+- @R11baka made their first contribution in [#672](https://github.com/orhun/git-cliff/pull/672)
+- @0x61nas made their first contribution in [#669](https://github.com/orhun/git-cliff/pull/669)
+- @dark0dave made their first contribution in [#663](https://github.com/orhun/git-cliff/pull/663)
+- @antonengelhardt made their first contribution in [#653](https://github.com/orhun/git-cliff/pull/653)
 
 Any contribution is highly appreciated! See the [contribution guidelines](https://github.com/orhun/git-cliff/blob/main/CONTRIBUTING.md) for getting started.
 
