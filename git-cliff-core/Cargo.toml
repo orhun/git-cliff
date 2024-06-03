@@ -61,7 +61,7 @@ serde_json = "1.0.117"
 serde_regex = "1.1.0"
 tera = "1.20.0"
 indexmap = { version = "2.2.6", optional = true }
-toml = "0.8.13"
+toml = "0.8.14"
 lazy-regex = "3.1.0"
 next_version = "0.2.17"
 semver = "1.0.23"
