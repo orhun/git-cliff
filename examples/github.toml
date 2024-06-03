@@ -25,6 +25,7 @@ body = """
       [#{{ commit.github.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.github.pr_number }}) \
     {%- endif %}
 {%- endfor -%}
+
 {%- if github -%}
 {% if github.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
   {% raw %}\n{% endraw -%}
