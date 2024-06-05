@@ -186,115 +186,113 @@ mod test {
 	};
 	use regex::Regex;
 
-    fn get_fake_release_data() -> Release<'static> {
-        Release {
-            version: Some(String::from("1.0")),
-            commits: vec![
-                Commit::new(
-                    String::from("123123"),
-                    String::from("feat(xyz): add xyz"),
-                ),
-                Commit::new(
-                    String::from("124124"),
-                    String::from("fix(abc): fix abc"),
-                ),
-            ]
-                .into_iter()
-                .filter_map(|c| c.into_conventional().ok())
-                .collect(),
-            commit_id: None,
-            timestamp: 0,
-            previous: None,
-            #[cfg(feature = "github")]
-            github: crate::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
-            #[cfg(feature = "gitlab")]
-            gitlab: crate::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
-            #[cfg(feature = "bitbucket")]
-            bitbucket: crate::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
-        }
-    }
+	fn get_fake_release_data() -> Release<'static> {
+		Release {
+			version: Some(String::from("1.0")),
+			commits: vec![
+				Commit::new(
+					String::from("123123"),
+					String::from("feat(xyz): add xyz"),
+				),
+				Commit::new(
+					String::from("124124"),
+					String::from("fix(abc): fix abc"),
+				),
+			]
+			.into_iter()
+			.filter_map(|c| c.into_conventional().ok())
+			.collect(),
+			commit_id: None,
+			timestamp: 0,
+			previous: None,
+			#[cfg(feature = "github")]
+			github: crate::remote::RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "gitlab")]
+			gitlab: crate::remote::RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "bitbucket")]
+			bitbucket: crate::remote::RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+		}
+	}
 
-    #[test]
-    fn render_template() -> Result<()> {
+	#[test]
+	fn render_template() -> Result<()> {
 		let template = r#"
 		## {{ version }} - <DATE>
 		{% for commit in commits %}
 		### {{ commit.group }}
 		- {{ commit.message | upper_first }}
 		{% endfor %}"#;
-        let mut template = Template::new(template.to_string(), false)?;
-        let release = get_fake_release_data();
-        assert_eq!(
-			"\n\t\t## 1.0 - 2023\n\t\t\n\t\t### feat\n\t\t- Add xyz\n\t\t\n\t\t### fix\n\t\t- Fix abc\n\t\t",
-            template.render(
-                &release,
-                Option::<HashMap<&str, String>>::None.as_ref(),
-                &[TextProcessor {
-                    pattern: Regex::new("<DATE>")
-                        .expect("failed to compile regex"),
-                    replace: Some(String::from("2023")),
-                    replace_command: None,
-                }],
-            )?
-        );
-        template.variables.sort();
-        assert_eq!(
-            vec![
-                String::from("commit.group"),
-                String::from("commit.message"),
-                String::from("commits"),
-                String::from("version"),
-            ],
-            template.variables
-        );
-        #[cfg(feature = "github")]
-        {
-            assert!(!template.contains_variable(&["commit.github"]));
-            assert!(template.contains_variable(&["commit.group"]));
-        }
-        Ok(())
-    }
+		let mut template = Template::new(template.to_string(), false)?;
+		let release = get_fake_release_data();
+		assert_eq!(
+			"\n\t\t## 1.0 - 2023\n\t\t\n\t\t### feat\n\t\t- Add xyz\n\t\t\n\t\t### \
+			 fix\n\t\t- Fix abc\n\t\t",
+			template.render(
+				&release,
+				Option::<HashMap<&str, String>>::None.as_ref(),
+				&[TextProcessor {
+					pattern:         Regex::new("<DATE>")
+						.expect("failed to compile regex"),
+					replace:         Some(String::from("2023")),
+					replace_command: None,
+				}],
+			)?
+		);
+		template.variables.sort();
+		assert_eq!(
+			vec![
+				String::from("commit.group"),
+				String::from("commit.message"),
+				String::from("commits"),
+				String::from("version"),
+			],
+			template.variables
+		);
+		#[cfg(feature = "github")]
+		{
+			assert!(!template.contains_variable(&["commit.github"]));
+			assert!(template.contains_variable(&["commit.group"]));
+		}
+		Ok(())
+	}
 
-    #[test]
-    fn render_trimmed_template() -> Result<()> {
-        let template = r#"
+	#[test]
+	fn render_trimmed_template() -> Result<()> {
+		let template = r#"
 		##  {{ version }}
 		"#;
-        let template = Template::new(template.to_string(), true)?;
-        let release = get_fake_release_data();
-        assert_eq!(
-            "\n##  1.0\n",
-            template.render(
-                &release,
-                Option::<HashMap<&str, String>>::None.as_ref(),
-                &[],
-            )?
-        );
-        assert_eq!(
-            vec![
-                String::from("version"),
-            ],
-            template.variables
-        );
-        Ok(())
-    }
+		let template = Template::new(template.to_string(), true)?;
+		let release = get_fake_release_data();
+		assert_eq!(
+			"\n##  1.0\n",
+			template.render(
+				&release,
+				Option::<HashMap<&str, String>>::None.as_ref(),
+				&[],
+			)?
+		);
+		assert_eq!(vec![String::from("version"),], template.variables);
+		Ok(())
+	}
 
-    #[test]
-    fn test_upper_first_filter() -> Result<()> {
-        let template = "{% set hello_variable = 'hello' %}{{ hello_variable | upper_first }}";
-        let release = get_fake_release_data();
-        let template = Template::new(template.to_string(), true)?;
-        let r = template.render(&release, Option::<HashMap<&str, String>>::None.as_ref(), &[])?;
-        assert_eq!(
-            "Hello",
-            r
-        );
-        Ok(())
-    }
+	#[test]
+	fn test_upper_first_filter() -> Result<()> {
+		let template =
+			"{% set hello_variable = 'hello' %}{{ hello_variable | upper_first }}";
+		let release = get_fake_release_data();
+		let template = Template::new(template.to_string(), true)?;
+		let r = template.render(
+			&release,
+			Option::<HashMap<&str, String>>::None.as_ref(),
+			&[],
+		)?;
+		assert_eq!("Hello", r);
+		Ok(())
+	}
 }
