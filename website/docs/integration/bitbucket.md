@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# Bitbucket Integration 🆕
+# Bitbucket Integration 📘
 
 :::warning
 

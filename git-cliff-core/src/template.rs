@@ -222,7 +222,7 @@ mod test {
 
     #[test]
     fn render_template() -> Result<()> {
-        let template = r#"
+		let template = r#"
 		## {{ version }} - <DATE>
 		{% for commit in commits %}
 		### {{ commit.group }}
@@ -231,15 +231,7 @@ mod test {
         let mut template = Template::new(template.to_string(), false)?;
         let release = get_fake_release_data();
         assert_eq!(
-            r#"
-		## 1.0 - 2023
-
-		### feat
-		- Add xyz
-
-		### fix
-		- Fix abc
-		"#,
+			"\n\t\t## 1.0 - 2023\n\t\t\n\t\t### feat\n\t\t- Add xyz\n\t\t\n\t\t### fix\n\t\t- Fix abc\n\t\t",
             template.render(
                 &release,
                 Option::<HashMap<&str, String>>::None.as_ref(),

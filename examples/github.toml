@@ -26,6 +26,7 @@ body = """
     {%- endif %}
 {%- endfor -%}
 
+{%- if github -%}
 {% if github.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
   {% raw %}\n{% endraw -%}
   ## New Contributors
@@ -36,6 +37,7 @@ body = """
       [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}) \
     {%- endif %}
 {%- endfor -%}
+{%- endif -%}
 
 {% if version %}
     {% if previous.version %}

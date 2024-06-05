@@ -2,7 +2,7 @@
 sidebar_position: 2
 ---
 
-# GitLab Integration 🆕
+# GitLab Integration 🦊
 
 :::warning
 
