@@ -23,7 +23,7 @@ path = "src/bin/mangen.rs"
 
 [features]
 # check for new versions
-default = ["update-informer", "github", "gitlab", "bitbucket"]
+default = ["update-informer", "github", "gitlab", "gitea", "bitbucket"]
 # inform about new releases
 update-informer = ["dep:update-informer"]
 # enable code forge integration

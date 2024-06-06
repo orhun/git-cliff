@@ -47,6 +47,7 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
+use std::fmt::Debug;
 use std::hash::{
 	Hash,
 	Hasher,
@@ -79,7 +80,7 @@ pub trait RemoteEntry {
 }
 
 /// Trait for handling remote commits.
-pub trait RemoteCommit: DynClone {
+pub trait RemoteCommit: DynClone + Debug {
 	/// Commit SHA.
 	fn id(&self) -> String;
 	/// Commit author.
