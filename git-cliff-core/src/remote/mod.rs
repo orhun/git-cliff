@@ -80,7 +80,7 @@ pub trait RemoteEntry {
 }
 
 /// Trait for handling remote commits.
-pub trait RemoteCommit: DynClone + Debug {
+pub trait RemoteCommit: DynClone {
 	/// Commit SHA.
 	fn id(&self) -> String;
 	/// Commit author.
