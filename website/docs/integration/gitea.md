@@ -1,8 +1,8 @@
 ---
-sidebar_position: 4
+sidebar_position: 3
 ---
 
-# Bitbucket Integration 📘
+# Gitea Integration 🍵
 
 :::warning
 
@@ -12,13 +12,13 @@ This is still an experimental feature, please [report bugs](https://github.com/o
 
 :::note
 
-If you have built from source, enable the `bitbucket` feature flag for the integration to work.
+If you have built from source, enable the `gitea` feature flag for the integration to work.
 
 :::
 
-For projects hosted on Bitbucket, you can use **git-cliff** to add the following to your changelog:
+For projects hosted on Gitea/Forgejo, you can use **git-cliff** to add the following to your changelog:
 
-- Bitbucket usernames
+- Gitea usernames
 - Contributors list (all contributors / first time)
 - Pull request links (associated with the commits)
 
@@ -31,37 +31,37 @@ If that doesn't work or if you want to set a custom remote, there are a couple o
 - Use the [remote option](/docs/configuration/remote) in the configuration file:
 
 ```toml
-[remote.bitbucket]
+[remote.gitea]
 owner = "orhun"
 repo = "git-cliff"
 token = "***"
 ```
 
-- Use the `--bitbucket-repo` argument (takes values in `OWNER/REPO` format, e.g. "orhun/git-cliff")
+- Use the `--gitea-repo` argument (takes values in `OWNER/REPO` format, e.g. "orhun/git-cliff")
 
-- Use the `BITBUCKET_REPO` environment variable (same format as `--bitbucket-repo`)
+- Use the `GITEA_REPO` environment variable (same format as `--gitea-repo`)
 
 ## Authentication
 
 :::tip
 
-[Bitbucket REST API](https://developer.atlassian.com/cloud/bitbucket/rest/) is being used to retrieve data from Bitbucket and it has [rate limiting](https://support.atlassian.com/bitbucket-cloud/docs/api-request-limits/) rules.
-
-You can follow [this guide](https://developer.atlassian.com/cloud/bitbucket/rest/intro/#authentication) for creating an access token.
+[Gitea REST API](https://gitea.com/api/swagger) is being used to retrieve data from Gitea.
+It does not require authentication for public repositories. If your project uses a private
+repository, you need to create an access token under *Settings* > *Applications* > *Access tokens*.
 
 :::
 
-To set an access token, you can use the [configuration file](/docs/configuration/remote) (not recommended), `--bitbucket-token` argument or `BITBUCKET_TOKEN` environment variable.
+To set an access token, you can use the [configuration file](/docs/configuration/remote) (not recommended), `--gitea-token` argument or `GITEA_TOKEN` environment variable.
 
 For example:
 
 ```bash
-BITBUCKET_TOKEN="***" git cliff --bitbucket-repo "orhun/git-cliff"
+GITEA_TOKEN="***" git cliff --gitea-repo "orhun/git-cliff"
 ```
 
 :::tip
 
-You can use the `BITBUCKET_API_URL` environment variable want to override the API URL. This is useful if you are using your own Bitbucket instance.
+You can use the `GITEA_API_URL` environment variable want to override the API URL. This is useful if you are using your own Gitea instance.
 
 :::
 
@@ -79,7 +79,7 @@ You can use the following [context](/docs/templating/context) for adding the rem
 
 ```json
 {
-  "bitbucket": {
+  "gitea": {
     "owner": "orhun",
     "repo": "git-cliff"
   }
@@ -89,12 +89,12 @@ You can use the following [context](/docs/templating/context) for adding the rem
 For example:
 
 ```jinja2
-https://bitbucket.org/{{ remote.bitbucket.owner }}/{{ remote.bitbucket.repo }}/commits/tag/{{ version }}
+https://codeberg.org/{{ remote.gitea.owner }}/{{ remote.gitea.repo }}/commits/tag/{{ version }}
 ```
 
 ### Commit authors
 
-For each commit, Bitbucket related values are added as a nested object (named `bitbucket`) to the [template context](/docs/templating/context):
+For each commit, Gitea related values are added as a nested object (named `gitea`) to the [template context](/docs/templating/context):
 
 ```json
 {
@@ -104,7 +104,7 @@ For each commit, Bitbucket related values are added as a nested object (named `b
 
   "...": "<strip>",
 
-  "bitbucket": {
+  "gitea": {
     "username": "orhun",
     "pr_title": "some things have changed",
     "pr_number": 420,
@@ -119,8 +119,8 @@ This can be used in the template as follows:
 ```
 {% for commit in commits %}
   * {{ commit.message | split(pat="\n") | first | trim }}\
-    {% if commit.bitbucket.username %} by @{{ commit.bitbucket.username }}{%- endif %}\
-    {% if commit.bitbucket.pr_number %} in #{{ commit.bitbucket.pr_number }}{%- endif %}
+    {% if commit.gitea.username %} by @{{ commit.gitea.username }}{%- endif %}\
+    {% if commit.gitea.pr_number %} in #{{ commit.gitea.pr_number }}{%- endif %}
 {%- endfor -%}
 ```
 
@@ -142,7 +142,7 @@ For each release, following contributors data is added to the [template context]
   "commit_id": "0af9eb24888d1a8c9b2887fbe5427985582a0f26",
   "timestamp": 0,
   "previous": null,
-  "bitbucket": {
+  "gitea": {
     "contributors": [
       {
         "username": "orhun",
@@ -166,7 +166,7 @@ For each release, following contributors data is added to the [template context]
 This can be used in the template as follows:
 
 ```
-{% for contributor in bitbucket.contributors | filter(attribute="is_first_time", value=true) %}
+{% for contributor in gitea.contributors | filter(attribute="is_first_time", value=true) %}
   * @{{ contributor.username }} made their first contribution in #{{ contributor.pr_number }}
 {%- endfor -%}
 ```
