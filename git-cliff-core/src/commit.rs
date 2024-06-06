@@ -128,6 +128,9 @@ pub struct Commit<'a> {
 	/// GitLab metadata of the commit.
 	#[cfg(feature = "gitlab")]
 	pub gitlab:        crate::remote::RemoteContributor,
+	/// Gitea metadata of the commit.
+	#[cfg(feature = "gitea")]
+	pub gitea:         crate::remote::RemoteContributor,
 	/// Bitbucket metadata of the commit.
 	#[cfg(feature = "bitbucket")]
 	pub bitbucket:     crate::remote::RemoteContributor,

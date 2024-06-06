@@ -126,6 +126,9 @@ pub struct RemoteConfig {
 	/// GitLab remote.
 	#[serde(default)]
 	pub gitlab:    Remote,
+	/// Gitea remote.
+	#[serde(default)]
+	pub gitea:     Remote,
 	/// Bitbucket remote.
 	#[serde(default)]
 	pub bitbucket: Remote,
