@@ -132,7 +132,7 @@ impl Template {
 	}
 
 	/// Returns `true` if the template contains one of the given variables.
-	#[cfg(any(feature = "github", feature = "gitlab", feature = "bitbucket"))]
+	#[cfg(feature = "remote")]
 	pub(crate) fn contains_variable(&self, variables: &[&str]) -> bool {
 		variables
 			.iter()
@@ -211,6 +211,10 @@ mod test {
 			},
 			#[cfg(feature = "gitlab")]
 			gitlab: crate::remote::RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "gitea")]
+			gitea: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
 			#[cfg(feature = "bitbucket")]

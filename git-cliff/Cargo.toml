@@ -1,6 +1,6 @@
 [package]
 name = "git-cliff"
-version = "2.3.0" # managed by release.sh
+version = "2.3.0"                                               # managed by release.sh
 description = "A highly customizable changelog generator ⛰️"
 authors = ["git-cliff contributors <git-cliff@protonmail.com>"]
 license = "MIT OR Apache-2.0"
@@ -26,12 +26,16 @@ path = "src/bin/mangen.rs"
 default = ["update-informer", "github", "gitlab", "bitbucket"]
 # inform about new releases
 update-informer = ["dep:update-informer"]
+# enable code forge integration
+remote = ["dep:indicatif"]
 # enable GitHub integration
-github = ["git-cliff-core/github", "dep:indicatif"]
+github = ["remote", "git-cliff-core/github"]
 # enable GitLab integration
-gitlab = ["git-cliff-core/gitlab", "dep:indicatif"]
+gitlab = ["remote", "git-cliff-core/gitlab"]
+# enable Gitea integration
+gitea = ["remote", "git-cliff-core/gitea"]
 # enable Bitbucket integration
-bitbucket = ["git-cliff-core/bitbucket", "dep:indicatif"]
+bitbucket = ["remote", "git-cliff-core/bitbucket"]
 
 [dependencies]
 glob.workspace = true
@@ -49,7 +53,7 @@ indicatif = { version = "0.17.8", optional = true }
 env_logger = "0.10.2"
 
 [dependencies.git-cliff-core]
-version = "2.3.0" # managed by release.sh
+version = "2.3.0"          # managed by release.sh
 path = "../git-cliff-core"
 
 [dev-dependencies]

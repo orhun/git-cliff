@@ -10,6 +10,8 @@ use crate::release::{
 };
 #[cfg(feature = "bitbucket")]
 use crate::remote::bitbucket::BitbucketClient;
+#[cfg(feature = "gitea")]
+use crate::remote::gitea::GiteaClient;
 #[cfg(feature = "github")]
 use crate::remote::github::GitHubClient;
 #[cfg(feature = "gitlab")]
@@ -293,6 +295,57 @@ impl<'a> Changelog<'a> {
 					Ok((commits, merge_requests))
 				});
 			info!("{}", gitlab::FINISHED_FETCHING_MSG);
+			data
+		} else {
+			Ok((vec![], vec![]))
+		}
+	}
+
+	/// Returns the Gitea metadata needed for the changelog.
+	///
+	/// This function creates a multithread async runtime for handling the
+	/// requests. The following are fetched from the GitHub REST API:
+	///
+	/// - Commits
+	/// - Pull requests
+	///
+	/// Each of these are paginated requests so they are being run in parallel
+	/// for speedup.
+	///
+	/// If no Gitea related variable is used in the template then this function
+	/// returns empty vectors.
+	#[cfg(feature = "gitea")]
+	fn get_gitea_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
+		use crate::remote::gitea;
+		if self
+			.body_template
+			.contains_variable(gitea::TEMPLATE_VARIABLES) ||
+			self.footer_template
+				.as_ref()
+				.map(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
+				.unwrap_or(false)
+		{
+			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
+			let gitea_client =
+				GiteaClient::try_from(self.config.remote.gitea.clone())?;
+			info!(
+				"{} ({})",
+				gitea::START_FETCHING_MSG,
+				self.config.remote.gitea
+			);
+			let data = tokio::runtime::Builder::new_multi_thread()
+				.enable_all()
+				.build()?
+				.block_on(async {
+					let (commits, pull_requests) = tokio::try_join!(
+						gitea_client.get_commits(),
+						gitea_client.get_pull_requests(),
+					)?;
+					debug!("Number of Gitea commits: {}", commits.len());
+					debug!("Number of Gitea pull requests: {}", commits.len());
+					Ok((commits, pull_requests))
+				});
+			info!("{}", gitea::FINISHED_FETCHING_MSG);
 			data
 		} else {
 			Ok((vec![], vec![]))
@@ -682,6 +735,11 @@ mod test {
 					repo:  String::from("awesome"),
 					token: None,
 				},
+				gitea:     Remote {
+					owner: String::from("coolguy"),
+					repo:  String::from("awesome"),
+					token: None,
+				},
 				bitbucket: Remote {
 					owner: String::from("coolguy"),
 					repo:  String::from("awesome"),
@@ -761,6 +819,10 @@ mod test {
 			gitlab: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
+			#[cfg(feature = "gitea")]
+			gitea: crate::remote::RemoteReleaseMetadata {
+				contributors: vec![],
+			},
 			#[cfg(feature = "bitbucket")]
 			bitbucket: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],
@@ -814,6 +876,10 @@ mod test {
 				},
 				#[cfg(feature = "gitlab")]
 				gitlab: crate::remote::RemoteReleaseMetadata {
+					contributors: vec![],
+				},
+				#[cfg(feature = "gitea")]
+				gitea: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
 				},
 				#[cfg(feature = "bitbucket")]
