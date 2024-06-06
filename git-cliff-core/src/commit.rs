@@ -449,6 +449,8 @@ impl Serialize for Commit<'_> {
 		commit.serialize_field("github", &self.github)?;
 		#[cfg(feature = "gitlab")]
 		commit.serialize_field("gitlab", &self.gitlab)?;
+		#[cfg(feature = "gitea")]
+		commit.serialize_field("gitea", &self.gitea)?;
 		#[cfg(feature = "bitbucket")]
 		commit.serialize_field("bitbucket", &self.bitbucket)?;
 		commit.end()

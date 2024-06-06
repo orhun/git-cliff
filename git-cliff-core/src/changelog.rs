@@ -225,7 +225,7 @@ impl<'a> Changelog<'a> {
 						github_client.get_pull_requests(),
 					)?;
 					debug!("Number of GitHub commits: {}", commits.len());
-					debug!("Number of GitHub pull requests: {}", commits.len());
+					debug!("Number of GitHub pull requests: {}", pull_requests.len());
 					Ok((commits, pull_requests))
 				});
 			info!("{}", github::FINISHED_FETCHING_MSG);
@@ -342,7 +342,7 @@ impl<'a> Changelog<'a> {
 						gitea_client.get_pull_requests(),
 					)?;
 					debug!("Number of Gitea commits: {}", commits.len());
-					debug!("Number of Gitea pull requests: {}", commits.len());
+					debug!("Number of Gitea pull requests: {}", pull_requests.len());
 					Ok((commits, pull_requests))
 				});
 			info!("{}", gitea::FINISHED_FETCHING_MSG);
@@ -448,6 +448,13 @@ impl<'a> Changelog<'a> {
 		} else {
 			(vec![], vec![])
 		};
+		#[cfg(feature = "gitea")]
+		let (gitea_commits, gitea_merge_request) = if self.config.remote.gitea.is_set() {
+			self.get_gitea_metadata()
+				.expect("Could not get gitea metadata")
+		} else {
+			(vec![], vec![])
+		};
 		#[cfg(feature = "bitbucket")]
 		let (bitbucket_commits, bitbucket_pull_request) =
 			if self.config.remote.bitbucket.is_set() {
@@ -481,6 +488,11 @@ impl<'a> Changelog<'a> {
 			release.update_gitlab_metadata(
 				gitlab_commits.clone(),
 				gitlab_merge_request.clone(),
+			)?;
+            #[cfg(feature = "gitea")]
+			release.update_gitea_metadata(
+				gitea_commits.clone(),
+				gitea_merge_request.clone(),
 			)?;
 			#[cfg(feature = "bitbucket")]
 			release.update_bitbucket_metadata(
