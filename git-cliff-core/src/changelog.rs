@@ -225,7 +225,10 @@ impl<'a> Changelog<'a> {
 						github_client.get_pull_requests(),
 					)?;
 					debug!("Number of GitHub commits: {}", commits.len());
-					debug!("Number of GitHub pull requests: {}", pull_requests.len());
+					debug!(
+						"Number of GitHub pull requests: {}",
+						pull_requests.len()
+					);
 					Ok((commits, pull_requests))
 				});
 			info!("{}", github::FINISHED_FETCHING_MSG);
@@ -489,7 +492,7 @@ impl<'a> Changelog<'a> {
 				gitlab_commits.clone(),
 				gitlab_merge_request.clone(),
 			)?;
-            #[cfg(feature = "gitea")]
+			#[cfg(feature = "gitea")]
 			release.update_gitea_metadata(
 				gitea_commits.clone(),
 				gitea_merge_request.clone(),

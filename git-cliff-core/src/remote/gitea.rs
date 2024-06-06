@@ -107,7 +107,8 @@ impl RemotePullRequest for GiteaPullRequest {
 impl RemoteEntry for GiteaPullRequest {
 	fn url(_id: i64, api_url: &str, remote: &Remote, page: i32) -> String {
 		format!(
-			"{}/api/v1/repos/{}/{}/pulls?limit={MAX_PAGE_SIZE}&page={page}&state=closed",
+			"{}/api/v1/repos/{}/{}/pulls?limit={MAX_PAGE_SIZE}&page={page}&\
+			 state=closed",
 			api_url, remote.owner, remote.repo
 		)
 	}
