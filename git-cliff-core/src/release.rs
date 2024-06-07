@@ -1115,7 +1115,7 @@ mod test {
 			Commit {
 				id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
 				message: String::from("add github integration"),
-				github: RemoteContributor {
+				gitea: RemoteContributor {
 					username:      Some(String::from("orhun")),
 					pr_title:      Some(String::from("1")),
 					pr_number:     Some(42),
@@ -1127,7 +1127,7 @@ mod test {
 			Commit {
 				id: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
 				message: String::from("fix github integration"),
-				github: RemoteContributor {
+				gitea: RemoteContributor {
 					username:      Some(String::from("orhun")),
 					pr_title:      Some(String::from("2")),
 					pr_number:     Some(66),
@@ -1139,7 +1139,7 @@ mod test {
 			Commit {
 				id: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
 				message: String::from("update metadata"),
-				github: RemoteContributor {
+				gitea: RemoteContributor {
 					username:      Some(String::from("nuhro")),
 					pr_title:      Some(String::from("3")),
 					pr_number:     Some(53),
@@ -1151,7 +1151,7 @@ mod test {
 			Commit {
 				id: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
 				message: String::from("do some stuff"),
-				github: RemoteContributor {
+				gitea: RemoteContributor {
 					username:      Some(String::from("awesome_contributor")),
 					pr_title:      Some(String::from("4")),
 					pr_number:     Some(1000),
@@ -1163,7 +1163,7 @@ mod test {
 			Commit {
 				id: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
 				message: String::from("alright"),
-				github: RemoteContributor {
+				gitea: RemoteContributor {
 					username:      Some(String::from("orhun")),
 					pr_title:      Some(String::from("5")),
 					pr_number:     Some(999999),
@@ -1175,7 +1175,7 @@ mod test {
 			Commit {
 				id: String::from("6c34967147560ea09658776d4901709139b4ad66"),
 				message: String::from("should be fine"),
-				github: RemoteContributor {
+				gitea: RemoteContributor {
 					username:      Some(String::from("someone")),
 					pr_title:      None,
 					pr_number:     None,
@@ -1188,7 +1188,7 @@ mod test {
 		assert_eq!(expected_commits, release.commits);
 
 		release
-			.github
+			.gitea
 			.contributors
 			.sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
 
@@ -1224,7 +1224,7 @@ mod test {
 				},
 			],
 		};
-		assert_eq!(expected_metadata, release.github);
+		assert_eq!(expected_metadata, release.gitea);
 
 		Ok(())
 	}
