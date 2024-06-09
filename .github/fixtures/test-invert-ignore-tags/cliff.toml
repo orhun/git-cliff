@@ -29,5 +29,6 @@ trim = true
 [git]
 # regex for skipping tags
 skip_tags = "v0.1.0-beta.1"
-# regex for invert ignoring tags
+# regex for ignoring tags
+ignore_tags = "v.*-beta.*"
 count_tags = "v0.2.0"
