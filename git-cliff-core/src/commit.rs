@@ -1,3 +1,8 @@
+#[cfg(feature = "remote")]
+use std::collections::HashMap;
+
+#[cfg(feature = "remote")]
+use crate::config::RemoteKind;
 use crate::config::{
 	CommitParser,
 	GitConfig,
@@ -8,6 +13,8 @@ use crate::error::{
 	Error as AppError,
 	Result,
 };
+#[cfg(feature = "remote")]
+use crate::remote::RemoteContributor;
 #[cfg(feature = "repo")]
 use git2::{
 	Commit as GitCommit,
@@ -122,18 +129,9 @@ pub struct Commit<'a> {
 	pub committer:     Signature,
 	/// Whether if the commit has two or more parents.
 	pub merge_commit:  bool,
-	/// GitHub metadata of the commit.
-	#[cfg(feature = "github")]
-	pub github:        crate::remote::RemoteContributor,
-	/// GitLab metadata of the commit.
-	#[cfg(feature = "gitlab")]
-	pub gitlab:        crate::remote::RemoteContributor,
-	/// Gitea metadata of the commit.
-	#[cfg(feature = "gitea")]
-	pub gitea:         crate::remote::RemoteContributor,
-	/// Bitbucket metadata of the commit.
-	#[cfg(feature = "bitbucket")]
-	pub bitbucket:     crate::remote::RemoteContributor,
+	/// Remote metadata of the commit
+	#[cfg(feature = "remote")]
+	pub remote:        HashMap<RemoteKind, RemoteContributor>,
 }
 
 impl<'a> From<String> for Commit<'a> {
@@ -445,14 +443,12 @@ impl Serialize for Commit<'_> {
 		commit.serialize_field("committer", &self.committer)?;
 		commit.serialize_field("conventional", &self.conv.is_some())?;
 		commit.serialize_field("merge_commit", &self.merge_commit)?;
-		#[cfg(feature = "github")]
-		commit.serialize_field("github", &self.github)?;
-		#[cfg(feature = "gitlab")]
-		commit.serialize_field("gitlab", &self.gitlab)?;
-		#[cfg(feature = "gitea")]
-		commit.serialize_field("gitea", &self.gitea)?;
-		#[cfg(feature = "bitbucket")]
-		commit.serialize_field("bitbucket", &self.bitbucket)?;
+
+		#[cfg(feature = "remote")]
+		for (k, v) in &self.remote {
+			commit.serialize_field(k.id(), v)?;
+		}
+
 		commit.end()
 	}
 }

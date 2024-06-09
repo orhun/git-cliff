@@ -28,8 +28,8 @@ pub mod error;
 pub mod release;
 /// Remote handler.
 #[cfg(feature = "remote")]
-#[allow(async_fn_in_trait)]
 pub mod remote;
+
 /// Git repository.
 #[cfg(feature = "repo")]
 pub mod repo;

@@ -1,5 +1,10 @@
+#[cfg(feature = "remote")]
+use std::collections::HashMap;
+
 use crate::commit::Commit;
 use crate::config::Bump;
+#[cfg(feature = "remote")]
+use crate::config::RemoteKind;
 use crate::error::Result;
 #[cfg(feature = "remote")]
 use crate::remote::{
@@ -31,32 +36,76 @@ pub struct Release<'a> {
 	/// Previous release.
 	pub previous:  Option<Box<Release<'a>>>,
 	/// Contributors.
-	#[cfg(feature = "github")]
-	pub github:    RemoteReleaseMetadata,
-	/// Contributors.
-	#[cfg(feature = "gitlab")]
-	pub gitlab:    RemoteReleaseMetadata,
-	/// Contributors.
-	#[cfg(feature = "gitea")]
-	pub gitea:     RemoteReleaseMetadata,
-	/// Contributors.
-	#[cfg(feature = "bitbucket")]
-	pub bitbucket: RemoteReleaseMetadata,
+	#[cfg(feature = "remote")]
+	#[serde(flatten)]
+	pub contrib:   HashMap<RemoteKind, RemoteReleaseMetadata>,
 }
 
-#[cfg(feature = "github")]
-crate::update_release_metadata!(github, update_github_metadata);
-
-#[cfg(feature = "gitlab")]
-crate::update_release_metadata!(gitlab, update_gitlab_metadata);
-
-#[cfg(feature = "gitea")]
-crate::update_release_metadata!(gitea, update_gitea_metadata);
-
-#[cfg(feature = "bitbucket")]
-crate::update_release_metadata!(bitbucket, update_bitbucket_metadata);
-
 impl<'a> Release<'a> {
+	/// Updates the remote metadata that is contained in the release.
+	///
+	/// This function takes two arguments:
+	///
+	/// - Commits: needed for associating the Git user with the GitHub username.
+	/// - Pull requests: needed for generating the contributor list for the
+	///   release.
+	#[cfg(feature = "remote")]
+	pub fn update_metadata(
+		&mut self,
+		remote_kind: RemoteKind,
+		mut commits: Vec<RemoteCommit>,
+		pull_requests: Vec<RemotePullRequest>,
+	) {
+		let mut contributors: Vec<RemoteContributor> = Vec::new();
+		// retain the commits that are not a part of this release for later
+		// on checking the first contributors.
+		commits.retain(|v| {
+			if let Some(commit) =
+				self.commits.iter_mut().find(|commit| commit.id == v.id)
+			{
+				let pull_request = pull_requests
+					.iter()
+					.find(|pr| pr.merge_commit.as_deref() == Some(&v.id));
+				let contrib = match pull_request {
+					Some(pr) => RemoteContributor {
+						username:      v.username.clone(),
+						pr_title:      pr.title.clone(),
+						pr_number:     Some(pr.number),
+						pr_labels:     pr.labels.clone(),
+						is_first_time: false,
+					},
+					None => RemoteContributor {
+						username:      v.username.clone(),
+						pr_title:      None,
+						pr_number:     None,
+						pr_labels:     Vec::new(),
+						is_first_time: false,
+					},
+				};
+				if !contributors.iter().any(|v| contrib.username == v.username) {
+					contributors.push(contrib.clone());
+				}
+				commit.remote.insert(remote_kind, contrib);
+				false
+			} else {
+				true
+			}
+		});
+		// mark contributors as first-time
+		self.contrib.insert(remote_kind, RemoteReleaseMetadata {
+			contributors: contributors
+				.into_iter()
+				.map(|mut v| {
+					v.is_first_time = !commits
+						.iter()
+						.map(|v| &v.username)
+						.any(|login| login == &v.username);
+					v
+				})
+				.collect(),
+		});
+	}
+
 	/// Calculates the next version based on the commits.
 	///
 	/// It uses the default bump version configuration to calculate the next
@@ -145,6 +194,7 @@ impl<'a> Releases<'a> {
 #[cfg(test)]
 mod test {
 	use super::*;
+
 	#[test]
 	fn bump_version() -> Result<()> {
 		fn build_release<'a>(version: &str, commits: &'a [&str]) -> Release<'a> {
@@ -160,22 +210,8 @@ mod test {
 					version: Some(String::from(version)),
 					..Default::default()
 				})),
-				#[cfg(feature = "github")]
-				github: crate::remote::RemoteReleaseMetadata {
-					contributors: vec![],
-				},
-				#[cfg(feature = "gitlab")]
-				gitlab: crate::remote::RemoteReleaseMetadata {
-					contributors: vec![],
-				},
-				#[cfg(feature = "gitea")]
-				gitea: crate::remote::RemoteReleaseMetadata {
-					contributors: vec![],
-				},
-				#[cfg(feature = "bitbucket")]
-				bitbucket: crate::remote::RemoteReleaseMetadata {
-					contributors: vec![],
-				},
+				#[cfg(feature = "remote")]
+				contrib: HashMap::new(),
 			}
 		}
 
@@ -317,17 +353,12 @@ mod test {
 
 	#[cfg(feature = "github")]
 	#[test]
-	fn update_github_metadata() -> Result<()> {
-		use crate::remote::github::{
-			GitHubCommit,
-			GitHubCommitAuthor,
-			GitHubPullRequest,
-			PullRequestLabel,
-		};
+	fn update_release_metadata() -> Result<()> {
+		use velcro::hash_map;
 
 		let mut release = Release {
-			version: None,
-			commits: vec![
+			version:   None,
+			commits:   vec![
 				Commit::from(String::from(
 					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \
 					 integration",
@@ -351,844 +382,191 @@ mod test {
 			],
 			commit_id: None,
 			timestamp: 0,
-			previous: Some(Box::new(Release {
+			previous:  Some(Box::new(Release {
 				version: Some(String::from("1.0.0")),
 				..Default::default()
 			})),
-			github: RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "gitlab")]
-			gitlab: RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "gitea")]
-			gitea: RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "bitbucket")]
-			bitbucket: RemoteReleaseMetadata {
-				contributors: vec![],
-			},
+			contrib:   HashMap::new(),
 		};
-		release.update_github_metadata(
+		release.update_metadata(
+			RemoteKind::GitHub,
 			vec![
-				GitHubCommit {
-					sha:    String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
-					author: Some(GitHubCommitAuthor {
-						login: Some(String::from("orhun")),
-					}),
-				},
-				GitHubCommit {
-					sha:    String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
-					author: Some(GitHubCommitAuthor {
-						login: Some(String::from("orhun")),
-					}),
-				},
-				GitHubCommit {
-					sha:    String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
-					author: Some(GitHubCommitAuthor {
-						login: Some(String::from("nuhro")),
-					}),
-				},
-				GitHubCommit {
-					sha:    String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
-					author: Some(GitHubCommitAuthor {
-						login: Some(String::from("awesome_contributor")),
-					}),
-				},
-				GitHubCommit {
-					sha:    String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
-					author: Some(GitHubCommitAuthor {
-						login: Some(String::from("orhun")),
-					}),
-				},
-				GitHubCommit {
-					sha:    String::from("6c34967147560ea09658776d4901709139b4ad66"),
-					author: Some(GitHubCommitAuthor {
-						login: Some(String::from("someone")),
-					}),
-				},
-				GitHubCommit {
-					sha:    String::from("0c34967147560e809658776d4901709139b4ad68"),
-					author: Some(GitHubCommitAuthor {
-						login: Some(String::from("idk")),
-					}),
-				},
-				GitHubCommit {
-					sha:    String::from("kk34967147560e809658776d4901709139b4ad68"),
-					author: None,
-				},
-				GitHubCommit {
-					sha:    String::new(),
-					author: None,
-				},
-			]
-			.into_iter()
-			.map(|v| Box::new(v) as Box<dyn RemoteCommit>)
-			.collect(),
-			vec![
-				GitHubPullRequest {
-					title:            Some(String::from("1")),
-					number:           42,
-					merge_commit_sha: Some(String::from(
-						"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
-					)),
-					labels:           vec![PullRequestLabel {
-						name: String::from("rust"),
-					}],
-				},
-				GitHubPullRequest {
-					title:            Some(String::from("2")),
-					number:           66,
-					merge_commit_sha: Some(String::from(
-						"21f6aa587fcb772de13f2fde0e92697c51f84162",
-					)),
-					labels:           vec![PullRequestLabel {
-						name: String::from("rust"),
-					}],
-				},
-				GitHubPullRequest {
-					title:            Some(String::from("3")),
-					number:           53,
-					merge_commit_sha: Some(String::from(
-						"35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973",
-					)),
-					labels:           vec![PullRequestLabel {
-						name: String::from("deps"),
-					}],
-				},
-				GitHubPullRequest {
-					title:            Some(String::from("4")),
-					number:           1000,
-					merge_commit_sha: Some(String::from(
-						"4d3ffe4753b923f4d7807c490e650e6624a12074",
-					)),
-					labels:           vec![PullRequestLabel {
-						name: String::from("deps"),
-					}],
-				},
-				GitHubPullRequest {
-					title:            Some(String::from("5")),
-					number:           999999,
-					merge_commit_sha: Some(String::from(
-						"5a55e92e5a62dc5bf9872ffb2566959fad98bd05",
-					)),
-					labels:           vec![PullRequestLabel {
-						name: String::from("github"),
-					}],
-				},
-			]
-			.into_iter()
-			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
-			.collect(),
-		)?;
-		let expected_commits = vec![
-			Commit {
-				id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
-				message: String::from("add github integration"),
-				github: RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("1")),
-					pr_number:     Some(42),
-					pr_labels:     vec![String::from("rust")],
-					is_first_time: false,
-				},
-				..Default::default()
-			},
-			Commit {
-				id: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
-				message: String::from("fix github integration"),
-				github: RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("2")),
-					pr_number:     Some(66),
-					pr_labels:     vec![String::from("rust")],
-					is_first_time: false,
-				},
-				..Default::default()
-			},
-			Commit {
-				id: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
-				message: String::from("update metadata"),
-				github: RemoteContributor {
-					username:      Some(String::from("nuhro")),
-					pr_title:      Some(String::from("3")),
-					pr_number:     Some(53),
-					pr_labels:     vec![String::from("deps")],
-					is_first_time: false,
-				},
-				..Default::default()
-			},
-			Commit {
-				id: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
-				message: String::from("do some stuff"),
-				github: RemoteContributor {
-					username:      Some(String::from("awesome_contributor")),
-					pr_title:      Some(String::from("4")),
-					pr_number:     Some(1000),
-					pr_labels:     vec![String::from("deps")],
-					is_first_time: false,
-				},
-				..Default::default()
-			},
-			Commit {
-				id: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
-				message: String::from("alright"),
-				github: RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("5")),
-					pr_number:     Some(999999),
-					pr_labels:     vec![String::from("github")],
-					is_first_time: false,
-				},
-				..Default::default()
-			},
-			Commit {
-				id: String::from("6c34967147560ea09658776d4901709139b4ad66"),
-				message: String::from("should be fine"),
-				github: RemoteContributor {
-					username:      Some(String::from("someone")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
-					is_first_time: false,
-				},
-				..Default::default()
-			},
-		];
-		assert_eq!(expected_commits, release.commits);
-
-		release
-			.github
-			.contributors
-			.sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
-
-		let expected_metadata = RemoteReleaseMetadata {
-			contributors: vec![
-				RemoteContributor {
-					username:      Some(String::from("someone")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
-					is_first_time: true,
-				},
-				RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("1")),
-					pr_number:     Some(42),
-					pr_labels:     vec![String::from("rust")],
-					is_first_time: true,
-				},
-				RemoteContributor {
-					username:      Some(String::from("nuhro")),
-					pr_title:      Some(String::from("3")),
-					pr_number:     Some(53),
-					pr_labels:     vec![String::from("deps")],
-					is_first_time: true,
-				},
-				RemoteContributor {
-					username:      Some(String::from("awesome_contributor")),
-					pr_title:      Some(String::from("4")),
-					pr_number:     Some(1000),
-					pr_labels:     vec![String::from("deps")],
-					is_first_time: true,
-				},
-			],
-		};
-		assert_eq!(expected_metadata, release.github);
-
-		Ok(())
-	}
-
-	#[cfg(feature = "gitlab")]
-	#[test]
-	fn update_gitlab_metadata() -> Result<()> {
-		use crate::remote::gitlab::{
-			GitLabCommit,
-			GitLabMergeRequest,
-			GitLabUser,
-		};
-
-		let mut release = Release {
-			version: None,
-			commits: vec![
-				Commit::from(String::from(
-					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \
-					 integration",
-				)),
-				Commit::from(String::from(
-					"21f6aa587fcb772de13f2fde0e92697c51f84162 fix github \
-					 integration",
-				)),
-				Commit::from(String::from(
-					"35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973 update metadata",
-				)),
-				Commit::from(String::from(
-					"4d3ffe4753b923f4d7807c490e650e6624a12074 do some stuff",
-				)),
-				Commit::from(String::from(
-					"5a55e92e5a62dc5bf9872ffb2566959fad98bd05 alright",
-				)),
-				Commit::from(String::from(
-					"6c34967147560ea09658776d4901709139b4ad66 should be fine",
-				)),
-			],
-			commit_id: None,
-			timestamp: 0,
-			previous: Some(Box::new(Release {
-				version: Some(String::from("1.0.0")),
-				..Default::default()
-			})),
-			#[cfg(feature = "github")]
-			github: RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			gitlab: RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "gitea")]
-			gitea: RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "bitbucket")]
-			bitbucket: RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-		};
-		release.update_gitlab_metadata(
-			vec![
-				GitLabCommit {
-					id:              String::from(
+				RemoteCommit {
+					id:       String::from(
 						"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
 					),
-					author_name:     String::from("orhun"),
-					short_id:        String::from(""),
-					title:           String::from(""),
-					author_email:    String::from(""),
-					authored_date:   String::from(""),
-					committer_name:  String::from(""),
-					committer_email: String::from(""),
-					committed_date:  String::from(""),
-					created_at:      String::from(""),
-					message:         String::from(""),
-					parent_ids:      vec![],
-					web_url:         String::from(""),
+					username: Some(String::from("orhun")),
 				},
-				GitLabCommit {
-					id:              String::from(
+				RemoteCommit {
+					id:       String::from(
 						"21f6aa587fcb772de13f2fde0e92697c51f84162",
 					),
-					author_name:     String::from("orhun"),
-					short_id:        String::from(""),
-					title:           String::from(""),
-					author_email:    String::from(""),
-					authored_date:   String::from(""),
-					committer_name:  String::from(""),
-					committer_email: String::from(""),
-					committed_date:  String::from(""),
-					created_at:      String::from(""),
-					message:         String::from(""),
-					parent_ids:      vec![],
-					web_url:         String::from(""),
+					username: Some(String::from("orhun")),
 				},
-				GitLabCommit {
-					id:              String::from(
+				RemoteCommit {
+					id:       String::from(
 						"35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973",
 					),
-					author_name:     String::from("nuhro"),
-					short_id:        String::from(""),
-					title:           String::from(""),
-					author_email:    String::from(""),
-					authored_date:   String::from(""),
-					committer_name:  String::from(""),
-					committer_email: String::from(""),
-					committed_date:  String::from(""),
-					created_at:      String::from(""),
-					message:         String::from(""),
-					parent_ids:      vec![],
-					web_url:         String::from(""),
+					username: Some(String::from("nuhro")),
 				},
-				GitLabCommit {
-					id:              String::from(
+				RemoteCommit {
+					id:       String::from(
 						"4d3ffe4753b923f4d7807c490e650e6624a12074",
 					),
-					author_name:     String::from("awesome_contributor"),
-					short_id:        String::from(""),
-					title:           String::from(""),
-					author_email:    String::from(""),
-					authored_date:   String::from(""),
-					committer_name:  String::from(""),
-					committer_email: String::from(""),
-					committed_date:  String::from(""),
-					created_at:      String::from(""),
-					message:         String::from(""),
-					parent_ids:      vec![],
-					web_url:         String::from(""),
+					username: Some(String::from("awesome_contributor")),
 				},
-				GitLabCommit {
-					id:              String::from(
+				RemoteCommit {
+					id:       String::from(
 						"5a55e92e5a62dc5bf9872ffb2566959fad98bd05",
 					),
-					author_name:     String::from("orhun"),
-					short_id:        String::from(""),
-					title:           String::from(""),
-					author_email:    String::from(""),
-					authored_date:   String::from(""),
-					committer_name:  String::from(""),
-					committer_email: String::from(""),
-					committed_date:  String::from(""),
-					created_at:      String::from(""),
-					message:         String::from(""),
-					parent_ids:      vec![],
-					web_url:         String::from(""),
+					username: Some(String::from("orhun")),
 				},
-				GitLabCommit {
-					id:              String::from(
+				RemoteCommit {
+					id:       String::from(
 						"6c34967147560ea09658776d4901709139b4ad66",
 					),
-					author_name:     String::from("someone"),
-					short_id:        String::from(""),
-					title:           String::from(""),
-					author_email:    String::from(""),
-					authored_date:   String::from(""),
-					committer_name:  String::from(""),
-					committer_email: String::from(""),
-					committed_date:  String::from(""),
-					created_at:      String::from(""),
-					message:         String::from(""),
-					parent_ids:      vec![],
-					web_url:         String::from(""),
+					username: Some(String::from("someone")),
 				},
-				GitLabCommit {
-					id:              String::from(
+				RemoteCommit {
+					id:       String::from(
 						"0c34967147560e809658776d4901709139b4ad68",
 					),
-					author_name:     String::from("idk"),
-					short_id:        String::from(""),
-					title:           String::from(""),
-					author_email:    String::from(""),
-					authored_date:   String::from(""),
-					committer_name:  String::from(""),
-					committer_email: String::from(""),
-					committed_date:  String::from(""),
-					created_at:      String::from(""),
-					message:         String::from(""),
-					parent_ids:      vec![],
-					web_url:         String::from(""),
+					username: Some(String::from("idk")),
 				},
-				GitLabCommit {
-					id:              String::from(
+				RemoteCommit {
+					id:       String::from(
 						"kk34967147560e809658776d4901709139b4ad68",
 					),
-					author_name:     String::from("orhun"),
-					short_id:        String::from(""),
-					title:           String::from(""),
-					author_email:    String::from(""),
-					authored_date:   String::from(""),
-					committer_name:  String::from(""),
-					committer_email: String::from(""),
-					committed_date:  String::from(""),
-					created_at:      String::from(""),
-					message:         String::from(""),
-					parent_ids:      vec![],
-					web_url:         String::from(""),
+					username: None,
 				},
-			]
-			.into_iter()
-			.map(|v| Box::new(v) as Box<dyn RemoteCommit>)
-			.collect(),
-			vec![Box::new(GitLabMergeRequest {
-				title:             String::from("1"),
-				merge_commit_sha:  Some(String::from(
-					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
-				)),
-				id:                1,
-				iid:               1,
-				project_id:        1,
-				description:       String::from(""),
-				state:             String::from(""),
-				created_at:        String::from(""),
-				author:            GitLabUser {
-					id:         1,
-					name:       String::from("42"),
-					username:   String::from("42"),
-					state:      String::from("42"),
-					avatar_url: None,
-					web_url:    String::from("42"),
-				},
-				sha:               String::from(
-					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
-				),
-				web_url:           String::from(""),
-				squash_commit_sha: None,
-				labels:            vec![String::from("rust")],
-			})],
-		)?;
-		let expected_commits = vec![
-			Commit {
-				id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
-				message: String::from("add github integration"),
-				gitlab: RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("1")),
-					pr_number:     Some(1),
-					pr_labels:     vec![String::from("rust")],
-					is_first_time: false,
-				},
-				..Default::default()
-			},
-			Commit {
-				id: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
-				message: String::from("fix github integration"),
-				gitlab: RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
-					is_first_time: false,
-				},
-				..Default::default()
-			},
-			Commit {
-				id: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
-				message: String::from("update metadata"),
-				gitlab: RemoteContributor {
-					username:      Some(String::from("nuhro")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
-					is_first_time: false,
-				},
-				..Default::default()
-			},
-			Commit {
-				id: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
-				message: String::from("do some stuff"),
-				gitlab: RemoteContributor {
-					username:      Some(String::from("awesome_contributor")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
-					is_first_time: false,
-				},
-				..Default::default()
-			},
-			Commit {
-				id: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
-				message: String::from("alright"),
-				gitlab: RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
-					is_first_time: false,
-				},
-				..Default::default()
-			},
-			Commit {
-				id: String::from("6c34967147560ea09658776d4901709139b4ad66"),
-				message: String::from("should be fine"),
-				gitlab: RemoteContributor {
-					username:      Some(String::from("someone")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
-					is_first_time: false,
-				},
-				..Default::default()
-			},
-		];
-		assert_eq!(expected_commits, release.commits);
-
-		release
-			.github
-			.contributors
-			.sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
-
-		let expected_metadata = RemoteReleaseMetadata {
-			contributors: vec![
-				RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("1")),
-					pr_number:     Some(1),
-					pr_labels:     vec![String::from("rust")],
-					is_first_time: false,
-				},
-				RemoteContributor {
-					username:      Some(String::from("nuhro")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
-					is_first_time: true,
-				},
-				RemoteContributor {
-					username:      Some(String::from("awesome_contributor")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
-					is_first_time: true,
-				},
-				RemoteContributor {
-					username:      Some(String::from("someone")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
-					is_first_time: true,
+				RemoteCommit {
+					id:       String::new(),
+					username: None,
 				},
 			],
-		};
-		assert_eq!(expected_metadata, release.gitlab);
-
-		Ok(())
-	}
-
-	#[cfg(feature = "gitea")]
-	#[test]
-	fn update_gitea_metadata() -> Result<()> {
-		use crate::remote::gitea::{
-			GiteaCommit,
-			GiteaCommitAuthor,
-			GiteaPullRequest,
-			PullRequestLabel,
-		};
-
-		let mut release = Release {
-			version: None,
-			commits: vec![
-				Commit::from(String::from(
-					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \
-					 integration",
-				)),
-				Commit::from(String::from(
-					"21f6aa587fcb772de13f2fde0e92697c51f84162 fix github \
-					 integration",
-				)),
-				Commit::from(String::from(
-					"35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973 update metadata",
-				)),
-				Commit::from(String::from(
-					"4d3ffe4753b923f4d7807c490e650e6624a12074 do some stuff",
-				)),
-				Commit::from(String::from(
-					"5a55e92e5a62dc5bf9872ffb2566959fad98bd05 alright",
-				)),
-				Commit::from(String::from(
-					"6c34967147560ea09658776d4901709139b4ad66 should be fine",
-				)),
-			],
-			commit_id: None,
-			timestamp: 0,
-			previous: Some(Box::new(Release {
-				version: Some(String::from("1.0.0")),
-				..Default::default()
-			})),
-			#[cfg(feature = "github")]
-			github: RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "gitlab")]
-			gitlab: RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			gitea: RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "bitbucket")]
-			bitbucket: RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-		};
-		release.update_gitea_metadata(
 			vec![
-				GiteaCommit {
-					sha:    String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
-					author: Some(GiteaCommitAuthor {
-						login: Some(String::from("orhun")),
-					}),
-				},
-				GiteaCommit {
-					sha:    String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
-					author: Some(GiteaCommitAuthor {
-						login: Some(String::from("orhun")),
-					}),
-				},
-				GiteaCommit {
-					sha:    String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
-					author: Some(GiteaCommitAuthor {
-						login: Some(String::from("nuhro")),
-					}),
-				},
-				GiteaCommit {
-					sha:    String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
-					author: Some(GiteaCommitAuthor {
-						login: Some(String::from("awesome_contributor")),
-					}),
-				},
-				GiteaCommit {
-					sha:    String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
-					author: Some(GiteaCommitAuthor {
-						login: Some(String::from("orhun")),
-					}),
-				},
-				GiteaCommit {
-					sha:    String::from("6c34967147560ea09658776d4901709139b4ad66"),
-					author: Some(GiteaCommitAuthor {
-						login: Some(String::from("someone")),
-					}),
-				},
-				GiteaCommit {
-					sha:    String::from("0c34967147560e809658776d4901709139b4ad68"),
-					author: Some(GiteaCommitAuthor {
-						login: Some(String::from("idk")),
-					}),
-				},
-				GiteaCommit {
-					sha:    String::from("kk34967147560e809658776d4901709139b4ad68"),
-					author: None,
-				},
-				GiteaCommit {
-					sha:    String::new(),
-					author: None,
-				},
-			]
-			.into_iter()
-			.map(|v| Box::new(v) as Box<dyn RemoteCommit>)
-			.collect(),
-			vec![
-				GiteaPullRequest {
-					title:            Some(String::from("1")),
-					number:           42,
-					merge_commit_sha: Some(String::from(
+				RemotePullRequest {
+					title:        Some(String::from("1")),
+					number:       42,
+					merge_commit: Some(String::from(
 						"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
 					)),
-					labels:           vec![PullRequestLabel {
-						name: String::from("rust"),
-					}],
+					labels:       vec![String::from("rust")],
 				},
-				GiteaPullRequest {
-					title:            Some(String::from("2")),
-					number:           66,
-					merge_commit_sha: Some(String::from(
+				RemotePullRequest {
+					title:        Some(String::from("2")),
+					number:       66,
+					merge_commit: Some(String::from(
 						"21f6aa587fcb772de13f2fde0e92697c51f84162",
 					)),
-					labels:           vec![PullRequestLabel {
-						name: String::from("rust"),
-					}],
+					labels:       vec![String::from("rust")],
 				},
-				GiteaPullRequest {
-					title:            Some(String::from("3")),
-					number:           53,
-					merge_commit_sha: Some(String::from(
+				RemotePullRequest {
+					title:        Some(String::from("3")),
+					number:       53,
+					merge_commit: Some(String::from(
 						"35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973",
 					)),
-					labels:           vec![PullRequestLabel {
-						name: String::from("deps"),
-					}],
+					labels:       vec![String::from("deps")],
 				},
-				GiteaPullRequest {
-					title:            Some(String::from("4")),
-					number:           1000,
-					merge_commit_sha: Some(String::from(
+				RemotePullRequest {
+					title:        Some(String::from("4")),
+					number:       1000,
+					merge_commit: Some(String::from(
 						"4d3ffe4753b923f4d7807c490e650e6624a12074",
 					)),
-					labels:           vec![PullRequestLabel {
-						name: String::from("deps"),
-					}],
+					labels:       vec![String::from("deps")],
 				},
-				GiteaPullRequest {
-					title:            Some(String::from("5")),
-					number:           999999,
-					merge_commit_sha: Some(String::from(
+				RemotePullRequest {
+					title:        Some(String::from("5")),
+					number:       999999,
+					merge_commit: Some(String::from(
 						"5a55e92e5a62dc5bf9872ffb2566959fad98bd05",
 					)),
-					labels:           vec![PullRequestLabel {
-						name: String::from("github"),
-					}],
+					labels:       vec![String::from("github")],
 				},
-			]
-			.into_iter()
-			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
-			.collect(),
-		)?;
+			],
+		);
 		let expected_commits = vec![
 			Commit {
 				id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
 				message: String::from("add github integration"),
-				gitea: RemoteContributor {
+				remote: hash_map!(RemoteKind::GitHub: RemoteContributor {
 					username:      Some(String::from("orhun")),
 					pr_title:      Some(String::from("1")),
 					pr_number:     Some(42),
 					pr_labels:     vec![String::from("rust")],
 					is_first_time: false,
-				},
+				}),
 				..Default::default()
 			},
 			Commit {
 				id: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
 				message: String::from("fix github integration"),
-				gitea: RemoteContributor {
+				remote: hash_map!(RemoteKind::GitHub: RemoteContributor {
 					username:      Some(String::from("orhun")),
 					pr_title:      Some(String::from("2")),
 					pr_number:     Some(66),
 					pr_labels:     vec![String::from("rust")],
 					is_first_time: false,
-				},
+				}),
 				..Default::default()
 			},
 			Commit {
 				id: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
 				message: String::from("update metadata"),
-				gitea: RemoteContributor {
+				remote: hash_map!(RemoteKind::GitHub: RemoteContributor {
 					username:      Some(String::from("nuhro")),
 					pr_title:      Some(String::from("3")),
 					pr_number:     Some(53),
 					pr_labels:     vec![String::from("deps")],
 					is_first_time: false,
-				},
+				}),
 				..Default::default()
 			},
 			Commit {
 				id: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
 				message: String::from("do some stuff"),
-				gitea: RemoteContributor {
+				remote: hash_map!(RemoteKind::GitHub: RemoteContributor {
 					username:      Some(String::from("awesome_contributor")),
 					pr_title:      Some(String::from("4")),
 					pr_number:     Some(1000),
 					pr_labels:     vec![String::from("deps")],
 					is_first_time: false,
-				},
+				}),
 				..Default::default()
 			},
 			Commit {
 				id: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
 				message: String::from("alright"),
-				gitea: RemoteContributor {
+				remote: hash_map!(RemoteKind::GitHub: RemoteContributor {
 					username:      Some(String::from("orhun")),
 					pr_title:      Some(String::from("5")),
 					pr_number:     Some(999999),
 					pr_labels:     vec![String::from("github")],
 					is_first_time: false,
-				},
+				}),
 				..Default::default()
 			},
 			Commit {
 				id: String::from("6c34967147560ea09658776d4901709139b4ad66"),
 				message: String::from("should be fine"),
-				gitea: RemoteContributor {
+				remote: hash_map!(RemoteKind::GitHub: RemoteContributor {
 					username:      Some(String::from("someone")),
 					pr_title:      None,
 					pr_number:     None,
 					pr_labels:     vec![],
 					is_first_time: false,
-				},
+				}),
 				..Default::default()
 			},
 		];
 		assert_eq!(expected_commits, release.commits);
 
 		release
-			.gitea
+			.contrib
+			.get_mut(&RemoteKind::GitHub)
+			.unwrap()
 			.contributors
 			.sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
 
@@ -1224,7 +602,7 @@ mod test {
 				},
 			],
 		};
-		assert_eq!(expected_metadata, release.gitea);
+		assert_eq!(expected_metadata, release.contrib[&RemoteKind::GitHub]);
 
 		Ok(())
 	}

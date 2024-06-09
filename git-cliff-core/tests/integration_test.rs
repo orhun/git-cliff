@@ -185,25 +185,7 @@ fn generate_changelog() -> Result<()> {
 			.iter()
 			.filter_map(|c| c.process(&git_config).ok())
 			.collect::<Vec<Commit>>(),
-			commit_id: None,
-			timestamp: 0,
-			previous:  None,
-			#[cfg(feature = "github")]
-			github: git_cliff_core::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "gitlab")]
-			gitlab: git_cliff_core::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "gitea")]
-			gitea: git_cliff_core::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "bitbucket")]
-			bitbucket: git_cliff_core::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
+			..Default::default()
 		},
 		Release {
 			version:   Some(String::from("v1.0.0")),
@@ -225,25 +207,7 @@ fn generate_changelog() -> Result<()> {
 			.into_iter()
 			.filter_map(|c| c.into_conventional().ok())
 			.collect::<Vec<Commit>>(),
-			commit_id: None,
-			timestamp: 0,
-			previous:  None,
-			#[cfg(feature = "github")]
-			github: git_cliff_core::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "gitlab")]
-			gitlab: git_cliff_core::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "gitea")]
-			gitea: git_cliff_core::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "bitbucket")]
-			bitbucket: git_cliff_core::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
+			..Default::default()
 		},
 	];
 

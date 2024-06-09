@@ -9,10 +9,12 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
+use std::collections::HashMap;
 use std::fmt;
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
+use url::Url;
 
 /// Manifest file information and regex for matching contents.
 #[derive(Debug)]
@@ -57,7 +59,7 @@ pub struct Config {
 	pub git:       GitConfig,
 	/// Configuration values about remote.
 	#[serde(default)]
-	pub remote:    RemoteConfig,
+	pub remote:    HashMap<RemoteKind, Remote>,
 	/// Configuration values about bump version.
 	#[serde(default)]
 	pub bump:      Bump,
@@ -117,26 +119,66 @@ pub struct GitConfig {
 	pub limit_commits:            Option<usize>,
 }
 
-/// Remote configuration.
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct RemoteConfig {
-	/// GitHub remote.
-	#[serde(default)]
-	pub github:    Remote,
-	/// GitLab remote.
-	#[serde(default)]
-	pub gitlab:    Remote,
-	/// Gitea remote.
-	#[serde(default)]
-	pub gitea:     Remote,
-	/// Bitbucket remote.
-	#[serde(default)]
-	pub bitbucket: Remote,
+/// Code forge type
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+#[non_exhaustive]
+pub enum RemoteKind {
+	/// [GitHub](https://github.com)
+	GitHub,
+	/// [GitLab](https://gitlab.com)
+	GitLab,
+	/// [Gitea](https://about.gitea.com) or [Forgejo](https://forgejo.org)
+	Gitea,
+	/// [Bitbucket](https://bitbucket.org)
+	Bitbucket,
+}
+
+/// All enabled code forge kinds
+pub const REMOTE_KINDS: &[RemoteKind] = &[
+	#[cfg(feature = "github")]
+	RemoteKind::GitHub,
+	#[cfg(feature = "gitlab")]
+	RemoteKind::GitLab,
+	#[cfg(feature = "gitea")]
+	RemoteKind::Gitea,
+	#[cfg(feature = "bitbucket")]
+	RemoteKind::Bitbucket,
+];
+
+impl RemoteKind {
+	/// Remote ID (used as a template key, for config options, etc)
+	pub fn id(&self) -> &'static str {
+		match self {
+			RemoteKind::GitHub => "github",
+			RemoteKind::GitLab => "gitlab",
+			RemoteKind::Gitea => "gitea",
+			RemoteKind::Bitbucket => "bitbucket",
+		}
+	}
+
+	/// Remote name (to be displayed to the user)
+	pub fn name(&self) -> &'static str {
+		match self {
+			RemoteKind::GitHub => "GitHub",
+			RemoteKind::GitLab => "GitLab",
+			RemoteKind::Gitea => "Gitea",
+			RemoteKind::Bitbucket => "Bitbucket",
+		}
+	}
+}
+
+impl std::fmt::Display for RemoteKind {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		f.write_str(self.name())
+	}
 }
 
 /// A single remote.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Remote {
+	/// Base URL of the remote
+	pub url:   Option<Url>,
 	/// Owner of the remote.
 	pub owner: String,
 	/// Repository name.
@@ -162,6 +204,7 @@ impl Remote {
 	/// Constructs a new instance.
 	pub fn new<S: Into<String>>(owner: S, repo: S) -> Self {
 		Self {
+			url:   None,
 			owner: owner.into(),
 			repo:  repo.into(),
 			token: None,
@@ -171,6 +214,22 @@ impl Remote {
 	/// Returns `true` if the remote has an owner and repo.
 	pub fn is_set(&self) -> bool {
 		!self.owner.is_empty() && !self.repo.is_empty()
+	}
+
+	/// Overwrite own properties with the ones from the other Remote
+	pub fn merge(&mut self, other: &Remote) {
+		if other.url.is_some() {
+			self.url.clone_from(&other.url);
+		}
+		if !other.owner.is_empty() {
+			self.owner.clone_from(&other.owner);
+		}
+		if !other.repo.is_empty() {
+			self.repo.clone_from(&other.repo);
+		}
+		if other.token.is_some() {
+			self.token.clone_from(&other.token);
+		}
 	}
 }
 

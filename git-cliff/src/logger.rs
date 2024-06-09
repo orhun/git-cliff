@@ -108,72 +108,15 @@ pub fn init() -> Result<()> {
 			width: max_width,
 		});
 
-		#[cfg(feature = "github")]
+		#[cfg(feature = "remote")]
 		{
 			let message = record.args().to_string();
-			if message
-				.starts_with(git_cliff_core::remote::github::START_FETCHING_MSG)
-			{
+			if message.starts_with("Retrieving data from ") {
 				PROGRESS_BAR
 					.enable_steady_tick(std::time::Duration::from_millis(80));
 				PROGRESS_BAR.set_message(message);
 				return Ok(());
-			} else if message
-				.starts_with(git_cliff_core::remote::github::FINISHED_FETCHING_MSG)
-			{
-				PROGRESS_BAR.finish_and_clear();
-				return Ok(());
-			}
-		}
-
-		#[cfg(feature = "gitlab")]
-		{
-			let message = record.args().to_string();
-			if message
-				.starts_with(git_cliff_core::remote::gitlab::START_FETCHING_MSG)
-			{
-				PROGRESS_BAR
-					.enable_steady_tick(std::time::Duration::from_millis(80));
-				PROGRESS_BAR.set_message(message);
-				return Ok(());
-			} else if message
-				.starts_with(git_cliff_core::remote::gitlab::FINISHED_FETCHING_MSG)
-			{
-				PROGRESS_BAR.finish_and_clear();
-				return Ok(());
-			}
-		}
-
-		#[cfg(feature = "gitea")]
-		{
-			let message = record.args().to_string();
-			if message.starts_with(git_cliff_core::remote::gitea::START_FETCHING_MSG)
-			{
-				PROGRESS_BAR
-					.enable_steady_tick(std::time::Duration::from_millis(80));
-				PROGRESS_BAR.set_message(message);
-				return Ok(());
-			} else if message
-				.starts_with(git_cliff_core::remote::gitea::FINISHED_FETCHING_MSG)
-			{
-				PROGRESS_BAR.finish_and_clear();
-				return Ok(());
-			}
-		}
-
-		#[cfg(feature = "bitbucket")]
-		{
-			let message = record.args().to_string();
-			if message
-				.starts_with(git_cliff_core::remote::bitbucket::START_FETCHING_MSG)
-			{
-				PROGRESS_BAR
-					.enable_steady_tick(std::time::Duration::from_millis(80));
-				PROGRESS_BAR.set_message(message);
-				return Ok(());
-			} else if message.starts_with(
-				git_cliff_core::remote::bitbucket::FINISHED_FETCHING_MSG,
-			) {
+			} else if message.starts_with("Done fetching ") {
 				PROGRESS_BAR.finish_and_clear();
 				return Ok(());
 			}

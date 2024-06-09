@@ -5,23 +5,14 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
-use std::env;
+use url::Url;
 
 use super::*;
 
-const CODEBERG_API_URL: &str = "https://codeberg.org";
+/// Codeberg REST API url.
+const CODEBERG_API_URL: &str = "https://codeberg.org/api/v1";
 
-/// Environment variable for overriding the Gitea REST API url.
-const GITEA_API_URL_ENV: &str = "GITEA_API_URL";
-
-/// Log message to show while fetching data from Gitea.
-pub const START_FETCHING_MSG: &str = "Retrieving data from Gitea...";
-
-/// Log message to show when done fetching from Gitea.
-pub const FINISHED_FETCHING_MSG: &str = "Done fetching Gitea data.";
-
-/// Template variables related to this remote.
-pub(crate) const TEMPLATE_VARIABLES: &[&str] = &["gitea", "commit.gitea"];
+const GITEA_API_PATH: &str = "/api/v1";
 
 /// Representation of a single commit.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -30,32 +21,6 @@ pub struct GiteaCommit {
 	pub sha:    String,
 	/// Author of the commit.
 	pub author: Option<GiteaCommitAuthor>,
-}
-
-impl RemoteCommit for GiteaCommit {
-	fn id(&self) -> String {
-		self.sha.clone()
-	}
-
-	fn username(&self) -> Option<String> {
-		self.author.clone().and_then(|v| v.login)
-	}
-}
-
-impl RemoteEntry for GiteaCommit {
-	fn url(_id: i64, api_url: &str, remote: &Remote, page: i32) -> String {
-		format!(
-			"{}/api/v1/repos/{}/{}/commits?limit={MAX_PAGE_SIZE}&page={page}",
-			api_url, remote.owner, remote.repo
-		)
-	}
-	fn buffer_size() -> usize {
-		10
-	}
-
-	fn early_exit(&self) -> bool {
-		false
-	}
 }
 
 /// Author of the commit.
@@ -86,29 +51,23 @@ pub struct GiteaPullRequest {
 	pub labels:           Vec<PullRequestLabel>,
 }
 
-impl RemotePullRequest for GiteaPullRequest {
-	fn number(&self) -> i64 {
-		self.number
+impl RemoteEntry for GiteaCommit {
+	fn url(_project_id: i64, api_url: &Url, remote: &Remote, page: i32) -> String {
+		format!(
+			"{}/repos/{}/{}/commits?limit={MAX_PAGE_SIZE}&page={page}",
+			api_url, remote.owner, remote.repo
+		)
 	}
 
-	fn title(&self) -> Option<String> {
-		self.title.clone()
-	}
-
-	fn labels(&self) -> Vec<String> {
-		self.labels.iter().map(|v| v.name.clone()).collect()
-	}
-
-	fn merge_commit(&self) -> Option<String> {
-		self.merge_commit_sha.clone()
+	fn buffer_size() -> usize {
+		10
 	}
 }
 
 impl RemoteEntry for GiteaPullRequest {
-	fn url(_id: i64, api_url: &str, remote: &Remote, page: i32) -> String {
+	fn url(_project_id: i64, api_url: &Url, remote: &Remote, page: i32) -> String {
 		format!(
-			"{}/api/v1/repos/{}/{}/pulls?limit={MAX_PAGE_SIZE}&page={page}&\
-			 state=closed",
+			"{}/repos/{}/{}/pulls?limit={MAX_PAGE_SIZE}&page={page}&state=closed",
 			api_url, remote.owner, remote.repo
 		)
 	}
@@ -116,9 +75,25 @@ impl RemoteEntry for GiteaPullRequest {
 	fn buffer_size() -> usize {
 		5
 	}
+}
 
-	fn early_exit(&self) -> bool {
-		false
+impl From<GiteaCommit> for RemoteCommit {
+	fn from(value: GiteaCommit) -> Self {
+		Self {
+			id:       value.sha,
+			username: value.author.and_then(|a| a.login),
+		}
+	}
+}
+
+impl From<GiteaPullRequest> for RemotePullRequest {
+	fn from(value: GiteaPullRequest) -> Self {
+		Self {
+			number:       value.number,
+			title:        value.title,
+			labels:       value.labels.into_iter().map(|l| l.name).collect(),
+			merge_commit: value.merge_commit_sha,
+		}
 	}
 }
 
@@ -126,27 +101,36 @@ impl RemoteEntry for GiteaPullRequest {
 #[derive(Debug, Clone)]
 pub struct GiteaClient {
 	/// Remote.
-	remote: Remote,
+	remote:  Remote,
+	/// Gitea API Url
+	api_url: Url,
 	/// HTTP client.
-	client: ClientWithMiddleware,
+	client:  ClientWithMiddleware,
 }
 
-/// Constructs a Gitea client from the remote configuration.
+/// Constructs a GitHub client from the remote configuration.
 impl TryFrom<Remote> for GiteaClient {
 	type Error = Error;
 	fn try_from(remote: Remote) -> Result<Self> {
 		Ok(Self {
 			client: create_remote_client(&remote, "application/json")?,
+			api_url: remote
+				.url
+				.as_ref()
+				.map(|url| {
+					let mut new_url = url.clone();
+					new_url.set_path(GITEA_API_PATH);
+					new_url
+				})
+				.unwrap_or_else(|| Url::parse(CODEBERG_API_URL).expect("invalid url")),
 			remote,
 		})
 	}
 }
 
-impl RemoteClient for GiteaClient {
-	fn api_url() -> String {
-		env::var(GITEA_API_URL_ENV)
-			.ok()
-			.unwrap_or_else(|| CODEBERG_API_URL.to_string())
+impl RemoteClientInternal for GiteaClient {
+	fn api_url(&self) -> &Url {
+		&self.api_url
 	}
 
 	fn remote(&self) -> Remote {
@@ -158,26 +142,23 @@ impl RemoteClient for GiteaClient {
 	}
 }
 
-impl GiteaClient {
-	/// Fetches the Gitea API and returns the commits.
-	pub async fn get_commits(&self) -> Result<Vec<Box<dyn RemoteCommit>>> {
+#[async_trait]
+impl RemoteClient for GiteaClient {
+	async fn get_commits(&self) -> Result<Vec<RemoteCommit>> {
 		Ok(self
 			.fetch::<GiteaCommit>(0)
 			.await?
 			.into_iter()
-			.map(|v| Box::new(v) as Box<dyn RemoteCommit>)
+			.map(RemoteCommit::from)
 			.collect())
 	}
 
-	/// Fetches the Gitea API and returns the pull requests.
-	pub async fn get_pull_requests(
-		&self,
-	) -> Result<Vec<Box<dyn RemotePullRequest>>> {
+	async fn get_pull_requests(&self) -> Result<Vec<RemotePullRequest>> {
 		Ok(self
 			.fetch::<GiteaPullRequest>(0)
 			.await?
 			.into_iter()
-			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
+			.map(RemotePullRequest::from)
 			.collect())
 	}
 }

@@ -194,7 +194,11 @@ impl Repository {
 				if let (Some(owner), Some(repo)) =
 					(segments.get(1), segments.first())
 				{
+					let mut base_url = url.clone();
+					base_url.set_path("");
+					base_url.set_query(None);
 					return Ok(Remote {
+						url:   Some(base_url),
 						owner: owner.to_string(),
 						repo:  repo.trim_end_matches(".git").to_string(),
 						token: None,
@@ -305,6 +309,7 @@ mod test {
 		let remote = repository.upstream_remote()?;
 		assert_eq!(
 			Remote {
+                url: Some(Url::parse("https://github.com").unwrap()),
 				owner: String::from("orhun"),
 				repo:  String::from("git-cliff"),
 				token: None,

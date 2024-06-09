@@ -5,24 +5,14 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
-use std::env;
+use url::Url;
 
 use super::*;
 
 /// GitHub REST API url.
 const GITHUB_API_URL: &str = "https://api.github.com";
 
-/// Environment variable for overriding the GitHub REST API url.
-const GITHUB_API_URL_ENV: &str = "GITHUB_API_URL";
-
-/// Log message to show while fetching data from GitHub.
-pub const START_FETCHING_MSG: &str = "Retrieving data from GitHub...";
-
-/// Log message to show when done fetching from GitHub.
-pub const FINISHED_FETCHING_MSG: &str = "Done fetching GitHub data.";
-
-/// Template variables related to this remote.
-pub(crate) const TEMPLATE_VARIABLES: &[&str] = &["github", "commit.github"];
+const GHES_API_PATH: &str = "/api/v3";
 
 /// Representation of a single commit.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -31,32 +21,6 @@ pub struct GitHubCommit {
 	pub sha:    String,
 	/// Author of the commit.
 	pub author: Option<GitHubCommitAuthor>,
-}
-
-impl RemoteCommit for GitHubCommit {
-	fn id(&self) -> String {
-		self.sha.clone()
-	}
-
-	fn username(&self) -> Option<String> {
-		self.author.clone().and_then(|v| v.login)
-	}
-}
-
-impl RemoteEntry for GitHubCommit {
-	fn url(_id: i64, api_url: &str, remote: &Remote, page: i32) -> String {
-		format!(
-			"{}/repos/{}/{}/commits?per_page={MAX_PAGE_SIZE}&page={page}",
-			api_url, remote.owner, remote.repo
-		)
-	}
-	fn buffer_size() -> usize {
-		10
-	}
-
-	fn early_exit(&self) -> bool {
-		false
-	}
 }
 
 /// Author of the commit.
@@ -87,26 +51,21 @@ pub struct GitHubPullRequest {
 	pub labels:           Vec<PullRequestLabel>,
 }
 
-impl RemotePullRequest for GitHubPullRequest {
-	fn number(&self) -> i64 {
-		self.number
+impl RemoteEntry for GitHubCommit {
+	fn url(_project_id: i64, api_url: &Url, remote: &Remote, page: i32) -> String {
+		format!(
+			"{}/repos/{}/{}/commits?per_page={MAX_PAGE_SIZE}&page={page}",
+			api_url, remote.owner, remote.repo
+		)
 	}
 
-	fn title(&self) -> Option<String> {
-		self.title.clone()
-	}
-
-	fn labels(&self) -> Vec<String> {
-		self.labels.iter().map(|v| v.name.clone()).collect()
-	}
-
-	fn merge_commit(&self) -> Option<String> {
-		self.merge_commit_sha.clone()
+	fn buffer_size() -> usize {
+		10
 	}
 }
 
 impl RemoteEntry for GitHubPullRequest {
-	fn url(_id: i64, api_url: &str, remote: &Remote, page: i32) -> String {
+	fn url(_project_id: i64, api_url: &Url, remote: &Remote, page: i32) -> String {
 		format!(
 			"{}/repos/{}/{}/pulls?per_page={MAX_PAGE_SIZE}&page={page}&state=closed",
 			api_url, remote.owner, remote.repo
@@ -116,9 +75,25 @@ impl RemoteEntry for GitHubPullRequest {
 	fn buffer_size() -> usize {
 		5
 	}
+}
 
-	fn early_exit(&self) -> bool {
-		false
+impl From<GitHubCommit> for RemoteCommit {
+	fn from(value: GitHubCommit) -> Self {
+		Self {
+			id:       value.sha,
+			username: value.author.and_then(|a| a.login),
+		}
+	}
+}
+
+impl From<GitHubPullRequest> for RemotePullRequest {
+	fn from(value: GitHubPullRequest) -> Self {
+		Self {
+			number:       value.number,
+			title:        value.title,
+			labels:       value.labels.into_iter().map(|l| l.name).collect(),
+			merge_commit: value.merge_commit_sha,
+		}
 	}
 }
 
@@ -126,9 +101,11 @@ impl RemoteEntry for GitHubPullRequest {
 #[derive(Debug, Clone)]
 pub struct GitHubClient {
 	/// Remote.
-	remote: Remote,
+	remote:  Remote,
+	/// GitHub API Url
+	api_url: Url,
 	/// HTTP client.
-	client: ClientWithMiddleware,
+	client:  ClientWithMiddleware,
 }
 
 /// Constructs a GitHub client from the remote configuration.
@@ -137,16 +114,25 @@ impl TryFrom<Remote> for GitHubClient {
 	fn try_from(remote: Remote) -> Result<Self> {
 		Ok(Self {
 			client: create_remote_client(&remote, "application/vnd.github+json")?,
+			api_url: remote
+				.url
+				.as_ref()
+				.filter(|url| url.domain() != Some("github.com"))
+				.map(|url| {
+					// GitHub Enterprise Server API URL
+					let mut new_url = url.clone();
+					new_url.set_path(GHES_API_PATH);
+					new_url
+				})
+				.unwrap_or_else(|| Url::parse(GITHUB_API_URL).expect("invalid url")),
 			remote,
 		})
 	}
 }
 
-impl RemoteClient for GitHubClient {
-	fn api_url() -> String {
-		env::var(GITHUB_API_URL_ENV)
-			.ok()
-			.unwrap_or_else(|| GITHUB_API_URL.to_string())
+impl RemoteClientInternal for GitHubClient {
+	fn api_url(&self) -> &Url {
+		&self.api_url
 	}
 
 	fn remote(&self) -> Remote {
@@ -158,26 +144,23 @@ impl RemoteClient for GitHubClient {
 	}
 }
 
-impl GitHubClient {
-	/// Fetches the GitHub API and returns the commits.
-	pub async fn get_commits(&self) -> Result<Vec<Box<dyn RemoteCommit>>> {
+#[async_trait]
+impl RemoteClient for GitHubClient {
+	async fn get_commits(&self) -> Result<Vec<RemoteCommit>> {
 		Ok(self
 			.fetch::<GitHubCommit>(0)
 			.await?
 			.into_iter()
-			.map(|v| Box::new(v) as Box<dyn RemoteCommit>)
+			.map(RemoteCommit::from)
 			.collect())
 	}
 
-	/// Fetches the GitHub API and returns the pull requests.
-	pub async fn get_pull_requests(
-		&self,
-	) -> Result<Vec<Box<dyn RemotePullRequest>>> {
+	async fn get_pull_requests(&self) -> Result<Vec<RemotePullRequest>> {
 		Ok(self
 			.fetch::<GitHubPullRequest>(0)
 			.await?
 			.into_iter()
-			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
+			.map(RemotePullRequest::from)
 			.collect())
 	}
 }

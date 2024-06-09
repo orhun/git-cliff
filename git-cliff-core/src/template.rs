@@ -202,25 +202,7 @@ mod test {
 			.into_iter()
 			.filter_map(|c| c.into_conventional().ok())
 			.collect(),
-			commit_id: None,
-			timestamp: 0,
-			previous: None,
-			#[cfg(feature = "github")]
-			github: crate::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "gitlab")]
-			gitlab: crate::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "gitea")]
-			gitea: crate::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "bitbucket")]
-			bitbucket: crate::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
+			..Default::default()
 		}
 	}
 

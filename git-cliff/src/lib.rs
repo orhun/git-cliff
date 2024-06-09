@@ -24,6 +24,7 @@ use git_cliff_core::commit::Commit;
 use git_cliff_core::config::{
 	CommitParser,
 	Config,
+	REMOTE_KINDS,
 };
 use git_cliff_core::embed::{
 	BuiltinConfig,
@@ -112,48 +113,31 @@ fn process_repository<'a>(
 		})
 		.collect();
 
-	if !config.remote.github.is_set() {
-		match repository.upstream_remote() {
-			Ok(remote) => {
-				debug!("No GitHub remote is set, using remote: {}", remote);
-				config.remote.github.owner = remote.owner;
-				config.remote.github.repo = remote.repo;
-			}
-			Err(e) => {
-				debug!("Failed to get remote from GitHub repository: {:?}", e);
-			}
-		}
-	} else if !config.remote.gitlab.is_set() {
-		match repository.upstream_remote() {
-			Ok(remote) => {
-				debug!("No GitLab remote is set, using remote: {}", remote);
-				config.remote.gitlab.owner = remote.owner;
-				config.remote.gitlab.repo = remote.repo;
-			}
-			Err(e) => {
-				debug!("Failed to get remote from GitLab repository: {:?}", e);
-			}
-		}
-	} else if !config.remote.gitea.is_set() {
-		match repository.upstream_remote() {
-			Ok(remote) => {
-				debug!("No Gitea remote is set, using remote: {}", remote);
-				config.remote.gitea.owner = remote.owner;
-				config.remote.gitea.repo = remote.repo;
-			}
-			Err(e) => {
-				debug!("Failed to get remote from Gitea repository: {:?}", e);
-			}
-		}
-	} else if !config.remote.bitbucket.is_set() {
-		match repository.upstream_remote() {
-			Ok(remote) => {
-				debug!("No Bitbucket remote is set, using remote: {}", remote);
-				config.remote.bitbucket.owner = remote.owner;
-				config.remote.bitbucket.repo = remote.repo;
-			}
-			Err(e) => {
-				debug!("Failed to get remote from Bitbucket repository: {:?}", e);
+	let upstream_remote = repository.upstream_remote();
+	for kind in REMOTE_KINDS {
+		let remote = config.remote.entry(*kind).or_default();
+		if !remote.is_set() {
+			match &upstream_remote {
+				Ok(upr) => {
+					let upr = upr.clone();
+					debug!(
+						"No {} remote is set, using remote: {}",
+						kind.name(),
+						remote
+					);
+					if let Some(upr_url) = upr.url {
+						remote.url.get_or_insert(upr_url);
+					}
+					remote.owner = upr.owner;
+					remote.repo = upr.repo;
+				}
+				Err(e) => {
+					debug!(
+						"Failed to get remote from {} repository: {:?}",
+						kind.name(),
+						e
+					);
+				}
 			}
 		}
 	}
@@ -442,34 +426,12 @@ pub fn run(mut args: Opt) -> Result<()> {
 			args.topo_order = topo_order;
 		}
 	}
-	if args.github_token.is_some() {
-		config.remote.github.token.clone_from(&args.github_token);
+
+	for (kind, remote) in &args.remotes.0 {
+		let cr = config.remote.entry(*kind).or_default();
+		cr.merge(remote);
 	}
-	if args.gitlab_token.is_some() {
-		config.remote.gitlab.token.clone_from(&args.gitlab_token);
-	}
-	if args.gitea_token.is_some() {
-		config.remote.gitea.token.clone_from(&args.gitlab_token);
-	}
-	if args.bitbucket_token.is_some() {
-		config
-			.remote
-			.bitbucket
-			.token
-			.clone_from(&args.bitbucket_token);
-	}
-	if let Some(ref remote) = args.github_repo {
-		config.remote.github.owner = remote.0.owner.to_string();
-		config.remote.github.repo = remote.0.repo.to_string();
-	}
-	if let Some(ref remote) = args.gitlab_repo {
-		config.remote.gitlab.owner = remote.0.owner.to_string();
-		config.remote.gitlab.repo = remote.0.repo.to_string();
-	}
-	if let Some(ref remote) = args.bitbucket_repo {
-		config.remote.bitbucket.owner = remote.0.owner.to_string();
-		config.remote.bitbucket.repo = remote.0.repo.to_string();
-	}
+
 	if args.no_exec {
 		if let Some(ref mut preprocessors) = config.git.commit_preprocessors {
 			preprocessors

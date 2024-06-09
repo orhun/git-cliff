@@ -71,8 +71,9 @@ tokio = { version = "1.38.0", features = [
   "macros",
 ], optional = true }
 futures = { version = "0.3.30", optional = true }
-url = "2.5.0"
+url = { version = "2.5.0", features = ["serde"] }
 dyn-clone = "1.0.17"
+async-trait = "0.1.80"
 
 [dependencies.git2]
 version = "0.18.3"
@@ -95,6 +96,7 @@ features = ["debug-embed", "compression"]
 [dev-dependencies]
 pretty_assertions = "1.4.0"
 expect-test = "1.5.0"
+velcro = "0.5.4"
 
 [package.metadata.docs.rs]
 all-features = true
