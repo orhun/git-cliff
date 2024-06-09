@@ -124,7 +124,14 @@ pub struct GitConfig {
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct RemoteConfig {
 	/// GitHub remote.
-	pub github: Remote,
+	#[serde(default)]
+	pub github:    Remote,
+	/// GitLab remote.
+	#[serde(default)]
+	pub gitlab:    Remote,
+	/// Bitbucket remote.
+	#[serde(default)]
+	pub bitbucket: Remote,
 }
 
 /// A single remote.

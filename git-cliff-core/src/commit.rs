@@ -8,8 +8,6 @@ use crate::error::{
 	Error as AppError,
 	Result,
 };
-#[cfg(feature = "github")]
-use crate::github::GitHubContributor;
 #[cfg(feature = "repo")]
 use git2::{
 	Commit as GitCommit,
@@ -126,7 +124,13 @@ pub struct Commit<'a> {
 	pub merge_commit:  bool,
 	/// GitHub metadata of the commit.
 	#[cfg(feature = "github")]
-	pub github:        GitHubContributor,
+	pub github:        crate::remote::RemoteContributor,
+	/// GitLab metadata of the commit.
+	#[cfg(feature = "gitlab")]
+	pub gitlab:        crate::remote::RemoteContributor,
+	/// Bitbucket metadata of the commit.
+	#[cfg(feature = "bitbucket")]
+	pub bitbucket:     crate::remote::RemoteContributor,
 }
 
 impl<'a> From<String> for Commit<'a> {
@@ -262,11 +266,13 @@ impl Commit<'_> {
 			if let Some(message_regex) = parser.message.as_ref() {
 				regex_checks.push((message_regex, self.message.to_string()))
 			}
-			if let (Some(body_regex), Some(body)) = (
-				parser.body.as_ref(),
-				self.conv.as_ref().and_then(|v| v.body()),
-			) {
-				regex_checks.push((body_regex, body.to_string()))
+			let body = self
+				.conv
+				.as_ref()
+				.and_then(|v| v.body())
+				.map(|v| v.to_string());
+			if let Some(body_regex) = parser.body.as_ref() {
+				regex_checks.push((body_regex, body.clone().unwrap_or_default()))
 			}
 			if let (Some(field_name), Some(pattern_regex)) =
 				(parser.field.as_ref(), parser.pattern.as_ref())
@@ -276,11 +282,7 @@ impl Commit<'_> {
 					match field_name.as_str() {
 						"id" => Some(self.id.clone()),
 						"message" => Some(self.message.clone()),
-						"body" => self
-							.conv
-							.as_ref()
-							.and_then(|v| v.body())
-							.map(|v| v.to_string()),
+						"body" => body,
 						"author.name" => self.author.name.clone(),
 						"author.email" => self.author.email.clone(),
 						"committer.name" => self.committer.name.clone(),
@@ -442,6 +444,10 @@ impl Serialize for Commit<'_> {
 		commit.serialize_field("merge_commit", &self.merge_commit)?;
 		#[cfg(feature = "github")]
 		commit.serialize_field("github", &self.github)?;
+		#[cfg(feature = "gitlab")]
+		commit.serialize_field("gitlab", &self.gitlab)?;
+		#[cfg(feature = "bitbucket")]
+		commit.serialize_field("bitbucket", &self.bitbucket)?;
 		commit.end()
 	}
 }

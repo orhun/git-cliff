@@ -1,7 +1,8 @@
 ---
-sidebar_position: 2
+sidebar_position: 4
 ---
-# Rust/Cargo
+
+# Rust/Cargo 🦀
 
 For Rust projects, **git-cliff** can be configured in `Cargo.toml` via [metadata table](https://doc.rust-lang.org/cargo/reference/manifest.html#the-metadata-table). To do this, simply replace the available configuration sections with `[package.metadata.git-cliff.<section>]` and place them inside `Cargo.toml`. For example:
 

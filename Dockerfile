@@ -11,7 +11,7 @@ COPY --from=planner /app/recipe.json recipe.json
 ENV CARGO_NET_GIT_FETCH_WITH_CLI=true
 RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
-RUN cargo build --release --locked --no-default-features --features github
+RUN cargo build --release --locked --no-default-features --features github --features gitlab --features bitbucket
 RUN rm -f target/release/deps/git_cliff*
 
 FROM debian:buster-slim as runner

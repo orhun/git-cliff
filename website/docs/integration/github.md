@@ -2,7 +2,7 @@
 sidebar_position: 1
 ---
 
-# GitHub Integration 🆕
+# GitHub Integration 🐙
 
 :::warning
 
@@ -45,7 +45,7 @@ token = "***"
 
 ## Authentication
 
-[GitHub REST API](https://docs.github.com/en/rest) is used to retrieve data from GitHub and it has the rate limit of _60 requests per hour_ for unauthenticated users.
+[GitHub REST API](https://docs.github.com/en/rest) is being used to retrieve data from GitHub and it has the rate limit of _60 requests per hour_ for unauthenticated users.
 
 Although this is enough for a couple of runs of **git-cliff**, it is suggested that you create an access token to increase the request limit.
 

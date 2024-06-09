@@ -44,6 +44,8 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
     --sort <SORT>                Sets sorting of the commits inside sections [default: oldest] [possible values: oldest, newest]
     --github-token <TOKEN>       Sets the GitHub API token [env: GITHUB_TOKEN]
     --github-repo <OWNER/REPO>   Sets the GitHub repository [env: GITHUB_REPO=]
+    --gitlab-token <TOKEN>       Sets the GitLab API token [env: GITLAB_TOKEN]
+    --gitlab-repo <OWNER/REPO>   Sets the GitLab repository [env: GITLAB_REPO=]
 ```
 
 ## Args

@@ -1,5 +1,71 @@
 [![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)
 
+## [2.3.0](https://github.com/orhun/git-cliff/compare/v2.2.2..v2.3.0) - 2024-06-03
+
+### ⛰️  Features
+
+- *(bitbucket)* Add Bitbucket support ([#663](https://github.com/orhun/git-cliff/issues/663)) - ([8ffc054](https://github.com/orhun/git-cliff/commit/8ffc0548fe0fd8930627412fecb9bc08a7879504))
+- *(gitlab)* [**breaking**] Add GitLab support ([#654](https://github.com/orhun/git-cliff/issues/654)) - ([b490f2a](https://github.com/orhun/git-cliff/commit/b490f2a24e3ebeb6ee54382ce9aa642ecff17b01))
+- *(output)* Support using stdout via dash (`-o -`) ([#644](https://github.com/orhun/git-cliff/issues/644)) - ([df81f63](https://github.com/orhun/git-cliff/commit/df81f636f53e63d305d06944ff014a21612cb666))
+
+### 🐛 Bug Fixes
+
+- *(args)* Allow -o and -p together if they point to different files ([#653](https://github.com/orhun/git-cliff/issues/653)) - ([076f859](https://github.com/orhun/git-cliff/commit/076f85915386c4769c838ca9a359d216249d2a97))
+
+### 📚 Documentation
+
+- *(nix)* Add installation instructions for Nix ([#669](https://github.com/orhun/git-cliff/issues/669)) - ([63c8ad4](https://github.com/orhun/git-cliff/commit/63c8ad43e9ecaa825ef1f0a67164265497f3a1dd))
+- *(website)* Add highlights for 2.3.0 ([#670](https://github.com/orhun/git-cliff/issues/670)) - ([1338703](https://github.com/orhun/git-cliff/commit/1338703a2aedb4116dcae849ada4941432f57e74))
+- *(website)* Clean up Nix docs - ([2c2a300](https://github.com/orhun/git-cliff/commit/2c2a300616fa151b91858a2a7d88bdc9b9dae497))
+- *(website)* Add more git range examples ([#655](https://github.com/orhun/git-cliff/issues/655)) - ([d451252](https://github.com/orhun/git-cliff/commit/d4512521fbcfb971c94aa7794d78bced1ddec7a1))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(cd)* Use macos-14 runner - ([22c94ed](https://github.com/orhun/git-cliff/commit/22c94ed8355d71a5fe99d8c1e9c8a3824338debf))
+- *(example)* Allow using github template without github variables ([#672](https://github.com/orhun/git-cliff/issues/672)) - ([6a9feba](https://github.com/orhun/git-cliff/commit/6a9feba98f36de1980bab313f6b0a861f5009d71))
+- *(links)* Ignore patreon links - ([bfe2774](https://github.com/orhun/git-cliff/commit/bfe27744701296185d2f1d37dba7cfb48bd70519))
+- *(npm)* Update yarn.lock - ([1c2b4ac](https://github.com/orhun/git-cliff/commit/1c2b4ac85b49f62ae6f19660e7e47b3bc24a5cae))
+
+## [2.2.2](https://github.com/orhun/git-cliff/compare/v2.2.1..v2.2.2) - 2024-05-11
+
+### ⛰️  Features
+
+- *(changelog)* Allow adding custom context ([#613](https://github.com/orhun/git-cliff/issues/613)) - ([522bd53](https://github.com/orhun/git-cliff/commit/522bd536a4ad63dfbfbaebcac8a92202b32b202f))
+
+### 🐛 Bug Fixes
+
+- *(changelog)* Ignore empty lines when using `split_commits` ([#608](https://github.com/orhun/git-cliff/issues/608)) - ([b8fb852](https://github.com/orhun/git-cliff/commit/b8fb85220e86138ad8b129ebf1e0599ce8aa5938))
+- *(parser)* Allow matching empty commit body ([#605](https://github.com/orhun/git-cliff/issues/605)) - ([1d1b3b8](https://github.com/orhun/git-cliff/commit/1d1b3b80e163baf34113456f24e3fbbc203e355d))
+
+### 📚 Documentation
+
+- *(readme)* Add social media badges - ([d53b905](https://github.com/orhun/git-cliff/commit/d53b9051840b46f41ccaeca6de3c37c1379a6e5a))
+- *(website)* Add note about supported platforms for NPM - ([4e4d7cd](https://github.com/orhun/git-cliff/commit/4e4d7cdbfced3618bdfaf392dbe0a3f4bbbba799))
+- *(website)* Add SourceHut builds example ([#617](https://github.com/orhun/git-cliff/issues/617)) - ([f636cfc](https://github.com/orhun/git-cliff/commit/f636cfc5ce0fdbe07d9010c1690876abcc017d29))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(npm)* Add minimum supported Node versions ([#621](https://github.com/orhun/git-cliff/issues/621)) - ([95bdf2d](https://github.com/orhun/git-cliff/commit/95bdf2db3724715f76a7b649367541ace5ca9d1f))
+- *(npm)* Update yarn.lock - ([adc5c5b](https://github.com/orhun/git-cliff/commit/adc5c5ba876281cdeab0d7e7150a32d959f90886))
+- *(pypi)* Disable PyPi builds for x86_64-pc-windows-gnu - ([f675b0b](https://github.com/orhun/git-cliff/commit/f675b0b5bdbe57437e39dbe4c0b78e7c4f373936))
+- *(tests)* Don't check last commit ([#619](https://github.com/orhun/git-cliff/issues/619)) - ([68b9839](https://github.com/orhun/git-cliff/commit/68b98393e72d4a38a2e9166477784a9e1a55c9cf))
+
+## [2.2.1](https://github.com/orhun/git-cliff/compare/v2.2.0..v2.2.1) - 2024-04-10
+
+### 🐛 Bug Fixes
+
+- *(npm)* Include the proper files in the npm tarball ([#594](https://github.com/orhun/git-cliff/issues/594)) - ([800c896](https://github.com/orhun/git-cliff/commit/800c8964933deda12ef17a27c566dde430a7cae9))
+
+### 📚 Documentation
+
+- *(readme)* Mention git-changelog-command-line tool ([#589](https://github.com/orhun/git-cliff/issues/589)) - ([d65b443](https://github.com/orhun/git-cliff/commit/d65b4433ce784a713355f47b30096031c7dc05f4))
+- *(website)* Add GITHUB_REPO variable to GitHub action ([#597](https://github.com/orhun/git-cliff/issues/597)) - ([3b74254](https://github.com/orhun/git-cliff/commit/3b742548cccf7a55bc071a7614fa224b41078aa2))
+- *(website)* Update release date - ([45132da](https://github.com/orhun/git-cliff/commit/45132da64284eb60330021ab8ca6d1db07206610))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(ci)* Remove audit check - ([6ba6809](https://github.com/orhun/git-cliff/commit/6ba6809ea1ff9b34f192b387e77da06cf0570606))
+
 ## [2.2.0](https://github.com/orhun/git-cliff/compare/v2.1.2..v2.2.0) - 2024-03-30
 
 ### ⛰️  Features

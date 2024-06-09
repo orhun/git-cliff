@@ -20,8 +20,12 @@ The minimum supported Rust version is `1.70.0`.
 
 Also, **git-cliff** has the following feature flags which can be enabled via `--features` argument:
 
-- `update-informer`: inform about the new releases of **git-cliff** (enabled as default)
-- `github`: enables the [GitHub integration](/docs/integration/github) (enabled as default)
+- `update-informer`: inform about the new releases of **git-cliff**
+- `github`: enables the [GitHub integration](/docs/integration/github)
+- `gitlab`: enables the [GitLab integration](/docs/integration/gitlab)
+- `bitbucket`: enables the [Bitbucket integration](/docs/integration/bitbucket)
+
+All these features are enabled as default.
 
 To install without these features:
 

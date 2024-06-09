@@ -60,3 +60,12 @@ commit_preprocessors = [
   { pattern = ' *(:\w+:|[\p{Emoji_Presentation}\p{Extended_Pictographic}](?:\u{FE0F})?\u{200D}?) *', replace = "" },
 ]
 ```
+
+## Skip commits with an empty body
+
+```toml
+[git]
+commit_parsers = [
+  { body = "$^", skip = true },
+]
+```

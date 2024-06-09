@@ -131,19 +131,16 @@ impl Template {
 		Ok(variables.into_iter().collect())
 	}
 
-	/// Returns `true` if the template contains GitHub related variables.
-	///
-	/// Note that this checks the variables starting with "github" and
-	/// "commit.github" and ignores "remote.github" values.
-	#[cfg(feature = "github")]
-	pub(crate) fn contains_github_variable(&self) -> bool {
-		self.variables
+	/// Returns `true` if the template contains one of the given variables.
+	#[cfg(any(feature = "github", feature = "gitlab", feature = "bitbucket"))]
+	pub(crate) fn contains_variable(&self, variables: &[&str]) -> bool {
+		variables
 			.iter()
-			.any(|v| v.starts_with("github") || v.starts_with("commit.github"))
+			.any(|var| self.variables.iter().any(|v| v.starts_with(var)))
 	}
 
 	/// Renders the template.
-	pub fn render<C: Serialize, T: Serialize, S: Into<String> + Copy>(
+	pub fn render<C: Serialize, T: Serialize, S: Into<String> + Clone>(
 		&self,
 		context: &C,
 		additional_context: Option<&HashMap<S, T>>,
@@ -152,7 +149,7 @@ impl Template {
 		let mut context = TeraContext::from_serialize(context)?;
 		if let Some(additional_context) = additional_context {
 			for (key, value) in additional_context {
-				context.insert(*key, &value);
+				context.insert(key.clone(), &value);
 			}
 		}
 		match self.tera.render("template", &context) {
@@ -189,6 +186,40 @@ mod test {
 	};
 	use regex::Regex;
 
+	fn get_fake_release_data() -> Release<'static> {
+		Release {
+			version: Some(String::from("1.0")),
+			commits: vec![
+				Commit::new(
+					String::from("123123"),
+					String::from("feat(xyz): add xyz"),
+				),
+				Commit::new(
+					String::from("124124"),
+					String::from("fix(abc): fix abc"),
+				),
+			]
+			.into_iter()
+			.filter_map(|c| c.into_conventional().ok())
+			.collect(),
+			commit_id: None,
+			timestamp: 0,
+			previous: None,
+			#[cfg(feature = "github")]
+			github: crate::remote::RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "gitlab")]
+			gitlab: crate::remote::RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "bitbucket")]
+			bitbucket: crate::remote::RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+		}
+	}
+
 	#[test]
 	fn render_template() -> Result<()> {
 		let template = r#"
@@ -198,47 +229,19 @@ mod test {
 		- {{ commit.message | upper_first }}
 		{% endfor %}"#;
 		let mut template = Template::new(template.to_string(), false)?;
+		let release = get_fake_release_data();
 		assert_eq!(
-			r#"
-		## 1.0 - 2023
-		
-		### feat
-		- Add xyz
-		
-		### fix
-		- Fix abc
-		"#,
+			"\n\t\t## 1.0 - 2023\n\t\t\n\t\t### feat\n\t\t- Add xyz\n\t\t\n\t\t### \
+			 fix\n\t\t- Fix abc\n\t\t",
 			template.render(
-				&Release {
-					version: Some(String::from("1.0")),
-					commits: vec![
-						Commit::new(
-							String::from("123123"),
-							String::from("feat(xyz): add xyz"),
-						),
-						Commit::new(
-							String::from("124124"),
-							String::from("fix(abc): fix abc"),
-						)
-					]
-					.into_iter()
-					.filter_map(|c| c.into_conventional().ok())
-					.collect(),
-					commit_id: None,
-					timestamp: 0,
-					previous: None,
-					#[cfg(feature = "github")]
-					github: crate::github::GitHubReleaseMetadata {
-						contributors: vec![],
-					},
-				},
+				&release,
 				Option::<HashMap<&str, String>>::None.as_ref(),
 				&[TextProcessor {
 					pattern:         Regex::new("<DATE>")
 						.expect("failed to compile regex"),
 					replace:         Some(String::from("2023")),
 					replace_command: None,
-				}]
+				}],
 			)?
 		);
 		template.variables.sort();
@@ -252,7 +255,44 @@ mod test {
 			template.variables
 		);
 		#[cfg(feature = "github")]
-		assert!(!template.contains_github_variable());
+		{
+			assert!(!template.contains_variable(&["commit.github"]));
+			assert!(template.contains_variable(&["commit.group"]));
+		}
+		Ok(())
+	}
+
+	#[test]
+	fn render_trimmed_template() -> Result<()> {
+		let template = r#"
+		##  {{ version }}
+		"#;
+		let template = Template::new(template.to_string(), true)?;
+		let release = get_fake_release_data();
+		assert_eq!(
+			"\n##  1.0\n",
+			template.render(
+				&release,
+				Option::<HashMap<&str, String>>::None.as_ref(),
+				&[],
+			)?
+		);
+		assert_eq!(vec![String::from("version"),], template.variables);
+		Ok(())
+	}
+
+	#[test]
+	fn test_upper_first_filter() -> Result<()> {
+		let template =
+			"{% set hello_variable = 'hello' %}{{ hello_variable | upper_first }}";
+		let release = get_fake_release_data();
+		let template = Template::new(template.to_string(), true)?;
+		let r = template.render(
+			&release,
+			Option::<HashMap<&str, String>>::None.as_ref(),
+			&[],
+		)?;
+		assert_eq!("Hello", r);
 		Ok(())
 	}
 }

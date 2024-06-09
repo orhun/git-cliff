@@ -77,17 +77,17 @@ pub enum Error {
 	SemverError(#[from] semver::Error),
 	/// The errors that may occur when processing a HTTP request.
 	#[error("HTTP client error: `{0}`")]
-	#[cfg(feature = "github")]
+	#[cfg(any(feature = "github", feature = "gitlab", feature = "bitbucket"))]
 	HttpClientError(#[from] reqwest::Error),
 	/// The errors that may occur while constructing the HTTP client with
 	/// middleware.
 	#[error("HTTP client with middleware error: `{0}`")]
-	#[cfg(feature = "github")]
+	#[cfg(any(feature = "github", feature = "gitlab", feature = "bitbucket"))]
 	HttpClientMiddlewareError(#[from] reqwest_middleware::Error),
 	/// A possible error when converting a HeaderValue from a string or byte
 	/// slice.
 	#[error("HTTP header error: `{0}`")]
-	#[cfg(feature = "github")]
+	#[cfg(any(feature = "github", feature = "gitlab", feature = "bitbucket"))]
 	HttpHeaderError(#[from] reqwest::header::InvalidHeaderValue),
 	/// Error that may occur during handling pages.
 	#[error("Pagination error: `{0}`")]

@@ -124,17 +124,6 @@ jobs:
           fail: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
-  audit:
-    name: Audit check
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Run cargo-audit
-        uses: actions-rs/audit-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
   msrv:
     name: Check Rust version
     runs-on: ubuntu-22.04
@@ -151,4 +140,46 @@ jobs:
           for package in "git-cliff" "git-cliff-core"; do
             printf "Checking MSRV for $package..."
             cargo msrv --output-format json --path "$package" verify | tail -n 1 | jq --exit-status '.success'
+          done
+
+  tarball:
+    name: Check NodeJS tarball
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          registry-url: "https://registry.npmjs.org"
+      - name: Validate the files in the tarball
+        shell: bash
+        working-directory: npm/git-cliff
+        run: |
+          yarn install
+          yarn build
+          cp ../../README.md .
+          cp ../../CHANGELOG.md .
+
+          files_expected_in_tarball=(
+              "CHANGELOG.md"
+              "README.md"
+              "lib/cjs/index.cjs"
+              "lib/cjs/index.cjs.map"
+              "lib/cjs/index.d.cts"
+              "lib/cli/cli.js"
+              "lib/esm/index.d.ts"
+              "lib/esm/index.js"
+              "lib/esm/index.js.map"
+              "package.json"
+          )
+
+          tarball_output=$(yarn pack --dry-run)
+
+          for file in "${files_expected_in_tarball[@]}"; do
+              if [[ ! "$tarball_output" == *"$file"* ]]; then
+                  echo "Error: Expected file '$file' not found in tarball."
+                  exit 1
+              fi
           done

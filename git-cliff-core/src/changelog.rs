@@ -4,18 +4,16 @@ use crate::config::{
 	GitConfig,
 };
 use crate::error::Result;
-#[cfg(feature = "github")]
-use crate::github::{
-	GitHubClient,
-	GitHubCommit,
-	GitHubPullRequest,
-	FINISHED_FETCHING_MSG,
-	START_FETCHING_MSG,
-};
 use crate::release::{
 	Release,
 	Releases,
 };
+#[cfg(feature = "bitbucket")]
+use crate::remote::bitbucket::BitbucketClient;
+#[cfg(feature = "github")]
+use crate::remote::github::GitHubClient;
+#[cfg(feature = "gitlab")]
+use crate::remote::gitlab::GitLabClient;
 use crate::template::Template;
 use std::collections::HashMap;
 use std::io::Write;
@@ -28,10 +26,11 @@ use std::time::{
 #[derive(Debug)]
 pub struct Changelog<'a> {
 	/// Releases that the changelog will contain.
-	pub releases:    Vec<Release<'a>>,
-	body_template:   Template,
-	footer_template: Option<Template>,
-	config:          &'a Config,
+	pub releases:       Vec<Release<'a>>,
+	body_template:      Template,
+	footer_template:    Option<Template>,
+	config:             &'a Config,
+	additional_context: HashMap<String, serde_json::Value>,
 }
 
 impl<'a> Changelog<'a> {
@@ -54,10 +53,28 @@ impl<'a> Changelog<'a> {
 				None => None,
 			},
 			config,
+			additional_context: HashMap::new(),
 		};
 		changelog.process_commits();
 		changelog.process_releases();
 		Ok(changelog)
+	}
+
+	/// Adds a key value pair to the template context.
+	///
+	/// These values will be used when generating the changelog.
+	///
+	/// # Errors
+	///
+	/// This operation fails if the deserialization fails.
+	pub fn add_context(
+		&mut self,
+		key: impl Into<String>,
+		value: impl serde::Serialize,
+	) -> Result<()> {
+		self.additional_context
+			.insert(key.into(), serde_json::to_value(value)?);
+		Ok(())
 	}
 
 	/// Processes a single commit and returns/logs the result.
@@ -94,10 +111,14 @@ impl<'a> Changelog<'a> {
 						commit
 							.message
 							.lines()
-							.flat_map(|line| {
+							.filter_map(|line| {
 								let mut c = commit.clone();
 								c.message = line.to_string();
-								Self::process_commit(c, &self.config.git)
+								if !c.message.is_empty() {
+									Self::process_commit(c, &self.config.git)
+								} else {
+									None
+								}
 							})
 							.collect()
 					} else {
@@ -175,19 +196,24 @@ impl<'a> Changelog<'a> {
 	/// If no GitHub related variable is used in the template then this function
 	/// returns empty vectors.
 	#[cfg(feature = "github")]
-	fn get_github_metadata(
-		&self,
-	) -> Result<(Vec<GitHubCommit>, Vec<GitHubPullRequest>)> {
-		if self.body_template.contains_github_variable() ||
+	fn get_github_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
+		use crate::remote::github;
+		if self
+			.body_template
+			.contains_variable(github::TEMPLATE_VARIABLES) ||
 			self.footer_template
 				.as_ref()
-				.map(|v| v.contains_github_variable())
+				.map(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
 				.unwrap_or(false)
 		{
 			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
 			let github_client =
 				GitHubClient::try_from(self.config.remote.github.clone())?;
-			info!("{START_FETCHING_MSG} ({})", self.config.remote.github);
+			info!(
+				"{} ({})",
+				github::START_FETCHING_MSG,
+				self.config.remote.github
+			);
 			let data = tokio::runtime::Builder::new_multi_thread()
 				.enable_all()
 				.build()?
@@ -200,7 +226,129 @@ impl<'a> Changelog<'a> {
 					debug!("Number of GitHub pull requests: {}", commits.len());
 					Ok((commits, pull_requests))
 				});
-			info!("{FINISHED_FETCHING_MSG}");
+			info!("{}", github::FINISHED_FETCHING_MSG);
+			data
+		} else {
+			Ok((vec![], vec![]))
+		}
+	}
+
+	/// Returns the GitLab metadata needed for the changelog.
+	///
+	/// This function creates a multithread async runtime for handling the
+	///
+	/// requests. The following are fetched from the GitLab REST API:
+	///
+	/// - Commits
+	/// - Marge requests
+	///
+	/// Each of these are paginated requests so they are being run in parallel
+	/// for speedup.
+	///
+	///
+	/// If no GitLab related variable is used in the template then this function
+	/// returns empty vectors.
+	#[cfg(feature = "gitlab")]
+	fn get_gitlab_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
+		use crate::remote::gitlab;
+		if self
+			.body_template
+			.contains_variable(gitlab::TEMPLATE_VARIABLES) ||
+			self.footer_template
+				.as_ref()
+				.map(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
+				.unwrap_or(false)
+		{
+			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
+			let gitlab_client =
+				GitLabClient::try_from(self.config.remote.gitlab.clone())?;
+			info!(
+				"{} ({})",
+				gitlab::START_FETCHING_MSG,
+				self.config.remote.gitlab
+			);
+			let data = tokio::runtime::Builder::new_multi_thread()
+				.enable_all()
+				.build()?
+				.block_on(async {
+					// Map repo/owner to gitlab id
+					let project_id = match tokio::join!(gitlab_client.get_project())
+					{
+						(Ok(project),) => project.id,
+						(Err(err),) => {
+							error!("Failed to lookup project! {}", err);
+							return Err(err);
+						}
+					};
+					let (commits, merge_requests) = tokio::try_join!(
+						// Send id to these functions
+						gitlab_client.get_commits(project_id),
+						gitlab_client.get_merge_requests(project_id),
+					)?;
+					debug!("Number of GitLab commits: {}", commits.len());
+					debug!(
+						"Number of GitLab merge requests: {}",
+						merge_requests.len()
+					);
+					Ok((commits, merge_requests))
+				});
+			info!("{}", gitlab::FINISHED_FETCHING_MSG);
+			data
+		} else {
+			Ok((vec![], vec![]))
+		}
+	}
+
+	/// Returns the Bitbucket metadata needed for the changelog.
+	///
+	/// This function creates a multithread async runtime for handling the
+	///
+	/// requests. The following are fetched from the bitbucket REST API:
+	///
+	/// - Commits
+	/// - Pull requests
+	///
+	/// Each of these are paginated requests so they are being run in parallel
+	/// for speedup.
+	///
+	///
+	/// If no bitbucket related variable is used in the template then this
+	/// function returns empty vectors.
+	#[cfg(feature = "bitbucket")]
+	fn get_bitbucket_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
+		use crate::remote::bitbucket;
+		if self
+			.body_template
+			.contains_variable(bitbucket::TEMPLATE_VARIABLES) ||
+			self.footer_template
+				.as_ref()
+				.map(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
+				.unwrap_or(false)
+		{
+			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
+			let bitbucket_client =
+				BitbucketClient::try_from(self.config.remote.bitbucket.clone())?;
+			info!(
+				"{} ({})",
+				bitbucket::START_FETCHING_MSG,
+				self.config.remote.bitbucket
+			);
+			let data = tokio::runtime::Builder::new_multi_thread()
+				.enable_all()
+				.build()?
+				.block_on(async {
+					let (commits, pull_requests) = tokio::try_join!(
+						bitbucket_client.get_commits(),
+						bitbucket_client.get_pull_requests()
+					)?;
+					debug!("Number of Bitbucket commits: {}", commits.len());
+					debug!(
+						"Number of Bitbucket pull requests: {}",
+						pull_requests.len()
+					);
+					Ok((commits, pull_requests))
+				});
+			info!("{}", bitbucket::FINISHED_FETCHING_MSG);
 			data
 		} else {
 			Ok((vec![], vec![]))
@@ -228,10 +376,33 @@ impl<'a> Changelog<'a> {
 	/// Generates the changelog and writes it to the given output.
 	pub fn generate<W: Write>(&self, out: &mut W) -> Result<()> {
 		debug!("Generating changelog...");
-		let mut additional_context = HashMap::new();
-		additional_context.insert("remote", self.config.remote.clone());
+		let mut additional_context = self.additional_context.clone();
+		additional_context.insert(
+			"remote".to_string(),
+			serde_json::to_value(self.config.remote.clone())?,
+		);
 		#[cfg(feature = "github")]
-		let (github_commits, github_pull_requests) = self.get_github_metadata()?;
+		let (github_commits, github_pull_requests) = if self.config.remote.github.is_set() {
+			self.get_github_metadata()
+				.expect("Could not get github metadata")
+		} else {
+			(vec![], vec![])
+		};
+		#[cfg(feature = "gitlab")]
+		let (gitlab_commits, gitlab_merge_request) = if self.config.remote.gitlab.is_set() {
+			self.get_gitlab_metadata()
+				.expect("Could not get gitlab metadata")
+		} else {
+			(vec![], vec![])
+		};
+		#[cfg(feature = "bitbucket")]
+		let (bitbucket_commits, bitbucket_pull_request) =
+			if self.config.remote.bitbucket.is_set() {
+				self.get_bitbucket_metadata()
+					.expect("Could not get bitbucket metadata")
+			} else {
+				(vec![], vec![])
+			};
 		let postprocessors = self
 			.config
 			.changelog
@@ -252,6 +423,16 @@ impl<'a> Changelog<'a> {
 			release.update_github_metadata(
 				github_commits.clone(),
 				github_pull_requests.clone(),
+			)?;
+			#[cfg(feature = "gitlab")]
+			release.update_gitlab_metadata(
+				gitlab_commits.clone(),
+				gitlab_merge_request.clone(),
+			)?;
+			#[cfg(feature = "bitbucket")]
+			release.update_bitbucket_metadata(
+				bitbucket_commits.clone(),
+				bitbucket_pull_request.clone(),
 			)?;
 			let write_result = write!(
 				out,
@@ -492,7 +673,17 @@ mod test {
 				limit_commits:            None,
 			},
 			remote:    RemoteConfig {
-				github: Remote {
+				github:    Remote {
+					owner: String::from("coolguy"),
+					repo:  String::from("awesome"),
+					token: None,
+				},
+				gitlab:    Remote {
+					owner: String::from("coolguy"),
+					repo:  String::from("awesome"),
+					token: None,
+				},
+				bitbucket: Remote {
 					owner: String::from("coolguy"),
 					repo:  String::from("awesome"),
 					token: None,
@@ -564,7 +755,15 @@ mod test {
 			timestamp: 50000000,
 			previous: None,
 			#[cfg(feature = "github")]
-			github: crate::github::GitHubReleaseMetadata {
+			github: crate::remote::RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "gitlab")]
+			gitlab: crate::remote::RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "bitbucket")]
+			bitbucket: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
 		};
@@ -611,7 +810,15 @@ mod test {
 				timestamp: 1000,
 				previous: Some(Box::new(test_release)),
 				#[cfg(feature = "github")]
-				github: crate::github::GitHubReleaseMetadata {
+				github: crate::remote::RemoteReleaseMetadata {
+					contributors: vec![],
+				},
+				#[cfg(feature = "gitlab")]
+				gitlab: crate::remote::RemoteReleaseMetadata {
+					contributors: vec![],
+				},
+				#[cfg(feature = "bitbucket")]
+				bitbucket: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
 				},
 			},
@@ -723,6 +930,7 @@ style: make awesome stuff look better
 			String::from("123abc"),
 			String::from(
 				"chore(deps): bump some deps
+
 chore(deps): bump some more deps
 chore(deps): fix broken deps
 ",
@@ -812,6 +1020,89 @@ chore(deps): fix broken deps
 			.replace("			", ""),
 			str::from_utf8(&out).unwrap_or_default()
 		);
+		Ok(())
+	}
+
+	#[test]
+	fn changelog_adds_additional_context() -> Result<()> {
+		let (mut config, releases) = get_test_data();
+		// add `{{ custom_field }}` to the template
+		config.changelog.body = Some(
+			r#"{% if version %}
+				## {{ custom_field }} [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+				{% if commit_id %}({{ commit_id }}){% endif %}{% else %}
+				## Unreleased{% endif %}
+				{% for group, commits in commits | group_by(attribute="group") %}
+				### {{ group }}{% for group, commits in commits | group_by(attribute="scope") %}
+				#### {{ group }}{% for commit in commits %}
+				- {{ commit.message }}{% endfor %}
+				{% endfor %}{% endfor %}"#
+				.to_string(),
+		);
+		let mut changelog = Changelog::new(releases, &config)?;
+		changelog.add_context("custom_field", "Hello")?;
+		let mut out = Vec::new();
+		changelog.generate(&mut out)?;
+		expect_test::expect![[r#"
+    # Changelog
+    ## Unreleased
+
+    ### Bug Fixes
+    #### app
+    - fix abc
+
+    ### New features
+    #### app
+    - add xyz
+
+    ### Other
+    #### app
+    - document zyx
+
+    #### ui
+    - do exciting stuff
+
+    ## Hello [v1.0.0] - 1971-08-02
+    (0bc123)
+
+    ### Bug Fixes
+    #### ui
+    - fix more stuff
+
+    ### Documentation
+    #### documentation
+    - update docs
+    - add some documentation
+
+    ### I love tea
+    #### app
+    - damn right
+
+    ### Matched (group)
+    #### group
+    - support regex-replace for groups
+
+    ### New features
+    #### app
+    - add cool features
+
+    #### other
+    - support unscoped commits
+    - support breaking commits
+
+    ### Other
+    #### app
+    - do nothing
+
+    #### other
+    - support unconventional commits
+    - this commit is preprocessed
+
+    #### ui
+    - make good stuff
+    -- total releases: 2 --
+"#]]
+		.assert_eq(str::from_utf8(&out).unwrap_or_default());
 		Ok(())
 	}
 }
