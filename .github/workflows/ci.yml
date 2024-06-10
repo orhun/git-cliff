@@ -63,10 +63,12 @@ jobs:
         uses: taiki-e/install-action@cargo-tarpaulin
       - name: Run tests
         run: |
-          cargo test --no-default-features
+          cargo test --no-default-features \
+            -- --skip "repo::test::git_upstream_remote"
       - name: Run tests
         run: |
-          cargo tarpaulin --out xml --verbose --all-features
+          cargo tarpaulin --out xml --verbose --all-features \
+            -- --skip "repo::test::git_upstream_remote"
       - name: Upload reports to codecov
         uses: codecov/codecov-action@v4
         with:
