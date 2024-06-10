@@ -9,9 +9,12 @@ use serde::{
 use super::*;
 
 /// GitLab REST API url.
-const GITLAB_API_URL: &str = "https://gitlab.com/api/v4";
-
-const GITLAB_API_PATH: &str = "/api/v4";
+const GITLAB_API_URL_CFG: ApiUrlCfg = ApiUrlCfg {
+	api_url:        "https://gitlab.com/api/v4",
+	env_var:        "GITLAB_API_URL",
+	api_path:       "/api/v4",
+	default_domain: "",
+};
 
 /// Representation of a single GitLab Project.
 ///
@@ -126,17 +129,7 @@ impl TryFrom<Remote> for GitLabClient {
 	fn try_from(remote: Remote) -> Result<Self> {
 		Ok(Self {
 			client: create_remote_client(&remote, "application/json")?,
-			api_url: remote
-				.url
-				.as_ref()
-				.filter(|url| url.domain() != Some("github.com"))
-				.map(|url| {
-					// GitHub Enterprise Server API URL
-					let mut new_url = url.clone();
-					new_url.set_path(GITLAB_API_PATH);
-					new_url
-				})
-				.unwrap_or_else(|| Url::parse(GITLAB_API_URL).expect("invalid url")),
+			api_url: GITLAB_API_URL_CFG.get_api_url(&remote)?,
 			project_id: 0,
 			remote,
 		})

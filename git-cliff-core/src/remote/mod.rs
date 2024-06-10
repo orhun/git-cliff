@@ -83,22 +83,22 @@ pub(crate) const MAX_PAGE_SIZE: usize = 100;
 /// Commit from a code forge
 #[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
 pub struct RemoteCommit {
-    /// Commit SHA.
+	/// Commit SHA.
 	pub id:       String,
-    /// Commit author.
+	/// Commit author.
 	pub username: Option<String>,
 }
 
 /// Pull request from a code forge
 #[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
 pub struct RemotePullRequest {
-    /// Number.
+	/// Number.
 	pub number:       i64,
-    /// Title.
+	/// Title.
 	pub title:        Option<String>,
-    /// Labels of the pull request.
+	/// Labels of the pull request.
 	pub labels:       Vec<String>,
-    /// Merge commit SHA.
+	/// Merge commit SHA.
 	pub merge_commit: Option<String>,
 }
 
@@ -325,6 +325,47 @@ fn create_remote_client(
 		}))
 		.build();
 	Ok(client)
+}
+
+struct ApiUrlCfg {
+	/// Default API URL
+	api_url:        &'static str,
+	/// Environment variable for overriding the API URL
+	env_var:        &'static str,
+	/// Path to add to the base URL from the remote config to get the API URL
+	api_path:       &'static str,
+	/// Use the default `api_url` if the domain from the remote URL matches this
+	/// value. This can be used if the hosted instance uses a different API URL
+	/// format than self-hosted instances.
+	///
+	/// Setting this value to an empty string disables this feature
+	default_domain: &'static str,
+}
+
+impl ApiUrlCfg {
+	/// Get the API URL to be used for accessing the given Remote. The URL is
+	/// parsed from the following sources:
+	///
+	/// 1. Environment variable (`<FORGE>_API_URL`)
+	/// 2. Configured URL from the Remote
+	/// 3. Default api_url
+	fn get_api_url(&self, remote: &Remote) -> Result<Url> {
+		if let Ok(url) = std::env::var(self.env_var) {
+			Ok(Url::parse(&url)?)
+		} else if let Some(cfg_url) = remote.url.as_ref().filter(|url| {
+			self.default_domain.is_empty() ||
+				url.domain() != Some(self.default_domain)
+		}) {
+			let mut url = cfg_url.clone();
+			{
+				let mut path_segs = url.path_segments_mut().expect("invalid url");
+				path_segs.push(self.api_path);
+			}
+			Ok(url)
+		} else {
+			Ok(Url::parse(self.api_url)?)
+		}
+	}
 }
 
 /// Create a new remote client from the give kind and configuration

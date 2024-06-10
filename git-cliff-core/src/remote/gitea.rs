@@ -9,10 +9,13 @@ use url::Url;
 
 use super::*;
 
-/// Codeberg REST API url.
-const CODEBERG_API_URL: &str = "https://codeberg.org/api/v1";
-
-const GITEA_API_PATH: &str = "/api/v1";
+/// Gitea REST API url.
+const GITEA_API_URL_CFG: ApiUrlCfg = ApiUrlCfg {
+	api_url:        "https://codeberg.org/api/v1",
+	env_var:        "GITEA_API_URL",
+	api_path:       "/api/v1",
+	default_domain: "",
+};
 
 /// Representation of a single commit.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -114,15 +117,7 @@ impl TryFrom<Remote> for GiteaClient {
 	fn try_from(remote: Remote) -> Result<Self> {
 		Ok(Self {
 			client: create_remote_client(&remote, "application/json")?,
-			api_url: remote
-				.url
-				.as_ref()
-				.map(|url| {
-					let mut new_url = url.clone();
-					new_url.set_path(GITEA_API_PATH);
-					new_url
-				})
-				.unwrap_or_else(|| Url::parse(CODEBERG_API_URL).expect("invalid url")),
+			api_url: GITEA_API_URL_CFG.get_api_url(&remote)?,
 			remote,
 		})
 	}

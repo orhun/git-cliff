@@ -9,13 +9,16 @@ use serde::{
 use super::*;
 
 /// Bitbucket REST API url.
-const BITBUCKET_API_URL: &str = "https://api.bitbucket.org/2.0/repositories";
-
-/// Self-hosted Bitbucket Server API path
-const BITBUCKET_SERVER_API_PATH: &str = "/rest/api/2.0/repositories";
+const BITBUCKET_API_URL_CFG: ApiUrlCfg = ApiUrlCfg {
+	api_url:        "https://api.bitbucket.org/2.0",
+	env_var:        "BITBUCKET_API_URL",
+	// Self-hosted Bitbucket Server API path
+	api_path:       "/rest/api/2.0",
+	default_domain: "bitbucket.org",
+};
 
 /// Maximum number of entries to fetch for bitbucket pull requests.
-pub(crate) const BITBUCKET_MAX_PAGE_PRS: usize = 50;
+const BITBUCKET_MAX_PAGE_PRS: usize = 50;
 
 /// Representation of a single commit.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -40,7 +43,8 @@ impl RemoteEntry for BitbucketPagination<BitbucketCommit> {
 	fn url(_id: i64, api_url: &Url, remote: &Remote, page: i32) -> String {
 		let commit_page = page + 1;
 		format!(
-			"{}/{}/{}/commits?pagelen={MAX_PAGE_SIZE}&page={commit_page}",
+			"{}/repositories/{}/{}/commits?pagelen={MAX_PAGE_SIZE}&\
+			 page={commit_page}",
 			api_url, remote.owner, remote.repo
 		)
 	}
@@ -124,7 +128,7 @@ impl RemoteEntry for BitbucketPagination<BitbucketPullRequest> {
 	fn url(_id: i64, api_url: &Url, remote: &Remote, page: i32) -> String {
 		let pr_page = page + 1;
 		format!(
-			"{}/{}/{}/pullrequests?&pagelen={BITBUCKET_MAX_PAGE_PRS}&\
+			"{}/repositories/{}/{}/pullrequests?&pagelen={BITBUCKET_MAX_PAGE_PRS}&\
 			 page={pr_page}&state=MERGED",
 			api_url, remote.owner, remote.repo
 		)
@@ -156,17 +160,7 @@ impl TryFrom<Remote> for BitbucketClient {
 	fn try_from(remote: Remote) -> Result<Self> {
 		Ok(Self {
 			client: create_remote_client(&remote, "application/json")?,
-			api_url: remote
-				.url
-				.as_ref()
-				.filter(|url| url.domain() != Some("github.com"))
-				.map(|url| {
-					// GitHub Enterprise Server API URL
-					let mut new_url = url.clone();
-					new_url.set_path(BITBUCKET_SERVER_API_PATH);
-					new_url
-				})
-				.unwrap_or_else(|| Url::parse(BITBUCKET_API_URL).expect("invalid url")),
+			api_url: BITBUCKET_API_URL_CFG.get_api_url(&remote)?,
 			remote,
 		})
 	}

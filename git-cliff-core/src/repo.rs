@@ -309,7 +309,7 @@ mod test {
 		let remote = repository.upstream_remote()?;
 		assert_eq!(
 			Remote {
-                url: Some(Url::parse("https://github.com").unwrap()),
+				url:   Some(Url::parse("https://github.com").unwrap()),
 				owner: String::from("orhun"),
 				repo:  String::from("git-cliff"),
 				token: None,

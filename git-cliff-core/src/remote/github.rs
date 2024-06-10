@@ -10,9 +10,13 @@ use url::Url;
 use super::*;
 
 /// GitHub REST API url.
-const GITHUB_API_URL: &str = "https://api.github.com";
-
-const GHES_API_PATH: &str = "/api/v3";
+const GITHUB_API_URL_CFG: ApiUrlCfg = ApiUrlCfg {
+	api_url:        "https://api.github.com",
+	env_var:        "GITHUB_API_URL",
+	// API path used for self-hosted GitHub Enterprise server
+	api_path:       "/api/v3",
+	default_domain: "github.com",
+};
 
 /// Representation of a single commit.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -114,17 +118,7 @@ impl TryFrom<Remote> for GitHubClient {
 	fn try_from(remote: Remote) -> Result<Self> {
 		Ok(Self {
 			client: create_remote_client(&remote, "application/vnd.github+json")?,
-			api_url: remote
-				.url
-				.as_ref()
-				.filter(|url| url.domain() != Some("github.com"))
-				.map(|url| {
-					// GitHub Enterprise Server API URL
-					let mut new_url = url.clone();
-					new_url.set_path(GHES_API_PATH);
-					new_url
-				})
-				.unwrap_or_else(|| Url::parse(GITHUB_API_URL).expect("invalid url")),
+			api_url: GITHUB_API_URL_CFG.get_api_url(&remote)?,
 			remote,
 		})
 	}
