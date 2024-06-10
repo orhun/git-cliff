@@ -566,7 +566,7 @@ mod test {
 		release
 			.contrib
 			.get_mut(&RemoteKind::GitHub)
-			.unwrap()
+			.expect("missing GitHub contributors")
 			.contributors
 			.sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
 
