@@ -18,6 +18,9 @@ jobs:
         include:
           - fixtures-name: new-fixture-template
           - fixtures-name: test-github-integration
+          - fixtures-name: test-gitlab-integration
+          - fixtures-name: test-gitea-integration
+          - fixtures-name: test-bitbucket-integration
           - fixtures-name: test-ignore-tags
           - fixtures-name: test-topo-order
             command: --latest

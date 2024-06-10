@@ -6,16 +6,23 @@ pub mod github;
 #[cfg(feature = "gitlab")]
 pub mod gitlab;
 
+/// Gitea client.
+#[cfg(feature = "gitea")]
+pub mod gitea;
+
 /// Bitbucket client.
 #[cfg(feature = "bitbucket")]
 pub mod bitbucket;
 
-use crate::config::Remote;
-use crate::error::{
-	Error,
-	Result,
+use std::{
+	hash::{
+		Hash,
+		Hasher,
+	},
+	time::Duration,
 };
-use dyn_clone::DynClone;
+
+use async_trait::async_trait;
 use futures::{
 	future,
 	stream,
@@ -28,28 +35,37 @@ use http_cache_reqwest::{
 	HttpCache,
 	HttpCacheOptions,
 };
-use reqwest::header::{
-	HeaderMap,
-	HeaderValue,
+use reqwest::{
+	header::{
+		HeaderMap,
+		HeaderValue,
+	},
+	Client,
 };
-use reqwest::Client;
 use reqwest_middleware::{
 	ClientBuilder,
 	ClientWithMiddleware,
 };
 use secrecy::ExposeSecret;
-use serde::de::DeserializeOwned;
 use serde::{
+	de::DeserializeOwned,
 	Deserialize,
 	Serialize,
 };
-use std::hash::{
-	Hash,
-	Hasher,
-};
-use std::time::Duration;
+use url::Url;
 
-/// User agent for interacting with the GitHub API.
+use crate::{
+	config::{
+		Remote,
+		RemoteKind,
+	},
+	error::{
+		Error,
+		Result,
+	},
+};
+
+/// User agent for interacting with the remote API.
 ///
 /// This is needed since GitHub API does not accept empty user agent.
 pub(crate) const USER_AGENT: &str =
@@ -62,45 +78,32 @@ pub(crate) const REQUEST_TIMEOUT: u64 = 30;
 pub(crate) const REQUEST_KEEP_ALIVE: u64 = 60;
 
 /// Maximum number of entries to fetch in a single page.
-pub(crate) const MAX_PAGE_SIZE: usize = 100;
+pub(crate) const MAX_PAGE_SIZE: &str = "100";
 
-/// Trait for handling the different entries returned from the remote.
-pub trait RemoteEntry {
-	/// Returns the API URL for fetching the entries at the specified page.
-	fn url(project_id: i64, api_url: &str, remote: &Remote, page: i32) -> String;
-	/// Returns the request buffer size.
-	fn buffer_size() -> usize;
-	/// Whether if exit early.
-	fn early_exit(&self) -> bool;
-}
-
-/// Trait for handling remote commits.
-pub trait RemoteCommit: DynClone {
+/// Commit from a code forge
+#[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
+pub struct RemoteCommit {
 	/// Commit SHA.
-	fn id(&self) -> String;
+	pub id:       String,
 	/// Commit author.
-	fn username(&self) -> Option<String>;
+	pub username: Option<String>,
 }
 
-dyn_clone::clone_trait_object!(RemoteCommit);
-
-/// Trait for handling remote pull requests.
-pub trait RemotePullRequest: DynClone {
+/// Pull request from a code forge
+#[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
+pub struct RemotePullRequest {
 	/// Number.
-	fn number(&self) -> i64;
+	pub number:       i64,
 	/// Title.
-	fn title(&self) -> Option<String>;
+	pub title:        Option<String>,
 	/// Labels of the pull request.
-	fn labels(&self) -> Vec<String>;
+	pub labels:       Vec<String>,
 	/// Merge commit SHA.
-	fn merge_commit(&self) -> Option<String>;
+	pub merge_commit: Option<String>,
 }
-
-dyn_clone::clone_trait_object!(RemotePullRequest);
 
 /// Result of a remote metadata.
-pub type RemoteMetadata =
-	(Vec<Box<dyn RemoteCommit>>, Vec<Box<dyn RemotePullRequest>>);
+pub type RemoteMetadata = (Vec<RemoteCommit>, Vec<RemotePullRequest>);
 
 /// Metadata of a remote release.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
@@ -130,53 +133,37 @@ impl Hash for RemoteContributor {
 	}
 }
 
-/// Creates a HTTP client for the remote.
-fn create_remote_client(
-	remote: &Remote,
-	accept_header: &str,
-) -> Result<ClientWithMiddleware> {
-	if !remote.is_set() {
-		return Err(Error::RemoteNotSetError);
+/// Trait for handling the different entries returned from the remote.
+trait RemoteEntry {
+	/// Returns the API URL for fetching the entries at the specified page.
+	fn url(project_id: i64, api_url: &Url, remote: &Remote, page: i32) -> Url;
+	/// Returns the request buffer size.
+	fn buffer_size() -> usize;
+	/// Whether the client should exit early after fetching this entry (e.g. no
+	/// items any more).
+	fn early_exit(&self) -> bool {
+		false
 	}
-	let mut headers = HeaderMap::new();
-	headers.insert(
-		reqwest::header::ACCEPT,
-		HeaderValue::from_str(accept_header)?,
-	);
-	if let Some(token) = &remote.token {
-		headers.insert(
-			reqwest::header::AUTHORIZATION,
-			format!("Bearer {}", token.expose_secret()).parse()?,
-		);
-	}
-	headers.insert(reqwest::header::USER_AGENT, USER_AGENT.parse()?);
-	let client = Client::builder()
-		.timeout(Duration::from_secs(REQUEST_TIMEOUT))
-		.tcp_keepalive(Duration::from_secs(REQUEST_KEEP_ALIVE))
-		.default_headers(headers)
-		.build()?;
-	let client = ClientBuilder::new(client)
-		.with(Cache(HttpCache {
-			mode:    CacheMode::Default,
-			manager: CACacheManager {
-				path: dirs::cache_dir()
-					.ok_or_else(|| {
-						Error::DirsError(String::from(
-							"failed to find the user's cache directory",
-						))
-					})?
-					.join(env!("CARGO_PKG_NAME")),
-			},
-			options: HttpCacheOptions::default(),
-		}))
-		.build();
-	Ok(client)
 }
 
-/// Trait for handling the API connection and fetching.
-pub trait RemoteClient {
+/// Client for fetching code forge data
+#[async_trait]
+pub trait RemoteClient: Send {
+	/// Initializes the API client and fetches project ID if necessary.
+	async fn init(&mut self) -> Result<()> {
+		Ok(())
+	}
+
+	/// Fetches the API and returns the commits.
+	async fn get_commits(&self) -> Result<Vec<RemoteCommit>>;
+
+	/// Fetches the API and returns the pull requests.
+	async fn get_pull_requests(&self) -> Result<Vec<RemotePullRequest>>;
+}
+
+trait RemoteClientInternal {
 	/// Returns the API url.
-	fn api_url() -> String;
+	fn api_url(&self) -> &Url;
 
 	/// Returns the remote repository information.
 	fn remote(&self) -> Remote;
@@ -195,9 +182,9 @@ pub trait RemoteClient {
 		project_id: i64,
 		page: i32,
 	) -> Result<T> {
-		let url = T::url(project_id, &Self::api_url(), &self.remote(), page);
+		let url = T::url(project_id, self.api_url(), &self.remote(), page);
 		debug!("Sending request to: {url}");
-		let response = self.client().get(&url).send().await?;
+		let response = self.client().get(url).send().await?;
 		let response_text = if response.status().is_success() {
 			let text = response.text().await?;
 			trace!("Response: {:?}", text);
@@ -216,9 +203,9 @@ pub trait RemoteClient {
 		project_id: i64,
 		page: i32,
 	) -> Result<Vec<T>> {
-		let url = T::url(project_id, &Self::api_url(), &self.remote(), page);
+		let url = T::url(project_id, self.api_url(), &self.remote(), page);
 		debug!("Sending request to: {url}");
-		let response = self.client().get(&url).send().await?;
+		let response = self.client().get(url).send().await?;
 		let response_text = if response.status().is_success() {
 			let text = response.text().await?;
 			trace!("Response: {:?}", text);
@@ -297,72 +284,168 @@ pub trait RemoteClient {
 	}
 }
 
-/// Generates a function for updating the release metadata for a remote.
-#[doc(hidden)]
-#[macro_export]
-macro_rules! update_release_metadata {
-	($remote: ident, $fn: ident) => {
-		impl<'a> Release<'a> {
-			/// Updates the remote metadata that is contained in the release.
-			///
-			/// This function takes two arguments:
-			///
-			/// - Commits: needed for associating the Git user with the GitHub
-			///   username.
-			/// - Pull requests: needed for generating the contributor list for the
-			///   release.
-			pub fn $fn(
-				&mut self,
-				mut commits: Vec<Box<dyn RemoteCommit>>,
-				pull_requests: Vec<Box<dyn RemotePullRequest>>,
-			) -> Result<()> {
-				let mut contributors: Vec<RemoteContributor> = Vec::new();
-				// retain the commits that are not a part of this release for later
-				// on checking the first contributors.
-				commits.retain(|v| {
-					if let Some(commit) =
-						self.commits.iter_mut().find(|commit| commit.id == v.id())
-					{
-						let pull_request = pull_requests
-							.iter()
-							.find(|pr| pr.merge_commit() == Some(v.id().clone()));
-						commit.$remote.username = v.username();
-						commit.$remote.pr_number = pull_request.map(|v| v.number());
-						commit.$remote.pr_title =
-							pull_request.and_then(|v| v.title().clone());
-						commit.$remote.pr_labels = pull_request
-							.map(|v| v.labels().clone())
-							.unwrap_or_default();
-						if !contributors
-							.iter()
-							.any(|v| commit.$remote.username == v.username)
-						{
-							contributors.push(RemoteContributor {
-								username:      commit.$remote.username.clone(),
-								pr_title:      commit.$remote.pr_title.clone(),
-								pr_number:     commit.$remote.pr_number,
-								pr_labels:     commit.$remote.pr_labels.clone(),
-								is_first_time: false,
-							});
-						}
-						false
-					} else {
-						true
-					}
-				});
-				// mark contributors as first-time
-				self.$remote.contributors = contributors
-					.into_iter()
-					.map(|mut v| {
-						v.is_first_time = !commits
-							.iter()
-							.map(|v| v.username())
-							.any(|login| login == v.username);
-						v
-					})
-					.collect();
-				Ok(())
-			}
+/// Creates a HTTP client for the remote.
+fn create_remote_client(
+	remote: &Remote,
+	accept_header: &str,
+) -> Result<ClientWithMiddleware> {
+	if !remote.is_set() {
+		return Err(Error::RemoteNotSetError);
+	}
+	let mut headers = HeaderMap::new();
+	headers.insert(
+		reqwest::header::ACCEPT,
+		HeaderValue::from_str(accept_header)?,
+	);
+	if let Some(token) = &remote.token {
+		headers.insert(
+			reqwest::header::AUTHORIZATION,
+			format!("Bearer {}", token.expose_secret()).parse()?,
+		);
+	}
+	headers.insert(reqwest::header::USER_AGENT, USER_AGENT.parse()?);
+	let client = Client::builder()
+		.timeout(Duration::from_secs(REQUEST_TIMEOUT))
+		.tcp_keepalive(Duration::from_secs(REQUEST_KEEP_ALIVE))
+		.default_headers(headers)
+		.build()?;
+	let client = ClientBuilder::new(client)
+		.with(Cache(HttpCache {
+			mode:    CacheMode::Default,
+			manager: CACacheManager {
+				path: dirs::cache_dir()
+					.ok_or_else(|| {
+						Error::DirsError(String::from(
+							"failed to find the user's cache directory",
+						))
+					})?
+					.join(env!("CARGO_PKG_NAME")),
+			},
+			options: HttpCacheOptions::default(),
+		}))
+		.build();
+	Ok(client)
+}
+
+struct ApiUrlCfg {
+	/// Default API URL
+	api_url:        &'static str,
+	/// Environment variable for overriding the API URL
+	env_var:        &'static str,
+	/// Path to add to the base URL from the remote config to get the API URL
+	api_path:       &'static [&'static str],
+	/// Use the default `api_url` if the domain from the remote URL matches this
+	/// value. This can be used if the hosted instance uses a different API URL
+	/// format than self-hosted instances.
+	///
+	/// Setting this value to an empty string disables this feature
+	default_domain: &'static str,
+}
+
+impl ApiUrlCfg {
+	/// Get the API URL to be used for accessing the given Remote. The URL is
+	/// parsed from the following sources:
+	///
+	/// 1. Environment variable (`<FORGE>_API_URL`)
+	/// 2. Configured URL from the Remote
+	/// 3. Default api_url
+	fn get_api_url(&self, remote: &Remote) -> Result<Url> {
+		if let Ok(url) = std::env::var(self.env_var) {
+			Ok(Url::parse(&url)?)
+		} else if let Some(cfg_url) = remote.url.as_ref().filter(|url| {
+			self.default_domain.is_empty() ||
+				url.domain() != Some(self.default_domain)
+		}) {
+			let mut url = cfg_url.clone();
+			url.path_segments_mut()
+				.expect("invalid url")
+				.extend(self.api_path);
+			Ok(url)
+		} else {
+			Ok(Url::parse(self.api_url)?)
 		}
-	};
+	}
+}
+
+/// Create a new remote client from the give kind and configuration
+pub fn new_remote_client(
+	kind: RemoteKind,
+	remote: Remote,
+) -> Result<Box<dyn RemoteClient>> {
+	#[cfg(feature = "github")]
+	use github::GitHubClient;
+
+	#[cfg(feature = "gitlab")]
+	use gitlab::GitLabClient;
+
+	#[cfg(feature = "gitea")]
+	use gitea::GiteaClient;
+
+	#[cfg(feature = "bitbucket")]
+	use bitbucket::BitbucketClient;
+
+	#[allow(unreachable_patterns)]
+	Ok(match kind {
+		#[cfg(feature = "github")]
+		RemoteKind::GitHub => Box::new(GitHubClient::try_from(remote)?),
+		#[cfg(feature = "gitlab")]
+		RemoteKind::GitLab => Box::new(GitLabClient::try_from(remote)?),
+		#[cfg(feature = "gitea")]
+		RemoteKind::Gitea => Box::new(GiteaClient::try_from(remote)?),
+		#[cfg(feature = "bitbucket")]
+		RemoteKind::Bitbucket => Box::new(BitbucketClient::try_from(remote)?),
+		_ => panic!(
+			"{} client is not enabled. Please build git-cliff with the {} feature \
+			 enabled",
+			kind,
+			kind.id()
+		),
+	})
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn get_api_url() {
+		let remote = Remote {
+			url:   Some(Url::parse("https://github.com").expect("invalid URL")),
+			owner: "orhun".to_owned(),
+			repo:  "git-cliff".to_owned(),
+			token: None,
+		};
+
+		let cfg = ApiUrlCfg {
+			api_url:        "https://api.github.com",
+			env_var:        "GITHUB_API_URL",
+			api_path:       &["api", "v3"],
+			default_domain: "github.com",
+		};
+
+		let res = cfg.get_api_url(&remote).expect("could not get api url");
+		assert_eq!("https://api.github.com/", res.to_string());
+	}
+
+	#[test]
+	fn get_api_url_subpath() {
+		let remote = Remote {
+			url:   Some(
+				Url::parse("https://example.com/gitea").expect("invalid URL"),
+			),
+			owner: "orhun".to_owned(),
+			repo:  "git-cliff".to_owned(),
+			token: None,
+		};
+
+		let cfg = ApiUrlCfg {
+			api_url:        "https://codeberg.org/api/v1",
+			env_var:        "GITEA_API_URL",
+			api_path:       &["api", "v1"],
+			default_domain: "",
+		};
+
+		let res = cfg.get_api_url(&remote).expect("could not get api url");
+		assert_eq!("https://example.com/gitea/api/v1", res.to_string());
+	}
 }

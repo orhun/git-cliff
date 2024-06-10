@@ -1,5 +1,5 @@
 name: Integration ⚙️
-description: Report a bug or request a feature about an integration (e.g GitHub/GitLab/Bitbucket)
+description: Report a bug or request a feature about an integration (e.g GitHub/GitLab/Gitea/Bitbucket)
 labels: ["integration"]
 assignees:
   - orhun

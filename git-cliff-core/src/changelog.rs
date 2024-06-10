@@ -3,17 +3,16 @@ use crate::config::{
 	Config,
 	GitConfig,
 };
+#[cfg(feature = "remote")]
+use crate::config::{
+	RemoteKind,
+	REMOTE_KINDS,
+};
 use crate::error::Result;
 use crate::release::{
 	Release,
 	Releases,
 };
-#[cfg(feature = "bitbucket")]
-use crate::remote::bitbucket::BitbucketClient;
-#[cfg(feature = "github")]
-use crate::remote::github::GitHubClient;
-#[cfg(feature = "gitlab")]
-use crate::remote::gitlab::GitLabClient;
 use crate::template::Template;
 use std::collections::HashMap;
 use std::io::Write;
@@ -182,10 +181,10 @@ impl<'a> Changelog<'a> {
 		}
 	}
 
-	/// Returns the GitHub metadata needed for the changelog.
+	/// Returns the code forge metadata needed for the changelog.
 	///
 	/// This function creates a multithread async runtime for handling the
-	/// requests. The following are fetched from the GitHub REST API:
+	/// requests. The following are fetched from the forge's API:
 	///
 	/// - Commits
 	/// - Pull requests
@@ -193,162 +192,56 @@ impl<'a> Changelog<'a> {
 	/// Each of these are paginated requests so they are being run in parallel
 	/// for speedup.
 	///
-	/// If no GitHub related variable is used in the template then this function
+	/// If no forge related variable is used in the template then this function
 	/// returns empty vectors.
-	#[cfg(feature = "github")]
-	fn get_github_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
-		use crate::remote::github;
-		if self
-			.body_template
-			.contains_variable(github::TEMPLATE_VARIABLES) ||
-			self.footer_template
-				.as_ref()
-				.map(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
-				.unwrap_or(false)
-		{
-			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
-			let github_client =
-				GitHubClient::try_from(self.config.remote.github.clone())?;
-			info!(
-				"{} ({})",
-				github::START_FETCHING_MSG,
-				self.config.remote.github
-			);
-			let data = tokio::runtime::Builder::new_multi_thread()
-				.enable_all()
-				.build()?
-				.block_on(async {
-					let (commits, pull_requests) = tokio::try_join!(
-						github_client.get_commits(),
-						github_client.get_pull_requests(),
-					)?;
-					debug!("Number of GitHub commits: {}", commits.len());
-					debug!("Number of GitHub pull requests: {}", commits.len());
-					Ok((commits, pull_requests))
-				});
-			info!("{}", github::FINISHED_FETCHING_MSG);
-			data
-		} else {
-			Ok((vec![], vec![]))
-		}
-	}
+	#[cfg(feature = "remote")]
+	fn get_remote_metadata(
+		&self,
+		remote_kind: RemoteKind,
+	) -> Result<crate::remote::RemoteMetadata> {
+		use crate::{
+			error::Error,
+			remote,
+		};
 
-	/// Returns the GitLab metadata needed for the changelog.
-	///
-	/// This function creates a multithread async runtime for handling the
-	///
-	/// requests. The following are fetched from the GitLab REST API:
-	///
-	/// - Commits
-	/// - Marge requests
-	///
-	/// Each of these are paginated requests so they are being run in parallel
-	/// for speedup.
-	///
-	///
-	/// If no GitLab related variable is used in the template then this function
-	/// returns empty vectors.
-	#[cfg(feature = "gitlab")]
-	fn get_gitlab_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
-		use crate::remote::gitlab;
-		if self
-			.body_template
-			.contains_variable(gitlab::TEMPLATE_VARIABLES) ||
-			self.footer_template
-				.as_ref()
-				.map(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
-				.unwrap_or(false)
-		{
-			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
-			let gitlab_client =
-				GitLabClient::try_from(self.config.remote.gitlab.clone())?;
-			info!(
-				"{} ({})",
-				gitlab::START_FETCHING_MSG,
-				self.config.remote.gitlab
-			);
-			let data = tokio::runtime::Builder::new_multi_thread()
-				.enable_all()
-				.build()?
-				.block_on(async {
-					// Map repo/owner to gitlab id
-					let project_id = match tokio::join!(gitlab_client.get_project())
-					{
-						(Ok(project),) => project.id,
-						(Err(err),) => {
-							error!("Failed to lookup project! {}", err);
-							return Err(err);
-						}
-					};
-					let (commits, merge_requests) = tokio::try_join!(
-						// Send id to these functions
-						gitlab_client.get_commits(project_id),
-						gitlab_client.get_merge_requests(project_id),
-					)?;
-					debug!("Number of GitLab commits: {}", commits.len());
-					debug!(
-						"Number of GitLab merge requests: {}",
-						merge_requests.len()
-					);
-					Ok((commits, merge_requests))
-				});
-			info!("{}", gitlab::FINISHED_FETCHING_MSG);
-			data
-		} else {
-			Ok((vec![], vec![]))
-		}
-	}
+		let id = remote_kind.id();
+		let name = remote_kind.name();
+		let vars = [id, &format!("commit.{id}")];
 
-	/// Returns the Bitbucket metadata needed for the changelog.
-	///
-	/// This function creates a multithread async runtime for handling the
-	///
-	/// requests. The following are fetched from the bitbucket REST API:
-	///
-	/// - Commits
-	/// - Pull requests
-	///
-	/// Each of these are paginated requests so they are being run in parallel
-	/// for speedup.
-	///
-	///
-	/// If no bitbucket related variable is used in the template then this
-	/// function returns empty vectors.
-	#[cfg(feature = "bitbucket")]
-	fn get_bitbucket_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
-		use crate::remote::bitbucket;
-		if self
-			.body_template
-			.contains_variable(bitbucket::TEMPLATE_VARIABLES) ||
+		if self.body_template.contains_variable(&vars) ||
 			self.footer_template
 				.as_ref()
-				.map(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
-				.unwrap_or(false)
+				.map(|v| v.contains_variable(&vars))
+				.unwrap_or_default()
 		{
 			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
-			let bitbucket_client =
-				BitbucketClient::try_from(self.config.remote.bitbucket.clone())?;
-			info!(
-				"{} ({})",
-				bitbucket::START_FETCHING_MSG,
-				self.config.remote.bitbucket
-			);
-			let data = tokio::runtime::Builder::new_multi_thread()
+			let remote = self
+				.config
+				.remote
+				.get(&remote_kind)
+				.ok_or_else(|| {
+					Error::ConfigError(config::ConfigError::Message(format!(
+						"no remote config for {name} found"
+					)))
+				})?
+				.clone();
+			let mut client = remote::new_remote_client(remote_kind, remote)?;
+			info!("Retrieving data from {name}... ({})", "remote");
+
+			let rt = tokio::runtime::Builder::new_multi_thread()
 				.enable_all()
-				.build()?
-				.block_on(async {
-					let (commits, pull_requests) = tokio::try_join!(
-						bitbucket_client.get_commits(),
-						bitbucket_client.get_pull_requests()
-					)?;
-					debug!("Number of Bitbucket commits: {}", commits.len());
-					debug!(
-						"Number of Bitbucket pull requests: {}",
-						pull_requests.len()
-					);
-					Ok((commits, pull_requests))
-				});
-			info!("{}", bitbucket::FINISHED_FETCHING_MSG);
+				.build()?;
+			rt.block_on(client.init())?;
+			let data = rt.block_on(async {
+				let (commits, pull_requests) = tokio::try_join!(
+					client.get_commits(),
+					client.get_pull_requests(),
+				)?;
+				debug!("Number of {} commits: {}", name, commits.len());
+				debug!("Number of {} pull requests: {}", name, pull_requests.len());
+				Ok((commits, pull_requests))
+			});
+			info!("Done fetching {name} data.");
 			data
 		} else {
 			Ok((vec![], vec![]))
@@ -381,28 +274,16 @@ impl<'a> Changelog<'a> {
 			"remote".to_string(),
 			serde_json::to_value(self.config.remote.clone())?,
 		);
-		#[cfg(feature = "github")]
-		let (github_commits, github_pull_requests) = if self.config.remote.github.is_set() {
-			self.get_github_metadata()
-				.expect("Could not get github metadata")
-		} else {
-			(vec![], vec![])
-		};
-		#[cfg(feature = "gitlab")]
-		let (gitlab_commits, gitlab_merge_request) = if self.config.remote.gitlab.is_set() {
-			self.get_gitlab_metadata()
-				.expect("Could not get gitlab metadata")
-		} else {
-			(vec![], vec![])
-		};
-		#[cfg(feature = "bitbucket")]
-		let (bitbucket_commits, bitbucket_pull_request) =
-			if self.config.remote.bitbucket.is_set() {
-				self.get_bitbucket_metadata()
-					.expect("Could not get bitbucket metadata")
-			} else {
-				(vec![], vec![])
-			};
+
+		#[cfg(feature = "remote")]
+		let remote_metadata = REMOTE_KINDS
+			.iter()
+			.map(|kind| {
+				let md = self.get_remote_metadata(*kind)?;
+				Ok((*kind, md))
+			})
+			.collect::<Result<HashMap<_, _>>>()?;
+
 		let postprocessors = self
 			.config
 			.changelog
@@ -419,21 +300,15 @@ impl<'a> Changelog<'a> {
 		}
 		let mut releases = self.releases.clone();
 		for release in releases.iter_mut() {
-			#[cfg(feature = "github")]
-			release.update_github_metadata(
-				github_commits.clone(),
-				github_pull_requests.clone(),
-			)?;
-			#[cfg(feature = "gitlab")]
-			release.update_gitlab_metadata(
-				gitlab_commits.clone(),
-				gitlab_merge_request.clone(),
-			)?;
-			#[cfg(feature = "bitbucket")]
-			release.update_bitbucket_metadata(
-				bitbucket_commits.clone(),
-				bitbucket_pull_request.clone(),
-			)?;
+			#[cfg(feature = "remote")]
+			for (kind, (commits, pull_requests)) in &remote_metadata {
+				release.update_metadata(
+					*kind,
+					commits.clone(),
+					pull_requests.clone(),
+				);
+			}
+
 			let write_result = write!(
 				out,
 				"{}",
@@ -504,12 +379,13 @@ mod test {
 		ChangelogConfig,
 		CommitParser,
 		Remote,
-		RemoteConfig,
+		RemoteKind,
 		TextProcessor,
 	};
 	use pretty_assertions::assert_eq;
 	use regex::Regex;
 	use std::str;
+	use velcro::hash_map;
 
 	fn get_test_data() -> (Config, Vec<Release<'static>>) {
 		let config = Config {
@@ -671,23 +547,30 @@ mod test {
 				link_parsers:             None,
 				limit_commits:            None,
 			},
-			remote:    RemoteConfig {
-				github:    Remote {
-					owner: String::from("coolguy"),
-					repo:  String::from("awesome"),
-					token: None,
-				},
-				gitlab:    Remote {
-					owner: String::from("coolguy"),
-					repo:  String::from("awesome"),
-					token: None,
-				},
-				bitbucket: Remote {
-					owner: String::from("coolguy"),
-					repo:  String::from("awesome"),
-					token: None,
-				},
-			},
+			remote:    hash_map!(RemoteKind::GitHub:    Remote {
+                url: None,
+                owner: String::from("coolguy"),
+                repo:  String::from("awesome"),
+                token: None,
+            },
+            RemoteKind::GitLab:    Remote {
+                url: None,
+                owner: String::from("coolguy"),
+                repo:  String::from("awesome"),
+                token: None,
+            },
+            RemoteKind::Gitea:     Remote {
+                url: None,
+                owner: String::from("coolguy"),
+                repo:  String::from("awesome"),
+                token: None,
+            },
+            RemoteKind::Bitbucket: Remote {
+                url: None,
+                owner: String::from("coolguy"),
+                repo:  String::from("awesome"),
+                token: None,
+            },),
 			bump:      Bump::default(),
 		};
 		let test_release = Release {
@@ -752,19 +635,7 @@ mod test {
 			],
 			commit_id: Some(String::from("0bc123")),
 			timestamp: 50000000,
-			previous: None,
-			#[cfg(feature = "github")]
-			github: crate::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "gitlab")]
-			gitlab: crate::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "bitbucket")]
-			bitbucket: crate::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
+			..Default::default()
 		};
 		let releases = vec![
 			test_release.clone(),
@@ -808,18 +679,7 @@ mod test {
 				commit_id: None,
 				timestamp: 1000,
 				previous: Some(Box::new(test_release)),
-				#[cfg(feature = "github")]
-				github: crate::remote::RemoteReleaseMetadata {
-					contributors: vec![],
-				},
-				#[cfg(feature = "gitlab")]
-				gitlab: crate::remote::RemoteReleaseMetadata {
-					contributors: vec![],
-				},
-				#[cfg(feature = "bitbucket")]
-				bitbucket: crate::remote::RemoteReleaseMetadata {
-					contributors: vec![],
-				},
+				..Default::default()
 			},
 		];
 		(config, releases)
