@@ -64,8 +64,7 @@ impl RemoteEntry for GitHubCommit {
 			&remote.repo,
 			"commits",
 		]);
-		url
-			.query_pairs_mut()
+		url.query_pairs_mut()
 			.append_pair("per_page", MAX_PAGE_SIZE)
 			.append_pair("page", &page.to_string());
 		url
@@ -78,15 +77,14 @@ impl RemoteEntry for GitHubCommit {
 
 impl RemoteEntry for GitHubPullRequest {
 	fn url(_project_id: i64, api_url: &Url, remote: &Remote, page: i32) -> Url {
-        let mut url = api_url.clone();
+		let mut url = api_url.clone();
 		url.path_segments_mut().expect("invalid url").extend(&[
 			"repos",
 			&remote.owner,
 			&remote.repo,
 			"pulls",
 		]);
-		url
-			.query_pairs_mut()
+		url.query_pairs_mut()
 			.append_pair("per_page", MAX_PAGE_SIZE)
 			.append_pair("page", &page.to_string())
 			.append_pair("state", "closed");

@@ -41,16 +41,15 @@ impl From<BitbucketCommit> for RemoteCommit {
 /// <https://developer.atlassian.com/cloud/bitbucket/rest/api-group-commits/#api-repositories-workspace-repo-slug-commits-get>
 impl RemoteEntry for BitbucketPagination<BitbucketCommit> {
 	fn url(_id: i64, api_url: &Url, remote: &Remote, page: i32) -> Url {
-        let mut url = api_url.clone();
-        let commit_page = page + 1;
+		let mut url = api_url.clone();
+		let commit_page = page + 1;
 		url.path_segments_mut().expect("invalid url").extend(&[
 			"repositories",
 			&remote.owner,
 			&remote.repo,
 			"commits",
 		]);
-		url
-			.query_pairs_mut()
+		url.query_pairs_mut()
 			.append_pair("pagelen", MAX_PAGE_SIZE)
 			.append_pair("page", &commit_page.to_string());
 		url
@@ -133,16 +132,15 @@ impl From<BitbucketPullRequest> for RemotePullRequest {
 /// <https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/#api-repositories-workspace-repo-slug-pullrequests-get>
 impl RemoteEntry for BitbucketPagination<BitbucketPullRequest> {
 	fn url(_id: i64, api_url: &Url, remote: &Remote, page: i32) -> Url {
-        let mut url = api_url.clone();
-        let pr_page = page + 1;
+		let mut url = api_url.clone();
+		let pr_page = page + 1;
 		url.path_segments_mut().expect("invalid url").extend(&[
 			"repositories",
 			&remote.owner,
 			&remote.repo,
 			"pullrequests",
 		]);
-		url
-			.query_pairs_mut()
+		url.query_pairs_mut()
 			.append_pair("pagelen", BITBUCKET_MAX_PAGE_PRS)
 			.append_pair("page", &pr_page.to_string())
 			.append_pair("state", "MERGED");

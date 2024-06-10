@@ -87,7 +87,7 @@ impl RemoteEntry for GiteaPullRequest {
 			.append_pair("limit", MAX_PAGE_SIZE)
 			.append_pair("page", &page.to_string())
 			.append_pair("state", "closed");
-        url
+		url
 	}
 
 	fn buffer_size() -> usize {

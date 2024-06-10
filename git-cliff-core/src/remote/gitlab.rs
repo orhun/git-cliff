@@ -62,8 +62,8 @@ impl From<GitLabCommit> for RemoteCommit {
 
 impl RemoteEntry for GitLabCommit {
 	fn url(id: i64, api_url: &Url, _remote: &Remote, page: i32) -> Url {
-        let mut url = api_url.clone();
-        let commit_page = page + 1;
+		let mut url = api_url.clone();
+		let commit_page = page + 1;
 		url.path_segments_mut().expect("invalid url").extend(&[
 			"projects",
 			&id.to_string(),
@@ -73,7 +73,7 @@ impl RemoteEntry for GitLabCommit {
 		url.query_pairs_mut()
 			.append_pair("per_page", MAX_PAGE_SIZE)
 			.append_pair("page", &commit_page.to_string());
-        url
+		url
 	}
 	fn buffer_size() -> usize {
 		10
@@ -108,7 +108,7 @@ impl From<GitLabMergeRequest> for RemotePullRequest {
 
 impl RemoteEntry for GitLabMergeRequest {
 	fn url(id: i64, api_url: &Url, _remote: &Remote, page: i32) -> Url {
-        let mut url = api_url.clone();
+		let mut url = api_url.clone();
 		url.path_segments_mut().expect("invalid url").extend(&[
 			"projects",
 			&id.to_string(),
@@ -117,8 +117,8 @@ impl RemoteEntry for GitLabMergeRequest {
 		url.query_pairs_mut()
 			.append_pair("per_page", MAX_PAGE_SIZE)
 			.append_pair("page", &page.to_string())
-            .append_pair("state", "merged");
-        url
+			.append_pair("state", "merged");
+		url
 	}
 
 	fn buffer_size() -> usize {
