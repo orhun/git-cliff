@@ -13,12 +13,12 @@ const BITBUCKET_API_URL_CFG: ApiUrlCfg = ApiUrlCfg {
 	api_url:        "https://api.bitbucket.org/2.0",
 	env_var:        "BITBUCKET_API_URL",
 	// Self-hosted Bitbucket Server API path
-	api_path:       "/rest/api/2.0",
+	api_path:       &["rest", "api", "2.0"],
 	default_domain: "bitbucket.org",
 };
 
 /// Maximum number of entries to fetch for bitbucket pull requests.
-const BITBUCKET_MAX_PAGE_PRS: usize = 50;
+const BITBUCKET_MAX_PAGE_PRS: &str = "50";
 
 /// Representation of a single commit.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -40,13 +40,20 @@ impl From<BitbucketCommit> for RemoteCommit {
 
 /// <https://developer.atlassian.com/cloud/bitbucket/rest/api-group-commits/#api-repositories-workspace-repo-slug-commits-get>
 impl RemoteEntry for BitbucketPagination<BitbucketCommit> {
-	fn url(_id: i64, api_url: &Url, remote: &Remote, page: i32) -> String {
-		let commit_page = page + 1;
-		format!(
-			"{}/repositories/{}/{}/commits?pagelen={MAX_PAGE_SIZE}&\
-			 page={commit_page}",
-			api_url, remote.owner, remote.repo
-		)
+	fn url(_id: i64, api_url: &Url, remote: &Remote, page: i32) -> Url {
+        let mut url = api_url.clone();
+        let commit_page = page + 1;
+		url.path_segments_mut().expect("invalid url").extend(&[
+			"repositories",
+			&remote.owner,
+			&remote.repo,
+			"commits",
+		]);
+		url
+			.query_pairs_mut()
+			.append_pair("pagelen", MAX_PAGE_SIZE)
+			.append_pair("page", &commit_page.to_string());
+		url
 	}
 
 	fn buffer_size() -> usize {
@@ -125,13 +132,21 @@ impl From<BitbucketPullRequest> for RemotePullRequest {
 
 /// <https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/#api-repositories-workspace-repo-slug-pullrequests-get>
 impl RemoteEntry for BitbucketPagination<BitbucketPullRequest> {
-	fn url(_id: i64, api_url: &Url, remote: &Remote, page: i32) -> String {
-		let pr_page = page + 1;
-		format!(
-			"{}/repositories/{}/{}/pullrequests?&pagelen={BITBUCKET_MAX_PAGE_PRS}&\
-			 page={pr_page}&state=MERGED",
-			api_url, remote.owner, remote.repo
-		)
+	fn url(_id: i64, api_url: &Url, remote: &Remote, page: i32) -> Url {
+        let mut url = api_url.clone();
+        let pr_page = page + 1;
+		url.path_segments_mut().expect("invalid url").extend(&[
+			"repositories",
+			&remote.owner,
+			&remote.repo,
+			"pullrequests",
+		]);
+		url
+			.query_pairs_mut()
+			.append_pair("pagelen", BITBUCKET_MAX_PAGE_PRS)
+			.append_pair("page", &pr_page.to_string())
+			.append_pair("state", "MERGED");
+		url
 	}
 
 	fn buffer_size() -> usize {

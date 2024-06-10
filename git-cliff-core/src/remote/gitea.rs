@@ -13,7 +13,7 @@ use super::*;
 const GITEA_API_URL_CFG: ApiUrlCfg = ApiUrlCfg {
 	api_url:        "https://codeberg.org/api/v1",
 	env_var:        "GITEA_API_URL",
-	api_path:       "/api/v1",
+	api_path:       &["api", "v1"],
 	default_domain: "",
 };
 
@@ -55,11 +55,18 @@ pub struct GiteaPullRequest {
 }
 
 impl RemoteEntry for GiteaCommit {
-	fn url(_project_id: i64, api_url: &Url, remote: &Remote, page: i32) -> String {
-		format!(
-			"{}/repos/{}/{}/commits?limit={MAX_PAGE_SIZE}&page={page}",
-			api_url, remote.owner, remote.repo
-		)
+	fn url(_project_id: i64, api_url: &Url, remote: &Remote, page: i32) -> Url {
+		let mut url = api_url.clone();
+		url.path_segments_mut().expect("invalid url").extend(&[
+			"repos",
+			&remote.owner,
+			&remote.repo,
+			"commits",
+		]);
+		url.query_pairs_mut()
+			.append_pair("limit", MAX_PAGE_SIZE)
+			.append_pair("page", &page.to_string());
+		url
 	}
 
 	fn buffer_size() -> usize {
@@ -68,11 +75,19 @@ impl RemoteEntry for GiteaCommit {
 }
 
 impl RemoteEntry for GiteaPullRequest {
-	fn url(_project_id: i64, api_url: &Url, remote: &Remote, page: i32) -> String {
-		format!(
-			"{}/repos/{}/{}/pulls?limit={MAX_PAGE_SIZE}&page={page}&state=closed",
-			api_url, remote.owner, remote.repo
-		)
+	fn url(_project_id: i64, api_url: &Url, remote: &Remote, page: i32) -> Url {
+		let mut url = api_url.clone();
+		url.path_segments_mut().expect("invalid url").extend(&[
+			"repos",
+			&remote.owner,
+			&remote.repo,
+			"pulls",
+		]);
+		url.query_pairs_mut()
+			.append_pair("limit", MAX_PAGE_SIZE)
+			.append_pair("page", &page.to_string())
+			.append_pair("state", "closed");
+        url
 	}
 
 	fn buffer_size() -> usize {

@@ -12,7 +12,7 @@ use super::*;
 const GITLAB_API_URL_CFG: ApiUrlCfg = ApiUrlCfg {
 	api_url:        "https://gitlab.com/api/v4",
 	env_var:        "GITLAB_API_URL",
-	api_path:       "/api/v4",
+	api_path:       &["api", "v4"],
 	default_domain: "",
 };
 
@@ -26,8 +26,12 @@ pub struct GitLabProject {
 }
 
 impl RemoteEntry for GitLabProject {
-	fn url(_project_id: i64, api_url: &Url, remote: &Remote, _page: i32) -> String {
-		format!("{}/projects/{}%2F{}", api_url, remote.owner, remote.repo)
+	fn url(_project_id: i64, api_url: &Url, remote: &Remote, _page: i32) -> Url {
+		let mut url = api_url.clone();
+		url.path_segments_mut()
+			.expect("invalid url")
+			.extend(&["projects", &format!("{}%2F{}", remote.owner, remote.repo)]);
+		url
 	}
 
 	fn buffer_size() -> usize {
@@ -57,13 +61,19 @@ impl From<GitLabCommit> for RemoteCommit {
 }
 
 impl RemoteEntry for GitLabCommit {
-	fn url(id: i64, api_url: &Url, _remote: &Remote, page: i32) -> String {
-		let commit_page = page + 1;
-		format!(
-			"{}/projects/{}/repository/commits?per_page={MAX_PAGE_SIZE}&\
-			 page={commit_page}",
-			api_url, id
-		)
+	fn url(id: i64, api_url: &Url, _remote: &Remote, page: i32) -> Url {
+        let mut url = api_url.clone();
+        let commit_page = page + 1;
+		url.path_segments_mut().expect("invalid url").extend(&[
+			"projects",
+			&id.to_string(),
+			"repository",
+			"commits",
+		]);
+		url.query_pairs_mut()
+			.append_pair("per_page", MAX_PAGE_SIZE)
+			.append_pair("page", &commit_page.to_string());
+        url
 	}
 	fn buffer_size() -> usize {
 		10
@@ -97,12 +107,18 @@ impl From<GitLabMergeRequest> for RemotePullRequest {
 }
 
 impl RemoteEntry for GitLabMergeRequest {
-	fn url(id: i64, api_url: &Url, _remote: &Remote, page: i32) -> String {
-		format!(
-			"{}/projects/{}/merge_requests?per_page={MAX_PAGE_SIZE}&page={page}&\
-			 state=merged",
-			api_url, id
-		)
+	fn url(id: i64, api_url: &Url, _remote: &Remote, page: i32) -> Url {
+        let mut url = api_url.clone();
+		url.path_segments_mut().expect("invalid url").extend(&[
+			"projects",
+			&id.to_string(),
+			"merge_requests",
+		]);
+		url.query_pairs_mut()
+			.append_pair("per_page", MAX_PAGE_SIZE)
+			.append_pair("page", &page.to_string())
+            .append_pair("state", "merged");
+        url
 	}
 
 	fn buffer_size() -> usize {

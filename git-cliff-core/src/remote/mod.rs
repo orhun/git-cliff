@@ -78,7 +78,7 @@ pub(crate) const REQUEST_TIMEOUT: u64 = 30;
 pub(crate) const REQUEST_KEEP_ALIVE: u64 = 60;
 
 /// Maximum number of entries to fetch in a single page.
-pub(crate) const MAX_PAGE_SIZE: usize = 100;
+pub(crate) const MAX_PAGE_SIZE: &str = "100";
 
 /// Commit from a code forge
 #[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
@@ -136,7 +136,7 @@ impl Hash for RemoteContributor {
 /// Trait for handling the different entries returned from the remote.
 trait RemoteEntry {
 	/// Returns the API URL for fetching the entries at the specified page.
-	fn url(project_id: i64, api_url: &Url, remote: &Remote, page: i32) -> String;
+	fn url(project_id: i64, api_url: &Url, remote: &Remote, page: i32) -> Url;
 	/// Returns the request buffer size.
 	fn buffer_size() -> usize;
 	/// Whether the client should exit early after fetching this entry (e.g. no
@@ -184,7 +184,7 @@ trait RemoteClientInternal {
 	) -> Result<T> {
 		let url = T::url(project_id, self.api_url(), &self.remote(), page);
 		debug!("Sending request to: {url}");
-		let response = self.client().get(&url).send().await?;
+		let response = self.client().get(url).send().await?;
 		let response_text = if response.status().is_success() {
 			let text = response.text().await?;
 			trace!("Response: {:?}", text);
@@ -205,7 +205,7 @@ trait RemoteClientInternal {
 	) -> Result<Vec<T>> {
 		let url = T::url(project_id, self.api_url(), &self.remote(), page);
 		debug!("Sending request to: {url}");
-		let response = self.client().get(&url).send().await?;
+		let response = self.client().get(url).send().await?;
 		let response_text = if response.status().is_success() {
 			let text = response.text().await?;
 			trace!("Response: {:?}", text);
@@ -333,7 +333,7 @@ struct ApiUrlCfg {
 	/// Environment variable for overriding the API URL
 	env_var:        &'static str,
 	/// Path to add to the base URL from the remote config to get the API URL
-	api_path:       &'static str,
+	api_path:       &'static [&'static str],
 	/// Use the default `api_url` if the domain from the remote URL matches this
 	/// value. This can be used if the hosted instance uses a different API URL
 	/// format than self-hosted instances.
@@ -357,10 +357,9 @@ impl ApiUrlCfg {
 				url.domain() != Some(self.default_domain)
 		}) {
 			let mut url = cfg_url.clone();
-			{
-				let mut path_segs = url.path_segments_mut().expect("invalid url");
-				path_segs.push(self.api_path);
-			}
+			url.path_segments_mut()
+				.expect("invalid url")
+				.extend(self.api_path);
 			Ok(url)
 		} else {
 			Ok(Url::parse(self.api_url)?)
@@ -402,4 +401,51 @@ pub fn new_remote_client(
 			kind.id()
 		),
 	})
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn get_api_url() {
+		let remote = Remote {
+			url:   Some(Url::parse("https://github.com").expect("invalid URL")),
+			owner: "orhun".to_owned(),
+			repo:  "git-cliff".to_owned(),
+			token: None,
+		};
+
+		let cfg = ApiUrlCfg {
+			api_url:        "https://api.github.com",
+			env_var:        "GITHUB_API_URL",
+			api_path:       &["api", "v3"],
+			default_domain: "github.com",
+		};
+
+		let res = cfg.get_api_url(&remote).expect("could not get api url");
+		assert_eq!("https://api.github.com/", res.to_string());
+	}
+
+	#[test]
+	fn get_api_url_subpath() {
+		let remote = Remote {
+			url:   Some(
+				Url::parse("https://example.com/gitea").expect("invalid URL"),
+			),
+			owner: "orhun".to_owned(),
+			repo:  "git-cliff".to_owned(),
+			token: None,
+		};
+
+		let cfg = ApiUrlCfg {
+			api_url:        "https://codeberg.org/api/v1",
+			env_var:        "GITEA_API_URL",
+			api_path:       &["api", "v1"],
+			default_domain: "",
+		};
+
+		let res = cfg.get_api_url(&remote).expect("could not get api url");
+		assert_eq!("https://example.com/gitea/api/v1", res.to_string());
+	}
 }
