@@ -30,7 +30,7 @@ impl RemoteEntry for GitLabProject {
 		let mut url = api_url.clone();
 		url.path_segments_mut()
 			.expect("invalid url")
-			.extend(&["projects", &format!("{}%2F{}", remote.owner, remote.repo)]);
+			.extend(&["projects", &format!("{}/{}", remote.owner, remote.repo)]);
 		url
 	}
 

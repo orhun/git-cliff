@@ -225,25 +225,22 @@ impl<'a> Changelog<'a> {
 					)))
 				})?
 				.clone();
-			let client = remote::new_remote_client(remote_kind, remote)?;
+			let mut client = remote::new_remote_client(remote_kind, remote)?;
 			info!("Retrieving data from {name}... ({})", "remote");
 
-			let data = tokio::runtime::Builder::new_multi_thread()
+			let rt = tokio::runtime::Builder::new_multi_thread()
 				.enable_all()
-				.build()?
-				.block_on(async {
-					let (commits, pull_requests) = tokio::try_join!(
-						client.get_commits(),
-						client.get_pull_requests(),
-					)?;
-					debug!("Number of {} commits: {}", name, commits.len());
-					debug!(
-						"Number of {} pull requests: {}",
-						name,
-						pull_requests.len()
-					);
-					Ok((commits, pull_requests))
-				});
+				.build()?;
+			rt.block_on(client.init())?;
+			let data = rt.block_on(async {
+				let (commits, pull_requests) = tokio::try_join!(
+					client.get_commits(),
+					client.get_pull_requests(),
+				)?;
+				debug!("Number of {} commits: {}", name, commits.len());
+				debug!("Number of {} pull requests: {}", name, pull_requests.len());
+				Ok((commits, pull_requests))
+			});
 			info!("Done fetching {name} data.");
 			data
 		} else {

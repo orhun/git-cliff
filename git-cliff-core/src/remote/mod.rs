@@ -148,7 +148,7 @@ trait RemoteEntry {
 
 /// Client for fetching code forge data
 #[async_trait]
-pub trait RemoteClient {
+pub trait RemoteClient: Send {
 	/// Initializes the API client and fetches project ID if necessary.
 	async fn init(&mut self) -> Result<()> {
 		Ok(())
