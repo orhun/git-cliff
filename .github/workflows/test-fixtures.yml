@@ -68,6 +68,9 @@ jobs:
           - fixtures-name: test-custom-tag-pattern
             command: --tag-pattern "alpha.*"
           - fixtures-name: test-configure-from-cargo-toml
+          - fixtures-name: test-cli-arg-ignore-tags
+            command: --ignore-tags ".*beta"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
