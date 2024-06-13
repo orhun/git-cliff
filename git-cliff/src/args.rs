@@ -143,11 +143,7 @@ pub struct Opt {
 	)]
 	pub with_commit:     Option<Vec<String>>,
 	/// Sets custom ignore_tags
-	#[arg(
-		long,
-		env = "GIT_CLIFF_IGNORE_TAGS",
-		value_name = "PATTERN",
-	)]
+	#[arg(long, env = "GIT_CLIFF_IGNORE_TAGS", value_name = "PATTERN")]
 	pub ignore_tags:     Option<Regex>,
 	/// Sets commits that will be skipped in the changelog.
 	#[arg(
