@@ -73,7 +73,7 @@ jobs:
           - fixtures-name: test-bump-initial-tag-default
             command: --bump
           - fixtures-name: test-bump-initial-tag-cli-arg
-            command: --bump --bump-initial-tag=2.1.1
+            command: --bump --tag=2.1.1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
