@@ -14,6 +14,7 @@ use git2::{
 use glob::Pattern;
 use indexmap::IndexMap;
 use regex::Regex;
+use std::cmp::Reverse;
 use std::io;
 use std::path::PathBuf;
 use url::Url;
@@ -62,12 +63,13 @@ impl Repository {
 			.collect();
 		if include_path.is_some() || exclude_path.is_some() {
 			commits.retain(|commit| {
-				let Ok(prev_commit) = commit.parent(0) else {
-					return false;
-				};
+				let prev_tree = commit
+					.parent(0)
+					.and_then(|prev_commit| prev_commit.tree())
+					.ok();
 				let Ok(diff) = self.inner.diff_tree_to_tree(
 					commit.tree().ok().as_ref(),
-					prev_commit.tree().ok().as_ref(),
+					prev_tree.as_ref(),
 					None,
 				) else {
 					return false;
@@ -117,16 +119,17 @@ impl Repository {
 	/// It collects lightweight and annotated tags.
 	pub fn tags(
 		&self,
-		pattern: &Option<Regex>,
+		pattern: Option<&Regex>,
 		topo_order: bool,
-	) -> Result<IndexMap<String, String>> {
+	) -> Result<TaggedCommits<'_>> {
 		let mut tags: Vec<(Commit, String)> = Vec::new();
 		let tag_names = self.inner.tag_names(None)?;
 		for name in tag_names
 			.iter()
 			.flatten()
 			.filter(|tag_name| {
-				pattern.as_ref().map_or(true, |pat| pat.is_match(tag_name))
+				pattern.is_none() ||
+					pattern.is_some_and(|pat| pat.is_match(tag_name))
 			})
 			.map(String::from)
 		{
@@ -144,12 +147,9 @@ impl Repository {
 			}
 		}
 		if !topo_order {
-			tags.sort_by(|a, b| a.0.time().seconds().cmp(&b.0.time().seconds()));
+			tags.sort_by_key(|(commit, _)| commit.time().seconds());
 		}
-		Ok(tags
-			.into_iter()
-			.map(|(a, b)| (a.id().to_string(), b))
-			.collect())
+		TaggedCommits::new(self, &tags)
 	}
 
 	/// Returns the remote of the upstream repository.
@@ -203,6 +203,104 @@ impl Repository {
 			}
 		}
 		Err(Error::RepoError(String::from("no remotes configured")))
+	}
+}
+
+/// Stores which commits are tagged with which tags.
+pub struct TaggedCommits<'a> {
+	/// All the commits in the repository.
+	pub commits: IndexMap<String, Commit<'a>>,
+	/// List of tags with their commit index.
+	///
+	/// Sorted in reverse order, meaning the first element is the latest tag.
+	pub tags:    Vec<(usize, String)>,
+}
+
+impl<'a> TaggedCommits<'a> {
+	fn new(repository: &'a Repository, tags: &[(Commit, String)]) -> Result<Self> {
+		let commits = repository.commits(None, None, None)?;
+		let commits: IndexMap<_, _> = commits
+			.into_iter()
+			.map(|c| (c.id().to_string(), c))
+			.collect();
+		let mut tags: Vec<_> = tags
+			.iter()
+			.map(|(commit, tag)| {
+				let id = commit.id().to_string();
+				let idx = commits.get_index_of(&id).expect("commit exists");
+				(idx, tag.to_string())
+			})
+			.collect();
+		tags.sort_by_key(|(idx, _)| Reverse(*idx));
+		Ok(Self { commits, tags })
+	}
+
+	/// Returns the number of tags.
+	pub fn len(&self) -> usize {
+		self.tags.len()
+	}
+
+	/// Returns `true` if there are no tags.
+	pub fn is_empty(&self) -> bool {
+		self.tags.is_empty()
+	}
+
+	/// Returns an iterator over all the tags.
+	pub fn tags(&self) -> impl Iterator<Item = &str> {
+		self.tags.iter().map(|(_, tag)| tag.as_str())
+	}
+
+	/// Returns the tag of the given commit.
+	///
+	/// Note that this only searches for an exact match.
+	/// For a more general search, use [`get_closest`](Self::get_closest)
+	/// instead.
+	pub fn get(&self, commit: &str) -> Option<&str> {
+		let index = self.commits.get_index_of(commit)?;
+		let idx = self.binary_search(index).ok()?;
+		Some(&self.tags[idx].1)
+	}
+
+	/// Returns the tag at the given index.
+	///
+	/// The index can be calculated with `tags().position()`.
+	pub fn get_index(&self, idx: usize) -> Option<&str> {
+		self.tags.get(idx).map(|(_, tag)| tag.as_str())
+	}
+
+	/// Returns the tag closest to the given commit.
+	pub fn get_closest(&self, commit: &str) -> Option<&str> {
+		let index = self.commits.get_index_of(commit)?;
+		let (_, tag) = self.tags.iter().find(|(tag_idx, _)| index >= *tag_idx)?;
+		Some(tag)
+	}
+
+	/// Returns the commit of the given tag.
+	pub fn get_commit(&self, tag: &str) -> Option<&Commit> {
+		let (tag_idx, _) = self.tags.iter().find(|(_, t)| t == tag)?;
+		let (_, commit) = self.commits.get_index(*tag_idx)?;
+		Some(commit)
+	}
+
+	/// Returns `true` if the given tag exists.
+	pub fn contains(&self, tag: &str) -> bool {
+		self.tags.iter().any(|(_, t)| t == tag)
+	}
+
+	/// Inserts a new tagged commit.
+	///
+	/// Returns `None` if the commit does not exist or if is already tagged.
+	#[must_use]
+	pub fn insert(&mut self, commit: &str, tag: String) -> Option<()> {
+		let index = self.commits.get_index_of(commit)?;
+		let idx = self.binary_search(index).err()?;
+		self.tags.insert(idx, (index, tag));
+		Some(())
+	}
+
+	fn binary_search(&self, index: usize) -> std::result::Result<usize, usize> {
+		self.tags
+			.binary_search_by_key(&Reverse(index), |(tag_idx, _)| Reverse(*tag_idx))
 	}
 }
 
@@ -260,15 +358,15 @@ mod test {
 	#[test]
 	fn get_latest_tag() -> Result<()> {
 		let repository = get_repository()?;
-		let tags = repository.tags(&None, false)?;
-		assert_eq!(&get_last_tag()?, tags.last().expect("no tags found").1);
+		let tags = repository.tags(None, false)?;
+		assert_eq!(&get_last_tag()?, tags.tags().last().expect("no tags found"));
 		Ok(())
 	}
 
 	#[test]
 	fn git_tags() -> Result<()> {
 		let repository = get_repository()?;
-		let tags = repository.tags(&None, true)?;
+		let tags = repository.tags(None, true)?;
 		assert_eq!(
 			tags.get("2b8b4d3535f29231e05c3572e919634b9af907b6").expect(
 				"the commit hash does not exist in the repository (tag v0.1.0)"
@@ -283,8 +381,8 @@ mod test {
 			"v0.1.0-beta.4"
 		);
 		let tags = repository.tags(
-			&Some(
-				Regex::new("^v[0-9]+\\.[0-9]+\\.[0-9]$")
+			Some(
+				&Regex::new("^v[0-9]+\\.[0-9]+\\.[0-9]$")
 					.expect("the regex is not valid"),
 			),
 			true,
@@ -295,7 +393,7 @@ mod test {
 			),
 			"v0.1.0"
 		);
-		assert!(!tags.contains_key("4ddef08debfff48117586296e49d5caa0800d1b5"));
+		assert!(!tags.contains("4ddef08debfff48117586296e49d5caa0800d1b5"));
 		Ok(())
 	}
 
