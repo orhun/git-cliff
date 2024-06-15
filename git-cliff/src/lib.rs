@@ -472,7 +472,6 @@ pub fn run(mut args: Opt) -> Result<()> {
 	if args.tag_pattern.is_some() {
 		config.git.tag_pattern.clone_from(&args.tag_pattern);
 	}
-
 	if args.tag.is_some() {
 		config.bump.initial_tag.clone_from(&args.tag);
 	}

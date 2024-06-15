@@ -34,4 +34,4 @@ commit_parsers = [
 ]
 
 [bump]
-initial_tag = "asdasd"
+initial_tag = "test"

@@ -6,6 +6,7 @@ This section contains the bump version related configuration options.
 [bump]
 features_always_bump_minor = true
 breaking_always_bump_major = true
+initial_tag = "0.1.0"
 ```
 
 ### features_always_bump_minor
@@ -26,3 +27,9 @@ When `false`, a breaking change commit will trigger:
 
 - A minor version update if the major version is 0.
 - A major version update otherwise.
+
+### initial_tag
+
+Configures the initial version of the project.
+
+When set, the version will be set to this value if no tags are found.
