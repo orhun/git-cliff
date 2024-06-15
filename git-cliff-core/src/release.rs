@@ -123,9 +123,8 @@ impl<'a> Release<'a> {
 			None => match config.initial_tag.clone() {
 				Some(tag) => {
 					warn!(
-						"No releases found, using initial tag '{}' as the next \
-						 version.",
-						tag
+						"No releases found, using initial tag '{tag}' as the next \
+						 version."
 					);
 					Ok(tag)
 				}
