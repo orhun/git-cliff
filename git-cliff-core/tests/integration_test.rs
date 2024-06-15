@@ -196,6 +196,10 @@ fn generate_changelog() -> Result<()> {
 			gitlab: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
+			#[cfg(feature = "gitea")]
+			gitea: git_cliff_core::remote::RemoteReleaseMetadata {
+				contributors: vec![],
+			},
 			#[cfg(feature = "bitbucket")]
 			bitbucket: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],
@@ -230,6 +234,10 @@ fn generate_changelog() -> Result<()> {
 			},
 			#[cfg(feature = "gitlab")]
 			gitlab: git_cliff_core::remote::RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "gitea")]
+			gitea: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
 			#[cfg(feature = "bitbucket")]

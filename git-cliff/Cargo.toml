@@ -23,15 +23,19 @@ path = "src/bin/mangen.rs"
 
 [features]
 # check for new versions
-default = ["update-informer", "github", "gitlab", "bitbucket"]
+default = ["update-informer", "github", "gitlab", "gitea", "bitbucket"]
 # inform about new releases
 update-informer = ["dep:update-informer"]
+# enable remote repository integration
+remote = ["dep:indicatif"]
 # enable GitHub integration
-github = ["git-cliff-core/github", "dep:indicatif"]
+github = ["remote", "git-cliff-core/github"]
 # enable GitLab integration
-gitlab = ["git-cliff-core/gitlab", "dep:indicatif"]
+gitlab = ["remote", "git-cliff-core/gitlab"]
+# enable Gitea integration
+gitea = ["remote", "git-cliff-core/gitea"]
 # enable Bitbucket integration
-bitbucket = ["git-cliff-core/bitbucket", "dep:indicatif"]
+bitbucket = ["remote", "git-cliff-core/bitbucket"]
 
 [dependencies]
 glob.workspace = true

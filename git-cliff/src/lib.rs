@@ -134,6 +134,17 @@ fn process_repository<'a>(
 				debug!("Failed to get remote from GitLab repository: {:?}", e);
 			}
 		}
+	} else if !config.remote.gitea.is_set() {
+		match repository.upstream_remote() {
+			Ok(remote) => {
+				debug!("No Gitea remote is set, using remote: {}", remote);
+				config.remote.gitea.owner = remote.owner;
+				config.remote.gitea.repo = remote.repo;
+			}
+			Err(e) => {
+				debug!("Failed to get remote from Gitea repository: {:?}", e);
+			}
+		}
 	} else if !config.remote.bitbucket.is_set() {
 		match repository.upstream_remote() {
 			Ok(remote) => {
@@ -436,6 +447,9 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 	if args.gitlab_token.is_some() {
 		config.remote.gitlab.token.clone_from(&args.gitlab_token);
+	}
+	if args.gitea_token.is_some() {
+		config.remote.gitea.token.clone_from(&args.gitea_token);
 	}
 	if args.bitbucket_token.is_some() {
 		config

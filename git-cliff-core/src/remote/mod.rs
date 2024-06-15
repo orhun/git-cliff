@@ -10,6 +10,10 @@ pub mod gitlab;
 #[cfg(feature = "bitbucket")]
 pub mod bitbucket;
 
+/// Gitea client.
+#[cfg(feature = "gitea")]
+pub mod gitea;
+
 use crate::config::Remote;
 use crate::error::{
 	Error,
@@ -43,6 +47,7 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
+use std::fmt::Debug;
 use std::hash::{
 	Hash,
 	Hasher,

@@ -10,7 +10,7 @@ use git_cliff_core::error::{
 	Error,
 	Result,
 };
-#[cfg(any(feature = "github", feature = "gitlab", feature = "bitbucket"))]
+#[cfg(feature = "remote")]
 use indicatif::{
 	ProgressBar,
 	ProgressStyle,
@@ -66,7 +66,7 @@ fn colored_level(style: &mut Style, level: Level) -> StyledValue<'_, &'static st
 	}
 }
 
-#[cfg(any(feature = "github", feature = "gitlab", feature = "bitbucket"))]
+#[cfg(feature = "remote")]
 lazy_static::lazy_static! {
 	/// Lazily initialized progress bar.
 	pub static ref PROGRESS_BAR: ProgressBar = {
@@ -138,6 +138,23 @@ pub fn init() -> Result<()> {
 				return Ok(());
 			} else if message
 				.starts_with(git_cliff_core::remote::gitlab::FINISHED_FETCHING_MSG)
+			{
+				PROGRESS_BAR.finish_and_clear();
+				return Ok(());
+			}
+		}
+
+		#[cfg(feature = "gitea")]
+		{
+			let message = record.args().to_string();
+			if message.starts_with(git_cliff_core::remote::gitea::START_FETCHING_MSG)
+			{
+				PROGRESS_BAR
+					.enable_steady_tick(std::time::Duration::from_millis(80));
+				PROGRESS_BAR.set_message(message);
+				return Ok(());
+			} else if message
+				.starts_with(git_cliff_core::remote::gitea::FINISHED_FETCHING_MSG)
 			{
 				PROGRESS_BAR.finish_and_clear();
 				return Ok(());
