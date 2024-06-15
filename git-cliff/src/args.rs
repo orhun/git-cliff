@@ -182,6 +182,10 @@ pub struct Opt {
 	/// Bumps the version for unreleased changes.
 	#[arg(long, help_heading = Some("FLAGS"))]
 	pub bump:            bool,
+    /// Sets the initial tag (version) to be set if no tag is found.
+    #[arg(long,
+        env = "GIT_CLIFF_BUMP_INITIAL_TAG", value_name = "TAG")]
+    pub bump_initial_tag: Option<String>,
 	/// Prints bumped version for unreleased changes.
 	#[arg(long, help_heading = Some("FLAGS"))]
 	pub bumped_version:  bool,

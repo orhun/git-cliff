@@ -114,10 +114,18 @@ impl<'a> Release<'a> {
 					Ok(next_version)
 				}
 			}
-			None => {
-				warn!("No releases found, using 0.1.0 as the next version.");
-				Ok(String::from("0.1.0"))
-			}
+            None => {
+                match config.initial_tag.clone() {
+                    Some(tag) => {
+                        warn!("No releases found, using initial tag '{}' as the next version.", tag);
+                        Ok(tag)
+                    }
+                    None => {
+                        warn!("No releases found, using 0.1.0 as the next version.");
+                        Ok(String::from("0.1.0"))
+                    }
+                }
+            }
 		}
 	}
 }
@@ -239,6 +247,7 @@ mod test {
 				release.calculate_next_version_with_config(&Bump {
 					features_always_bump_minor: Some(false),
 					breaking_always_bump_major: Some(false),
+                    initial_tag: None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -259,6 +268,7 @@ mod test {
 				release.calculate_next_version_with_config(&Bump {
 					features_always_bump_minor: Some(true),
 					breaking_always_bump_major: Some(false),
+                    initial_tag: None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -279,6 +289,7 @@ mod test {
 				release.calculate_next_version_with_config(&Bump {
 					features_always_bump_minor: Some(false),
 					breaking_always_bump_major: Some(true),
+                    initial_tag: None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -299,6 +310,7 @@ mod test {
 				empty_release.calculate_next_version_with_config(&Bump {
 					features_always_bump_minor: Some(features_always_bump_minor),
 					breaking_always_bump_major: Some(breaking_always_bump_major),
+                    initial_tag: None,
 				})?
 			);
 		}
