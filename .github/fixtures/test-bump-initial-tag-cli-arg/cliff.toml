@@ -32,3 +32,6 @@ commit_parsers = [
     { message = "^feat", group = "Features", default_scope = "app" },
     { message = "^fix", group = "Bug Fixes", scope = "cli" },
 ]
+
+[bump]
+initial_tag = "asdasd"
