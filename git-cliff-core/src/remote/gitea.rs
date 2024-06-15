@@ -9,7 +9,8 @@ use std::env;
 
 use super::*;
 
-const CODEBERG_API_URL: &str = "https://codeberg.org";
+/// Gitea API url.
+const GITEA_API_URL: &str = "https://codeberg.org";
 
 /// Environment variable for overriding the Gitea REST API url.
 const GITEA_API_URL_ENV: &str = "GITEA_API_URL";
@@ -146,7 +147,7 @@ impl RemoteClient for GiteaClient {
 	fn api_url() -> String {
 		env::var(GITEA_API_URL_ENV)
 			.ok()
-			.unwrap_or_else(|| CODEBERG_API_URL.to_string())
+			.unwrap_or_else(|| GITEA_API_URL.to_string())
 	}
 
 	fn remote(&self) -> Remote {

@@ -449,7 +449,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		config.remote.gitlab.token.clone_from(&args.gitlab_token);
 	}
 	if args.gitea_token.is_some() {
-		config.remote.gitea.token.clone_from(&args.gitlab_token);
+		config.remote.gitea.token.clone_from(&args.gitea_token);
 	}
 	if args.bitbucket_token.is_some() {
 		config
