@@ -10,7 +10,11 @@ To calculate and set the next semantic version (i.e. _bump the version_) for the
 git cliff --bump
 ```
 
-For example, if you have `1.0.0` and committed "feat: xyz", `git-cliff --bump --unreleased` will create a changelog for `1.1.0`.
+- Basic:
+  - For example, if you have `1.0.0` and committed "feat: xyz", `git-cliff --bump --unreleased` will create a changelog for `1.1.0`.
+
+- Tag prefixes:
+    - Tag prefixes are also supported, for example `testing/v1.0.0-beta.1` can be updated to `testing/v1.0.0-beta.2`
 
 How it works is that for a semantic versioning such as `<MAJOR>.<MINOR>.<PATCH>`:
 
