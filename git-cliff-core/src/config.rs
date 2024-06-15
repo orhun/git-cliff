@@ -193,10 +193,10 @@ pub struct Bump {
 	/// - A major version update otherwise.
 	pub breaking_always_bump_major: Option<bool>,
 
-    /// Configures the initial version of the project.
-    ///
-    /// When set, the version will be set to this value if no tags are found.
-    pub initial_tag: Option<String>,
+	/// Configures the initial version of the project.
+	///
+	/// When set, the version will be set to this value if no tags are found.
+	pub initial_tag: Option<String>,
 }
 
 /// Parser for grouping commits.

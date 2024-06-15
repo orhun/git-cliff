@@ -473,9 +473,9 @@ pub fn run(mut args: Opt) -> Result<()> {
 		config.git.tag_pattern.clone_from(&args.tag_pattern);
 	}
 
-    if args.bump_initial_tag.is_some() {
-        config.bump.initial_tag.clone_from(&args.bump_initial_tag);
-    }
+	if args.bump_initial_tag.is_some() {
+		config.bump.initial_tag.clone_from(&args.bump_initial_tag);
+	}
 
 	// Process the repositories.
 	let repositories = args.repository.clone().unwrap_or(vec![env::current_dir()?]);
@@ -515,12 +515,11 @@ pub fn run(mut args: Opt) -> Result<()> {
 		)?);
 	}
 
-    // Process commits and releases for the changelog.
+	// Process commits and releases for the changelog.
 	let mut changelog = Changelog::new(releases, &config)?;
 
 	// Print the result.
 	if args.bump || args.bumped_version {
-
 		let next_version = if let Some(next_version) = changelog.bump_version()? {
 			next_version
 		} else if let Some(last_version) =
