@@ -207,6 +207,7 @@ impl Repository {
 }
 
 /// Stores which commits are tagged with which tags.
+#[derive(Debug)]
 pub struct TaggedCommits<'a> {
 	/// All the commits in the repository.
 	pub commits: IndexMap<String, Commit<'a>>,
@@ -225,10 +226,10 @@ impl<'a> TaggedCommits<'a> {
 			.collect();
 		let mut tags: Vec<_> = tags
 			.iter()
-			.map(|(commit, tag)| {
+			.filter_map(|(commit, tag)| {
 				let id = commit.id().to_string();
-				let idx = commits.get_index_of(&id).expect("commit exists");
-				(idx, tag.to_string())
+				let idx = commits.get_index_of(&id)?;
+				Some((idx, tag.to_string()))
 			})
 			.collect();
 		tags.sort_by_key(|(idx, _)| Reverse(*idx));
@@ -309,6 +310,7 @@ mod test {
 	use super::*;
 	use crate::commit::Commit as AppCommit;
 	use std::env;
+	use std::path::Path;
 	use std::process::Command;
 	use std::str;
 
@@ -338,7 +340,7 @@ mod test {
 
 	fn get_repository() -> Result<Repository> {
 		Repository::init(
-			PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+			Path::new(env!("CARGO_MANIFEST_DIR"))
 				.parent()
 				.expect("parent directory not found")
 				.to_path_buf(),
