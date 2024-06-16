@@ -494,7 +494,7 @@ impl<'a> Changelog<'a> {
 	}
 
 	/// Generates the changelog and writes it to the given output.
-	pub fn generate<W: Write>(&self, out: &mut W) -> Result<()> {
+	pub fn generate<W: Write + ?Sized>(&self, out: &mut W) -> Result<()> {
 		debug!("Generating changelog...");
 		let postprocessors = self
 			.config
@@ -510,8 +510,7 @@ impl<'a> Changelog<'a> {
 				}
 			}
 		}
-		let mut releases = self.releases.clone();
-		for release in releases.iter_mut() {
+		for release in &self.releases {
 			let write_result = write!(
 				out,
 				"{}",
@@ -533,7 +532,7 @@ impl<'a> Changelog<'a> {
 				"{}",
 				footer_template.render(
 					&Releases {
-						releases: &releases,
+						releases: &self.releases,
 					},
 					Some(&self.additional_context),
 					&postprocessors,
@@ -549,7 +548,7 @@ impl<'a> Changelog<'a> {
 	}
 
 	/// Generates a changelog and prepends it to the given changelog.
-	pub fn prepend<W: Write>(
+	pub fn prepend<W: Write + ?Sized>(
 		&self,
 		mut changelog: String,
 		out: &mut W,
@@ -564,7 +563,7 @@ impl<'a> Changelog<'a> {
 	}
 
 	/// Prints the changelog context to the given output.
-	pub fn write_context<W: Write>(&self, out: &mut W) -> Result<()> {
+	pub fn write_context<W: Write + ?Sized>(&self, out: &mut W) -> Result<()> {
 		let output = Releases {
 			releases: &self.releases,
 		}

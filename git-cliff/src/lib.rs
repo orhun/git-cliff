@@ -34,7 +34,10 @@ use git_cliff_core::error::{
 	Result,
 };
 use git_cliff_core::release::Release;
-use git_cliff_core::repo::Repository;
+use git_cliff_core::repo::{
+	Repository,
+	TaggedCommits,
+};
 use git_cliff_core::{
 	DEFAULT_CONFIG,
 	IGNORE_FILE,
@@ -44,11 +47,8 @@ use std::fs::{
 	self,
 	File,
 };
-use std::io::{
-	self,
-	Write,
-};
-use std::path::PathBuf;
+use std::io;
+use std::path::Path;
 use std::time::{
 	SystemTime,
 	UNIX_EPOCH,
@@ -85,32 +85,30 @@ fn process_repository<'a>(
 	config: &mut Config,
 	args: &Opt,
 ) -> Result<Vec<Release<'a>>> {
-	let mut tags = repository.tags(&config.git.tag_pattern, args.topo_order)?;
+	let mut tags =
+		repository.tags(config.git.tag_pattern.as_ref(), args.topo_order)?;
 	let skip_regex = config.git.skip_tags.as_ref();
 	let ignore_regex = config.git.ignore_tags.as_ref();
-	tags = tags
-		.into_iter()
-		.filter(|(_, name)| {
-			// Keep skip tags to drop commits in the later stage.
-			let skip = skip_regex.map(|r| r.is_match(name)).unwrap_or_default();
+	tags.retain(|name| {
+		// Keep skip tags to drop commits in the later stage.
+		let skip = skip_regex.is_some_and(|r| r.is_match(name));
+		if skip {
+			return true;
+		}
 
-			let ignore = ignore_regex
-				.map(|r| {
-					if r.as_str().trim().is_empty() {
-						return false;
-					}
+		let ignore = ignore_regex.is_some_and(|r| {
+			if r.as_str().trim().is_empty() {
+				return false;
+			}
 
-					let ignore_tag = r.is_match(name);
-					if ignore_tag {
-						trace!("Ignoring release: {}", name)
-					}
-					ignore_tag
-				})
-				.unwrap_or_default();
-
-			skip || !ignore
-		})
-		.collect();
+			let ignore_tag = r.is_match(name);
+			if ignore_tag {
+				trace!("Ignoring release: {}", name)
+			}
+			ignore_tag
+		});
+		!ignore
+	});
 
 	if !config.remote.github.is_set() {
 		match repository.upstream_remote() {
@@ -159,22 +157,20 @@ fn process_repository<'a>(
 	}
 
 	// Print debug information about configuration and arguments.
-	log::trace!("Arguments: {:#?}", args);
-	log::trace!("Config: {:#?}", config);
+	// log::trace!("Arguments: {:#?}", args);
+	// log::trace!("Config: {:#?}", config);
 
 	// Parse commits.
 	let mut commit_range = args.range.clone();
 	if args.unreleased {
-		if let Some(last_tag) = tags.last().map(|(k, _)| k) {
+		if let Some(last_tag) = tags.last() {
 			commit_range = Some(format!("{last_tag}..HEAD"));
 		}
 	} else if args.latest || args.current {
 		if tags.len() < 2 {
-			let commits = repository.commits(None, None, None)?;
-			if let (Some(tag1), Some(tag2)) = (
-				commits.last().map(|c| c.id().to_string()),
-				tags.get_index(0).map(|(k, _)| k),
-			) {
+			if let (Some((tag1, _)), Some(tag2)) =
+				(tags.commits.last(), tags.get_index(0))
+			{
 				commit_range = Some(format!("{tag1}..{tag2}"));
 			}
 		} else {
@@ -182,10 +178,7 @@ fn process_repository<'a>(
 			if args.current {
 				if let Some(current_tag_index) =
 					repository.current_tag().as_ref().and_then(|tag| {
-						tags.iter()
-							.enumerate()
-							.find(|(_, (_, v))| v == &tag)
-							.map(|(i, _)| i)
+						tags.tags().enumerate().position(|(_, v)| v == tag)
 					}) {
 					match current_tag_index.checked_sub(1) {
 						Some(i) => tag_index = i,
@@ -202,23 +195,20 @@ fn process_repository<'a>(
 					)));
 				}
 			}
-			if let (Some(tag1), Some(tag2)) = (
-				tags.get_index(tag_index).map(|(k, _)| k),
-				tags.get_index(tag_index + 1).map(|(k, _)| k),
-			) {
+			if let (Some(tag1), Some(tag2)) =
+				(tags.get_index(tag_index), tags.get_index(tag_index + 1))
+			{
 				commit_range = Some(format!("{tag1}..{tag2}"));
 			}
 		}
 	}
 	let mut commits = repository.commits(
-		commit_range,
-		args.include_path.clone(),
-		args.exclude_path.clone(),
+		commit_range.as_deref(),
+		args.include_path.as_deref(),
+		args.exclude_path.as_deref(),
 	)?;
 	if let Some(commit_limit_value) = config.git.limit_commits {
-		commits = commits
-			.drain(..commits.len().min(commit_limit_value))
-			.collect();
+		commits.truncate(commit_limit_value);
 	}
 
 	// Update tags.
@@ -236,81 +226,73 @@ fn process_repository<'a>(
 	}
 
 	// Process releases.
-	let mut releases = vec![Release::default()];
-	let mut release_index = 0;
-	let mut previous_release = Release::default();
+	let mut releases = Vec::<Release>::new();
+	let mut release = Release::default();
+	let mut current_tag = commits
+		.last()
+		.and_then(|root| tags.get_closest(&root.id().to_string()));
 	let mut first_processed_tag = None;
 	for git_commit in commits.iter().rev() {
 		let commit = Commit::from(git_commit);
-		let commit_id = commit.id.to_string();
-		if args.sort == Sort::Newest {
-			releases[release_index].commits.insert(0, commit);
-		} else {
-			releases[release_index].commits.push(commit);
-		}
-		if let Some(tag) = tags.get(&commit_id) {
-			releases[release_index].version = Some(tag.to_string());
-			releases[release_index].commit_id = Some(commit_id);
-			releases[release_index].timestamp = if args.tag.as_deref() == Some(tag) {
-				SystemTime::now()
-					.duration_since(UNIX_EPOCH)?
-					.as_secs()
-					.try_into()?
-			} else {
-				git_commit.time().seconds()
-			};
-			if first_processed_tag.is_none() {
-				first_processed_tag = Some(tag);
-			}
-			previous_release.previous = None;
-			releases[release_index].previous = Some(Box::new(previous_release));
-			previous_release = releases[release_index].clone();
-			releases.push(Release::default());
-			release_index += 1;
-		}
-	}
 
-	if release_index > 0 {
-		previous_release.previous = None;
-		releases[release_index].previous = Some(Box::new(previous_release));
+		let new_tag = tags.get_closest(&commit.id);
+		if first_processed_tag.is_none() {
+			first_processed_tag = new_tag;
+		}
+		if new_tag == current_tag {
+			release.commits.push(commit);
+			continue;
+		}
+
+		// Found a new release, finalize the current one and append the commit to the
+		// new release.
+		fill_release(repository, &mut release, args, current_tag, &tags)?;
+		current_tag = new_tag;
+		append_release(&mut releases, &mut release);
+		release.commits.push(commit);
+	}
+	fill_release(repository, &mut release, args, current_tag, &tags)?;
+	append_release(&mut releases, &mut release);
+
+	if args.sort == Sort::Newest {
+		for release in &mut releases {
+			release.commits.reverse();
+		}
 	}
 
 	// Add custom commit messages to the latest release.
 	if let Some(custom_commits) = &args.with_commit {
-		if let Some(latest_release) = releases.iter_mut().last() {
-			custom_commits.iter().for_each(|message| {
-				latest_release
-					.commits
-					.push(Commit::from(message.to_string()))
-			});
-		}
+		releases
+			.last_mut()
+			.unwrap()
+			.commits
+			.extend(custom_commits.iter().cloned().map(Commit::from));
 	}
 
 	// Set the previous release if the first release does not have one set.
-	if !releases.is_empty() &&
-		releases
-			.first()
-			.and_then(|r| r.previous.as_ref())
-			.and_then(|p| p.version.as_ref())
-			.is_none()
+	if releases[0]
+		.previous
+		.as_ref()
+		.and_then(|p| p.version.as_ref())
+		.is_none()
 	{
 		// Get the previous tag of the first processed tag in the release loop.
 		let first_tag = first_processed_tag
 			.map(|tag| {
-				tags.iter()
-					.enumerate()
-					.find(|(_, (_, v))| v == &tag)
-					.and_then(|(i, _)| i.checked_sub(1))
+				tags.tags()
+					.position(|v| v == tag)
+					.and_then(|i| i.checked_sub(1))
 					.and_then(|i| tags.get_index(i))
 			})
 			.or_else(|| Some(tags.last()))
 			.flatten();
 
 		// Set the previous release if the first tag is found.
-		if let Some((commit_id, version)) = first_tag {
+		if let Some(tag) = first_tag {
+			let commit_id = tags.get_commit(tag).unwrap();
 			let previous_release = Release {
 				commit_id: Some(commit_id.to_string()),
-				version: Some(version.to_string()),
+				version: Some(tag.to_string()),
 				timestamp: repository
 					.find_commit(commit_id.to_string())
 					.map(|v| v.time().seconds())
@@ -322,6 +304,42 @@ fn process_repository<'a>(
 	}
 
 	Ok(releases)
+}
+
+fn fill_release(
+	repository: &Repository,
+	release: &mut Release<'_>,
+	args: &Opt,
+	tag: Option<&str>,
+	tags: &TaggedCommits<'_>,
+) -> Result<()> {
+	let Some(tag) = tag else { return Ok(()) };
+	let Some(release_commit) = tags.get_commit(tag) else {
+		return Ok(());
+	};
+	release.version = Some(tag.to_string());
+	release.commit_id = Some(release_commit.to_string());
+	release.timestamp = if args.tag.as_deref() == Some(tag) {
+		SystemTime::now()
+			.duration_since(UNIX_EPOCH)?
+			.as_secs()
+			.try_into()?
+	} else {
+		repository
+			.find_commit(release_commit.to_string())
+			.map(|c| c.time().seconds())
+			.unwrap_or_default()
+	};
+	Ok(())
+}
+
+/// Appends `release` to `releases`, also setting the `previous` field and
+/// resetting `release`.
+fn append_release<'a>(releases: &mut Vec<Release<'a>>, release: &mut Release<'a>) {
+	let mut previous = releases.last().cloned().unwrap_or_default();
+	previous.previous = None;
+	release.previous = Some(Box::new(previous));
+	releases.push(std::mem::take(release));
 }
 
 /// Runs `git-cliff`.
@@ -532,6 +550,16 @@ pub fn run(mut args: Opt) -> Result<()> {
 	let mut changelog = Changelog::new(releases, &config)?;
 
 	// Print the result.
+	let mut out: Box<dyn io::Write> = if let Some(path) = &args.output {
+		if path == Path::new("-") {
+			Box::new(io::stdout())
+		} else {
+			Box::new(io::BufWriter::new(File::create(path)?))
+		}
+	} else {
+		Box::new(io::stdout())
+	};
+	let out = &mut *out;
 	if args.bump || args.bumped_version {
 		let next_version = if let Some(next_version) = changelog.bump_version()? {
 			next_version
@@ -544,40 +572,22 @@ pub fn run(mut args: Opt) -> Result<()> {
 			return Ok(());
 		};
 		if args.bumped_version {
-			if let Some(path) = args.output {
-				let mut output = File::create(path)?;
-				output.write_all(next_version.as_bytes())?;
-			} else {
-				println!("{next_version}");
-			}
+			writeln!(out, "{next_version}")?;
 			return Ok(());
 		}
 	}
+
 	if args.context {
-		return if let Some(path) = args.output {
-			let mut output = File::create(path)?;
-			changelog.write_context(&mut output)
-		} else {
-			changelog.write_context(&mut io::stdout())
-		};
+		changelog.write_context(out)?;
+		return Ok(());
 	}
-	if let Some(ref path) = args.prepend {
-		changelog.prepend(fs::read_to_string(path)?, &mut File::create(path)?)?;
+
+	if let Some(path) = &args.prepend {
+		changelog.prepend(fs::read_to_string(path)?, out)?;
 	}
-	if let Some(path) = args.output {
-		let mut output: Box<dyn Write> = if path == PathBuf::from("-") {
-			Box::new(io::stdout())
-		} else {
-			Box::new(File::create(path)?)
-		};
-		if args.context {
-			changelog.write_context(&mut output)
-		} else {
-			changelog.generate(&mut output)
-		}
-	} else if args.prepend.is_none() {
-		changelog.generate(&mut io::stdout())
-	} else {
-		Ok(())
+	if args.output.is_some() || args.prepend.is_none() {
+		changelog.generate(out)?;
 	}
+
+	Ok(())
 }

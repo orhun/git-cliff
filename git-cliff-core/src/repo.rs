@@ -14,6 +14,7 @@ use git2::{
 use glob::Pattern;
 use indexmap::IndexMap;
 use regex::Regex;
+use std::cmp::Reverse;
 use std::io;
 use std::path::PathBuf;
 use url::Url;
@@ -45,14 +46,14 @@ impl Repository {
 	/// Sorts the commits by their time.
 	pub fn commits(
 		&self,
-		range: Option<String>,
-		include_path: Option<Vec<Pattern>>,
-		exclude_path: Option<Vec<Pattern>>,
+		range: Option<&str>,
+		include_path: Option<&[Pattern]>,
+		exclude_path: Option<&[Pattern]>,
 	) -> Result<Vec<Commit>> {
 		let mut revwalk = self.inner.revwalk()?;
 		revwalk.set_sorting(Sort::TOPOLOGICAL)?;
 		if let Some(range) = range {
-			revwalk.push_range(&range)?;
+			revwalk.push_range(range)?;
 		} else {
 			revwalk.push_head()?;
 		}
@@ -62,31 +63,32 @@ impl Repository {
 			.collect();
 		if include_path.is_some() || exclude_path.is_some() {
 			commits.retain(|commit| {
-				if let Ok(prev_commit) = commit.parent(0) {
-					if let Ok(diff) = self.inner.diff_tree_to_tree(
-						commit.tree().ok().as_ref(),
-						prev_commit.tree().ok().as_ref(),
-						None,
-					) {
-						return diff
-							.deltas()
-							.filter_map(|delta| delta.new_file().path())
-							.any(|new_file_path| {
-								if let Some(include_path) = &include_path {
-									include_path
-										.iter()
-										.any(|glob| glob.matches_path(new_file_path))
-								} else if let Some(exclude_path) = &exclude_path {
-									!exclude_path
-										.iter()
-										.any(|glob| glob.matches_path(new_file_path))
-								} else {
-									false
-								}
-							});
-					}
-				}
-				false
+				let prev_tree = commit
+					.parent(0)
+					.and_then(|prev_commit| prev_commit.tree())
+					.ok();
+				let Ok(diff) = self.inner.diff_tree_to_tree(
+					commit.tree().ok().as_ref(),
+					prev_tree.as_ref(),
+					None,
+				) else {
+					return false;
+				};
+				diff.deltas()
+					.filter_map(|delta| delta.new_file().path())
+					.any(|new_file_path| {
+						if let Some(include_path) = include_path {
+							return include_path
+								.iter()
+								.any(|glob| glob.matches_path(new_file_path));
+						}
+						if let Some(exclude_path) = exclude_path {
+							return !exclude_path
+								.iter()
+								.any(|glob| glob.matches_path(new_file_path));
+						}
+						unreachable!()
+					})
 			});
 		}
 		Ok(commits)
@@ -117,16 +119,17 @@ impl Repository {
 	/// It collects lightweight and annotated tags.
 	pub fn tags(
 		&self,
-		pattern: &Option<Regex>,
+		pattern: Option<&Regex>,
 		topo_order: bool,
-	) -> Result<IndexMap<String, String>> {
+	) -> Result<TaggedCommits<'_>> {
 		let mut tags: Vec<(Commit, String)> = Vec::new();
 		let tag_names = self.inner.tag_names(None)?;
 		for name in tag_names
 			.iter()
 			.flatten()
 			.filter(|tag_name| {
-				pattern.as_ref().map_or(true, |pat| pat.is_match(tag_name))
+				pattern.is_none() ||
+					pattern.is_some_and(|pat| pat.is_match(tag_name))
 			})
 			.map(String::from)
 		{
@@ -144,12 +147,9 @@ impl Repository {
 			}
 		}
 		if !topo_order {
-			tags.sort_by(|a, b| a.0.time().seconds().cmp(&b.0.time().seconds()));
+			tags.sort_by_key(|(commit, _)| commit.time().seconds());
 		}
-		Ok(tags
-			.into_iter()
-			.map(|(a, b)| (a.id().to_string(), b))
-			.collect())
+		TaggedCommits::new(self, tags)
 	}
 
 	/// Returns the remote of the upstream repository.
@@ -206,11 +206,139 @@ impl Repository {
 	}
 }
 
+/// Stores which commits are tagged with which tags.
+#[derive(Debug)]
+pub struct TaggedCommits<'a> {
+	/// All the commits in the repository.
+	pub commits: IndexMap<String, Commit<'a>>,
+	/// Commit ID to tag map.
+	tags:        IndexMap<String, String>,
+	/// List of tags with their commit index.
+	///
+	/// Sorted in reverse order, meaning the first element is the latest tag.
+	///
+	/// Used for lookups.
+	tag_ids:     Vec<(usize, String)>,
+}
+
+impl<'a> TaggedCommits<'a> {
+	fn new(
+		repository: &'a Repository,
+		tags: Vec<(Commit<'a>, String)>,
+	) -> Result<Self> {
+		let commits = repository.commits(None, None, None)?;
+		let commits: IndexMap<_, _> = commits
+			.into_iter()
+			.map(|c| (c.id().to_string(), c))
+			.collect();
+		let mut tag_ids: Vec<_> = tags
+			.iter()
+			.filter_map(|(commit, tag)| {
+				let id = commit.id().to_string();
+				let idx = commits.get_index_of(&id)?;
+				Some((idx, tag.to_string()))
+			})
+			.collect();
+		tag_ids.sort_by_key(|(idx, _)| Reverse(*idx));
+		let tags = tags
+			.into_iter()
+			.map(|(commit, tag)| (commit.id().to_string(), tag))
+			.collect();
+		Ok(Self {
+			commits,
+			tag_ids,
+			tags,
+		})
+	}
+
+	/// Returns the number of tags.
+	pub fn len(&self) -> usize {
+		self.tags.len()
+	}
+
+	/// Returns `true` if there are no tags.
+	pub fn is_empty(&self) -> bool {
+		self.tags.is_empty()
+	}
+
+	/// Returns an iterator over all the tags.
+	pub fn tags(&self) -> impl Iterator<Item = &str> {
+		self.tags.iter().map(|(_, v)| v.as_str())
+	}
+
+	/// Returns the last tag.
+	pub fn last(&self) -> Option<&str> {
+		self.tags().last()
+	}
+
+	/// Returns the tag of the given commit.
+	///
+	/// Note that this only searches for an exact match.
+	/// For a more general search, use [`get_closest`](Self::get_closest)
+	/// instead.
+	pub fn get(&self, commit: &str) -> Option<&str> {
+		self.tags.get(commit).map(String::as_str)
+	}
+
+	/// Returns the tag at the given index.
+	///
+	/// The index can be calculated with `tags().position()`.
+	pub fn get_index(&self, idx: usize) -> Option<&str> {
+		self.tags.get_index(idx).map(|(_, v)| v.as_str())
+	}
+
+	/// Returns the tag closest to the given commit.
+	pub fn get_closest(&self, commit: &str) -> Option<&str> {
+		if let Some(tagged) = self.get(commit) {
+			return Some(tagged);
+		}
+
+		let index = self.commits.get_index_of(commit)?;
+		let (_, tag) = self.tag_ids.iter().find(|(tag_idx, _)| index >= *tag_idx)?;
+		Some(tag)
+	}
+
+	/// Returns the commit of the given tag.
+	pub fn get_commit(&self, tag: &str) -> Option<&str> {
+		self.tags
+			.iter()
+			.find(|(_, t)| *t == tag)
+			.map(|(commit, _)| commit.as_str())
+	}
+
+	/// Returns `true` if the given tag exists.
+	pub fn contains_commit(&self, commit: &str) -> bool {
+		self.tags.contains_key(commit)
+	}
+
+	/// Inserts a new tagged commit.
+	pub fn insert(&mut self, commit: String, tag: String) {
+		if let Some(index) = self.commits.get_index_of(&commit) {
+			if let Err(idx) = self.binary_search(index) {
+				self.tag_ids.insert(idx, (index, tag.clone()));
+			}
+		}
+		self.tags.insert(commit, tag);
+	}
+
+	/// Retains only the tags specified by the predicate.
+	pub fn retain(&mut self, mut f: impl FnMut(&str) -> bool) {
+		self.tags.retain(|_, tag| f(tag));
+		self.tag_ids.retain(|(_, tag)| f(tag));
+	}
+
+	fn binary_search(&self, index: usize) -> std::result::Result<usize, usize> {
+		self.tag_ids
+			.binary_search_by_key(&Reverse(index), |(tag_idx, _)| Reverse(*tag_idx))
+	}
+}
+
 #[cfg(test)]
 mod test {
 	use super::*;
 	use crate::commit::Commit as AppCommit;
 	use std::env;
+	use std::path::Path;
 	use std::process::Command;
 	use std::str;
 
@@ -240,7 +368,7 @@ mod test {
 
 	fn get_repository() -> Result<Repository> {
 		Repository::init(
-			PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+			Path::new(env!("CARGO_MANIFEST_DIR"))
 				.parent()
 				.expect("parent directory not found")
 				.to_path_buf(),
@@ -260,15 +388,15 @@ mod test {
 	#[test]
 	fn get_latest_tag() -> Result<()> {
 		let repository = get_repository()?;
-		let tags = repository.tags(&None, false)?;
-		assert_eq!(&get_last_tag()?, tags.last().expect("no tags found").1);
+		let tags = repository.tags(None, false)?;
+		assert_eq!(&get_last_tag()?, tags.tags().last().expect("no tags found"));
 		Ok(())
 	}
 
 	#[test]
 	fn git_tags() -> Result<()> {
 		let repository = get_repository()?;
-		let tags = repository.tags(&None, true)?;
+		let tags = repository.tags(None, true)?;
 		assert_eq!(
 			tags.get("2b8b4d3535f29231e05c3572e919634b9af907b6").expect(
 				"the commit hash does not exist in the repository (tag v0.1.0)"
@@ -283,8 +411,8 @@ mod test {
 			"v0.1.0-beta.4"
 		);
 		let tags = repository.tags(
-			&Some(
-				Regex::new("^v[0-9]+\\.[0-9]+\\.[0-9]$")
+			Some(
+				&Regex::new("^v[0-9]+\\.[0-9]+\\.[0-9]$")
 					.expect("the regex is not valid"),
 			),
 			true,
@@ -295,7 +423,7 @@ mod test {
 			),
 			"v0.1.0"
 		);
-		assert!(!tags.contains_key("4ddef08debfff48117586296e49d5caa0800d1b5"));
+		assert!(!tags.contains_commit("4ddef08debfff48117586296e49d5caa0800d1b5"));
 		Ok(())
 	}
 
