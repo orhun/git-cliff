@@ -277,10 +277,7 @@ impl<'a> TaggedCommits<'a> {
 	/// For a more general search, use [`get_closest`](Self::get_closest)
 	/// instead.
 	pub fn get(&self, commit: &str) -> Option<&str> {
-		self.tags
-			.iter()
-			.find(|(c, _)| *c == commit)
-			.map(|(_, v)| v.as_str())
+		self.tags.get(commit).map(String::as_str)
 	}
 
 	/// Returns the tag at the given index.
@@ -292,6 +289,10 @@ impl<'a> TaggedCommits<'a> {
 
 	/// Returns the tag closest to the given commit.
 	pub fn get_closest(&self, commit: &str) -> Option<&str> {
+		if let Some(tagged) = self.get(commit) {
+			return Some(tagged);
+		}
+
 		let index = self.commits.get_index_of(commit)?;
 		let (_, tag) = self.tag_ids.iter().find(|(tag_idx, _)| index >= *tag_idx)?;
 		Some(tag)
