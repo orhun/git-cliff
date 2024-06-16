@@ -29,6 +29,7 @@ use std::time::{
 pub struct Changelog<'a> {
 	/// Releases that the changelog will contain.
 	pub releases:       Vec<Release<'a>>,
+	header_template:    Option<Template>,
 	body_template:      Template,
 	footer_template:    Option<Template>,
 	config:             &'a Config,
@@ -41,6 +42,10 @@ impl<'a> Changelog<'a> {
 		let trim = config.changelog.trim.unwrap_or(true);
 		let mut changelog = Self {
 			releases,
+			header_template: match &config.changelog.header {
+				Some(header) => Some(Template::new(header.to_string(), trim)?),
+				None => None,
+			},
 			body_template: Template::new(
 				config
 					.changelog
@@ -420,16 +425,14 @@ impl<'a> Changelog<'a> {
 			serde_json::to_value(self.config.remote.clone())?,
 		);
 		#[cfg(feature = "github")]
-		let (github_commits, github_pull_requests) = if self.config.remote.github.is_set()
-		{
+		let (github_commits, github_pull_requests) = if self.config.remote.github.is_set() {
 			self.get_github_metadata()
 				.expect("Could not get github metadata")
 		} else {
 			(vec![], vec![])
 		};
 		#[cfg(feature = "gitlab")]
-		let (gitlab_commits, gitlab_merge_request) = if self.config.remote.gitlab.is_set()
-		{
+		let (gitlab_commits, gitlab_merge_request) = if self.config.remote.gitlab.is_set() {
 			self.get_gitlab_metadata()
 				.expect("Could not get gitlab metadata")
 		} else {
@@ -502,15 +505,30 @@ impl<'a> Changelog<'a> {
 			.postprocessors
 			.clone()
 			.unwrap_or_default();
-		if let Some(header) = &self.config.changelog.header {
-			let write_result = write!(out, "{header}");
+
+		let mut releases = self.releases.clone();
+
+		// render the header template
+		if let Some(header_template) = &self.header_template {
+			let write_result = writeln!(
+				out,
+				"{}",
+				header_template.render(
+					&Releases {
+						releases: &releases,
+					},
+					Some(&self.additional_context),
+					&postprocessors,
+				)?
+			);
 			if let Err(e) = write_result {
 				if e.kind() != std::io::ErrorKind::BrokenPipe {
 					return Err(e.into());
 				}
 			}
 		}
-		let mut releases = self.releases.clone();
+
+		// render the body template
 		for release in releases.iter_mut() {
 			let write_result = write!(
 				out,
@@ -527,6 +545,8 @@ impl<'a> Changelog<'a> {
 				}
 			}
 		}
+
+		// render the footer template
 		if let Some(footer_template) = &self.footer_template {
 			let write_result = writeln!(
 				out,
@@ -545,6 +565,7 @@ impl<'a> Changelog<'a> {
 				}
 			}
 		}
+
 		Ok(())
 	}
 
@@ -927,6 +948,7 @@ mod test {
 		assert_eq!(
 			String::from(
 				r#"# Changelog
+
 			## Release [v1.1.0] - 1970-01-01
 
 
@@ -1032,6 +1054,7 @@ chore(deps): fix broken deps
 		assert_eq!(
 			String::from(
 				r#"# Changelog
+
 			## Unreleased
 
 			### Bug Fixes
@@ -1135,6 +1158,7 @@ chore(deps): fix broken deps
 		changelog.generate(&mut out)?;
 		expect_test::expect![[r#"
     # Changelog
+
     ## Unreleased
 
     ### Bug Fixes
