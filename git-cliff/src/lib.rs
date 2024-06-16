@@ -195,8 +195,6 @@ fn process_repository<'a>(
 					)));
 				}
 			}
-			dbg!(tag_index);
-			dbg!(&tags);
 			if let (Some(tag1), Some(tag2)) =
 				(tags.get_index(tag_index), tags.get_index(tag_index + 1))
 			{
@@ -204,7 +202,6 @@ fn process_repository<'a>(
 			}
 		}
 	}
-	dbg!(&commit_range);
 	let mut commits = repository.commits(
 		commit_range.as_deref(),
 		args.include_path.as_deref(),
@@ -283,12 +280,11 @@ fn process_repository<'a>(
 		let first_tag = first_processed_tag
 			.map(|tag| {
 				tags.tags()
-					.enumerate()
-					.find(|(_, v)| *v == tag)
-					.and_then(|(i, _)| i.checked_sub(1))
+					.position(|v| v == tag)
+					.and_then(|i| i.checked_sub(1))
 					.and_then(|i| tags.get_index(i))
 			})
-			.or_else(|| Some(tags.tags().last()))
+			.or_else(|| Some(tags.last()))
 			.flatten();
 
 		// Set the previous release if the first tag is found.
@@ -340,10 +336,9 @@ fn fill_release(
 /// Appends `release` to `releases`, also setting the `previous` field and
 /// resetting `release`.
 fn append_release<'a>(releases: &mut Vec<Release<'a>>, release: &mut Release<'a>) {
-	if let Some(mut previous) = releases.last().cloned() {
-		previous.previous = None;
-		release.previous = Some(Box::new(previous));
-	}
+	let mut previous = releases.last().cloned().unwrap_or_default();
+	previous.previous = None;
+	release.previous = Some(Box::new(previous));
 	releases.push(std::mem::take(release));
 }
 
