@@ -89,7 +89,7 @@ fn process_repository<'a>(
 		repository.tags(config.git.tag_pattern.as_ref(), args.topo_order)?;
 	let skip_regex = config.git.skip_tags.as_ref();
 	let ignore_regex = config.git.ignore_tags.as_ref();
-	tags.tags.retain(|(_, name)| {
+	tags.retain(|name| {
 		// Keep skip tags to drop commits in the later stage.
 		let skip = skip_regex.is_some_and(|r| r.is_match(name));
 		if skip {
@@ -157,13 +157,13 @@ fn process_repository<'a>(
 	}
 
 	// Print debug information about configuration and arguments.
-	log::trace!("Arguments: {:#?}", args);
-	log::trace!("Config: {:#?}", config);
+	// log::trace!("Arguments: {:#?}", args);
+	// log::trace!("Config: {:#?}", config);
 
 	// Parse commits.
 	let mut commit_range = args.range.clone();
 	if args.unreleased {
-		if let Some((_, last_tag)) = tags.tags.last() {
+		if let Some(last_tag) = tags.last() {
 			commit_range = Some(format!("{last_tag}..HEAD"));
 		}
 	} else if args.latest || args.current {
@@ -195,6 +195,8 @@ fn process_repository<'a>(
 					)));
 				}
 			}
+			dbg!(tag_index);
+			dbg!(&tags);
 			if let (Some(tag1), Some(tag2)) =
 				(tags.get_index(tag_index), tags.get_index(tag_index + 1))
 			{
@@ -202,6 +204,7 @@ fn process_repository<'a>(
 			}
 		}
 	}
+	dbg!(&commit_range);
 	let mut commits = repository.commits(
 		commit_range.as_deref(),
 		args.include_path.as_deref(),
@@ -219,7 +222,7 @@ fn process_repository<'a>(
 					warn!("There is already a tag ({}) for {}", tag, commit_id)
 				}
 				None => {
-					tags.insert(&commit_id, tag.to_string()).unwrap();
+					tags.insert(commit_id, tag.to_string());
 				}
 			}
 		}
@@ -246,12 +249,12 @@ fn process_repository<'a>(
 
 		// Found a new release, finalize the current one and append the commit to the
 		// new release.
-		fill_release(&mut release, args, current_tag, &tags);
+		fill_release(repository, &mut release, args, current_tag, &tags)?;
 		current_tag = new_tag;
 		append_release(&mut releases, &mut release);
 		release.commits.push(commit);
 	}
-	fill_release(&mut release, args, current_tag, &tags);
+	fill_release(repository, &mut release, args, current_tag, &tags)?;
 	append_release(&mut releases, &mut release);
 
 	if args.sort == Sort::Newest {
@@ -290,8 +293,7 @@ fn process_repository<'a>(
 
 		// Set the previous release if the first tag is found.
 		if let Some(tag) = first_tag {
-			let commit = tags.get_commit(tag).unwrap();
-			let commit_id = commit.id();
+			let commit_id = tags.get_commit(tag).unwrap();
 			let previous_release = Release {
 				commit_id: Some(commit_id.to_string()),
 				version: Some(tag.to_string()),
@@ -309,27 +311,30 @@ fn process_repository<'a>(
 }
 
 fn fill_release(
+	repository: &Repository,
 	release: &mut Release<'_>,
 	args: &Opt,
 	tag: Option<&str>,
 	tags: &TaggedCommits<'_>,
-) {
-	let Some(tag) = tag else { return };
+) -> Result<()> {
+	let Some(tag) = tag else { return Ok(()) };
 	let Some(release_commit) = tags.get_commit(tag) else {
-		return;
+		return Ok(());
 	};
 	release.version = Some(tag.to_string());
-	release.commit_id = Some(release_commit.id().to_string());
+	release.commit_id = Some(release_commit.to_string());
 	release.timestamp = if args.tag.as_deref() == Some(tag) {
 		SystemTime::now()
-			.duration_since(UNIX_EPOCH)
-			.expect("system time is before unix epoch")
+			.duration_since(UNIX_EPOCH)?
 			.as_secs()
-			.try_into()
-			.expect("unix epoch seconds overflows i64")
+			.try_into()?
 	} else {
-		release_commit.time().seconds()
+		repository
+			.find_commit(release_commit.to_string())
+			.map(|c| c.time().seconds())
+			.unwrap_or_default()
 	};
+	Ok(())
 }
 
 /// Appends `release` to `releases`, also setting the `previous` field and
