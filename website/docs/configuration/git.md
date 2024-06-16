@@ -146,8 +146,8 @@ Examples:
   - Group the commit as "Features" if the commit message (description) starts with "feat".
 - `{ body = ".*security", group = "Security" }`
   - Group the commit as "Security" if the commit body contains "security".
-<!-- Conventonial commits parser is out of sync with spec, parsing only separator ":", not ": "; see: -->
-<!-- https://github.com/conventional-commits/parser/issues/47 -->
+    <!-- Conventional commits parser is out of sync with spec, parsing only separator ":", not ": "; see: -->
+    <!-- https://github.com/conventional-commits/parser/issues/47 -->
 - `{ footer = "^changelog: ?ignore", skip = true }`
   - Skip processing the commit if the commit footer contains "changelog: ignore".
 - `{ message = '^fix\((.*)\)', group = 'Fix (${1})' }`
