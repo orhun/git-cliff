@@ -29,6 +29,7 @@ use std::time::{
 pub struct Changelog<'a> {
 	/// Releases that the changelog will contain.
 	pub releases:       Vec<Release<'a>>,
+	header_template:    Option<Template>,
 	body_template:      Template,
 	footer_template:    Option<Template>,
 	config:             &'a Config,
@@ -41,6 +42,10 @@ impl<'a> Changelog<'a> {
 		let trim = config.changelog.trim.unwrap_or(true);
 		let mut changelog = Self {
 			releases,
+			header_template: match &config.changelog.header {
+				Some(header) => Some(Template::new(header.to_string(), trim)?),
+				None => None,
+			},
 			body_template: Template::new(
 				config
 					.changelog
@@ -502,16 +507,27 @@ impl<'a> Changelog<'a> {
 			.postprocessors
 			.clone()
 			.unwrap_or_default();
-		if let Some(header) = &self.config.changelog.header {
-			let write_result = write!(out, "{header}");
+
+		if let Some(header_template) = &self.header_template {
+			let write_result = writeln!(
+				out,
+				"{}",
+				header_template.render(
+					&Releases {
+						releases: &self.releases,
+					},
+					Some(&self.additional_context),
+					&postprocessors,
+				)?
+			);
 			if let Err(e) = write_result {
 				if e.kind() != std::io::ErrorKind::BrokenPipe {
 					return Err(e.into());
 				}
 			}
 		}
-		let mut releases = self.releases.clone();
-		for release in releases.iter_mut() {
+
+		for release in &self.releases {
 			let write_result = write!(
 				out,
 				"{}",
@@ -527,13 +543,14 @@ impl<'a> Changelog<'a> {
 				}
 			}
 		}
+
 		if let Some(footer_template) = &self.footer_template {
 			let write_result = writeln!(
 				out,
 				"{}",
 				footer_template.render(
 					&Releases {
-						releases: &releases,
+						releases: &self.releases,
 					},
 					Some(&self.additional_context),
 					&postprocessors,
@@ -545,6 +562,7 @@ impl<'a> Changelog<'a> {
 				}
 			}
 		}
+
 		Ok(())
 	}
 
@@ -953,6 +971,7 @@ mod test {
 		assert_eq!(
 			String::from(
 				r#"# Changelog
+
 			## Release [v1.1.0] - 1970-01-01
 
 
@@ -1069,6 +1088,7 @@ chore(deps): fix broken deps
 		assert_eq!(
 			String::from(
 				r#"# Changelog
+
 			## Unreleased
 
 			### Bug Fixes
@@ -1172,6 +1192,7 @@ chore(deps): fix broken deps
 		changelog.generate(&mut out)?;
 		expect_test::expect![[r#"
     # Changelog
+
     ## Unreleased
 
     ### Bug Fixes
