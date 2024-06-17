@@ -197,6 +197,8 @@ A regex for skip processing the matched tags.
 
 A regex for ignore processing the matched tags.
 
+This value can be also overridden with using the `--ignore-tags` argument.
+
 While `skip_tags` drop commits from the changelog, `ignore_tags` include ignored commits into the next tag.
 
 ### topo_order
