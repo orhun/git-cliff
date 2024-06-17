@@ -264,6 +264,24 @@ pub struct Opt {
 		hide = !cfg!(feature = "gitlab"),
 	)]
 	pub gitlab_repo:     Option<RemoteValue>,
+	/// Sets the Gitea API token.
+	#[arg(
+		long,
+		env = "GITEA_TOKEN",
+		value_name = "TOKEN",
+		hide_env_values = true,
+		hide = !cfg!(feature = "gitea"),
+	)]
+	pub gitea_token:     Option<SecretString>,
+	/// Sets the GitLab repository.
+	#[arg(
+		long,
+		env = "GITEA_REPO",
+		value_parser = clap::value_parser!(RemoteValue),
+		value_name = "OWNER/REPO",
+		hide = !cfg!(feature = "gitea"),
+	)]
+	pub gitea_repo:      Option<RemoteValue>,
 	/// Sets the Bitbucket API token.
 	#[arg(
 		long,

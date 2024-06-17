@@ -18,6 +18,9 @@ jobs:
         include:
           - fixtures-name: new-fixture-template
           - fixtures-name: test-github-integration
+          - fixtures-name: test-gitlab-integration
+          - fixtures-name: test-gitea-integration
+          - fixtures-name: test-bitbucket-integration
           - fixtures-name: test-ignore-tags
           - fixtures-name: test-topo-order
             command: --latest
@@ -68,6 +71,12 @@ jobs:
           - fixtures-name: test-custom-tag-pattern
             command: --tag-pattern "alpha.*"
           - fixtures-name: test-configure-from-cargo-toml
+          - fixtures-name: test-bump-initial-tag
+            command: --bump
+          - fixtures-name: test-bump-initial-tag-default
+            command: --bump
+          - fixtures-name: test-bump-initial-tag-cli-arg
+            command: --bump --tag=2.1.1
           - fixtures-name: test-cli-arg-ignore-tags
             command: --ignore-tags ".*beta"
 

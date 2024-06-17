@@ -126,6 +126,9 @@ pub struct RemoteConfig {
 	/// GitLab remote.
 	#[serde(default)]
 	pub gitlab:    Remote,
+	/// Gitea remote.
+	#[serde(default)]
+	pub gitea:     Remote,
 	/// Bitbucket remote.
 	#[serde(default)]
 	pub bitbucket: Remote,
@@ -192,6 +195,11 @@ pub struct Bump {
 	/// - A minor version update if the major version is 0.
 	/// - A major version update otherwise.
 	pub breaking_always_bump_major: Option<bool>,
+
+	/// Configures the initial version of the project.
+	///
+	/// When set, the version will be set to this value if no tags are found.
+	pub initial_tag: Option<String>,
 }
 
 /// Parser for grouping commits.
