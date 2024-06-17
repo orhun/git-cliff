@@ -79,6 +79,7 @@ jobs:
             command: --bump --tag=2.1.1
           - fixtures-name: test-cli-arg-ignore-tags
             command: --ignore-tags ".*beta"
+          - fixtures-name: test-tag-message
 
     steps:
       - name: Checkout

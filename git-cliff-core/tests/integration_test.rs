@@ -149,6 +149,7 @@ fn generate_changelog() -> Result<()> {
 	let releases = vec![
 		Release {
 			version:   Some(String::from("v2.0.0")),
+			message: None,
 			commits:   vec![
 
 				Commit::new(
@@ -212,6 +213,7 @@ fn generate_changelog() -> Result<()> {
 		},
 		Release {
 			version:   Some(String::from("v1.0.0")),
+			message: None,
 			commits:   vec![
 				Commit::new(
 					String::from("0bc123"),

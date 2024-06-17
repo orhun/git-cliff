@@ -21,6 +21,8 @@ use serde::{
 pub struct Release<'a> {
 	/// Release version, git tag.
 	pub version:   Option<String>,
+	/// git tag's message.
+	pub message:   Option<String>,
 	/// Commits made for the release.
 	pub commits:   Vec<Commit<'a>>,
 	/// Commit ID of the tag.
@@ -159,6 +161,7 @@ mod test {
 		fn build_release<'a>(version: &str, commits: &'a [&str]) -> Release<'a> {
 			Release {
 				version: None,
+				message: None,
 				commits: commits
 					.iter()
 					.map(|v| Commit::from(v.to_string()))
@@ -340,6 +343,7 @@ mod test {
 
 		let mut release = Release {
 			version: None,
+			message: None,
 			commits: vec![
 				Commit::from(String::from(
 					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \
@@ -625,6 +629,7 @@ mod test {
 
 		let mut release = Release {
 			version: None,
+			message: None,
 			commits: vec![
 				Commit::from(String::from(
 					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \
@@ -968,6 +973,7 @@ mod test {
 
 		let mut release = Release {
 			version: None,
+			message: None,
 			commits: vec![
 				Commit::from(String::from(
 					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \

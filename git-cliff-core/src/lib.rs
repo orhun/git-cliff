@@ -33,6 +33,8 @@ pub mod remote;
 /// Git repository.
 #[cfg(feature = "repo")]
 pub mod repo;
+/// Git tag.
+pub mod tag;
 /// Template engine.
 pub mod template;
 

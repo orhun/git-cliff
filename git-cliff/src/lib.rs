@@ -90,7 +90,9 @@ fn process_repository<'a>(
 	let ignore_regex = config.git.ignore_tags.as_ref();
 	tags = tags
 		.into_iter()
-		.filter(|(_, name)| {
+		.filter(|(_, tag)| {
+			let name = &tag.name;
+
 			// Keep skip tags to drop commits in the later stage.
 			let skip = skip_regex.map(|r| r.is_match(name)).unwrap_or_default();
 
@@ -184,7 +186,7 @@ fn process_repository<'a>(
 					repository.current_tag().as_ref().and_then(|tag| {
 						tags.iter()
 							.enumerate()
-							.find(|(_, (_, v))| v == &tag)
+							.find(|(_, (_, v))| v.name == tag.name)
 							.map(|(i, _)| i)
 					}) {
 					match current_tag_index.checked_sub(1) {
@@ -226,10 +228,10 @@ fn process_repository<'a>(
 		if let Some(commit_id) = commits.first().map(|c| c.id().to_string()) {
 			match tags.get(&commit_id) {
 				Some(tag) => {
-					warn!("There is already a tag ({}) for {}", tag, commit_id)
+					warn!("There is already a tag ({:?}) for {}", tag, commit_id)
 				}
 				None => {
-					tags.insert(commit_id, tag.to_string());
+					tags.insert(commit_id, repository.resolve_tag(tag));
 				}
 			}
 		}
@@ -249,9 +251,13 @@ fn process_repository<'a>(
 			releases[release_index].commits.push(commit);
 		}
 		if let Some(tag) = tags.get(&commit_id) {
-			releases[release_index].version = Some(tag.to_string());
+			let tag_name = &tag.name;
+
+			releases[release_index].version = Some(tag_name.clone());
+			releases[release_index].message = tag.message.clone();
 			releases[release_index].commit_id = Some(commit_id);
-			releases[release_index].timestamp = if args.tag.as_deref() == Some(tag) {
+			releases[release_index].timestamp = if args.tag == Some(tag_name.clone())
+			{
 				SystemTime::now()
 					.duration_since(UNIX_EPOCH)?
 					.as_secs()
@@ -299,7 +305,7 @@ fn process_repository<'a>(
 			.map(|tag| {
 				tags.iter()
 					.enumerate()
-					.find(|(_, (_, v))| v == &tag)
+					.find(|(_, (_, v))| v.name == tag.name)
 					.and_then(|(i, _)| i.checked_sub(1))
 					.and_then(|i| tags.get_index(i))
 			})
@@ -307,10 +313,10 @@ fn process_repository<'a>(
 			.flatten();
 
 		// Set the previous release if the first tag is found.
-		if let Some((commit_id, version)) = first_tag {
+		if let Some((commit_id, tag)) = first_tag {
 			let previous_release = Release {
 				commit_id: Some(commit_id.to_string()),
-				version: Some(version.to_string()),
+				version: Some(tag.name.clone()),
 				timestamp: repository
 					.find_commit(commit_id.to_string())
 					.map(|v| v.time().seconds())
