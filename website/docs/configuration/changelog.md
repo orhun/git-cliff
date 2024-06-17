@@ -24,7 +24,6 @@ postprocessors = [{ pattern = "foo", replace = "bar"}]
 
 See [templating](/docs/category/templating) for more detail.
 
-
 ### header
 
 Footer template that will be rendered and added to the beginning of the changelog.

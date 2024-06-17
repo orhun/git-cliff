@@ -425,14 +425,16 @@ impl<'a> Changelog<'a> {
 			serde_json::to_value(self.config.remote.clone())?,
 		);
 		#[cfg(feature = "github")]
-		let (github_commits, github_pull_requests) = if self.config.remote.github.is_set() {
+		let (github_commits, github_pull_requests) = if self.config.remote.github.is_set()
+		{
 			self.get_github_metadata()
 				.expect("Could not get github metadata")
 		} else {
 			(vec![], vec![])
 		};
 		#[cfg(feature = "gitlab")]
-		let (gitlab_commits, gitlab_merge_request) = if self.config.remote.gitlab.is_set() {
+		let (gitlab_commits, gitlab_merge_request) = if self.config.remote.gitlab.is_set()
+		{
 			self.get_gitlab_metadata()
 				.expect("Could not get gitlab metadata")
 		} else {
@@ -506,16 +508,13 @@ impl<'a> Changelog<'a> {
 			.clone()
 			.unwrap_or_default();
 
-		let mut releases = self.releases.clone();
-
-		// render the header template
 		if let Some(header_template) = &self.header_template {
 			let write_result = writeln!(
 				out,
 				"{}",
 				header_template.render(
 					&Releases {
-						releases: &releases,
+						releases: &self.releases,
 					},
 					Some(&self.additional_context),
 					&postprocessors,
@@ -528,8 +527,7 @@ impl<'a> Changelog<'a> {
 			}
 		}
 
-		// render the body template
-		for release in releases.iter_mut() {
+		for release in &self.releases {
 			let write_result = write!(
 				out,
 				"{}",
@@ -546,14 +544,13 @@ impl<'a> Changelog<'a> {
 			}
 		}
 
-		// render the footer template
 		if let Some(footer_template) = &self.footer_template {
 			let write_result = writeln!(
 				out,
 				"{}",
 				footer_template.render(
 					&Releases {
-						releases: &releases,
+						releases: &self.releases,
 					},
 					Some(&self.additional_context),
 					&postprocessors,
