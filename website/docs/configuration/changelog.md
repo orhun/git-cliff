@@ -26,7 +26,7 @@ See [templating](/docs/category/templating) for more detail.
 
 ### header
 
-Footer template that will be rendered and added to the beginning of the changelog.
+Header template that will be rendered and added to the beginning of the changelog.
 
 The template context contains the full list of releases in the variable `releases`. See [templating](/docs/category/templating) for more details.
 
