@@ -243,6 +243,8 @@ fn process_repository<'a>(
 	for git_commit in commits.iter().rev() {
 		let commit = Commit::from(git_commit);
 		let commit_id = commit.id.to_string();
+		releases[release_index].repository =
+			Some(repository.path.to_string_lossy().to_string());
 		if args.sort == Sort::Newest {
 			releases[release_index].commits.insert(0, commit);
 		} else {

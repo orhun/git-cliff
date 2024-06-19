@@ -613,7 +613,7 @@ mod test {
 				header:         Some(String::from("# Changelog")),
 				body:           Some(String::from(
 					r#"{% if version %}
-				## Release [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+				## Release [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }} - ({{ repository }})
 				{% if commit_id %}({{ commit_id }}){% endif %}{% else %}
 				## Unreleased{% endif %}
 				{% for group, commits in commits | group_by(attribute="group") %}
@@ -880,6 +880,7 @@ mod test {
 			commit_id: Some(String::from("0bc123")),
 			timestamp: 50000000,
 			previous: None,
+			repository: Some(String::from("/root/repo")),
 			#[cfg(feature = "github")]
 			github: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],
@@ -939,6 +940,7 @@ mod test {
 				commit_id: None,
 				timestamp: 1000,
 				previous: Some(Box::new(test_release)),
+				repository: Some(String::from("/root/repo")),
 				#[cfg(feature = "github")]
 				github: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
@@ -972,7 +974,7 @@ mod test {
 			String::from(
 				r#"# Changelog
 
-			## Release [v1.1.0] - 1970-01-01
+			## Release [v1.1.0] - 1970-01-01 - (/root/repo)
 
 
 			### Bug Fixes
@@ -990,7 +992,7 @@ mod test {
 			#### ui
 			- do exciting stuff
 
-			## Release [v1.0.0] - 1971-08-02
+			## Release [v1.0.0] - 1971-08-02 - (/root/repo)
 			(0bc123)
 
 			### Bug Fixes
@@ -1115,7 +1117,7 @@ chore(deps): fix broken deps
 			#### app
 			- merge #5
 
-			## Release [v1.0.0] - 1971-08-02
+			## Release [v1.0.0] - 1971-08-02 - (/root/repo)
 			(0bc123)
 
 			### Bug Fixes
