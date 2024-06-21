@@ -106,6 +106,24 @@ impl<'a> Release<'a> {
 					.with_breaking_always_increment_major(
 						config.breaking_always_bump_major.unwrap_or(true),
 					)
+					.with_custom_major_increment_regex(
+						&config
+							.custom_major_increment_regex
+							.clone()
+							// a pattern that never match as an alternative to no
+							// assigning any
+							.unwrap_or("a^".to_owned()),
+					)
+					.expect("invalid regex")
+					.with_custom_minor_increment_regex(
+						&config
+							.custom_minor_increment_regex
+							.clone()
+							// a pattern that never match as an alternative to no
+							// assigning any
+							.unwrap_or("a^".to_owned()),
+					)
+					.expect("invalid regex")
 					.increment(
 						&semver?,
 						self.commits
@@ -256,9 +274,11 @@ mod test {
 			let release = build_release(version, commits);
 			let next_version =
 				release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor: Some(false),
-					breaking_always_bump_major: Some(false),
-					initial_tag:                None,
+					features_always_bump_minor:   Some(false),
+					breaking_always_bump_major:   Some(false),
+					initial_tag:                  None,
+					custom_major_increment_regex: None,
+					custom_minor_increment_regex: None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -277,9 +297,11 @@ mod test {
 			let release = build_release(version, commits);
 			let next_version =
 				release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor: Some(true),
-					breaking_always_bump_major: Some(false),
-					initial_tag:                None,
+					features_always_bump_minor:   Some(true),
+					breaking_always_bump_major:   Some(false),
+					initial_tag:                  None,
+					custom_major_increment_regex: None,
+					custom_minor_increment_regex: None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -298,9 +320,11 @@ mod test {
 			let release = build_release(version, commits);
 			let next_version =
 				release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor: Some(false),
-					breaking_always_bump_major: Some(true),
-					initial_tag:                None,
+					features_always_bump_minor:   Some(false),
+					breaking_always_bump_major:   Some(true),
+					initial_tag:                  None,
+					custom_major_increment_regex: None,
+					custom_minor_increment_regex: None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -319,9 +343,11 @@ mod test {
 			assert_eq!(
 				"0.1.0",
 				empty_release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor: Some(features_always_bump_minor),
-					breaking_always_bump_major: Some(breaking_always_bump_major),
-					initial_tag:                None,
+					features_always_bump_minor:   Some(features_always_bump_minor),
+					breaking_always_bump_major:   Some(breaking_always_bump_major),
+					initial_tag:                  None,
+					custom_major_increment_regex: None,
+					custom_minor_increment_regex: None,
 				})?
 			);
 		}
