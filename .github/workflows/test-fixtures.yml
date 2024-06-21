@@ -80,6 +80,8 @@ jobs:
           - fixtures-name: test-cli-arg-ignore-tags
             command: --ignore-tags ".*beta"
           - fixtures-name: test-tag-message
+          - fixtures-name: test-bump-unreleased-with-tag-message-arg
+            command: --bump --unreleased --with-tag-message "Some text"
 
     steps:
       - name: Checkout
