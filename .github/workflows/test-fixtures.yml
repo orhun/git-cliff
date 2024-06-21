@@ -38,6 +38,8 @@ jobs:
           - fixtures-name: test-split-commits
           - fixtures-name: test-bump-version
             command: --bump
+          - fixtures-name: test-bump-version-custom-minor
+            command: --bump
           - fixtures-name: test-bumped-version
             command: --bumped-version
           - fixtures-name: test-footer-template
