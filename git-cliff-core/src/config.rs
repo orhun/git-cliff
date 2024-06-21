@@ -202,16 +202,20 @@ pub struct Bump {
 	pub initial_tag: Option<String>,
 
 	/// Configure a custom regex pattern for major version increments.
+	///
 	/// This will check only the type of the commit against the given pattern.
 	///
 	/// ### Note
+	///
 	/// `commit type` according to the spec is only `[a-zA-Z]+`
 	pub custom_major_increment_regex: Option<String>,
 
 	/// Configure a custom regex pattern for minor version increments.
+	///
 	/// This will check only the type of the commit against the given pattern.
 	///
 	/// ### Note
+	///
 	/// `commit type` according to the spec is only `[a-zA-Z]+`
 	pub custom_minor_increment_regex: Option<String>,
 }

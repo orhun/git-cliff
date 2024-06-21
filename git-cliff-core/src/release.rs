@@ -99,31 +99,28 @@ impl<'a> Release<'a> {
 						}
 					}
 				}
-				let next_version = VersionUpdater::new()
+				let mut next_version = VersionUpdater::new()
 					.with_features_always_increment_minor(
 						config.features_always_bump_minor.unwrap_or(true),
 					)
 					.with_breaking_always_increment_major(
 						config.breaking_always_bump_major.unwrap_or(true),
-					)
-					.with_custom_major_increment_regex(
-						&config
-							.custom_major_increment_regex
-							.clone()
-							// a pattern that never match as an alternative to no
-							// assigning any
-							.unwrap_or("a^".to_owned()),
-					)
-					.expect("invalid regex")
-					.with_custom_minor_increment_regex(
-						&config
-							.custom_minor_increment_regex
-							.clone()
-							// a pattern that never match as an alternative to no
-							// assigning any
-							.unwrap_or("a^".to_owned()),
-					)
-					.expect("invalid regex")
+					);
+				if let Some(custom_major_increment_regex) =
+					&config.custom_major_increment_regex
+				{
+					next_version = next_version.with_custom_major_increment_regex(
+						custom_major_increment_regex,
+					)?;
+				}
+				if let Some(custom_minor_increment_regex) =
+					&config.custom_minor_increment_regex
+				{
+					next_version = next_version.with_custom_minor_increment_regex(
+						custom_minor_increment_regex,
+					)?;
+				}
+				let next_version = next_version
 					.increment(
 						&semver?,
 						self.commits
