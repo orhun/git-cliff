@@ -25,6 +25,7 @@ following context is generated to use for templating:
 ```json
 {
   "version": "v0.1.0-rc.21",
+  "message": "The annotated tag message for the release"
   "commits": [
     {
       "id": "e795460c9bb7275294d1fa53a9d73258fb51eb10",
@@ -129,6 +130,7 @@ If [`conventional_commits`](/docs/configuration/git#conventional_commits) is set
 ```json
 {
   "version": "v0.1.0-rc.21",
+  "message": "The annotated tag message for the release"
   "commits": [
     {
       "id": "e795460c9bb7275294d1fa53a9d73258fb51eb10",

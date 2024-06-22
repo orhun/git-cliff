@@ -189,6 +189,7 @@ mod test {
 	fn get_fake_release_data() -> Release<'static> {
 		Release {
 			version: Some(String::from("1.0")),
+			message: None,
 			commits: vec![
 				Commit::new(
 					String::from("123123"),

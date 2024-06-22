@@ -815,6 +815,7 @@ mod test {
 		};
 		let test_release = Release {
 			version: Some(String::from("v1.0.0")),
+			message: None,
 			commits: vec![
 				Commit::new(
 					String::from("coffee"),
@@ -909,6 +910,7 @@ mod test {
 			},
 			Release {
 				version: None,
+				message: None,
 				commits: vec![
 					Commit::new(
 						String::from("abc123"),
