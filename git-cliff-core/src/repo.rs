@@ -23,7 +23,8 @@ use std::io;
 use std::path::PathBuf;
 use url::Url;
 
-static SIGNATURE_REGEX: Lazy<Regex> = lazy_regex!(
+/// Regex for replacing the signature part of a tag message.
+static TAG_SIGNATURE_REGEX: Lazy<Regex> = lazy_regex!(
 	r"(?s)-----BEGIN PGP SIGNATURE-----(.*?)-----END PGP SIGNATURE-----"
 );
 
@@ -127,9 +128,9 @@ impl Repository {
 		{
 			Ok(tag) => Tag {
 				name:    tag.name().unwrap_or_default().to_owned(),
-				message: tag
-					.message()
-					.map(|msg| SIGNATURE_REGEX.replace(msg, "").trim().to_owned()),
+				message: tag.message().map(|msg| {
+					TAG_SIGNATURE_REGEX.replace(msg, "").trim().to_owned()
+				}),
 			},
 			_ => Tag {
 				name:    name.to_owned(),
@@ -168,7 +169,6 @@ impl Repository {
 		{
 			let obj = self.inner.revparse_single(&name)?;
 			if let Ok(commit) = obj.clone().into_commit() {
-				// lightweight commit?
 				tags.push((commit, Tag {
 					name,
 					message: None,
@@ -180,8 +180,10 @@ impl Repository {
 					.and_then(|target| target.into_commit().ok())
 				{
 					tags.push((commit, Tag {
-						name:    tag.name().expect("tag don't have name").to_owned(),
-						message: tag.message().map(|msg| msg.to_owned()),
+						name:    tag.name().map(String::from).unwrap_or(name),
+						message: tag.message().map(|msg| {
+							TAG_SIGNATURE_REGEX.replace(msg, "").trim().to_owned()
+						}),
 					}));
 				}
 			}
@@ -366,9 +368,7 @@ mod test {
 	#[test]
 	fn resolves_existing_tag_with_name_and_message() -> Result<()> {
 		let repository = get_repository()?;
-
 		let tag = repository.resolve_tag("v0.2.3");
-
 		assert_eq!(tag.name, "v0.2.3");
 		assert_eq!(
 			tag.message,
@@ -385,12 +385,9 @@ mod test {
 	#[test]
 	fn resolves_tag_when_no_tags_exist() -> Result<()> {
 		let repository = get_repository()?;
-
 		let tag = repository.resolve_tag("nonexistent-tag");
-
 		assert_eq!(tag.name, "nonexistent-tag");
 		assert_eq!(tag.message, None);
-
 		Ok(())
 	}
 }

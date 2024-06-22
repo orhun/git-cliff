@@ -142,7 +142,7 @@ pub struct Opt {
 		num_args(1..)
 	)]
 	pub with_commit:      Option<Vec<String>>,
-	/// Sets custom message to the latest release.
+	/// Sets custom message for the latest release.
 	#[arg(
 		long,
 		env = "GIT_CLIFF_WITH_TAG_MESSAGE",

@@ -5,7 +5,7 @@
 pub struct Tag {
 	/// The name of the tag
 	pub name:    String,
-	/// the message of the tag. only if it was annotated
+	/// The message of the tag (only if it was annotated).
 	pub message: Option<String>,
 }
 

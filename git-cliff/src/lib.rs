@@ -292,7 +292,7 @@ fn process_repository<'a>(
 		}
 	}
 
-	// Set custom message to the latest release.
+	// Set custom message for the latest release.
 	if let Some(message) = &args.with_tag_message {
 		if let Some(latest_release) = releases.iter_mut().last() {
 			latest_release.message = Some(message.to_owned());
