@@ -22,23 +22,25 @@ postprocessors = [{ pattern = "foo", replace = "bar"}]
 
 <!-- {% endraw %} -->
 
+See [templating](/docs/category/templating) for more detail.
+
 ### header
 
-Header text that will be added to the beginning of the changelog.
+Header template that will be rendered and added to the beginning of the changelog.
+
+The template context contains the full list of releases in the variable `releases`. See [templating](/docs/category/templating) for more details.
 
 ### body
 
-Body template that represents a single release in the changelog.
+Body template that will be rendered for each release in the changelog. For example, if the changelog contains 3 releases, it will be rendered 3 times, once for each release.
 
-See [templating](/docs/category/templating) for more detail.
+The template context contains one release in the variable `release`. See [templating](/docs/category/templating) for more detail.
 
 ### footer
 
 Footer template that will be rendered and added to the end of the changelog.
 
-The template context is the same as [`body`](#body) and contains all the releases instead of a single release.
-
-For example, to get the list of releases, use the `{{ releases }}` variable in the template. To get information about a single release, iterate over this array and access the fields similar to [`body`](#body).
+The template context contains the full list of releases in the variable `releases`. See [templating](/docs/category/templating) for more details.
 
 See [Keep a Changelog configuration](/docs/templating/examples#keep-a-changelog) for seeing the example of adding links to the end of the changelog.
 

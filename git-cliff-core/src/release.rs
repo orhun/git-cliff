@@ -21,6 +21,8 @@ use serde::{
 pub struct Release<'a> {
 	/// Release version, git tag.
 	pub version:   Option<String>,
+	/// git tag's message.
+	pub message:   Option<String>,
 	/// Commits made for the release.
 	pub commits:   Vec<Commit<'a>>,
 	/// Commit ID of the tag.
@@ -99,13 +101,28 @@ impl<'a> Release<'a> {
 						}
 					}
 				}
-				let next_version = VersionUpdater::new()
+				let mut next_version = VersionUpdater::new()
 					.with_features_always_increment_minor(
 						config.features_always_bump_minor.unwrap_or(true),
 					)
 					.with_breaking_always_increment_major(
 						config.breaking_always_bump_major.unwrap_or(true),
-					)
+					);
+				if let Some(custom_major_increment_regex) =
+					&config.custom_major_increment_regex
+				{
+					next_version = next_version.with_custom_major_increment_regex(
+						custom_major_increment_regex,
+					)?;
+				}
+				if let Some(custom_minor_increment_regex) =
+					&config.custom_minor_increment_regex
+				{
+					next_version = next_version.with_custom_minor_increment_regex(
+						custom_minor_increment_regex,
+					)?;
+				}
+				let next_version = next_version
 					.increment(
 						&semver?,
 						self.commits
@@ -159,6 +176,7 @@ mod test {
 		fn build_release<'a>(version: &str, commits: &'a [&str]) -> Release<'a> {
 			Release {
 				version: None,
+				message: None,
 				commits: commits
 					.iter()
 					.map(|v| Commit::from(v.to_string()))
@@ -256,9 +274,11 @@ mod test {
 			let release = build_release(version, commits);
 			let next_version =
 				release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor: Some(false),
-					breaking_always_bump_major: Some(false),
-					initial_tag:                None,
+					features_always_bump_minor:   Some(false),
+					breaking_always_bump_major:   Some(false),
+					initial_tag:                  None,
+					custom_major_increment_regex: None,
+					custom_minor_increment_regex: None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -277,9 +297,11 @@ mod test {
 			let release = build_release(version, commits);
 			let next_version =
 				release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor: Some(true),
-					breaking_always_bump_major: Some(false),
-					initial_tag:                None,
+					features_always_bump_minor:   Some(true),
+					breaking_always_bump_major:   Some(false),
+					initial_tag:                  None,
+					custom_major_increment_regex: None,
+					custom_minor_increment_regex: None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -298,9 +320,11 @@ mod test {
 			let release = build_release(version, commits);
 			let next_version =
 				release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor: Some(false),
-					breaking_always_bump_major: Some(true),
-					initial_tag:                None,
+					features_always_bump_minor:   Some(false),
+					breaking_always_bump_major:   Some(true),
+					initial_tag:                  None,
+					custom_major_increment_regex: None,
+					custom_minor_increment_regex: None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -319,9 +343,11 @@ mod test {
 			assert_eq!(
 				"0.1.0",
 				empty_release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor: Some(features_always_bump_minor),
-					breaking_always_bump_major: Some(breaking_always_bump_major),
-					initial_tag:                None,
+					features_always_bump_minor:   Some(features_always_bump_minor),
+					breaking_always_bump_major:   Some(breaking_always_bump_major),
+					initial_tag:                  None,
+					custom_major_increment_regex: None,
+					custom_minor_increment_regex: None,
 				})?
 			);
 		}
@@ -340,6 +366,7 @@ mod test {
 
 		let mut release = Release {
 			version: None,
+			message: None,
 			commits: vec![
 				Commit::from(String::from(
 					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \
@@ -625,6 +652,7 @@ mod test {
 
 		let mut release = Release {
 			version: None,
+			message: None,
 			commits: vec![
 				Commit::from(String::from(
 					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \
@@ -968,6 +996,7 @@ mod test {
 
 		let mut release = Release {
 			version: None,
+			message: None,
 			commits: vec![
 				Commit::from(String::from(
 					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \

@@ -200,6 +200,24 @@ pub struct Bump {
 	///
 	/// When set, the version will be set to this value if no tags are found.
 	pub initial_tag: Option<String>,
+
+	/// Configure a custom regex pattern for major version increments.
+	///
+	/// This will check only the type of the commit against the given pattern.
+	///
+	/// ### Note
+	///
+	/// `commit type` according to the spec is only `[a-zA-Z]+`
+	pub custom_major_increment_regex: Option<String>,
+
+	/// Configure a custom regex pattern for minor version increments.
+	///
+	/// This will check only the type of the commit against the given pattern.
+	///
+	/// ### Note
+	///
+	/// `commit type` according to the spec is only `[a-zA-Z]+`
+	pub custom_minor_increment_regex: Option<String>,
 }
 
 /// Parser for grouping commits.
@@ -213,6 +231,9 @@ pub struct CommitParser {
 	/// Regex for matching the commit body.
 	#[serde(with = "serde_regex", default)]
 	pub body:          Option<Regex>,
+	/// Regex for matching the commit footer.
+	#[serde(with = "serde_regex", default)]
+	pub footer:        Option<Regex>,
 	/// Group of the commit.
 	pub group:         Option<String>,
 	/// Default scope of the commit.

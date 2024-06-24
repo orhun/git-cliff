@@ -29,6 +29,7 @@ use std::time::{
 pub struct Changelog<'a> {
 	/// Releases that the changelog will contain.
 	pub releases:       Vec<Release<'a>>,
+	header_template:    Option<Template>,
 	body_template:      Template,
 	footer_template:    Option<Template>,
 	config:             &'a Config,
@@ -41,6 +42,10 @@ impl<'a> Changelog<'a> {
 		let trim = config.changelog.trim.unwrap_or(true);
 		let mut changelog = Self {
 			releases,
+			header_template: match &config.changelog.header {
+				Some(header) => Some(Template::new(header.to_string(), trim)?),
+				None => None,
+			},
 			body_template: Template::new(
 				config
 					.changelog
@@ -420,16 +425,14 @@ impl<'a> Changelog<'a> {
 			serde_json::to_value(self.config.remote.clone())?,
 		);
 		#[cfg(feature = "github")]
-		let (github_commits, github_pull_requests) = if self.config.remote.github.is_set()
-		{
+		let (github_commits, github_pull_requests) = if self.config.remote.github.is_set() {
 			self.get_github_metadata()
 				.expect("Could not get github metadata")
 		} else {
 			(vec![], vec![])
 		};
 		#[cfg(feature = "gitlab")]
-		let (gitlab_commits, gitlab_merge_request) = if self.config.remote.gitlab.is_set()
-		{
+		let (gitlab_commits, gitlab_merge_request) = if self.config.remote.gitlab.is_set() {
 			self.get_gitlab_metadata()
 				.expect("Could not get gitlab metadata")
 		} else {
@@ -502,14 +505,26 @@ impl<'a> Changelog<'a> {
 			.postprocessors
 			.clone()
 			.unwrap_or_default();
-		if let Some(header) = &self.config.changelog.header {
-			let write_result = write!(out, "{header}");
+
+		if let Some(header_template) = &self.header_template {
+			let write_result = writeln!(
+				out,
+				"{}",
+				header_template.render(
+					&Releases {
+						releases: &self.releases,
+					},
+					Some(&self.additional_context),
+					&postprocessors,
+				)?
+			);
 			if let Err(e) = write_result {
 				if e.kind() != std::io::ErrorKind::BrokenPipe {
 					return Err(e.into());
 				}
 			}
 		}
+
 		for release in &self.releases {
 			let write_result = write!(
 				out,
@@ -526,6 +541,7 @@ impl<'a> Changelog<'a> {
 				}
 			}
 		}
+
 		if let Some(footer_template) = &self.footer_template {
 			let write_result = writeln!(
 				out,
@@ -544,6 +560,7 @@ impl<'a> Changelog<'a> {
 				}
 			}
 		}
+
 		Ok(())
 	}
 
@@ -631,6 +648,7 @@ mod test {
 						sha:           Some(String::from("tea")),
 						message:       None,
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("I love tea")),
 						default_scope: None,
 						scope:         None,
@@ -642,6 +660,7 @@ mod test {
 						sha:           Some(String::from("coffee")),
 						message:       None,
 						body:          None,
+						footer:        None,
 						group:         None,
 						default_scope: None,
 						scope:         None,
@@ -653,6 +672,7 @@ mod test {
 						sha:           Some(String::from("coffee2")),
 						message:       None,
 						body:          None,
+						footer:        None,
 						group:         None,
 						default_scope: None,
 						scope:         None,
@@ -664,6 +684,7 @@ mod test {
 						sha:           None,
 						message:       Regex::new(r".*merge.*").ok(),
 						body:          None,
+						footer:        None,
 						group:         None,
 						default_scope: None,
 						scope:         None,
@@ -675,6 +696,7 @@ mod test {
 						sha:           None,
 						message:       Regex::new("feat*").ok(),
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("New features")),
 						default_scope: Some(String::from("other")),
 						scope:         None,
@@ -686,6 +708,7 @@ mod test {
 						sha:           None,
 						message:       Regex::new("^fix*").ok(),
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("Bug Fixes")),
 						default_scope: None,
 						scope:         None,
@@ -697,6 +720,7 @@ mod test {
 						sha:           None,
 						message:       Regex::new("doc:").ok(),
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("Documentation")),
 						default_scope: None,
 						scope:         Some(String::from("documentation")),
@@ -708,6 +732,7 @@ mod test {
 						sha:           None,
 						message:       Regex::new("docs:").ok(),
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("Documentation")),
 						default_scope: None,
 						scope:         Some(String::from("documentation")),
@@ -719,6 +744,7 @@ mod test {
 						sha:           None,
 						message:       Regex::new(r"match\((.*)\):.*").ok(),
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("Matched ($1)")),
 						default_scope: None,
 						scope:         None,
@@ -728,8 +754,21 @@ mod test {
 					},
 					CommitParser {
 						sha:           None,
+						message:       None,
+						body:          None,
+						footer:        Regex::new("Footer:.*").ok(),
+						group:         Some(String::from("Footer")),
+						default_scope: None,
+						scope:         Some(String::from("footer")),
+						skip:          None,
+						field:         None,
+						pattern:       None,
+					},
+					CommitParser {
+						sha:           None,
 						message:       Regex::new(".*").ok(),
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("Other")),
 						default_scope: Some(String::from("other")),
 						scope:         None,
@@ -774,6 +813,7 @@ mod test {
 		};
 		let test_release = Release {
 			version: Some(String::from("v1.0.0")),
+			message: None,
 			commits: vec![
 				Commit::new(
 					String::from("coffee"),
@@ -831,6 +871,10 @@ mod test {
 					String::from("coffee"),
 					String::from("revert(app): skip this commit"),
 				),
+				Commit::new(
+					String::from("footer"),
+					String::from("misc: use footer\n\nFooter: footer text"),
+				),
 			],
 			commit_id: Some(String::from("0bc123")),
 			timestamp: 50000000,
@@ -864,6 +908,7 @@ mod test {
 			},
 			Release {
 				version: None,
+				message: None,
 				commits: vec![
 					Commit::new(
 						String::from("abc123"),
@@ -926,6 +971,7 @@ mod test {
 		assert_eq!(
 			String::from(
 				r#"# Changelog
+
 			## Release [v1.1.0] - 1970-01-01
 
 
@@ -955,6 +1001,10 @@ mod test {
 			#### documentation
 			- update docs
 			- add some documentation
+
+			### Footer
+			#### footer
+			- use footer
 
 			### I love tea
 			#### app
@@ -997,6 +1047,13 @@ mod test {
 		config.git.split_commits = Some(true);
 		config.git.filter_unconventional = Some(false);
 		config.git.protect_breaking_commits = Some(true);
+
+		if let Some(parsers) = config.git.commit_parsers.as_mut() {
+			for parser in parsers.iter_mut().filter(|p| p.footer.is_some()) {
+				parser.skip = Some(true)
+			}
+		}
+
 		releases[0].commits.push(Commit::new(
 			String::from("0bc123"),
 			String::from(
@@ -1031,6 +1088,7 @@ chore(deps): fix broken deps
 		assert_eq!(
 			String::from(
 				r#"# Changelog
+
 			## Unreleased
 
 			### Bug Fixes
@@ -1134,6 +1192,7 @@ chore(deps): fix broken deps
 		changelog.generate(&mut out)?;
 		expect_test::expect![[r#"
     # Changelog
+
     ## Unreleased
 
     ### Bug Fixes
@@ -1162,6 +1221,10 @@ chore(deps): fix broken deps
     #### documentation
     - update docs
     - add some documentation
+
+    ### Footer
+    #### footer
+    - use footer
 
     ### I love tea
     #### app

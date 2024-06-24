@@ -146,6 +146,10 @@ Examples:
   - Group the commit as "Features" if the commit message (description) starts with "feat".
 - `{ body = ".*security", group = "Security" }`
   - Group the commit as "Security" if the commit body contains "security".
+    <!-- Conventional commits parser is out of sync with spec, parsing only separator ":", not ": "; see: -->
+    <!-- https://github.com/conventional-commits/parser/issues/47 -->
+- `{ footer = "^changelog: ?ignore", skip = true }`
+  - Skip processing the commit if the commit footer contains "changelog: ignore".
 - `{ message = '^fix\((.*)\)', group = 'Fix (${1})' }`
   - Use the matched scope value from the commit message in the group name.
 - `{ message = ".*deprecated", body = ".*deprecated", group = "Deprecation" }`
@@ -192,6 +196,8 @@ A regex for skip processing the matched tags.
 ### ignore_tags
 
 A regex for ignore processing the matched tags.
+
+This value can be also overridden with using the `--ignore-tags` argument.
 
 While `skip_tags` drop commits from the changelog, `ignore_tags` include ignored commits into the next tag.
 
