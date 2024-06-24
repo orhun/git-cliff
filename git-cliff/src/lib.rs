@@ -533,7 +533,6 @@ pub fn run(mut args: Opt) -> Result<()> {
 	} else {
 		Box::new(io::stdout())
 	};
-	let out = &mut *out;
 	if args.bump || args.bumped_version {
 		let next_version = if let Some(next_version) = changelog.bump_version()? {
 			next_version
@@ -552,15 +551,16 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 
 	if args.context {
-		changelog.write_context(out)?;
+		changelog.write_context(&mut out)?;
 		return Ok(());
 	}
 
 	if let Some(path) = &args.prepend {
-		changelog.prepend(fs::read_to_string(path)?, &mut File::create(path)?)?;
+		let mut out = io::BufWriter::new(File::create(path)?);
+		changelog.prepend(fs::read_to_string(path)?, &mut out)?;
 	}
 	if args.output.is_some() || args.prepend.is_none() {
-		changelog.generate(out)?;
+		changelog.generate(&mut out)?;
 	}
 
 	Ok(())
