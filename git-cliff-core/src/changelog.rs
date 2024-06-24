@@ -425,14 +425,16 @@ impl<'a> Changelog<'a> {
 			serde_json::to_value(self.config.remote.clone())?,
 		);
 		#[cfg(feature = "github")]
-		let (github_commits, github_pull_requests) = if self.config.remote.github.is_set() {
+		let (github_commits, github_pull_requests) = if self.config.remote.github.is_set()
+		{
 			self.get_github_metadata()
 				.expect("Could not get github metadata")
 		} else {
 			(vec![], vec![])
 		};
 		#[cfg(feature = "gitlab")]
-		let (gitlab_commits, gitlab_merge_request) = if self.config.remote.gitlab.is_set() {
+		let (gitlab_commits, gitlab_merge_request) = if self.config.remote.gitlab.is_set()
+		{
 			self.get_gitlab_metadata()
 				.expect("Could not get gitlab metadata")
 		} else {
