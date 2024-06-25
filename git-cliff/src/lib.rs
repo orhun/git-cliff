@@ -569,8 +569,9 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 
 	if let Some(path) = &args.prepend {
+		let changelog_before = fs::read_to_string(path)?;
 		let mut out = io::BufWriter::new(File::create(path)?);
-		changelog.prepend(fs::read_to_string(path)?, &mut out)?;
+		changelog.prepend(changelog_before, &mut out)?;
 	}
 	if args.output.is_some() || args.prepend.is_none() {
 		changelog.generate(&mut out)?;
