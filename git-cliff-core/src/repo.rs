@@ -3,6 +3,7 @@ use crate::error::{
 	Error,
 	Result,
 };
+use crate::tag::Tag;
 use git2::{
 	BranchType,
 	Commit,
@@ -13,10 +14,19 @@ use git2::{
 };
 use glob::Pattern;
 use indexmap::IndexMap;
-use regex::Regex;
+use lazy_regex::{
+	lazy_regex,
+	Lazy,
+	Regex,
+};
 use std::io;
 use std::path::PathBuf;
 use url::Url;
+
+/// Regex for replacing the signature part of a tag message.
+static TAG_SIGNATURE_REGEX: Lazy<Regex> = lazy_regex!(
+	r"(?s)-----BEGIN PGP SIGNATURE-----(.*?)-----END PGP SIGNATURE-----"
+);
 
 /// Wrapper for [`Repository`] type from git2.
 ///
@@ -98,11 +108,38 @@ impl Repository {
 	/// Returns the current tag.
 	///
 	/// It is the same as running `git describe --tags`
-	pub fn current_tag(&self) -> Option<String> {
+	pub fn current_tag(&self) -> Option<Tag> {
 		self.inner
 			.describe(DescribeOptions::new().describe_tags())
 			.ok()
-			.and_then(|describe| describe.format(None).ok())
+			.and_then(|describe| {
+				describe
+					.format(None)
+					.ok()
+					.map(|name| self.resolve_tag(&name))
+			})
+	}
+
+	/// Returns the tag object of the given name.
+	///
+	/// If given name doesn't exist, it still returns `Tag` with the given name.
+	pub fn resolve_tag(&self, name: &str) -> Tag {
+		match self
+			.inner
+			.resolve_reference_from_short_name(name)
+			.and_then(|r| r.peel_to_tag())
+		{
+			Ok(tag) => Tag {
+				name:    tag.name().unwrap_or_default().to_owned(),
+				message: tag.message().map(|msg| {
+					TAG_SIGNATURE_REGEX.replace(msg, "").trim().to_owned()
+				}),
+			},
+			_ => Tag {
+				name:    name.to_owned(),
+				message: None,
+			},
+		}
 	}
 
 	/// Returns the commit object of the given ID.
@@ -122,8 +159,8 @@ impl Repository {
 		&self,
 		pattern: &Option<Regex>,
 		topo_order: bool,
-	) -> Result<IndexMap<String, String>> {
-		let mut tags: Vec<(Commit, String)> = Vec::new();
+	) -> Result<IndexMap<String, Tag>> {
+		let mut tags: Vec<(Commit, Tag)> = Vec::new();
 		let tag_names = self.inner.tag_names(None)?;
 		for name in tag_names
 			.iter()
@@ -135,14 +172,22 @@ impl Repository {
 		{
 			let obj = self.inner.revparse_single(&name)?;
 			if let Ok(commit) = obj.clone().into_commit() {
-				tags.push((commit, name));
+				tags.push((commit, Tag {
+					name,
+					message: None,
+				}));
 			} else if let Some(tag) = obj.as_tag() {
 				if let Some(commit) = tag
 					.target()
 					.ok()
 					.and_then(|target| target.into_commit().ok())
 				{
-					tags.push((commit, name));
+					tags.push((commit, Tag {
+						name:    tag.name().map(String::from).unwrap_or(name),
+						message: tag.message().map(|msg| {
+							TAG_SIGNATURE_REGEX.replace(msg, "").trim().to_owned()
+						}),
+					}));
 				}
 			}
 		}
@@ -264,7 +309,7 @@ mod test {
 	fn get_latest_tag() -> Result<()> {
 		let repository = get_repository()?;
 		let tags = repository.tags(&None, false)?;
-		assert_eq!(&get_last_tag()?, tags.last().expect("no tags found").1);
+		assert_eq!(get_last_tag()?, tags.last().expect("no tags found").1.name);
 		Ok(())
 	}
 
@@ -273,16 +318,20 @@ mod test {
 		let repository = get_repository()?;
 		let tags = repository.tags(&None, true)?;
 		assert_eq!(
-			tags.get("2b8b4d3535f29231e05c3572e919634b9af907b6").expect(
-				"the commit hash does not exist in the repository (tag v0.1.0)"
-			),
+			tags.get("2b8b4d3535f29231e05c3572e919634b9af907b6")
+				.expect(
+					"the commit hash does not exist in the repository (tag v0.1.0)"
+				)
+				.name,
 			"v0.1.0"
 		);
 		assert_eq!(
-			tags.get("4ddef08debfff48117586296e49d5caa0800d1b5").expect(
-				"the commit hash does not exist in the repository (tag \
-				 v0.1.0-beta.4)"
-			),
+			tags.get("4ddef08debfff48117586296e49d5caa0800d1b5")
+				.expect(
+					"the commit hash does not exist in the repository (tag \
+					 v0.1.0-beta.4)"
+				)
+				.name,
 			"v0.1.0-beta.4"
 		);
 		let tags = repository.tags(
@@ -293,9 +342,11 @@ mod test {
 			true,
 		)?;
 		assert_eq!(
-			tags.get("2b8b4d3535f29231e05c3572e919634b9af907b6").expect(
-				"the commit hash does not exist in the repository (tag v0.1.0)"
-			),
+			tags.get("2b8b4d3535f29231e05c3572e919634b9af907b6")
+				.expect(
+					"the commit hash does not exist in the repository (tag v0.1.0)"
+				)
+				.name,
 			"v0.1.0"
 		);
 		assert!(!tags.contains_key("4ddef08debfff48117586296e49d5caa0800d1b5"));
@@ -314,6 +365,32 @@ mod test {
 			},
 			remote
 		);
+		Ok(())
+	}
+
+	#[test]
+	fn resolves_existing_tag_with_name_and_message() -> Result<()> {
+		let repository = get_repository()?;
+		let tag = repository.resolve_tag("v0.2.3");
+		assert_eq!(tag.name, "v0.2.3");
+		assert_eq!(
+			tag.message,
+			Some(
+				"Release v0.2.3\n\nBug Fixes\n- Fetch the dependencies before \
+				 copying the file to embed (9e29c95)"
+					.to_string()
+			)
+		);
+
+		Ok(())
+	}
+
+	#[test]
+	fn resolves_tag_when_no_tags_exist() -> Result<()> {
+		let repository = get_repository()?;
+		let tag = repository.resolve_tag("nonexistent-tag");
+		assert_eq!(tag.name, "nonexistent-tag");
+		assert_eq!(tag.message, None);
 		Ok(())
 	}
 }
