@@ -32,7 +32,9 @@ static TAG_SIGNATURE_REGEX: Lazy<Regex> = lazy_regex!(
 ///
 /// [`Repository`]: GitRepository
 pub struct Repository {
-	inner: GitRepository,
+	inner:    GitRepository,
+	/// Repository path.
+	pub path: PathBuf,
 }
 
 impl Repository {
@@ -40,7 +42,8 @@ impl Repository {
 	pub fn init(path: PathBuf) -> Result<Self> {
 		if path.exists() {
 			Ok(Self {
-				inner: GitRepository::open(path)?,
+				inner: GitRepository::open(&path)?,
+				path,
 			})
 		} else {
 			Err(Error::IoError(io::Error::new(

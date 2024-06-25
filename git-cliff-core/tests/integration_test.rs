@@ -194,6 +194,7 @@ fn generate_changelog() -> Result<()> {
 			commit_id: None,
 			timestamp: 0,
 			previous:  None,
+			repository: Some(String::from("/root/repo")),
 			#[cfg(feature = "github")]
 			github: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],
@@ -235,6 +236,7 @@ fn generate_changelog() -> Result<()> {
 			commit_id: None,
 			timestamp: 0,
 			previous:  None,
+			repository: Some(String::from("/root/repo")),
 			#[cfg(feature = "github")]
 			github: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],

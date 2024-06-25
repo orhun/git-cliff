@@ -238,6 +238,7 @@ fn process_repository<'a>(
 		let commit = Commit::from(git_commit);
 		let commit_id = commit.id.to_string();
 		release.commits.push(commit);
+		release.repository = Some(repository.path.to_string_lossy().into_owned());
 		if let Some(tag) = tags.get(&commit_id) {
 			release.version = Some(tag.name.to_string());
 			release.message = tag.message.clone();

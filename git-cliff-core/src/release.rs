@@ -20,30 +20,32 @@ use serde::{
 #[serde(rename_all = "camelCase")]
 pub struct Release<'a> {
 	/// Release version, git tag.
-	pub version:   Option<String>,
+	pub version:    Option<String>,
 	/// git tag's message.
-	pub message:   Option<String>,
+	pub message:    Option<String>,
 	/// Commits made for the release.
-	pub commits:   Vec<Commit<'a>>,
+	pub commits:    Vec<Commit<'a>>,
 	/// Commit ID of the tag.
 	#[serde(rename = "commit_id")]
-	pub commit_id: Option<String>,
+	pub commit_id:  Option<String>,
 	/// Timestamp of the release in seconds, from epoch.
-	pub timestamp: i64,
+	pub timestamp:  i64,
 	/// Previous release.
-	pub previous:  Option<Box<Release<'a>>>,
+	pub previous:   Option<Box<Release<'a>>>,
+	/// Repository path.
+	pub repository: Option<String>,
 	/// Contributors.
 	#[cfg(feature = "github")]
-	pub github:    RemoteReleaseMetadata,
+	pub github:     RemoteReleaseMetadata,
 	/// Contributors.
 	#[cfg(feature = "gitlab")]
-	pub gitlab:    RemoteReleaseMetadata,
+	pub gitlab:     RemoteReleaseMetadata,
 	/// Contributors.
 	#[cfg(feature = "gitea")]
-	pub gitea:     RemoteReleaseMetadata,
+	pub gitea:      RemoteReleaseMetadata,
 	/// Contributors.
 	#[cfg(feature = "bitbucket")]
-	pub bitbucket: RemoteReleaseMetadata,
+	pub bitbucket:  RemoteReleaseMetadata,
 }
 
 #[cfg(feature = "github")]
@@ -187,6 +189,7 @@ mod test {
 					version: Some(String::from(version)),
 					..Default::default()
 				})),
+				repository: Some(String::from("/root/repo")),
 				#[cfg(feature = "github")]
 				github: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
@@ -395,6 +398,7 @@ mod test {
 				version: Some(String::from("1.0.0")),
 				..Default::default()
 			})),
+			repository: Some(String::from("/root/repo")),
 			github: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
@@ -681,6 +685,7 @@ mod test {
 				version: Some(String::from("1.0.0")),
 				..Default::default()
 			})),
+			repository: Some(String::from("/root/repo")),
 			#[cfg(feature = "github")]
 			github: RemoteReleaseMetadata {
 				contributors: vec![],
@@ -1025,6 +1030,7 @@ mod test {
 				version: Some(String::from("1.0.0")),
 				..Default::default()
 			})),
+			repository: Some(String::from("/root/repo")),
 			#[cfg(feature = "github")]
 			github: RemoteReleaseMetadata {
 				contributors: vec![],
