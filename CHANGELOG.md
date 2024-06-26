@@ -1,5 +1,44 @@
 [![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)
 
+## [2.4.0](https://github.com/orhun/git-cliff/compare/v2.3.0..v2.4.0) - 2024-06-26
+
+### ⛰️  Features
+
+- *(args)* Add `--ignore-tags` argument ([#696](https://github.com/orhun/git-cliff/issues/696)) - ([94891c2](https://github.com/orhun/git-cliff/commit/94891c2c27b1f46cb840fbea1e167c161609cbcd))
+- *(bump)* Support bumping based on configurable custom pattern ([#725](https://github.com/orhun/git-cliff/issues/725)) - ([8e03356](https://github.com/orhun/git-cliff/commit/8e03356706c8aa89eac80953bc2a01ed3f93bb52))
+- *(bump)* Support setting the `initial_tag` ([#701](https://github.com/orhun/git-cliff/issues/701)) - ([7341500](https://github.com/orhun/git-cliff/commit/734150020e1e2763eaac7aa10acf80f82169b60e))
+- *(changelog)* Add tag message to release context ([#713](https://github.com/orhun/git-cliff/issues/713)) - ([3eb828e](https://github.com/orhun/git-cliff/commit/3eb828e69ad3a5b94833f67dfe287e7d8b31a274))
+- *(changelog)* Make `changelog.header` a template ([#698](https://github.com/orhun/git-cliff/issues/698)) - ([9fc12bb](https://github.com/orhun/git-cliff/commit/9fc12bb90cac732d8621446e4d4de775e7f0ba9a))
+- *(changelog)* Support parsing commits by footer ([#569](https://github.com/orhun/git-cliff/issues/569)) - ([50c240c](https://github.com/orhun/git-cliff/commit/50c240c25b632c670b23e0bac943ff94eeb3dfb7))
+- *(changelog)* Make remote data available in context ([#703](https://github.com/orhun/git-cliff/issues/703)) - ([d14774a](https://github.com/orhun/git-cliff/commit/d14774ae4afb086819d9669dfc050fac1c237de8))
+- *(codeberg)* Add Gitea support ([#680](https://github.com/orhun/git-cliff/issues/680)) - ([403d3dc](https://github.com/orhun/git-cliff/commit/403d3dcd32246fba5c1e1c50bc1f95410e3ee5e4))
+- *(context)* Add repository path to template context ([#721](https://github.com/orhun/git-cliff/issues/721)) - ([e7807e1](https://github.com/orhun/git-cliff/commit/e7807e13c4b38aaa4a735ff05b69fdd6b57a7a85))
+
+### 🐛 Bug Fixes
+
+- *(fixture)* Support running fixtures on mingw64 ([#708](https://github.com/orhun/git-cliff/issues/708)) - ([dabe716](https://github.com/orhun/git-cliff/commit/dabe716c201fedf3021d89c5a8564794bda07f2a))
+- *(website)* Update dependencies to fix search issue - ([8a9f9f4](https://github.com/orhun/git-cliff/commit/8a9f9f48da42ec95f47a169370c6c5cdf2a0b327))
+
+### 🚜 Refactor
+
+- *(bump)* Add documentation and simplify implementation - ([bea4916](https://github.com/orhun/git-cliff/commit/bea49161e9bd9bc999889aca22ed4c0f18f53ca1))
+
+### 📚 Documentation
+
+- *(website)* Add highlights for 2.4.0 ([#729](https://github.com/orhun/git-cliff/issues/729)) - ([5558cc5](https://github.com/orhun/git-cliff/commit/5558cc51b17cbc9c09bf9a2938ed227f1d1bda11))
+- *(website)* Add more context about `ignore_tags` matching commits ([#710](https://github.com/orhun/git-cliff/issues/710)) - ([854b411](https://github.com/orhun/git-cliff/commit/854b411e474b21c870afb0636512b471bf737c4c))
+- *(website)* Fix link to github-keepachangelog template ([#694](https://github.com/orhun/git-cliff/issues/694)) - ([eac2195](https://github.com/orhun/git-cliff/commit/eac2195963e1688cd865969a01cc944d6a4af7b4))
+- *(website)* Add information about `--bump` with `tag prefixes` ([#695](https://github.com/orhun/git-cliff/issues/695)) - ([4cd18c2](https://github.com/orhun/git-cliff/commit/4cd18c2bcdb2ce21234776364598d42261df004d))
+
+### 🎨 Styling
+
+- *(lint)* Fix formatting - ([5b58a37](https://github.com/orhun/git-cliff/commit/5b58a3771d056a95b9ec93ff4a7d0d5bf49b8473))
+- *(lint)* Fix formatting ([#702](https://github.com/orhun/git-cliff/issues/702)) - ([b7e323f](https://github.com/orhun/git-cliff/commit/b7e323f8ec948f7ab9d2f821e0da77e4d936475d))
+
+### 🧪 Testing
+
+- *(template)* Add tests ([#674](https://github.com/orhun/git-cliff/issues/674)) - ([a51422d](https://github.com/orhun/git-cliff/commit/a51422dda9431a3f24b4b061ab055ac97fa018de))
+
 ## [2.3.0](https://github.com/orhun/git-cliff/compare/v2.2.2..v2.3.0) - 2024-06-03
 
 ### ⛰️  Features
@@ -24,7 +63,6 @@
 - *(cd)* Use macos-14 runner - ([22c94ed](https://github.com/orhun/git-cliff/commit/22c94ed8355d71a5fe99d8c1e9c8a3824338debf))
 - *(example)* Allow using github template without github variables ([#672](https://github.com/orhun/git-cliff/issues/672)) - ([6a9feba](https://github.com/orhun/git-cliff/commit/6a9feba98f36de1980bab313f6b0a861f5009d71))
 - *(links)* Ignore patreon links - ([bfe2774](https://github.com/orhun/git-cliff/commit/bfe27744701296185d2f1d37dba7cfb48bd70519))
-- *(npm)* Update yarn.lock - ([1c2b4ac](https://github.com/orhun/git-cliff/commit/1c2b4ac85b49f62ae6f19660e7e47b3bc24a5cae))
 
 ## [2.2.2](https://github.com/orhun/git-cliff/compare/v2.2.1..v2.2.2) - 2024-05-11
 
@@ -46,7 +84,6 @@
 ### ⚙️ Miscellaneous Tasks
 
 - *(npm)* Add minimum supported Node versions ([#621](https://github.com/orhun/git-cliff/issues/621)) - ([95bdf2d](https://github.com/orhun/git-cliff/commit/95bdf2db3724715f76a7b649367541ace5ca9d1f))
-- *(npm)* Update yarn.lock - ([adc5c5b](https://github.com/orhun/git-cliff/commit/adc5c5ba876281cdeab0d7e7150a32d959f90886))
 - *(pypi)* Disable PyPi builds for x86_64-pc-windows-gnu - ([f675b0b](https://github.com/orhun/git-cliff/commit/f675b0b5bdbe57437e39dbe4c0b78e7c4f373936))
 - *(tests)* Don't check last commit ([#619](https://github.com/orhun/git-cliff/issues/619)) - ([68b9839](https://github.com/orhun/git-cliff/commit/68b98393e72d4a38a2e9166477784a9e1a55c9cf))
 
