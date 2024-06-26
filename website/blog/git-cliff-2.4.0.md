@@ -6,6 +6,7 @@ authors: orhun
 tags:
   - release
 ---
+
 <center>
 
   <a href="https://github.com/orhun/git-cliff">
@@ -19,6 +20,10 @@ tags:
 > It supports using [custom regular expressions](/docs/configuration/git#commit_parsers) to alter changelogs which are mostly based on [conventional commits](/docs/configuration/git#conventional_commits). With a single [configuration file](/docs/configuration), a wide variety of formats can be applied for a changelog, thanks to the Jinja2/Django-inspired [template engine](/docs/category/templating).
 >
 > More information and examples can be found in the [GitHub repository](https://github.com/orhun/git-cliff).
+
+## What's new? ⛰️
+
+The full changelog can be found [here](https://github.com/orhun/git-cliff/blob/main/CHANGELOG.md).
 
 ---
 
