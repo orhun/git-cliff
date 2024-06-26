@@ -109,6 +109,9 @@ pub struct GitConfig {
 	/// Regex to ignore matched tags.
 	#[serde(with = "serde_regex", default)]
 	pub ignore_tags:              Option<Regex>,
+	/// Regex to count matched tags.
+	#[serde(with = "serde_regex", default)]
+	pub count_tags:               Option<Regex>,
 	/// Whether to sort tags topologically.
 	pub topo_order:               Option<bool>,
 	/// Sorting of the commits inside sections.
