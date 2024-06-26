@@ -76,7 +76,7 @@ url = "2.5.2"
 dyn-clone = "1.0.17"
 
 [dependencies.git2]
-version = "0.18.3"
+version = "0.19.0"
 default-features = false
 optional = true
 
