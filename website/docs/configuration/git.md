@@ -201,6 +201,9 @@ This value can be also overridden with using the `--ignore-tags` argument.
 
 While `skip_tags` drop commits from the changelog, `ignore_tags` include ignored commits into the next tag.
 
+* Note that if a commit has multiple tags, any matched tag will result in all associated tags being ignored, including those not explicitly matched by the regex. This is because git-cliff processes tags at the commit level rather than individually.
+For more details, you can view the discussion [here](https://github.com/orhun/git-cliff/discussions/707)
+
 ### topo_order
 
 If set to `true`, tags are processed in topological order instead of chronological.
