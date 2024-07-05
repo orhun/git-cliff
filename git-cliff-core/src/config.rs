@@ -218,6 +218,9 @@ pub struct Bump {
 	///
 	/// `commit type` according to the spec is only `[a-zA-Z]+`
 	pub custom_minor_increment_regex: Option<String>,
+
+	/// force to always bump in major, minor or patch.
+	pub bump_as: Option<String>,
 }
 
 /// Parser for grouping commits.

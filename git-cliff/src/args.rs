@@ -193,6 +193,9 @@ pub struct Opt {
 	/// Bumps the version for unreleased changes.
 	#[arg(long, help_heading = Some("FLAGS"))]
 	pub bump:             bool,
+	/// Bumps the version for unreleased changes with specified change.
+	#[arg(long, value_name = "BUMP_AS")]
+	pub bump_as:          Option<String>,
 	/// Prints bumped version for unreleased changes.
 	#[arg(long, help_heading = Some("FLAGS"))]
 	pub bumped_version:   bool,

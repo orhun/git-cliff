@@ -546,6 +546,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 
 	// Process commits and releases for the changelog.
+	config.bump.bump_as = args.bump_as;
 	let mut changelog = Changelog::new(releases, &config)?;
 
 	// Print the result.
