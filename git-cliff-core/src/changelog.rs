@@ -104,13 +104,6 @@ impl<'a> Changelog<'a> {
 		}
 	}
 
-	// fn load_commits(&mut self) {
-	// 	debug!("Loading commits...");
-	// 	self.releases.iter_mut().for_each(|release| {
-
-	// 	})
-	// }
-
 	/// Processes the commits and omits the ones that doesn't match the
 	/// criteria set by configuration file.
 	fn process_commits(&mut self) {
