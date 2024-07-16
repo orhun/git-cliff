@@ -518,9 +518,9 @@ pub fn run(mut args: Opt) -> Result<()> {
 	if args.ignore_tags.is_some() {
 		config.git.ignore_tags.clone_from(&args.ignore_tags);
 	}
-    if args.count_tags.is_some() {
-        config.git.count_tags.clone_from(&args.count_tags);
-    }
+	if args.count_tags.is_some() {
+		config.git.count_tags.clone_from(&args.count_tags);
+	}
 	// Process the repositories.
 	let repositories = args.repository.clone().unwrap_or(vec![env::current_dir()?]);
 	let mut releases = Vec::<Release>::new();
