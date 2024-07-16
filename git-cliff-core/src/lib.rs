@@ -27,12 +27,14 @@ pub mod error;
 /// Common release type.
 pub mod release;
 /// Remote handler.
-#[cfg(any(feature = "github", feature = "gitlab", feature = "bitbucket"))]
+#[cfg(feature = "remote")]
 #[allow(async_fn_in_trait)]
 pub mod remote;
 /// Git repository.
 #[cfg(feature = "repo")]
 pub mod repo;
+/// Git tag.
+pub mod tag;
 /// Template engine.
 pub mod template;
 

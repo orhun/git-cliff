@@ -91,7 +91,9 @@ fn process_repository<'a>(
 	let count_tags = config.git.count_tags.as_ref();
 	tags = tags
 		.into_iter()
-		.filter(|(_, name)| {
+		.filter(|(_, tag)| {
+			let name = &tag.name;
+
 			// Keep skip tags to drop commits in the later stage.
 			let skip = skip_regex.map(|r| r.is_match(name)).unwrap_or_default();
 
@@ -145,6 +147,17 @@ fn process_repository<'a>(
 				debug!("Failed to get remote from GitLab repository: {:?}", e);
 			}
 		}
+	} else if !config.remote.gitea.is_set() {
+		match repository.upstream_remote() {
+			Ok(remote) => {
+				debug!("No Gitea remote is set, using remote: {}", remote);
+				config.remote.gitea.owner = remote.owner;
+				config.remote.gitea.repo = remote.repo;
+			}
+			Err(e) => {
+				debug!("Failed to get remote from Gitea repository: {:?}", e);
+			}
+		}
 	} else if !config.remote.bitbucket.is_set() {
 		match repository.upstream_remote() {
 			Ok(remote) => {
@@ -184,7 +197,7 @@ fn process_repository<'a>(
 					repository.current_tag().as_ref().and_then(|tag| {
 						tags.iter()
 							.enumerate()
-							.find(|(_, (_, v))| v == &tag)
+							.find(|(_, (_, v))| v.name == tag.name)
 							.map(|(i, _)| i)
 					}) {
 					match current_tag_index.checked_sub(1) {
@@ -226,10 +239,10 @@ fn process_repository<'a>(
 		if let Some(commit_id) = commits.first().map(|c| c.id().to_string()) {
 			match tags.get(&commit_id) {
 				Some(tag) => {
-					warn!("There is already a tag ({}) for {}", tag, commit_id)
+					warn!("There is already a tag ({:?}) for {}", tag, commit_id)
 				}
 				None => {
-					tags.insert(commit_id, tag.to_string());
+					tags.insert(commit_id, repository.resolve_tag(tag));
 				}
 			}
 		}
@@ -243,15 +256,21 @@ fn process_repository<'a>(
 	for git_commit in commits.iter().rev() {
 		let commit = Commit::from(git_commit);
 		let commit_id = commit.id.to_string();
+		releases[release_index].repository =
+			Some(repository.path.to_string_lossy().to_string());
 		if args.sort == Sort::Newest {
 			releases[release_index].commits.insert(0, commit);
 		} else {
 			releases[release_index].commits.push(commit);
 		}
 		if let Some(tag) = tags.get(&commit_id) {
-			releases[release_index].version = Some(tag.to_string());
+			let tag_name = &tag.name;
+
+			releases[release_index].version = Some(tag_name.clone());
+			releases[release_index].message = tag.message.clone();
 			releases[release_index].commit_id = Some(commit_id);
-			releases[release_index].timestamp = if args.tag.as_deref() == Some(tag) {
+			releases[release_index].timestamp = if args.tag == Some(tag_name.clone())
+			{
 				SystemTime::now()
 					.duration_since(UNIX_EPOCH)?
 					.as_secs()
@@ -286,6 +305,13 @@ fn process_repository<'a>(
 		}
 	}
 
+	// Set custom message for the latest release.
+	if let Some(message) = &args.with_tag_message {
+		if let Some(latest_release) = releases.iter_mut().last() {
+			latest_release.message = Some(message.to_owned());
+		}
+	}
+
 	// Set the previous release if the first release does not have one set.
 	if !releases.is_empty() &&
 		releases
@@ -299,7 +325,7 @@ fn process_repository<'a>(
 			.map(|tag| {
 				tags.iter()
 					.enumerate()
-					.find(|(_, (_, v))| v == &tag)
+					.find(|(_, (_, v))| v.name == tag.name)
 					.and_then(|(i, _)| i.checked_sub(1))
 					.and_then(|i| tags.get_index(i))
 			})
@@ -307,10 +333,10 @@ fn process_repository<'a>(
 			.flatten();
 
 		// Set the previous release if the first tag is found.
-		if let Some((commit_id, version)) = first_tag {
+		if let Some((commit_id, tag)) = first_tag {
 			let previous_release = Release {
 				commit_id: Some(commit_id.to_string()),
-				version: Some(version.to_string()),
+				version: Some(tag.name.clone()),
 				timestamp: repository
 					.find_commit(commit_id.to_string())
 					.map(|v| v.time().seconds())
@@ -448,6 +474,9 @@ pub fn run(mut args: Opt) -> Result<()> {
 	if args.gitlab_token.is_some() {
 		config.remote.gitlab.token.clone_from(&args.gitlab_token);
 	}
+	if args.gitea_token.is_some() {
+		config.remote.gitea.token.clone_from(&args.gitea_token);
+	}
 	if args.bitbucket_token.is_some() {
 		config
 			.remote
@@ -483,7 +512,12 @@ pub fn run(mut args: Opt) -> Result<()> {
 	if args.tag_pattern.is_some() {
 		config.git.tag_pattern.clone_from(&args.tag_pattern);
 	}
-
+	if args.tag.is_some() {
+		config.bump.initial_tag.clone_from(&args.tag);
+	}
+	if args.ignore_tags.is_some() {
+		config.git.ignore_tags.clone_from(&args.ignore_tags);
+	}
 	// Process the repositories.
 	let repositories = args.repository.clone().unwrap_or(vec![env::current_dir()?]);
 	let mut releases = Vec::<Release>::new();

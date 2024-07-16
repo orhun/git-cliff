@@ -1,0 +1,31 @@
+[changelog]
+# template for the changelog footer
+header = """
+# Changelog
+{% for release in releases %}\
+    {% if release.version %}\
+        {% if release.previous.version %}\
+            <!--{{ release.previous.version }}..{{ release.version }}-->
+        {% endif %}\
+    {% else %}\
+        <!--{{ release.previous.version }}..HEAD-->
+    {% endif %}\
+{% endfor %}\
+"""
+# template for the changelog body
+# https://keats.github.io/tera/docs/#introduction
+body = """
+{% if version %}\
+    ## [{{ version | trim_start_matches(pat="v") }}]
+{% else %}\
+    ## [unreleased]
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | upper_first }}
+    {% for commit in commits %}
+        - {% if commit.breaking %}[**breaking**] {% endif %}{{ commit.message | upper_first }}\
+    {% endfor %}
+{% endfor %}\n
+"""
+# remove the leading and trailing whitespace from the templates
+trim = true

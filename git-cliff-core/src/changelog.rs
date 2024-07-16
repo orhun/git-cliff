@@ -10,6 +10,8 @@ use crate::release::{
 };
 #[cfg(feature = "bitbucket")]
 use crate::remote::bitbucket::BitbucketClient;
+#[cfg(feature = "gitea")]
+use crate::remote::gitea::GiteaClient;
 #[cfg(feature = "github")]
 use crate::remote::github::GitHubClient;
 #[cfg(feature = "gitlab")]
@@ -27,6 +29,7 @@ use std::time::{
 pub struct Changelog<'a> {
 	/// Releases that the changelog will contain.
 	pub releases:       Vec<Release<'a>>,
+	header_template:    Option<Template>,
 	body_template:      Template,
 	footer_template:    Option<Template>,
 	config:             &'a Config,
@@ -39,6 +42,10 @@ impl<'a> Changelog<'a> {
 		let trim = config.changelog.trim.unwrap_or(true);
 		let mut changelog = Self {
 			releases,
+			header_template: match &config.changelog.header {
+				Some(header) => Some(Template::new(header.to_string(), trim)?),
+				None => None,
+			},
 			body_template: Template::new(
 				config
 					.changelog
@@ -57,6 +64,7 @@ impl<'a> Changelog<'a> {
 		};
 		changelog.process_commits();
 		changelog.process_releases();
+		changelog.add_remote_data()?;
 		Ok(changelog)
 	}
 
@@ -223,7 +231,10 @@ impl<'a> Changelog<'a> {
 						github_client.get_pull_requests(),
 					)?;
 					debug!("Number of GitHub commits: {}", commits.len());
-					debug!("Number of GitHub pull requests: {}", commits.len());
+					debug!(
+						"Number of GitHub pull requests: {}",
+						pull_requests.len()
+					);
 					Ok((commits, pull_requests))
 				});
 			info!("{}", github::FINISHED_FETCHING_MSG);
@@ -299,6 +310,57 @@ impl<'a> Changelog<'a> {
 		}
 	}
 
+	/// Returns the Gitea metadata needed for the changelog.
+	///
+	/// This function creates a multithread async runtime for handling the
+	/// requests. The following are fetched from the GitHub REST API:
+	///
+	/// - Commits
+	/// - Pull requests
+	///
+	/// Each of these are paginated requests so they are being run in parallel
+	/// for speedup.
+	///
+	/// If no Gitea related variable is used in the template then this function
+	/// returns empty vectors.
+	#[cfg(feature = "gitea")]
+	fn get_gitea_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
+		use crate::remote::gitea;
+		if self
+			.body_template
+			.contains_variable(gitea::TEMPLATE_VARIABLES) ||
+			self.footer_template
+				.as_ref()
+				.map(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
+				.unwrap_or(false)
+		{
+			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
+			let gitea_client =
+				GiteaClient::try_from(self.config.remote.gitea.clone())?;
+			info!(
+				"{} ({})",
+				gitea::START_FETCHING_MSG,
+				self.config.remote.gitea
+			);
+			let data = tokio::runtime::Builder::new_multi_thread()
+				.enable_all()
+				.build()?
+				.block_on(async {
+					let (commits, pull_requests) = tokio::try_join!(
+						gitea_client.get_commits(),
+						gitea_client.get_pull_requests(),
+					)?;
+					debug!("Number of Gitea commits: {}", commits.len());
+					debug!("Number of Gitea pull requests: {}", pull_requests.len());
+					Ok((commits, pull_requests))
+				});
+			info!("{}", gitea::FINISHED_FETCHING_MSG);
+			data
+		} else {
+			Ok((vec![], vec![]))
+		}
+	}
+
 	/// Returns the Bitbucket metadata needed for the changelog.
 	///
 	/// This function creates a multithread async runtime for handling the
@@ -355,6 +417,69 @@ impl<'a> Changelog<'a> {
 		}
 	}
 
+	/// Adds remote data (e.g. GitHub commits) to the releases.
+	pub fn add_remote_data(&mut self) -> Result<()> {
+		debug!("Adding remote data...");
+		self.additional_context.insert(
+			"remote".to_string(),
+			serde_json::to_value(self.config.remote.clone())?,
+		);
+		#[cfg(feature = "github")]
+		let (github_commits, github_pull_requests) = if self.config.remote.github.is_set()
+		{
+			self.get_github_metadata()
+				.expect("Could not get github metadata")
+		} else {
+			(vec![], vec![])
+		};
+		#[cfg(feature = "gitlab")]
+		let (gitlab_commits, gitlab_merge_request) = if self.config.remote.gitlab.is_set()
+		{
+			self.get_gitlab_metadata()
+				.expect("Could not get gitlab metadata")
+		} else {
+			(vec![], vec![])
+		};
+		#[cfg(feature = "gitea")]
+		let (gitea_commits, gitea_merge_request) = if self.config.remote.gitea.is_set() {
+			self.get_gitea_metadata()
+				.expect("Could not get gitea metadata")
+		} else {
+			(vec![], vec![])
+		};
+		#[cfg(feature = "bitbucket")]
+		let (bitbucket_commits, bitbucket_pull_request) =
+			if self.config.remote.bitbucket.is_set() {
+				self.get_bitbucket_metadata()
+					.expect("Could not get bitbucket metadata")
+			} else {
+				(vec![], vec![])
+			};
+		for release in self.releases.iter_mut() {
+			#[cfg(feature = "github")]
+			release.update_github_metadata(
+				github_commits.clone(),
+				github_pull_requests.clone(),
+			)?;
+			#[cfg(feature = "gitlab")]
+			release.update_gitlab_metadata(
+				gitlab_commits.clone(),
+				gitlab_merge_request.clone(),
+			)?;
+			#[cfg(feature = "gitea")]
+			release.update_gitea_metadata(
+				gitea_commits.clone(),
+				gitea_merge_request.clone(),
+			)?;
+			#[cfg(feature = "bitbucket")]
+			release.update_bitbucket_metadata(
+				bitbucket_commits.clone(),
+				bitbucket_pull_request.clone(),
+			)?;
+		}
+		Ok(())
+	}
+
 	/// Increments the version for the unreleased changes based on semver.
 	pub fn bump_version(&mut self) -> Result<Option<String>> {
 		if let Some(ref mut last_release) = self.releases.iter_mut().next() {
@@ -376,88 +501,22 @@ impl<'a> Changelog<'a> {
 	/// Generates the changelog and writes it to the given output.
 	pub fn generate<W: Write>(&self, out: &mut W) -> Result<()> {
 		debug!("Generating changelog...");
-		let mut additional_context = self.additional_context.clone();
-		additional_context.insert(
-			"remote".to_string(),
-			serde_json::to_value(self.config.remote.clone())?,
-		);
-		#[cfg(feature = "github")]
-		let (github_commits, github_pull_requests) = if self.config.remote.github.is_set() {
-			self.get_github_metadata()
-				.expect("Could not get github metadata")
-		} else {
-			(vec![], vec![])
-		};
-		#[cfg(feature = "gitlab")]
-		let (gitlab_commits, gitlab_merge_request) = if self.config.remote.gitlab.is_set() {
-			self.get_gitlab_metadata()
-				.expect("Could not get gitlab metadata")
-		} else {
-			(vec![], vec![])
-		};
-		#[cfg(feature = "bitbucket")]
-		let (bitbucket_commits, bitbucket_pull_request) =
-			if self.config.remote.bitbucket.is_set() {
-				self.get_bitbucket_metadata()
-					.expect("Could not get bitbucket metadata")
-			} else {
-				(vec![], vec![])
-			};
 		let postprocessors = self
 			.config
 			.changelog
 			.postprocessors
 			.clone()
 			.unwrap_or_default();
-		if let Some(header) = &self.config.changelog.header {
-			let write_result = write!(out, "{header}");
-			if let Err(e) = write_result {
-				if e.kind() != std::io::ErrorKind::BrokenPipe {
-					return Err(e.into());
-				}
-			}
-		}
-		let mut releases = self.releases.clone();
-		for release in releases.iter_mut() {
-			#[cfg(feature = "github")]
-			release.update_github_metadata(
-				github_commits.clone(),
-				github_pull_requests.clone(),
-			)?;
-			#[cfg(feature = "gitlab")]
-			release.update_gitlab_metadata(
-				gitlab_commits.clone(),
-				gitlab_merge_request.clone(),
-			)?;
-			#[cfg(feature = "bitbucket")]
-			release.update_bitbucket_metadata(
-				bitbucket_commits.clone(),
-				bitbucket_pull_request.clone(),
-			)?;
-			let write_result = write!(
-				out,
-				"{}",
-				self.body_template.render(
-					&release,
-					Some(&additional_context),
-					&postprocessors
-				)?
-			);
-			if let Err(e) = write_result {
-				if e.kind() != std::io::ErrorKind::BrokenPipe {
-					return Err(e.into());
-				}
-			}
-		}
-		if let Some(footer_template) = &self.footer_template {
+
+		if let Some(header_template) = &self.header_template {
 			let write_result = writeln!(
 				out,
 				"{}",
-				footer_template.render(
+				header_template.render(
 					&Releases {
-						releases: &releases,
+						releases: &self.releases,
 					},
-					Some(&additional_context),
+					Some(&self.additional_context),
 					&postprocessors,
 				)?
 			);
@@ -467,6 +526,43 @@ impl<'a> Changelog<'a> {
 				}
 			}
 		}
+
+		for release in &self.releases {
+			let write_result = write!(
+				out,
+				"{}",
+				self.body_template.render(
+					&release,
+					Some(&self.additional_context),
+					&postprocessors
+				)?
+			);
+			if let Err(e) = write_result {
+				if e.kind() != std::io::ErrorKind::BrokenPipe {
+					return Err(e.into());
+				}
+			}
+		}
+
+		if let Some(footer_template) = &self.footer_template {
+			let write_result = writeln!(
+				out,
+				"{}",
+				footer_template.render(
+					&Releases {
+						releases: &self.releases,
+					},
+					Some(&self.additional_context),
+					&postprocessors,
+				)?
+			);
+			if let Err(e) = write_result {
+				if e.kind() != std::io::ErrorKind::BrokenPipe {
+					return Err(e.into());
+				}
+			}
+		}
+
 		Ok(())
 	}
 
@@ -517,7 +613,7 @@ mod test {
 				header:         Some(String::from("# Changelog")),
 				body:           Some(String::from(
 					r#"{% if version %}
-				## Release [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+				## Release [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }} - ({{ repository }})
 				{% if commit_id %}({{ commit_id }}){% endif %}{% else %}
 				## Unreleased{% endif %}
 				{% for group, commits in commits | group_by(attribute="group") %}
@@ -554,6 +650,7 @@ mod test {
 						sha:           Some(String::from("tea")),
 						message:       None,
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("I love tea")),
 						default_scope: None,
 						scope:         None,
@@ -565,6 +662,7 @@ mod test {
 						sha:           Some(String::from("coffee")),
 						message:       None,
 						body:          None,
+						footer:        None,
 						group:         None,
 						default_scope: None,
 						scope:         None,
@@ -576,6 +674,7 @@ mod test {
 						sha:           Some(String::from("coffee2")),
 						message:       None,
 						body:          None,
+						footer:        None,
 						group:         None,
 						default_scope: None,
 						scope:         None,
@@ -587,6 +686,7 @@ mod test {
 						sha:           None,
 						message:       Regex::new(r".*merge.*").ok(),
 						body:          None,
+						footer:        None,
 						group:         None,
 						default_scope: None,
 						scope:         None,
@@ -598,6 +698,7 @@ mod test {
 						sha:           None,
 						message:       Regex::new("feat*").ok(),
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("New features")),
 						default_scope: Some(String::from("other")),
 						scope:         None,
@@ -609,6 +710,7 @@ mod test {
 						sha:           None,
 						message:       Regex::new("^fix*").ok(),
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("Bug Fixes")),
 						default_scope: None,
 						scope:         None,
@@ -620,6 +722,7 @@ mod test {
 						sha:           None,
 						message:       Regex::new("doc:").ok(),
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("Documentation")),
 						default_scope: None,
 						scope:         Some(String::from("documentation")),
@@ -631,6 +734,7 @@ mod test {
 						sha:           None,
 						message:       Regex::new("docs:").ok(),
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("Documentation")),
 						default_scope: None,
 						scope:         Some(String::from("documentation")),
@@ -642,6 +746,7 @@ mod test {
 						sha:           None,
 						message:       Regex::new(r"match\((.*)\):.*").ok(),
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("Matched ($1)")),
 						default_scope: None,
 						scope:         None,
@@ -651,8 +756,21 @@ mod test {
 					},
 					CommitParser {
 						sha:           None,
+						message:       None,
+						body:          None,
+						footer:        Regex::new("Footer:.*").ok(),
+						group:         Some(String::from("Footer")),
+						default_scope: None,
+						scope:         Some(String::from("footer")),
+						skip:          None,
+						field:         None,
+						pattern:       None,
+					},
+					CommitParser {
+						sha:           None,
 						message:       Regex::new(".*").ok(),
 						body:          None,
+						footer:        None,
 						group:         Some(String::from("Other")),
 						default_scope: Some(String::from("other")),
 						scope:         None,
@@ -683,6 +801,11 @@ mod test {
 					repo:  String::from("awesome"),
 					token: None,
 				},
+				gitea:     Remote {
+					owner: String::from("coolguy"),
+					repo:  String::from("awesome"),
+					token: None,
+				},
 				bitbucket: Remote {
 					owner: String::from("coolguy"),
 					repo:  String::from("awesome"),
@@ -693,6 +816,7 @@ mod test {
 		};
 		let test_release = Release {
 			version: Some(String::from("v1.0.0")),
+			message: None,
 			commits: vec![
 				Commit::new(
 					String::from("coffee"),
@@ -750,16 +874,25 @@ mod test {
 					String::from("coffee"),
 					String::from("revert(app): skip this commit"),
 				),
+				Commit::new(
+					String::from("footer"),
+					String::from("misc: use footer\n\nFooter: footer text"),
+				),
 			],
 			commit_id: Some(String::from("0bc123")),
 			timestamp: 50000000,
 			previous: None,
+			repository: Some(String::from("/root/repo")),
 			#[cfg(feature = "github")]
 			github: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
 			#[cfg(feature = "gitlab")]
 			gitlab: crate::remote::RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "gitea")]
+			gitea: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
 			#[cfg(feature = "bitbucket")]
@@ -779,6 +912,7 @@ mod test {
 			},
 			Release {
 				version: None,
+				message: None,
 				commits: vec![
 					Commit::new(
 						String::from("abc123"),
@@ -809,12 +943,17 @@ mod test {
 				commit_id: None,
 				timestamp: 1000,
 				previous: Some(Box::new(test_release)),
+				repository: Some(String::from("/root/repo")),
 				#[cfg(feature = "github")]
 				github: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
 				},
 				#[cfg(feature = "gitlab")]
 				gitlab: crate::remote::RemoteReleaseMetadata {
+					contributors: vec![],
+				},
+				#[cfg(feature = "gitea")]
+				gitea: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
 				},
 				#[cfg(feature = "bitbucket")]
@@ -837,7 +976,8 @@ mod test {
 		assert_eq!(
 			String::from(
 				r#"# Changelog
-			## Release [v1.1.0] - 1970-01-01
+
+			## Release [v1.1.0] - 1970-01-01 - (/root/repo)
 
 
 			### Bug Fixes
@@ -855,7 +995,7 @@ mod test {
 			#### ui
 			- do exciting stuff
 
-			## Release [v1.0.0] - 1971-08-02
+			## Release [v1.0.0] - 1971-08-02 - (/root/repo)
 			(0bc123)
 
 			### Bug Fixes
@@ -866,6 +1006,10 @@ mod test {
 			#### documentation
 			- update docs
 			- add some documentation
+
+			### Footer
+			#### footer
+			- use footer
 
 			### I love tea
 			#### app
@@ -908,6 +1052,13 @@ mod test {
 		config.git.split_commits = Some(true);
 		config.git.filter_unconventional = Some(false);
 		config.git.protect_breaking_commits = Some(true);
+
+		if let Some(parsers) = config.git.commit_parsers.as_mut() {
+			for parser in parsers.iter_mut().filter(|p| p.footer.is_some()) {
+				parser.skip = Some(true)
+			}
+		}
+
 		releases[0].commits.push(Commit::new(
 			String::from("0bc123"),
 			String::from(
@@ -942,6 +1093,7 @@ chore(deps): fix broken deps
 		assert_eq!(
 			String::from(
 				r#"# Changelog
+
 			## Unreleased
 
 			### Bug Fixes
@@ -968,7 +1120,7 @@ chore(deps): fix broken deps
 			#### app
 			- merge #5
 
-			## Release [v1.0.0] - 1971-08-02
+			## Release [v1.0.0] - 1971-08-02 - (/root/repo)
 			(0bc123)
 
 			### Bug Fixes
@@ -1045,6 +1197,7 @@ chore(deps): fix broken deps
 		changelog.generate(&mut out)?;
 		expect_test::expect![[r#"
     # Changelog
+
     ## Unreleased
 
     ### Bug Fixes
@@ -1073,6 +1226,10 @@ chore(deps): fix broken deps
     #### documentation
     - update docs
     - add some documentation
+
+    ### Footer
+    #### footer
+    - use footer
 
     ### I love tea
     #### app

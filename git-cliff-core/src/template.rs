@@ -132,7 +132,7 @@ impl Template {
 	}
 
 	/// Returns `true` if the template contains one of the given variables.
-	#[cfg(any(feature = "github", feature = "gitlab", feature = "bitbucket"))]
+	#[cfg(feature = "remote")]
 	pub(crate) fn contains_variable(&self, variables: &[&str]) -> bool {
 		variables
 			.iter()
@@ -189,6 +189,7 @@ mod test {
 	fn get_fake_release_data() -> Release<'static> {
 		Release {
 			version: Some(String::from("1.0")),
+			message: None,
 			commits: vec![
 				Commit::new(
 					String::from("123123"),
@@ -205,12 +206,17 @@ mod test {
 			commit_id: None,
 			timestamp: 0,
 			previous: None,
+			repository: Some(String::from("/root/repo")),
 			#[cfg(feature = "github")]
 			github: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
 			#[cfg(feature = "gitlab")]
 			gitlab: crate::remote::RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "gitea")]
+			gitea: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
 			#[cfg(feature = "bitbucket")]

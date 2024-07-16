@@ -1,6 +1,6 @@
 [package]
 name = "git-cliff-core"
-version = "2.3.0" # managed by release.sh
+version = "2.4.0" # managed by release.sh
 description = "Core library of git-cliff"
 authors = ["git-cliff contributors <git-cliff@protonmail.com>"]
 license = "MIT OR Apache-2.0"
@@ -17,36 +17,30 @@ default = ["repo"]
 ## You can turn this off if you already have the commits to put in the
 ## changelog and you don't need `git-cliff` to parse them.
 repo = ["dep:git2", "dep:glob", "dep:indexmap"]
+# Enable integration with remote repositories.
+remote = [
+  "dep:reqwest",
+  "dep:http-cache-reqwest",
+  "dep:reqwest-middleware",
+  "dep:tokio",
+  "dep:futures",
+]
 ## Enable integration with GitHub.
 ## You can turn this off if you don't use GitHub and don't want
 ## to make network requests to the GitHub API.
-github = [
-  "dep:reqwest",
-  "dep:http-cache-reqwest",
-  "dep:reqwest-middleware",
-  "dep:tokio",
-  "dep:futures",
-]
+github = ["remote"]
 ## Enable integration with GitLab.
 ## You can turn this off if you don't use GitLab and don't want
 ## to make network requests to the GitLab API.
-gitlab = [
-  "dep:reqwest",
-  "dep:http-cache-reqwest",
-  "dep:reqwest-middleware",
-  "dep:tokio",
-  "dep:futures",
-]
+gitlab = ["remote"]
 ## Enable integration with Bitbucket.
 ## You can turn this off if you don't use Bitbucket and don't want
 ## to make network requests to the Bitbucket API.
-bitbucket = [
-  "dep:reqwest",
-  "dep:http-cache-reqwest",
-  "dep:reqwest-middleware",
-  "dep:tokio",
-  "dep:futures",
-]
+bitbucket = ["remote"]
+## Enable integration with Gitea.
+## You can turn this off if you don't use Gitea and don't want
+## to make network requests to the Gitea API.
+gitea = ["remote"]
 
 [dependencies]
 glob = { workspace = true, optional = true }
@@ -57,16 +51,16 @@ dirs.workspace = true
 lazy_static.workspace = true
 thiserror = "1.0.61"
 serde = { version = "1.0.203", features = ["derive"] }
-serde_json = "1.0.117"
+serde_json = "1.0.118"
 serde_regex = "1.1.0"
 tera = "1.20.0"
 indexmap = { version = "2.2.6", optional = true }
 toml = "0.8.14"
 lazy-regex = "3.1.0"
-next_version = "0.2.17"
+next_version = "0.2.18"
 semver = "1.0.23"
 document-features = { version = "0.2.8", optional = true }
-reqwest = { version = "0.12.4", default-features = false, features = [
+reqwest = { version = "0.12.5", default-features = false, features = [
   "rustls-tls",
   "json",
   "zstd",
@@ -78,11 +72,11 @@ tokio = { version = "1.38.0", features = [
   "macros",
 ], optional = true }
 futures = { version = "0.3.30", optional = true }
-url = "2.5.0"
+url = "2.5.2"
 dyn-clone = "1.0.17"
 
 [dependencies.git2]
-version = "0.18.3"
+version = "0.19.0"
 default-features = false
 optional = true
 

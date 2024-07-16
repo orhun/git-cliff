@@ -1,7 +1,7 @@
 use crate::commit::Commit;
 use crate::config::Bump;
 use crate::error::Result;
-#[cfg(any(feature = "github", feature = "gitlab", feature = "bitbucket"))]
+#[cfg(feature = "remote")]
 use crate::remote::{
 	RemoteCommit,
 	RemoteContributor,
@@ -20,25 +20,32 @@ use serde::{
 #[serde(rename_all = "camelCase")]
 pub struct Release<'a> {
 	/// Release version, git tag.
-	pub version:   Option<String>,
+	pub version:    Option<String>,
+	/// git tag's message.
+	pub message:    Option<String>,
 	/// Commits made for the release.
-	pub commits:   Vec<Commit<'a>>,
+	pub commits:    Vec<Commit<'a>>,
 	/// Commit ID of the tag.
 	#[serde(rename = "commit_id")]
-	pub commit_id: Option<String>,
+	pub commit_id:  Option<String>,
 	/// Timestamp of the release in seconds, from epoch.
-	pub timestamp: i64,
+	pub timestamp:  i64,
 	/// Previous release.
-	pub previous:  Option<Box<Release<'a>>>,
+	pub previous:   Option<Box<Release<'a>>>,
+	/// Repository path.
+	pub repository: Option<String>,
 	/// Contributors.
 	#[cfg(feature = "github")]
-	pub github:    RemoteReleaseMetadata,
+	pub github:     RemoteReleaseMetadata,
 	/// Contributors.
 	#[cfg(feature = "gitlab")]
-	pub gitlab:    RemoteReleaseMetadata,
+	pub gitlab:     RemoteReleaseMetadata,
+	/// Contributors.
+	#[cfg(feature = "gitea")]
+	pub gitea:      RemoteReleaseMetadata,
 	/// Contributors.
 	#[cfg(feature = "bitbucket")]
-	pub bitbucket: RemoteReleaseMetadata,
+	pub bitbucket:  RemoteReleaseMetadata,
 }
 
 #[cfg(feature = "github")]
@@ -46,6 +53,9 @@ crate::update_release_metadata!(github, update_github_metadata);
 
 #[cfg(feature = "gitlab")]
 crate::update_release_metadata!(gitlab, update_gitlab_metadata);
+
+#[cfg(feature = "gitea")]
+crate::update_release_metadata!(gitea, update_gitea_metadata);
 
 #[cfg(feature = "bitbucket")]
 crate::update_release_metadata!(bitbucket, update_bitbucket_metadata);
@@ -93,13 +103,28 @@ impl<'a> Release<'a> {
 						}
 					}
 				}
-				let next_version = VersionUpdater::new()
+				let mut next_version = VersionUpdater::new()
 					.with_features_always_increment_minor(
 						config.features_always_bump_minor.unwrap_or(true),
 					)
 					.with_breaking_always_increment_major(
 						config.breaking_always_bump_major.unwrap_or(true),
-					)
+					);
+				if let Some(custom_major_increment_regex) =
+					&config.custom_major_increment_regex
+				{
+					next_version = next_version.with_custom_major_increment_regex(
+						custom_major_increment_regex,
+					)?;
+				}
+				if let Some(custom_minor_increment_regex) =
+					&config.custom_minor_increment_regex
+				{
+					next_version = next_version.with_custom_minor_increment_regex(
+						custom_minor_increment_regex,
+					)?;
+				}
+				let next_version = next_version
 					.increment(
 						&semver?,
 						self.commits
@@ -114,10 +139,19 @@ impl<'a> Release<'a> {
 					Ok(next_version)
 				}
 			}
-			None => {
-				warn!("No releases found, using 0.1.0 as the next version.");
-				Ok(String::from("0.1.0"))
-			}
+			None => match config.initial_tag.clone() {
+				Some(tag) => {
+					warn!(
+						"No releases found, using initial tag '{tag}' as the next \
+						 version."
+					);
+					Ok(tag)
+				}
+				None => {
+					warn!("No releases found, using 0.1.0 as the next version.");
+					Ok(String::from("0.1.0"))
+				}
+			},
 		}
 	}
 }
@@ -144,6 +178,7 @@ mod test {
 		fn build_release<'a>(version: &str, commits: &'a [&str]) -> Release<'a> {
 			Release {
 				version: None,
+				message: None,
 				commits: commits
 					.iter()
 					.map(|v| Commit::from(v.to_string()))
@@ -154,12 +189,17 @@ mod test {
 					version: Some(String::from(version)),
 					..Default::default()
 				})),
+				repository: Some(String::from("/root/repo")),
 				#[cfg(feature = "github")]
 				github: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
 				},
 				#[cfg(feature = "gitlab")]
 				gitlab: crate::remote::RemoteReleaseMetadata {
+					contributors: vec![],
+				},
+				#[cfg(feature = "gitea")]
+				gitea: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
 				},
 				#[cfg(feature = "bitbucket")]
@@ -237,8 +277,11 @@ mod test {
 			let release = build_release(version, commits);
 			let next_version =
 				release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor: Some(false),
-					breaking_always_bump_major: Some(false),
+					features_always_bump_minor:   Some(false),
+					breaking_always_bump_major:   Some(false),
+					initial_tag:                  None,
+					custom_major_increment_regex: None,
+					custom_minor_increment_regex: None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -257,8 +300,11 @@ mod test {
 			let release = build_release(version, commits);
 			let next_version =
 				release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor: Some(true),
-					breaking_always_bump_major: Some(false),
+					features_always_bump_minor:   Some(true),
+					breaking_always_bump_major:   Some(false),
+					initial_tag:                  None,
+					custom_major_increment_regex: None,
+					custom_minor_increment_regex: None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -277,8 +323,11 @@ mod test {
 			let release = build_release(version, commits);
 			let next_version =
 				release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor: Some(false),
-					breaking_always_bump_major: Some(true),
+					features_always_bump_minor:   Some(false),
+					breaking_always_bump_major:   Some(true),
+					initial_tag:                  None,
+					custom_major_increment_regex: None,
+					custom_minor_increment_regex: None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -297,8 +346,11 @@ mod test {
 			assert_eq!(
 				"0.1.0",
 				empty_release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor: Some(features_always_bump_minor),
-					breaking_always_bump_major: Some(breaking_always_bump_major),
+					features_always_bump_minor:   Some(features_always_bump_minor),
+					breaking_always_bump_major:   Some(breaking_always_bump_major),
+					initial_tag:                  None,
+					custom_major_increment_regex: None,
+					custom_minor_increment_regex: None,
 				})?
 			);
 		}
@@ -316,8 +368,9 @@ mod test {
 		};
 
 		let mut release = Release {
-			version:   None,
-			commits:   vec![
+			version: None,
+			message: None,
+			commits: vec![
 				Commit::from(String::from(
 					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \
 					 integration",
@@ -341,16 +394,23 @@ mod test {
 			],
 			commit_id: None,
 			timestamp: 0,
-			previous:  Some(Box::new(Release {
+			previous: Some(Box::new(Release {
 				version: Some(String::from("1.0.0")),
 				..Default::default()
 			})),
-			github:    RemoteReleaseMetadata {
+			repository: Some(String::from("/root/repo")),
+			github: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
-			gitlab:    RemoteReleaseMetadata {
+			#[cfg(feature = "gitlab")]
+			gitlab: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
+			#[cfg(feature = "gitea")]
+			gitea: RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "bitbucket")]
 			bitbucket: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
@@ -595,8 +655,9 @@ mod test {
 		};
 
 		let mut release = Release {
-			version:   None,
-			commits:   vec![
+			version: None,
+			message: None,
+			commits: vec![
 				Commit::from(String::from(
 					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \
 					 integration",
@@ -620,16 +681,23 @@ mod test {
 			],
 			commit_id: None,
 			timestamp: 0,
-			previous:  Some(Box::new(Release {
+			previous: Some(Box::new(Release {
 				version: Some(String::from("1.0.0")),
 				..Default::default()
 			})),
-			github:    RemoteReleaseMetadata {
+			repository: Some(String::from("/root/repo")),
+			#[cfg(feature = "github")]
+			github: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
-			gitlab:    RemoteReleaseMetadata {
+			gitlab: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
+			#[cfg(feature = "gitea")]
+			gitea: RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "bitbucket")]
 			bitbucket: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
@@ -917,6 +985,294 @@ mod test {
 			],
 		};
 		assert_eq!(expected_metadata, release.gitlab);
+
+		Ok(())
+	}
+
+	#[cfg(feature = "gitea")]
+	#[test]
+	fn update_gitea_metadata() -> Result<()> {
+		use crate::remote::gitea::{
+			GiteaCommit,
+			GiteaCommitAuthor,
+			GiteaPullRequest,
+			PullRequestLabel,
+		};
+
+		let mut release = Release {
+			version: None,
+			message: None,
+			commits: vec![
+				Commit::from(String::from(
+					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \
+					 integration",
+				)),
+				Commit::from(String::from(
+					"21f6aa587fcb772de13f2fde0e92697c51f84162 fix github \
+					 integration",
+				)),
+				Commit::from(String::from(
+					"35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973 update metadata",
+				)),
+				Commit::from(String::from(
+					"4d3ffe4753b923f4d7807c490e650e6624a12074 do some stuff",
+				)),
+				Commit::from(String::from(
+					"5a55e92e5a62dc5bf9872ffb2566959fad98bd05 alright",
+				)),
+				Commit::from(String::from(
+					"6c34967147560ea09658776d4901709139b4ad66 should be fine",
+				)),
+			],
+			commit_id: None,
+			timestamp: 0,
+			previous: Some(Box::new(Release {
+				version: Some(String::from("1.0.0")),
+				..Default::default()
+			})),
+			repository: Some(String::from("/root/repo")),
+			#[cfg(feature = "github")]
+			github: RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "gitlab")]
+			gitlab: RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			gitea: RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "bitbucket")]
+			bitbucket: RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+		};
+		release.update_gitea_metadata(
+			vec![
+				GiteaCommit {
+					sha:    String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+					author: Some(GiteaCommitAuthor {
+						login: Some(String::from("orhun")),
+					}),
+				},
+				GiteaCommit {
+					sha:    String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
+					author: Some(GiteaCommitAuthor {
+						login: Some(String::from("orhun")),
+					}),
+				},
+				GiteaCommit {
+					sha:    String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
+					author: Some(GiteaCommitAuthor {
+						login: Some(String::from("nuhro")),
+					}),
+				},
+				GiteaCommit {
+					sha:    String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
+					author: Some(GiteaCommitAuthor {
+						login: Some(String::from("awesome_contributor")),
+					}),
+				},
+				GiteaCommit {
+					sha:    String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
+					author: Some(GiteaCommitAuthor {
+						login: Some(String::from("orhun")),
+					}),
+				},
+				GiteaCommit {
+					sha:    String::from("6c34967147560ea09658776d4901709139b4ad66"),
+					author: Some(GiteaCommitAuthor {
+						login: Some(String::from("someone")),
+					}),
+				},
+				GiteaCommit {
+					sha:    String::from("0c34967147560e809658776d4901709139b4ad68"),
+					author: Some(GiteaCommitAuthor {
+						login: Some(String::from("idk")),
+					}),
+				},
+				GiteaCommit {
+					sha:    String::from("kk34967147560e809658776d4901709139b4ad68"),
+					author: None,
+				},
+				GiteaCommit {
+					sha:    String::new(),
+					author: None,
+				},
+			]
+			.into_iter()
+			.map(|v| Box::new(v) as Box<dyn RemoteCommit>)
+			.collect(),
+			vec![
+				GiteaPullRequest {
+					title:            Some(String::from("1")),
+					number:           42,
+					merge_commit_sha: Some(String::from(
+						"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
+					)),
+					labels:           vec![PullRequestLabel {
+						name: String::from("rust"),
+					}],
+				},
+				GiteaPullRequest {
+					title:            Some(String::from("2")),
+					number:           66,
+					merge_commit_sha: Some(String::from(
+						"21f6aa587fcb772de13f2fde0e92697c51f84162",
+					)),
+					labels:           vec![PullRequestLabel {
+						name: String::from("rust"),
+					}],
+				},
+				GiteaPullRequest {
+					title:            Some(String::from("3")),
+					number:           53,
+					merge_commit_sha: Some(String::from(
+						"35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973",
+					)),
+					labels:           vec![PullRequestLabel {
+						name: String::from("deps"),
+					}],
+				},
+				GiteaPullRequest {
+					title:            Some(String::from("4")),
+					number:           1000,
+					merge_commit_sha: Some(String::from(
+						"4d3ffe4753b923f4d7807c490e650e6624a12074",
+					)),
+					labels:           vec![PullRequestLabel {
+						name: String::from("deps"),
+					}],
+				},
+				GiteaPullRequest {
+					title:            Some(String::from("5")),
+					number:           999999,
+					merge_commit_sha: Some(String::from(
+						"5a55e92e5a62dc5bf9872ffb2566959fad98bd05",
+					)),
+					labels:           vec![PullRequestLabel {
+						name: String::from("github"),
+					}],
+				},
+			]
+			.into_iter()
+			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
+			.collect(),
+		)?;
+		let expected_commits = vec![
+			Commit {
+				id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+				message: String::from("add github integration"),
+				gitea: RemoteContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      Some(String::from("1")),
+					pr_number:     Some(42),
+					pr_labels:     vec![String::from("rust")],
+					is_first_time: false,
+				},
+				..Default::default()
+			},
+			Commit {
+				id: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
+				message: String::from("fix github integration"),
+				gitea: RemoteContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      Some(String::from("2")),
+					pr_number:     Some(66),
+					pr_labels:     vec![String::from("rust")],
+					is_first_time: false,
+				},
+				..Default::default()
+			},
+			Commit {
+				id: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
+				message: String::from("update metadata"),
+				gitea: RemoteContributor {
+					username:      Some(String::from("nuhro")),
+					pr_title:      Some(String::from("3")),
+					pr_number:     Some(53),
+					pr_labels:     vec![String::from("deps")],
+					is_first_time: false,
+				},
+				..Default::default()
+			},
+			Commit {
+				id: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
+				message: String::from("do some stuff"),
+				gitea: RemoteContributor {
+					username:      Some(String::from("awesome_contributor")),
+					pr_title:      Some(String::from("4")),
+					pr_number:     Some(1000),
+					pr_labels:     vec![String::from("deps")],
+					is_first_time: false,
+				},
+				..Default::default()
+			},
+			Commit {
+				id: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
+				message: String::from("alright"),
+				gitea: RemoteContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      Some(String::from("5")),
+					pr_number:     Some(999999),
+					pr_labels:     vec![String::from("github")],
+					is_first_time: false,
+				},
+				..Default::default()
+			},
+			Commit {
+				id: String::from("6c34967147560ea09658776d4901709139b4ad66"),
+				message: String::from("should be fine"),
+				gitea: RemoteContributor {
+					username:      Some(String::from("someone")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				},
+				..Default::default()
+			},
+		];
+		assert_eq!(expected_commits, release.commits);
+
+		release
+			.gitea
+			.contributors
+			.sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+
+		let expected_metadata = RemoteReleaseMetadata {
+			contributors: vec![
+				RemoteContributor {
+					username:      Some(String::from("someone")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: true,
+				},
+				RemoteContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      Some(String::from("1")),
+					pr_number:     Some(42),
+					pr_labels:     vec![String::from("rust")],
+					is_first_time: true,
+				},
+				RemoteContributor {
+					username:      Some(String::from("nuhro")),
+					pr_title:      Some(String::from("3")),
+					pr_number:     Some(53),
+					pr_labels:     vec![String::from("deps")],
+					is_first_time: true,
+				},
+				RemoteContributor {
+					username:      Some(String::from("awesome_contributor")),
+					pr_title:      Some(String::from("4")),
+					pr_number:     Some(1000),
+					pr_labels:     vec![String::from("deps")],
+					is_first_time: true,
+				},
+			],
+		};
+		assert_eq!(expected_metadata, release.gitea);
 
 		Ok(())
 	}

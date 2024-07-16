@@ -146,6 +146,10 @@ Examples:
   - Group the commit as "Features" if the commit message (description) starts with "feat".
 - `{ body = ".*security", group = "Security" }`
   - Group the commit as "Security" if the commit body contains "security".
+    <!-- Conventional commits parser is out of sync with spec, parsing only separator ":", not ": "; see: -->
+    <!-- https://github.com/conventional-commits/parser/issues/47 -->
+- `{ footer = "^changelog: ?ignore", skip = true }`
+  - Skip processing the commit if the commit footer contains "changelog: ignore".
 - `{ message = '^fix\((.*)\)', group = 'Fix (${1})' }`
   - Use the matched scope value from the commit message in the group name.
 - `{ message = ".*deprecated", body = ".*deprecated", group = "Deprecation" }`
@@ -193,7 +197,12 @@ A regex for skip processing the matched tags.
 
 A regex for ignore processing the matched tags.
 
+This value can be also overridden with using the `--ignore-tags` argument.
+
 While `skip_tags` drop commits from the changelog, `ignore_tags` include ignored commits into the next tag.
+
+* Note that if a commit has multiple tags, any matched tag will result in all associated tags being ignored, including those not explicitly matched by the regex. This is because git-cliff processes tags at the commit level rather than individually.
+For more details, you can view the discussion [here](https://github.com/orhun/git-cliff/discussions/707)
 
 ### topo_order
 

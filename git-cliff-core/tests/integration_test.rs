@@ -56,6 +56,7 @@ fn generate_changelog() -> Result<()> {
 				sha:           Some(String::from("coffee")),
 				message:       None,
 				body:          None,
+				footer:        None,
 				group:         Some(String::from("I love coffee")),
 				default_scope: None,
 				scope:         None,
@@ -67,6 +68,7 @@ fn generate_changelog() -> Result<()> {
 				sha:           None,
 				message:       Regex::new("^feat").ok(),
 				body:          None,
+				footer:        None,
 				group:         Some(String::from("shiny features")),
 				default_scope: None,
 				scope:         None,
@@ -78,6 +80,7 @@ fn generate_changelog() -> Result<()> {
 				sha:           None,
 				message:       Regex::new("^fix").ok(),
 				body:          None,
+				footer:        None,
 				group:         Some(String::from("fix bugs")),
 				default_scope: None,
 				scope:         None,
@@ -89,6 +92,7 @@ fn generate_changelog() -> Result<()> {
 				sha:           None,
 				message:       Regex::new("^test").ok(),
 				body:          None,
+				footer:        None,
 				group:         None,
 				default_scope: None,
 				scope:         Some(String::from("tests")),
@@ -100,6 +104,7 @@ fn generate_changelog() -> Result<()> {
 				sha:           None,
 				message:       None,
 				body:          None,
+				footer:        None,
 				group:         Some(String::from("docs")),
 				default_scope: None,
 				scope:         None,
@@ -145,6 +150,7 @@ fn generate_changelog() -> Result<()> {
 	let releases = vec![
 		Release {
 			version:   Some(String::from("v2.0.0")),
+			message: None,
 			commits:   vec![
 
 				Commit::new(
@@ -189,12 +195,17 @@ fn generate_changelog() -> Result<()> {
 			commit_id: None,
 			timestamp: 0,
 			previous:  None,
+			repository: Some(String::from("/root/repo")),
 			#[cfg(feature = "github")]
 			github: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
 			#[cfg(feature = "gitlab")]
 			gitlab: git_cliff_core::remote::RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "gitea")]
+			gitea: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
 			#[cfg(feature = "bitbucket")]
@@ -204,6 +215,7 @@ fn generate_changelog() -> Result<()> {
 		},
 		Release {
 			version:   Some(String::from("v1.0.0")),
+			message: None,
 			commits:   vec![
 				Commit::new(
 					String::from("0bc123"),
@@ -225,12 +237,17 @@ fn generate_changelog() -> Result<()> {
 			commit_id: None,
 			timestamp: 0,
 			previous:  None,
+			repository: Some(String::from("/root/repo")),
 			#[cfg(feature = "github")]
 			github: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
 			#[cfg(feature = "gitlab")]
 			gitlab: git_cliff_core::remote::RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "gitea")]
+			gitea: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],
 			},
 			#[cfg(feature = "bitbucket")]

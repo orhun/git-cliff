@@ -128,6 +128,9 @@ pub struct Commit<'a> {
 	/// GitLab metadata of the commit.
 	#[cfg(feature = "gitlab")]
 	pub gitlab:        crate::remote::RemoteContributor,
+	/// Gitea metadata of the commit.
+	#[cfg(feature = "gitea")]
+	pub gitea:         crate::remote::RemoteContributor,
 	/// Bitbucket metadata of the commit.
 	#[cfg(feature = "bitbucket")]
 	pub bitbucket:     crate::remote::RemoteContributor,
@@ -273,6 +276,13 @@ impl Commit<'_> {
 				.map(|v| v.to_string());
 			if let Some(body_regex) = parser.body.as_ref() {
 				regex_checks.push((body_regex, body.clone().unwrap_or_default()))
+			}
+			if let (Some(footer_regex), Some(footers)) = (
+				parser.footer.as_ref(),
+				self.conv.as_ref().map(|v| v.footers()),
+			) {
+				regex_checks
+					.extend(footers.iter().map(|f| (footer_regex, f.to_string())));
 			}
 			if let (Some(field_name), Some(pattern_regex)) =
 				(parser.field.as_ref(), parser.pattern.as_ref())
@@ -446,6 +456,8 @@ impl Serialize for Commit<'_> {
 		commit.serialize_field("github", &self.github)?;
 		#[cfg(feature = "gitlab")]
 		commit.serialize_field("gitlab", &self.gitlab)?;
+		#[cfg(feature = "gitea")]
+		commit.serialize_field("gitea", &self.gitea)?;
 		#[cfg(feature = "bitbucket")]
 		commit.serialize_field("bitbucket", &self.bitbucket)?;
 		commit.end()
@@ -478,6 +490,7 @@ mod test {
 				sha:           None,
 				message:       Regex::new("test*").ok(),
 				body:          None,
+				footer:        None,
 				group:         Some(String::from("test_group")),
 				default_scope: Some(String::from("test_scope")),
 				scope:         None,
@@ -651,6 +664,7 @@ mod test {
 				sha:           None,
 				message:       None,
 				body:          None,
+				footer:        None,
 				group:         Some(String::from("Test group")),
 				default_scope: None,
 				scope:         None,
@@ -679,6 +693,7 @@ mod test {
 				)),
 				message:       None,
 				body:          None,
+				footer:        None,
 				group:         None,
 				default_scope: None,
 				scope:         None,
@@ -698,6 +713,7 @@ mod test {
 				)),
 				message:       None,
 				body:          None,
+				footer:        None,
 				group:         Some(String::from("Test group")),
 				default_scope: None,
 				scope:         None,

@@ -6,6 +6,7 @@ This section contains the bump version related configuration options.
 [bump]
 features_always_bump_minor = true
 breaking_always_bump_major = true
+initial_tag = "0.1.0"
 ```
 
 ### features_always_bump_minor
@@ -26,3 +27,57 @@ When `false`, a breaking change commit will trigger:
 
 - A minor version update if the major version is 0.
 - A major version update otherwise.
+
+### initial_tag
+
+Configures the initial version of the project.
+
+When set, the version will be set to this value if no tags are found.
+
+### custom_major_increment_regex & custom_minor_increment_regex
+
+Configures additional commit types that should increment the major or minor accordingly.
+
+They should be used rarely, only in the case you have a spacial case for incrementing versions.
+
+Expects a valid regex pattern.
+
+For example:
+
+```toml
+[bump]
+features_always_bump_minor = true
+breaking_always_bump_major = true
+custom_major_increment_regex = "major"
+custom_minor_increment_regex = "minor|more"
+```
+
+with this history:
+
+```
+5189568 (HEAD -> main) major: 1
+0b17b48 (tag: 0.1.0) initial commit
+```
+
+will result in:
+
+```bash
+git-cliff --bumped-version
+
+1.0.0
+```
+
+or, with history:
+
+```
+47206d0 (HEAD -> main) more: 1
+0b17b48 (tag: 0.1.0) initial commit
+```
+
+will result in:
+
+```bash
+git-cliff --bumped-version
+
+0.2.0
+```
