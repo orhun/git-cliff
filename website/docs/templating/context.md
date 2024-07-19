@@ -114,7 +114,7 @@ BREAKING CHANGE: this is a breaking change
 If the `BREAKING CHANGE:` footer is present, the footer will also be included in
 `commit.footers`.
 
-Breaking changes will be skipped if [`protect_breaking_commits`](/docs/configuration/git#protect_breaking_commits) is set to `true`, even when matched by a skipping [commit_parser](/docs/configuration/git#commit_parsers).
+Breaking changes will not be skipped if [`protect_breaking_commits`](/docs/configuration/git#protect_breaking_commits) is set to `true`, even when matched by a skipping [commit_parser](/docs/configuration/git#commit_parsers).
 
 ### Committer vs Author
 
