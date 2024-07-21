@@ -1,42 +1,34 @@
+use super::{
+	RemoteClient,
+	MAX_PAGE_PRS,
+};
 use crate::config::Remote;
-use crate::error::*;
+use crate::error::Result;
+use crate::remote::{
+	RemoteCommit,
+	RemoteEntry,
+	RemotePullRequest,
+	MAX_PAGE_SIZE,
+};
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{
 	Deserialize,
 	Serialize,
 };
-use std::env;
-
-use super::*;
 
 /// Bitbucket REST API url.
-const BITBUCKET_API_URL: &str = "https://api.bitbucket.org/2.0/repositories";
-
-/// Environment variable for overriding the Bitbucket REST API url.
-const BITBUCKET_API_URL_ENV: &str = "BITBUCKET_API_URL";
-
-/// Log message to show while fetching data from Bitbucket.
-pub const START_FETCHING_MSG: &str = "Retrieving data from Bitbucket...";
-
-/// Log message to show when done fetching from Bitbucket.
-pub const FINISHED_FETCHING_MSG: &str = "Done fetching Bitbucket data.";
-
-/// Template variables related to this remote.
-pub(crate) const TEMPLATE_VARIABLES: &[&str] = &["bitbucket", "commit.bitbucket"];
-
-/// Maximum number of entries to fetch for bitbucket pull requests.
-pub(crate) const BITBUCKET_MAX_PAGE_PRS: usize = 50;
+const API_URL: &str = "https://api.bitbucket.org/2.0/repositories";
 
 /// Representation of a single commit.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct BitbucketCommit {
+pub struct Commit {
 	/// SHA.
 	pub hash:   String,
 	/// Author of the commit.
-	pub author: Option<BitbucketCommitAuthor>,
+	pub author: Option<CommitAuthor>,
 }
 
-impl RemoteCommit for BitbucketCommit {
+impl RemoteCommit for Commit {
 	fn id(&self) -> String {
 		self.hash.clone()
 	}
@@ -47,8 +39,8 @@ impl RemoteCommit for BitbucketCommit {
 }
 
 /// <https://developer.atlassian.com/cloud/bitbucket/rest/api-group-commits/#api-repositories-workspace-repo-slug-commits-get>
-impl RemoteEntry for BitbucketPagination<BitbucketCommit> {
-	fn url(_id: i64, api_url: &str, remote: &Remote, page: i32) -> String {
+impl RemoteEntry for Pagination<Commit> {
+	fn url(_id: i64, api_url: &str, remote: &Remote, page: usize) -> String {
 		let commit_page = page + 1;
 		format!(
 			"{}/{}/{}/commits?pagelen={MAX_PAGE_SIZE}&page={commit_page}",
@@ -65,11 +57,11 @@ impl RemoteEntry for BitbucketPagination<BitbucketCommit> {
 	}
 }
 
-/// Bitbucket Pagination Header
+/// Pagination header.
 ///
 /// <https://developer.atlassian.com/cloud/bitbucket/rest/intro/#pagination>
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct BitbucketPagination<T> {
+pub struct Pagination<T> {
 	/// Total number of objects in the response.
 	pub size:     Option<i64>,
 	/// Page number of the current results.
@@ -87,65 +79,57 @@ pub struct BitbucketPagination<T> {
 
 /// Author of the commit.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct BitbucketCommitAuthor {
+pub struct CommitAuthor {
 	/// Username.
 	#[serde(rename = "raw")]
 	pub login: Option<String>,
 }
 
-/// Label of the pull request.
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PullRequestLabel {
-	/// Name of the label.
-	pub name: String,
-}
-
 /// Representation of a single pull request's merge commit
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct BitbucketPullRequestMergeCommit {
+pub struct PullRequestMergeCommit {
 	/// SHA of the merge commit.
 	pub hash: String,
 }
 
 /// Representation of a single pull request.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct BitbucketPullRequest {
+pub struct PullRequest {
 	/// Pull request number.
-	pub id:               i64,
+	pub id:               u64,
 	/// Pull request title.
 	pub title:            Option<String>,
-	/// Bitbucket Pull Request Merge Commit
-	pub merge_commit_sha: BitbucketPullRequestMergeCommit,
-	/// Author of Pull Request
-	pub author:           BitbucketCommitAuthor,
+	/// Pull request merge commit.
+	pub merge_commit_sha: PullRequestMergeCommit,
+	/// Author of the pull request.
+	pub author:           CommitAuthor,
 }
 
-impl RemotePullRequest for BitbucketPullRequest {
-	fn number(&self) -> i64 {
+impl RemotePullRequest for PullRequest {
+	fn number(&self) -> u64 {
 		self.id
 	}
 
-	fn title(&self) -> Option<String> {
-		self.title.clone()
+	fn title(&self) -> Option<&str> {
+		self.title.as_deref()
 	}
 
 	fn labels(&self) -> Vec<String> {
 		vec![]
 	}
 
-	fn merge_commit(&self) -> Option<String> {
-		Some(self.merge_commit_sha.hash.clone())
+	fn merge_commit(&self) -> Option<&str> {
+		Some(&self.merge_commit_sha.hash)
 	}
 }
 
 /// <https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/#api-repositories-workspace-repo-slug-pullrequests-get>
-impl RemoteEntry for BitbucketPagination<BitbucketPullRequest> {
-	fn url(_id: i64, api_url: &str, remote: &Remote, page: i32) -> String {
+impl RemoteEntry for Pagination<PullRequest> {
+	fn url(_id: i64, api_url: &str, remote: &Remote, page: usize) -> String {
 		let pr_page = page + 1;
 		format!(
-			"{}/{}/{}/pullrequests?&pagelen={BITBUCKET_MAX_PAGE_PRS}&\
-			 page={pr_page}&state=MERGED",
+			"{}/{}/{}/pullrequests?&pagelen={MAX_PAGE_PRS}&page={pr_page}&\
+			 state=MERGED",
 			api_url, remote.owner, remote.repo
 		)
 	}
@@ -159,31 +143,24 @@ impl RemoteEntry for BitbucketPagination<BitbucketPullRequest> {
 	}
 }
 
-/// HTTP client for handling Bitbucket REST API requests.
+/// HTTP client for handling REST API requests.
 #[derive(Debug, Clone)]
-pub struct BitbucketClient {
+pub struct Client {
 	/// Remote.
 	remote: Remote,
 	/// HTTP client.
 	client: ClientWithMiddleware,
 }
 
-/// Constructs a Bitbucket client from the remote configuration.
-impl TryFrom<Remote> for BitbucketClient {
-	type Error = Error;
-	fn try_from(remote: Remote) -> Result<Self> {
-		Ok(Self {
-			client: create_remote_client(&remote, "application/json")?,
-			remote,
-		})
+impl From<(Remote, ClientWithMiddleware)> for Client {
+	fn from((remote, client): (Remote, ClientWithMiddleware)) -> Self {
+		Self { remote, client }
 	}
 }
 
-impl RemoteClient for BitbucketClient {
-	fn api_url() -> String {
-		env::var(BITBUCKET_API_URL_ENV)
-			.ok()
-			.unwrap_or_else(|| BITBUCKET_API_URL.to_string())
+impl RemoteClient for Client {
+	fn api_url(&self) -> String {
+		API_URL.to_string()
 	}
 
 	fn remote(&self) -> Remote {
@@ -195,11 +172,11 @@ impl RemoteClient for BitbucketClient {
 	}
 }
 
-impl BitbucketClient {
-	/// Fetches the Bitbucket API and returns the commits.
+impl Client {
+	/// Fetches from the API and returns the commits.
 	pub async fn get_commits(&self) -> Result<Vec<Box<dyn RemoteCommit>>> {
 		Ok(self
-			.fetch_with_early_exit::<BitbucketPagination<BitbucketCommit>>(0)
+			.fetch_with_early_exit::<Pagination<Commit>>(0)
 			.await?
 			.into_iter()
 			.flat_map(|v| v.values)
@@ -207,12 +184,12 @@ impl BitbucketClient {
 			.collect())
 	}
 
-	/// Fetches the Bitbucket API and returns the pull requests.
+	/// Fetches from the API and returns the pull requests.
 	pub async fn get_pull_requests(
 		&self,
 	) -> Result<Vec<Box<dyn RemotePullRequest>>> {
 		Ok(self
-			.fetch_with_early_exit::<BitbucketPagination<BitbucketPullRequest>>(0)
+			.fetch_with_early_exit::<Pagination<PullRequest>>(0)
 			.await?
 			.into_iter()
 			.flat_map(|v| v.values)
