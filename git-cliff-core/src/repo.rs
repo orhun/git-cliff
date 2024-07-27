@@ -23,6 +23,11 @@ use lazy_regex::{
 	Lazy,
 	Regex,
 };
+use std::hash::{
+	DefaultHasher,
+	Hash,
+	Hasher,
+};
 use std::io;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -41,25 +46,34 @@ pub struct Repository {
 	inner:    GitRepository,
 	/// Repository path.
 	pub path: PathBuf,
-}
 
-/// Cached static for the [`should_retain_commit`] function.
-static SHOULD_RETAIN_COMMIT: Lazy<Mutex<DiskCache<String, bool>>> =
-	Lazy::new(|| {
-		Mutex::new({
-			DiskCache::new(".git-cliff-cache")
-				.build()
-				.expect("Failed to create commits cache")
-		})
-	});
+	/// Cache for the [`should_retain_commit`] function.
+	retain_commit_cache: Mutex<DiskCache<String, bool>>,
+}
 
 impl Repository {
 	/// Initializes (opens) the repository.
 	pub fn init(path: PathBuf) -> Result<Self> {
 		if path.exists() {
+			let inner = GitRepository::open(&path)?;
+
+			// hash the path to create a unique cache id
+			let cache_id = {
+				let mut hasher = DefaultHasher::new();
+				path.hash(&mut hasher);
+				hasher.finish()
+			};
+			// create a retian_commit cache for this repository
+			let retain_commit_cache = Mutex::new({
+				DiskCache::new(&format!("git-cliff-{}", cache_id))
+					.build()
+					.expect("Failed to create commits cache")
+			});
+
 			Ok(Self {
-				inner: GitRepository::open(&path)?,
+				inner,
 				path,
+				retain_commit_cache,
 			})
 		} else {
 			Err(Error::IoError(io::Error::new(
@@ -108,8 +122,7 @@ impl Repository {
 		// Cache key is generated from the repository path, commit id, include path,
 		// and exclude path.
 		let cache_key = format!(
-			"path:{:?}-commit_id:{}-include:{:?}-exclude:{:?}",
-			self.inner.path(),
+			"commit_id:{}-include:{:?}-exclude:{:?}",
 			commit.id(),
 			include_path.as_ref().map(|patterns| patterns
 				.iter()
@@ -123,7 +136,10 @@ impl Repository {
 
 		// Check the cache first.
 		{
-			let cache = SHOULD_RETAIN_COMMIT.lock().expect("Failed to lock cache");
+			let cache = self
+				.retain_commit_cache
+				.lock()
+				.expect("Failed to lock cache");
 			if let Ok(Some(result)) = cache.cache_get(&cache_key) {
 				return result.to_owned();
 			}
@@ -134,7 +150,10 @@ impl Repository {
 			self.should_retain_commit_no_cache(commit, include_path, exclude_path);
 
 		// Set the result to the cache.
-		let cache = SHOULD_RETAIN_COMMIT.lock().expect("Failed to lock cache");
+		let cache = self
+			.retain_commit_cache
+			.lock()
+			.expect("Failed to lock cache");
 		let set_res = cache.cache_set(cache_key, result);
 
 		if let Err(err) = set_res {
