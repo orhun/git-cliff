@@ -4,6 +4,10 @@ use crate::error::{
 	Result,
 };
 use crate::tag::Tag;
+use cached::{
+	DiskCache,
+	IOCached,
+};
 use git2::{
 	BranchType,
 	Commit,
@@ -21,6 +25,7 @@ use lazy_regex::{
 };
 use std::io;
 use std::path::PathBuf;
+use std::sync::Mutex;
 use url::Url;
 
 /// Regex for replacing the signature part of a tag message.
@@ -37,6 +42,16 @@ pub struct Repository {
 	/// Repository path.
 	pub path: PathBuf,
 }
+
+/// Cached static for the [`should_retain_commit`] function.
+static SHOULD_RETAIN_COMMIT: Lazy<Mutex<DiskCache<String, bool>>> =
+	Lazy::new(|| {
+		Mutex::new({
+			DiskCache::new(".git-cliff-cache")
+				.build()
+				.expect("Failed to create commits cache")
+		})
+	});
 
 impl Repository {
 	/// Initializes (opens) the repository.
@@ -76,34 +91,91 @@ impl Repository {
 			.collect();
 		if include_path.is_some() || exclude_path.is_some() {
 			commits.retain(|commit| {
-				let Ok(prev_commit) = commit.parent(0) else {
-					return false;
-				};
-				let Ok(diff) = self.inner.diff_tree_to_tree(
-					commit.tree().ok().as_ref(),
-					prev_commit.tree().ok().as_ref(),
-					None,
-				) else {
-					return false;
-				};
-				diff.deltas()
-					.filter_map(|delta| delta.new_file().path())
-					.any(|new_file_path| {
-						if let Some(include_path) = include_path {
-							return include_path
-								.iter()
-								.any(|glob| glob.matches_path(new_file_path));
-						}
-						if let Some(exclude_path) = exclude_path {
-							return !exclude_path
-								.iter()
-								.any(|glob| glob.matches_path(new_file_path));
-						}
-						unreachable!()
-					})
+				self.should_retain_commit(commit, &include_path, &exclude_path)
 			});
 		}
 		Ok(commits)
+	}
+
+	/// Cached function for checking whether the commit should be retained or
+	/// not.
+	fn should_retain_commit(
+		&self,
+		commit: &Commit,
+		include_path: &Option<Vec<Pattern>>,
+		exclude_path: &Option<Vec<Pattern>>,
+	) -> bool {
+		// Cache key is generated from the repository path, commit id, include path,
+		// and exclude path.
+		let cache_key = format!(
+			"path:{:?}-commit_id:{}-include:{:?}-exclude:{:?}",
+			self.inner.path(),
+			commit.id(),
+			include_path.as_ref().map(|patterns| patterns
+				.iter()
+				.map(|pattern| pattern.as_str())
+				.collect::<Vec<_>>()),
+			exclude_path.as_ref().map(|patterns| patterns
+				.iter()
+				.map(|pattern| pattern.as_str())
+				.collect::<Vec<_>>())
+		);
+
+		// Check the cache first.
+		{
+			let cache = SHOULD_RETAIN_COMMIT.lock().expect("Failed to lock cache");
+			if let Ok(Some(result)) = cache.cache_get(&cache_key) {
+				return result.to_owned();
+			}
+		}
+
+		// If the cache is not found, calculate the result and set it to the cache.
+		let result =
+			self.should_retain_commit_no_cache(commit, include_path, exclude_path);
+
+		// Set the result to the cache.
+		let cache = SHOULD_RETAIN_COMMIT.lock().expect("Failed to lock cache");
+		let set_res = cache.cache_set(cache_key, result);
+
+		if let Err(err) = set_res {
+			error!("Failed to set cache for repo {:?}: {}", self.path, err);
+		}
+
+		result
+	}
+
+	/// Calculates whether the commit should be retained or not.
+	fn should_retain_commit_no_cache(
+		&self,
+		commit: &Commit,
+		include_path: &Option<Vec<Pattern>>,
+		exclude_path: &Option<Vec<Pattern>>,
+	) -> bool {
+		if let Ok(prev_commit) = commit.parent(0) {
+			if let Ok(diff) = self.inner.diff_tree_to_tree(
+				commit.tree().ok().as_ref(),
+				prev_commit.tree().ok().as_ref(),
+				None,
+			) {
+				return diff
+					.deltas()
+					.filter_map(|delta| delta.new_file().path())
+					.any(|new_file_path| {
+						if let Some(include_path) = &include_path {
+							include_path
+								.iter()
+								.any(|glob| glob.matches_path(new_file_path))
+						} else if let Some(exclude_path) = &exclude_path {
+							!exclude_path
+								.iter()
+								.any(|glob| glob.matches_path(new_file_path))
+						} else {
+							false
+						}
+					});
+			}
+		}
+		false
 	}
 
 	/// Returns the current tag.
