@@ -4,10 +4,6 @@ use crate::error::{
 	Result,
 };
 use crate::tag::Tag;
-use cached::{
-	DiskCache,
-	IOCached,
-};
 use git2::{
 	BranchType,
 	Commit,
@@ -23,14 +19,8 @@ use lazy_regex::{
 	Lazy,
 	Regex,
 };
-use std::hash::{
-	DefaultHasher,
-	Hash,
-	Hasher,
-};
 use std::io;
 use std::path::PathBuf;
-use std::sync::Mutex;
 use url::Url;
 
 /// Regex for replacing the signature part of a tag message.
@@ -47,8 +37,8 @@ pub struct Repository {
 	/// Repository path.
 	pub path: PathBuf,
 
-	/// Cache for the [`should_retain_commit`] function.
-	retain_commit_cache: Mutex<DiskCache<String, bool>>,
+	/// Cache path for retaining the commit.
+	retain_commit_cache_path: PathBuf,
 }
 
 impl Repository {
@@ -58,22 +48,13 @@ impl Repository {
 			let inner = GitRepository::open(&path)?;
 
 			// hash the path to create a unique cache id
-			let cache_id = {
-				let mut hasher = DefaultHasher::new();
-				path.hash(&mut hasher);
-				hasher.finish()
-			};
-			// create a retian_commit cache for this repository
-			let retain_commit_cache = Mutex::new({
-				DiskCache::new(&format!("git-cliff-{}", cache_id))
-					.build()
-					.expect("Failed to create commits cache")
-			});
+			let retain_commit_cache_path =
+				inner.path().join("git-cliff").join("retain_commit_cache");
 
 			Ok(Self {
 				inner,
 				path,
-				retain_commit_cache,
+				retain_commit_cache_path,
 			})
 		} else {
 			Err(Error::IoError(io::Error::new(
@@ -136,12 +117,16 @@ impl Repository {
 
 		// Check the cache first.
 		{
-			let cache = self
-				.retain_commit_cache
-				.lock()
-				.expect("Failed to lock cache");
-			if let Ok(Some(result)) = cache.cache_get(&cache_key) {
-				return result.to_owned();
+			if let Ok(result) =
+				cacache::read_sync(&self.retain_commit_cache_path, &cache_key)
+			{
+				match result.as_slice() {
+					b"1" => return true,
+					b"0" => return false,
+					_ => {
+						// If the cache is corrupted, remove it.
+					}
+				};
 			}
 		}
 
@@ -150,11 +135,11 @@ impl Repository {
 			self.should_retain_commit_no_cache(commit, include_path, exclude_path);
 
 		// Set the result to the cache.
-		let cache = self
-			.retain_commit_cache
-			.lock()
-			.expect("Failed to lock cache");
-		let set_res = cache.cache_set(cache_key, result);
+		let set_res = cacache::write_sync(
+			&self.retain_commit_cache_path,
+			cache_key,
+			if result { b"1" } else { b"0" },
+		);
 
 		if let Err(err) = set_res {
 			error!("Failed to set cache for repo {:?}: {}", self.path, err);
