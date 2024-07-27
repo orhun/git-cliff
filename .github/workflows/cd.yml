@@ -22,8 +22,6 @@ jobs:
         with:
           config: cliff.toml
           args: -vv --latest --no-exec --github-repo ${{ github.repository }}
-        env:
-          OUTPUT: CHANGES.md
 
   publish-binaries:
     name: Publish binaries
