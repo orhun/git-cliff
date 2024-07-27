@@ -49,6 +49,7 @@ Learn how to use **git-cliff** from the [documentation](https://git-cliff.org/do
 
 - [Turning Git commits into changelog with git-cliff](https://www.youtube.com/watch?v=RWh8qbiLRts) - RustLab 2023 (Talk)
 - [An Interview with Orhun of git-cliff](https://console.substack.com/p/console-141) - Console #141 (Newsletter)
+- [KaiCode Open Source Festival 2024](https://www.kaicode.org/2024.html) (Second place winner)
 
 ## Editor Support
 
