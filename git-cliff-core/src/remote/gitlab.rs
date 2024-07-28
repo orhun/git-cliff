@@ -6,7 +6,6 @@ use serde::{
 	Serialize,
 };
 use std::env;
-use urlencoding::encode;
 
 use super::*;
 
@@ -48,7 +47,12 @@ pub struct GitLabProject {
 
 impl RemoteEntry for GitLabProject {
 	fn url(_id: i64, api_url: &str, remote: &Remote, _page: i32) -> String {
-		format!("{}/projects/{}%2F{}", api_url, encode(remote.owner.as_str()), remote.repo)
+		format!(
+			"{}/projects/{}%2F{}",
+			api_url,
+			urlencoding::encode(remote.owner.as_str()),
+			remote.repo
+		)
 	}
 
 	fn buffer_size() -> usize {
@@ -290,17 +294,13 @@ impl GitLabClient {
 mod test {
 	use super::*;
 	use pretty_assertions::assert_eq;
-    
-    fn test_remote_entry_url<R: RemoteEntry>(expects: &str) {
-		let remote = Remote::new("abc/def", "xyz1");
-		assert_eq!(
-			expects, 
-			R::url(1, "https://gitlab.test.com/api/v4", &remote, 0)
-		)
-	}
 
 	#[test]
-	fn it_url_encodes_slashes() {
-		test_remote_entry_url::<GitLabProject>("https://gitlab.test.com/api/v4/projects/abc%2Fdef%2Fxyz1")
+	fn gitlab_remote_encodes_owner() {
+		let remote = Remote::new("abc/def", "xyz1");
+		assert_eq!(
+			"https://gitlab.test.com/api/v4/projects/abc%2Fdef%2Fxyz1",
+			GitLabProject::url(1, "https://gitlab.test.com/api/v4", &remote, 0)
+		)
 	}
 }
