@@ -66,6 +66,7 @@ Learn how to use **git-cliff** from the [documentation](https://git-cliff.org/do
   to semantically bump a NodeJS package and generate a git-cliff powered changelog.
 - [release-plz](https://github.com/MarcoIeni/release-plz) - Release Rust packages from CI.
 - [git-changelog-command-line](https://github.com/tomasbjerre/git-changelog-command-line) - Generate changelog and determine next version with conventional commits.
+- [git-changelog](https://github.com/pawamoy/git-changelog): Automatic Changelog generator using Jinja2 templates.
 
 ## Contributors
 
