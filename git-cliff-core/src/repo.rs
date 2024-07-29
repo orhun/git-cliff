@@ -37,8 +37,8 @@ pub struct Repository {
 	/// Repository path.
 	pub path: PathBuf,
 
-	/// Cache path for retaining the commit.
-	retain_commit_cache_path: PathBuf,
+	/// Cache path for the changed files of the commits.
+	changed_files_cache_path: PathBuf,
 }
 
 impl Repository {
@@ -48,13 +48,13 @@ impl Repository {
 			let inner = GitRepository::open(&path)?;
 
 			// hash the path to create a unique cache id
-			let retain_commit_cache_path =
-				inner.path().join("git-cliff").join("retain_commit_cache");
+			let changed_files_cache_path =
+				inner.path().join("git-cliff").join("changed_files_cache");
 
 			Ok(Self {
 				inner,
 				path,
-				retain_commit_cache_path,
+				changed_files_cache_path,
 			})
 		} else {
 			Err(Error::IoError(io::Error::new(
@@ -92,94 +92,96 @@ impl Repository {
 		Ok(commits)
 	}
 
-	/// Cached function for checking whether the commit should be retained or
-	/// not.
+	/// Calculates whether the commit should be retained or not.
 	fn should_retain_commit(
 		&self,
 		commit: &Commit,
 		include_path: &Option<Vec<Pattern>>,
 		exclude_path: &Option<Vec<Pattern>>,
 	) -> bool {
-		// Cache key is generated from the repository path, commit id, include path,
-		// and exclude path.
-		let cache_key = format!(
-			"commit_id:{}-include:{:?}-exclude:{:?}",
-			commit.id(),
-			include_path.as_ref().map(|patterns| patterns
-				.iter()
-				.map(|pattern| pattern.as_str())
-				.collect::<Vec<_>>()),
-			exclude_path.as_ref().map(|patterns| patterns
-				.iter()
-				.map(|pattern| pattern.as_str())
-				.collect::<Vec<_>>())
-		);
+		let changed_files = self.commit_changed_files(commit);
+
+		if let Some(include_path) = include_path {
+			if !include_path.iter().any(|pattern| {
+				changed_files.iter().any(|path| pattern.matches_path(path))
+			}) {
+				return false;
+			}
+		}
+
+		if let Some(exclude_path) = exclude_path {
+			if exclude_path.iter().any(|pattern| {
+				changed_files.iter().any(|path| pattern.matches_path(path))
+			}) {
+				return false;
+			}
+		}
+
+		true
+	}
+
+	fn commit_changed_files(&self, commit: &Commit) -> Vec<PathBuf> {
+		// Cache key is generated from the repository path and commit id
+		let cache_key = format!("commit_id:{}", commit.id());
 
 		// Check the cache first.
 		{
 			if let Ok(result) =
-				cacache::read_sync(&self.retain_commit_cache_path, &cache_key)
+				cacache::read_sync(&self.changed_files_cache_path, &cache_key)
 			{
-				match result.as_slice() {
-					b"1" => return true,
-					b"0" => return false,
-					_ => {
-						// If the cache is corrupted, remove it.
-					}
-				};
+				if let Ok((files, _)) =
+					bincode::decode_from_slice(&result, bincode::config::standard())
+				{
+					return files;
+				}
 			}
 		}
 
 		// If the cache is not found, calculate the result and set it to the cache.
-		let result =
-			self.should_retain_commit_no_cache(commit, include_path, exclude_path);
+		let result = self.commit_changed_files_no_cache(commit);
 
 		// Set the result to the cache.
-		let set_res = cacache::write_sync(
-			&self.retain_commit_cache_path,
-			cache_key,
-			if result { b"1" } else { b"0" },
-		);
-
-		if let Err(err) = set_res {
-			error!("Failed to set cache for repo {:?}: {}", self.path, err);
+		match bincode::encode_to_vec(&result, bincode::config::standard()) {
+			Ok(result_serialized) => {
+				let set_res = cacache::write_sync_with_algo(
+					cacache::Algorithm::Xxh3,
+					&self.changed_files_cache_path,
+					cache_key,
+					result_serialized,
+				);
+				if let Err(err) = set_res {
+					error!("Failed to set cache for repo {:?}: {}", self.path, err);
+				}
+			}
+			Err(err) => {
+				error!(
+					"Failed to serialize cache for repo {:?}: {}",
+					self.path, err
+				);
+			}
 		}
 
 		result
 	}
 
-	/// Calculates whether the commit should be retained or not.
-	fn should_retain_commit_no_cache(
-		&self,
-		commit: &Commit,
-		include_path: &Option<Vec<Pattern>>,
-		exclude_path: &Option<Vec<Pattern>>,
-	) -> bool {
+	fn commit_changed_files_no_cache(&self, commit: &Commit) -> Vec<PathBuf> {
+		let mut changed_files = Vec::new();
+
 		if let Ok(prev_commit) = commit.parent(0) {
 			if let Ok(diff) = self.inner.diff_tree_to_tree(
 				commit.tree().ok().as_ref(),
 				prev_commit.tree().ok().as_ref(),
 				None,
 			) {
-				return diff
-					.deltas()
-					.filter_map(|delta| delta.new_file().path())
-					.any(|new_file_path| {
-						if let Some(include_path) = &include_path {
-							include_path
-								.iter()
-								.any(|glob| glob.matches_path(new_file_path))
-						} else if let Some(exclude_path) = &exclude_path {
-							!exclude_path
-								.iter()
-								.any(|glob| glob.matches_path(new_file_path))
-						} else {
-							false
-						}
-					});
+				changed_files.extend(
+					diff.deltas()
+						.filter_map(|delta| delta.new_file().path())
+						.map(|path| path.to_owned()),
+				);
 			}
 		}
-		false
+
+		changed_files
 	}
 
 	/// Returns the current tag.
