@@ -29,4 +29,5 @@ strip = true
 
 [profile.bench]
 opt-level = 3
-debug = false
+debug = true # used by the profiler
+strip = false # keep symbols for the profiler
