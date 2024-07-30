@@ -174,7 +174,7 @@ impl Remote {
 	}
 }
 
-/// Verion bump type
+/// Version bump type
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum BumpType {
 	/// Bump major version

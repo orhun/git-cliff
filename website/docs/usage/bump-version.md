@@ -42,3 +42,12 @@ A switch from `0` to `1` should indicate a higher API stability level.
 
 You can modify the bumping rules to preserve the zero-based versioning scheme in the
 [configuration file](/docs/configuration/bump).
+
+
+## Bump to specific version type
+
+Optionally you can specify bump type in `--bump`:
+
+```bash
+git cliff --bump [major|minor|patch]
+```
