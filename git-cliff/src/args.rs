@@ -13,6 +13,7 @@ use clap::{
 	ValueEnum,
 };
 use git_cliff_core::{
+	config::BumpType,
 	config::Remote,
 	DEFAULT_CONFIG,
 	DEFAULT_OUTPUT,
@@ -27,6 +28,12 @@ pub enum Strip {
 	Header,
 	Footer,
 	All,
+}
+
+#[derive(Debug, Clone)]
+pub enum BumpOption {
+	Auto,
+	Specific(BumpType),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
@@ -190,12 +197,16 @@ pub struct Opt {
 		allow_hyphen_values = true
 	)]
 	pub tag:              Option<String>,
-	/// Bumps the version for unreleased changes.
-	#[arg(long, help_heading = Some("FLAGS"))]
-	pub bump:             bool,
-	/// Bumps the version for unreleased changes with specified change.
-	#[arg(long, value_name = "BUMP_AS")]
-	pub bump_as:          Option<String>,
+	/// Bumps the version for unreleased changes. Optionally with specified
+	/// version.
+	#[arg(
+        long,
+        value_name = "BUMP",
+        value_enum,
+        num_args = 0..=1,
+        default_missing_value = "auto",
+        value_parser = clap::value_parser!(BumpOption))]
+	pub bump:             Option<BumpOption>,
 	/// Prints bumped version for unreleased changes.
 	#[arg(long, help_heading = Some("FLAGS"))]
 	pub bumped_version:   bool,
@@ -351,6 +362,48 @@ impl TypedValueParser for RemoteValueParser {
 			}
 			err.insert(ContextKind::InvalidValue, ContextValue::String(value));
 			Err(err)
+		}
+	}
+}
+
+impl ValueParserFactory for BumpOption {
+	type Parser = BumpOptionParser;
+	fn value_parser() -> Self::Parser {
+		BumpOptionParser
+	}
+}
+
+/// Parsr for bump type
+#[derive(Clone, Debug)]
+pub struct BumpOptionParser;
+
+impl TypedValueParser for BumpOptionParser {
+	type Value = BumpOption;
+	fn parse_ref(
+		&self,
+		cmd: &clap::Command,
+		arg: Option<&clap::Arg>,
+		value: &std::ffi::OsStr,
+	) -> Result<Self::Value, clap::Error> {
+		let inner = clap::builder::StringValueParser::new();
+		let value = inner.parse_ref(cmd, arg, value)?;
+		match value.as_str() {
+			"auto" => Ok(BumpOption::Auto),
+			"major" => Ok(BumpOption::Specific(BumpType::Major)),
+			"minor" => Ok(BumpOption::Specific(BumpType::Minor)),
+			"patch" => Ok(BumpOption::Specific(BumpType::Patch)),
+			_ => {
+				let mut err =
+					clap::Error::new(ErrorKind::ValueValidation).with_cmd(cmd);
+				if let Some(arg) = arg {
+					err.insert(
+						ContextKind::InvalidArg,
+						ContextValue::String(arg.to_string()),
+					);
+				}
+				err.insert(ContextKind::InvalidValue, ContextValue::String(value));
+				Err(err)
+			}
 		}
 	}
 }

@@ -174,6 +174,17 @@ impl Remote {
 	}
 }
 
+/// Verion bump type
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum BumpType {
+	/// Bump major version
+	Major,
+	/// Bump minor version
+	Minor,
+	/// Bump patch version
+	Patch,
+}
+
 /// Bump version configuration.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Bump {
@@ -220,7 +231,7 @@ pub struct Bump {
 	pub custom_minor_increment_regex: Option<String>,
 
 	/// force to always bump in major, minor or patch.
-	pub bump_as: Option<String>,
+	pub bump_type: Option<BumpType>,
 }
 
 /// Parser for grouping commits.

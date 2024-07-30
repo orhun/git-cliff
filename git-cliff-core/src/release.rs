@@ -1,7 +1,4 @@
-use crate::error::{
-	Error,
-	Result,
-};
+use crate::error::Result;
 #[cfg(feature = "remote")]
 use crate::remote::{
 	RemoteCommit,
@@ -12,6 +9,7 @@ use crate::remote::{
 use crate::{
 	commit::Commit,
 	config::Bump,
+	config::BumpType,
 };
 
 use next_version::{
@@ -134,17 +132,11 @@ impl<'a> Release<'a> {
 					)?;
 				}
 
-				let next_version = if let Some(bump_as) = &config.bump_as {
-					match bump_as.as_str() {
-						"major" => semver?.increment_major().to_string(),
-						"minor" => semver?.increment_minor().to_string(),
-						"patch" => semver?.increment_patch().to_string(),
-						_ => {
-							return Err(Error::ArgumentError(format!(
-								"{} is not a valid bump type",
-								bump_as
-							)))
-						}
+				let next_version = if let Some(bump_type) = &config.bump_type {
+					match bump_type {
+						BumpType::Major => semver?.increment_major().to_string(),
+						BumpType::Minor => semver?.increment_minor().to_string(),
+						BumpType::Patch => semver?.increment_patch().to_string(),
 					}
 				} else {
 					next_version
@@ -301,12 +293,12 @@ mod test {
 			let release = build_release(version, commits);
 			let next_version =
 				release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor: Some(false),
-					breaking_always_bump_major: Some(false),
-					initial_tag: None,
+					features_always_bump_minor:   Some(false),
+					breaking_always_bump_major:   Some(false),
+					initial_tag:                  None,
 					custom_major_increment_regex: None,
 					custom_minor_increment_regex: None,
-					bump_as: None,
+					bump_type:                    None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -325,12 +317,12 @@ mod test {
 			let release = build_release(version, commits);
 			let next_version =
 				release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor: Some(true),
-					breaking_always_bump_major: Some(false),
-					initial_tag: None,
+					features_always_bump_minor:   Some(true),
+					breaking_always_bump_major:   Some(false),
+					initial_tag:                  None,
 					custom_major_increment_regex: None,
 					custom_minor_increment_regex: None,
-					bump_as: None,
+					bump_type:                    None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -349,12 +341,12 @@ mod test {
 			let release = build_release(version, commits);
 			let next_version =
 				release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor: Some(false),
-					breaking_always_bump_major: Some(true),
-					initial_tag: None,
+					features_always_bump_minor:   Some(false),
+					breaking_always_bump_major:   Some(true),
+					initial_tag:                  None,
 					custom_major_increment_regex: None,
 					custom_minor_increment_regex: None,
-					bump_as: None,
+					bump_type:                    None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -373,12 +365,12 @@ mod test {
 			assert_eq!(
 				"0.1.0",
 				empty_release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor: Some(features_always_bump_minor),
-					breaking_always_bump_major: Some(breaking_always_bump_major),
-					initial_tag: None,
+					features_always_bump_minor:   Some(features_always_bump_minor),
+					breaking_always_bump_major:   Some(breaking_always_bump_major),
+					initial_tag:                  None,
 					custom_major_increment_regex: None,
 					custom_minor_increment_regex: None,
-					bump_as: None,
+					bump_type:                    None,
 				})?
 			);
 		}

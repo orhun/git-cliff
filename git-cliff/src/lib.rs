@@ -14,6 +14,7 @@ pub mod logger;
 extern crate log;
 
 use args::{
+	BumpOption,
 	Opt,
 	Sort,
 	Strip,
@@ -546,11 +547,13 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 
 	// Process commits and releases for the changelog.
-	config.bump.bump_as = args.bump_as;
+	if let Some(BumpOption::Specific(bump_type)) = args.bump {
+		config.bump.bump_type = Some(bump_type)
+	}
 	let mut changelog = Changelog::new(releases, &config)?;
 
 	// Print the result.
-	if args.bump || args.bumped_version {
+	if args.bump.is_some() || args.bumped_version {
 		let next_version = if let Some(next_version) = changelog.bump_version()? {
 			next_version
 		} else if let Some(last_version) =
