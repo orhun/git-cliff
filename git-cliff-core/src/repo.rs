@@ -96,28 +96,45 @@ impl Repository {
 	fn should_retain_commit(
 		&self,
 		commit: &Commit,
-		include_path: &Option<Vec<Pattern>>,
-		exclude_path: &Option<Vec<Pattern>>,
+		include_patterns: &Option<Vec<Pattern>>,
+		exclude_patterns: &Option<Vec<Pattern>>,
 	) -> bool {
 		let changed_files = self.commit_changed_files(commit);
 
-		if let Some(include_path) = include_path {
-			if !include_path.iter().any(|pattern| {
-				changed_files.iter().any(|path| pattern.matches_path(path))
-			}) {
-				return false;
+		match (include_patterns, exclude_patterns) {
+			(Some(include_pattern), Some(exclude_pattern)) => {
+				// If both include and exclude paths are provided, check if the
+				// commit has any changed files that match the include paths and
+				// do not match the exclude paths.
+				return changed_files.iter().any(|path| {
+					include_pattern
+						.iter()
+						.any(|pattern| pattern.matches_path(path)) &&
+						!exclude_pattern
+							.iter()
+							.any(|pattern| pattern.matches_path(path))
+				});
 			}
-		}
-
-		if let Some(exclude_path) = exclude_path {
-			if exclude_path.iter().any(|pattern| {
-				changed_files.iter().any(|path| pattern.matches_path(path))
-			}) {
-				return false;
+			(Some(include_pattern), None) => {
+				// If only include paths are provided, check if the commit has any
+				// changed files that match the include paths.
+				return changed_files.iter().any(|path| {
+					include_pattern
+						.iter()
+						.any(|pattern| pattern.matches_path(path))
+				});
 			}
+			(None, Some(exclude_pattern)) => {
+				// If only exclude paths are provided, check if the commit has any
+				// changed files that do not match the exclude paths.
+				return changed_files.iter().any(|path| {
+					!exclude_pattern
+						.iter()
+						.any(|pattern| pattern.matches_path(path))
+				});
+			}
+			(None, None) => true,
 		}
-
-		true
 	}
 
 	fn commit_changed_files(&self, commit: &Commit) -> Vec<PathBuf> {
