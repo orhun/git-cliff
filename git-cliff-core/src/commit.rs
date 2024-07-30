@@ -727,4 +727,55 @@ mod test {
 
 		Ok(())
 	}
+
+	#[test]
+	fn field_name_regex() -> Result<()> {
+		let commit = Commit {
+			message: String::from("feat: do something"),
+			author: Signature {
+				name:      Some("John Doe".to_string()),
+				email:     None,
+				timestamp: 0x0,
+			},
+			..Default::default()
+		};
+		let parsed_commit = commit.clone().parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("author.name")),
+				pattern:       Regex::new("Something else").ok(),
+			}],
+			false,
+			true,
+		);
+
+		assert!(parsed_commit.is_err());
+
+		let parsed_commit = commit.parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("author.name")),
+				pattern:       Regex::new("John Doe").ok(),
+			}],
+			false,
+			false,
+		)?;
+
+		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+		Ok(())
+	}
 }
