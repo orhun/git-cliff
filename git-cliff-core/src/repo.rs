@@ -85,11 +85,32 @@ impl Repository {
 			.filter_map(|id| self.inner.find_commit(id).ok())
 			.collect();
 		if include_path.is_some() || exclude_path.is_some() {
+			// Normalize the glob patterns
+			let include_patterns = include_path.map(|patterns| {
+				patterns.into_iter().map(Self::normalize_glob).collect()
+			});
+			let exclude_patterns = exclude_path.map(|patterns| {
+				patterns.into_iter().map(Self::normalize_glob).collect()
+			});
+
 			commits.retain(|commit| {
-				self.should_retain_commit(commit, &include_path, &exclude_path)
+				self.should_retain_commit(
+					commit,
+					&include_patterns,
+					&exclude_patterns,
+				)
 			});
 		}
 		Ok(commits)
+	}
+
+	/// Normalizes the glob pattern by removing the leading `./`.
+	fn normalize_glob(pattern: Pattern) -> Pattern {
+		match pattern.as_str().strip_prefix("./") {
+			Some(stripped) => Pattern::new(stripped)
+				.expect("Removing the leading ./ will not fail"),
+			None => pattern,
+		}
 	}
 
 	/// Calculates whether the commit should be retained or not.
@@ -125,8 +146,8 @@ impl Repository {
 				});
 			}
 			(None, Some(exclude_pattern)) => {
-				// If only exclude paths are provided, check if the commit has any
-				// changed files that do not match the exclude paths.
+				// If only exclude paths are provided, check if the commit has at
+				// least one changed file that does not match the exclude paths.
 				return changed_files.iter().any(|path| {
 					!exclude_pattern
 						.iter()
