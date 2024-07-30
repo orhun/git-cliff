@@ -196,6 +196,15 @@ impl Repository {
 						.map(|path| path.to_owned()),
 				);
 			}
+		} else {
+			// If there is no parent, it is the first commit.
+			// So get all the files in the tree.
+			if let Ok(tree) = commit.tree() {
+				changed_files.extend(
+					tree.iter()
+						.filter_map(|entry| entry.name().map(PathBuf::from)),
+				);
+			}
 		}
 
 		changed_files
