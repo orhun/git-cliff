@@ -373,7 +373,7 @@ impl ValueParserFactory for BumpOption {
 	}
 }
 
-/// Parsr for bump type
+/// Parser for bump type.
 #[derive(Clone, Debug)]
 pub struct BumpOptionParser;
 
