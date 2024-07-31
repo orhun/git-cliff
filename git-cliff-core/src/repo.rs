@@ -114,6 +114,9 @@ impl Repository {
 	}
 
 	/// Calculates whether the commit should be retained or not.
+	///
+	/// This function is used to filter the commits based on the changed files,
+	/// and include/exclude patterns.
 	fn should_retain_commit(
 		&self,
 		commit: &Commit,
@@ -124,9 +127,8 @@ impl Repository {
 
 		match (include_patterns, exclude_patterns) {
 			(Some(include_pattern), Some(exclude_pattern)) => {
-				// If both include and exclude paths are provided, check if the
-				// commit has any changed files that match the include paths and
-				// do not match the exclude paths.
+				// check if the commit has any changed files that match any of the
+				// include patterns and non of the exclude patterns.
 				return changed_files.iter().any(|path| {
 					include_pattern
 						.iter()
@@ -137,8 +139,8 @@ impl Repository {
 				});
 			}
 			(Some(include_pattern), None) => {
-				// If only include paths are provided, check if the commit has any
-				// changed files that match the include paths.
+				// check if the commit has any changed files that match the include
+				// patterns.
 				return changed_files.iter().any(|path| {
 					include_pattern
 						.iter()
@@ -146,8 +148,8 @@ impl Repository {
 				});
 			}
 			(None, Some(exclude_pattern)) => {
-				// If only exclude paths are provided, check if the commit has at
-				// least one changed file that does not match the exclude paths.
+				// check if the commit has at least one changed file that does not
+				// match all exclude patterns.
 				return changed_files.iter().any(|path| {
 					!exclude_pattern
 						.iter()
@@ -158,15 +160,25 @@ impl Repository {
 		}
 	}
 
+	/// Returns the changed files of the commit.
+	///
+	/// It uses a cache to speed up checks to store the changed files of the
+	/// commits under `./.git/git-cliff/changed_files_cache`. The speed-up was
+	/// measured to be around 260x for large repositories.
+	///
+	/// If the cache is not found, it calculates the changed files and adds them
+	/// to the cache via [`Self::commit_changed_files_no_cache`].
 	fn commit_changed_files(&self, commit: &Commit) -> Vec<PathBuf> {
 		// Cache key is generated from the repository path and commit id
 		let cache_key = format!("commit_id:{}", commit.id());
 
 		// Check the cache first.
 		{
+			// Read the cache.
 			if let Ok(result) =
 				cacache::read_sync(&self.changed_files_cache_path, &cache_key)
 			{
+				// Deserialize the result via bincode.
 				if let Ok((files, _)) =
 					bincode::decode_from_slice(&result, bincode::config::standard())
 				{
@@ -178,9 +190,11 @@ impl Repository {
 		// If the cache is not found, calculate the result and set it to the cache.
 		let result = self.commit_changed_files_no_cache(commit);
 
-		// Set the result to the cache.
+		// Add the result to the cache.
+		// Serialize the result via bincode.
 		match bincode::encode_to_vec(&result, bincode::config::standard()) {
 			Ok(result_serialized) => {
+				// Store the serialized result in the cache.
 				let set_res = cacache::write_sync_with_algo(
 					cacache::Algorithm::Xxh3,
 					&self.changed_files_cache_path,
@@ -202,19 +216,26 @@ impl Repository {
 		result
 	}
 
+	/// Calculate the changed files of the commit.
+	///
+	/// This function does not use the cache (directly calls git2).
 	fn commit_changed_files_no_cache(&self, commit: &Commit) -> Vec<PathBuf> {
 		let mut changed_files = Vec::new();
 
 		if let Ok(prev_commit) = commit.parent(0) {
+			// Compare the current commit with the previous commit to get the
+			// changed files.
+			// libgit2 does not provide a way to get the changed files directly, so
+			// the full diff is calculated here.
 			if let Ok(diff) = self.inner.diff_tree_to_tree(
 				commit.tree().ok().as_ref(),
 				prev_commit.tree().ok().as_ref(),
 				None,
 			) {
 				changed_files.extend(
-					diff.deltas()
-						.filter_map(|delta| delta.new_file().path())
-						.map(|path| path.to_owned()),
+					diff.deltas().filter_map(|delta| {
+						delta.new_file().path().map(PathBuf::from)
+					}),
 				);
 			}
 		} else {
