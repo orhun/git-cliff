@@ -11,6 +11,7 @@ use git2::{
 	Oid,
 	Repository as GitRepository,
 	Sort,
+	TreeWalkMode,
 };
 use glob::Pattern;
 use indexmap::IndexMap;
@@ -20,7 +21,10 @@ use lazy_regex::{
 	Regex,
 };
 use std::io;
-use std::path::PathBuf;
+use std::path::{
+	Path,
+	PathBuf,
+};
 use url::Url;
 
 /// Regex for replacing the signature part of a tag message.
@@ -255,10 +259,27 @@ impl Repository {
 			// If there is no parent, it is the first commit.
 			// So get all the files in the tree.
 			if let Ok(tree) = commit.tree() {
-				changed_files.extend(
-					tree.iter()
-						.filter_map(|entry| entry.name().map(PathBuf::from)),
-				);
+				tree.walk(TreeWalkMode::PreOrder, |dir, entry| {
+					// filter out non files
+					if entry.kind().expect("Failed to get entry kind") !=
+						git2::ObjectType::Blob
+					{
+						return 0;
+					}
+
+					// get the full path of the file
+					let name = Path::new(entry.name().unwrap());
+					let entry_path = if dir != "," {
+						Path::new(dir).join(name)
+					} else {
+						name.to_path_buf()
+					};
+
+					changed_files.push(entry_path);
+
+					0
+				})
+				.expect("Failed to get the changed files of the first commit");
 			}
 		}
 
@@ -619,18 +640,31 @@ mod test {
 		let (repo, _temp_dir) = create_temp_repo();
 		// _temp_dir.leak();
 
-		create_commit_with_files(&repo, vec![("initial.txt", "initial content")]);
+		// create a new pattern with the given input and normalize it
+		let new_pattern = |input: &str| {
+			Repository::normalize_pattern(Pattern::new(input).unwrap())
+		};
+
+		let first_commit = create_commit_with_files(&repo, vec![
+			("initial.txt", "initial content"),
+			("dir/initial.txt", "initial content"),
+		]);
+
+		{
+			let retain = repo.should_retain_commit(
+				&first_commit,
+				&Some(vec![new_pattern("dir/")]),
+				&None,
+			);
+			assert!(retain, "include: dir/");
+		}
 
 		let commit = create_commit_with_files(&repo, vec![
 			("file1.txt", "content1"),
 			("file2.txt", "content2"),
 			("dir/file3.txt", "content3"),
+			("dir/subdir/file4.txt", "content4"),
 		]);
-
-		// create a new pattern with the given input and normalize it
-		let new_pattern = |input: &str| {
-			Repository::normalize_pattern(Pattern::new(input).unwrap())
-		};
 
 		{
 			let retain = repo.should_retain_commit(&commit, &None, &None);
