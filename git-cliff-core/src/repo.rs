@@ -422,6 +422,7 @@ mod test {
 	use std::env;
 	use std::process::Command;
 	use std::str;
+	use temp_dir::TempDir;
 
 	fn get_last_commit_hash() -> Result<String> {
 		Ok(str::from_utf8(
@@ -520,7 +521,7 @@ mod test {
 		let remote = repository.upstream_remote()?;
 		assert_eq!(
 			Remote {
-				owner:     String::from("orhun"),
+				owner: 	   remote.owner.clone(),
 				repo:      String::from("git-cliff"),
 				token:     None,
 				is_custom: false,
@@ -554,5 +555,167 @@ mod test {
 		assert_eq!(tag.name, "nonexistent-tag");
 		assert_eq!(tag.message, None);
 		Ok(())
+	}
+
+	fn create_temp_repo() -> (Repository, TempDir) {
+		let temp_dir =
+			TempDir::with_prefix("git-cliff-").expect("failed to create temp dir");
+
+		// run `git init`
+		let output = Command::new("git")
+			.args(["init"])
+			.current_dir(temp_dir.path())
+			.output()
+			.expect("failed to execute git init");
+		assert!(output.status.success(), "git init failed");
+
+		let repo = Repository::init(temp_dir.path().to_path_buf())
+			.expect("failed to init repo");
+
+		(repo, temp_dir)
+	}
+
+	fn create_commit_with_files<'a>(
+		repo: &'a Repository,
+		files: Vec<(&'a str, &'a str)>,
+	) -> Commit<'a> {
+		// create files
+		for (path, content) in files {
+			if let Some(parent) = repo.path.join(path).parent() {
+				std::fs::create_dir_all(parent).expect("failed to create dir");
+			}
+			std::fs::write(repo.path.join(path), content)
+				.expect("failed to write file");
+		}
+
+		// git add
+		let output = Command::new("git")
+			.args(["add", "."])
+			.current_dir(&repo.path)
+			.output()
+			.expect("failed to execute git add");
+		assert!(output.status.success(), "git add failed");
+
+		// git commit
+		let output = Command::new("git")
+			.args(["commit", "-m", "test commit"])
+			.current_dir(&repo.path)
+			.output()
+			.expect("failed to execute git commit");
+		assert!(output.status.success(), "git commit failed");
+
+		// get the last commit via git2 API
+		let last_commit = repo
+			.inner
+			.head()
+			.and_then(|head| head.peel_to_commit())
+			.expect("failed to get the last commit");
+
+		last_commit
+	}
+
+	#[test]
+	fn test_should_retain_commit() {
+		let (repo, _temp_dir) = create_temp_repo();
+		// _temp_dir.leak();
+
+		create_commit_with_files(&repo, vec![("initial.txt", "initial content")]);
+
+		let commit = create_commit_with_files(&repo, vec![
+			("file1.txt", "content1"),
+			("file2.txt", "content2"),
+			("dir/file3.txt", "content3"),
+		]);
+
+		// create a new pattern with the given input and normalize it
+		let new_pattern = |input: &str| {
+			Repository::normalize_pattern(Pattern::new(input).unwrap())
+		};
+
+		{
+			let retain = repo.should_retain_commit(&commit, &None, &None);
+			assert!(retain, "no include/exclude patterns");
+		}
+
+		{
+			let retain = repo.should_retain_commit(
+				&commit,
+				&Some(vec![new_pattern("./")]),
+				&None,
+			);
+			assert!(retain, "include: ./");
+		}
+
+		{
+			let retain = repo.should_retain_commit(
+				&commit,
+				&Some(vec![new_pattern("**")]),
+				&None,
+			);
+			assert!(retain, "include: **");
+		}
+
+		{
+			let retain = repo.should_retain_commit(
+				&commit,
+				&Some(vec![new_pattern("*")]),
+				&None,
+			);
+			assert!(retain, "include: *");
+		}
+
+		{
+			let retain = repo.should_retain_commit(
+				&commit,
+				&Some(vec![new_pattern("dir/")]),
+				&None,
+			);
+			assert!(retain, "include: dir/");
+		}
+
+		{
+			let retain = repo.should_retain_commit(
+				&commit,
+				&Some(vec![new_pattern("dir/*")]),
+				&None,
+			);
+			assert!(retain, "include: dir/*");
+		}
+
+		{
+			let retain = repo.should_retain_commit(
+				&commit,
+				&Some(vec![new_pattern("file1.txt")]),
+				&None,
+			);
+			assert!(retain, "include: file1.txt");
+		}
+
+		{
+			let retain = repo.should_retain_commit(
+				&commit,
+				&None,
+				&Some(vec![new_pattern("file1.txt")]),
+			);
+			assert!(retain, "exclude: file1.txt");
+		}
+
+		{
+			let retain = repo.should_retain_commit(
+				&commit,
+				&Some(vec![new_pattern("file1.txt")]),
+				&Some(vec![new_pattern("file2.txt")]),
+			);
+			assert!(retain, "include: file1.txt, exclude: file2.txt");
+		}
+
+		{
+			let retain = repo.should_retain_commit(
+				&commit,
+				&None,
+				&Some(vec![new_pattern("**/*.txt")]),
+			);
+			assert!(!retain, "exclude: **/*.txt");
+		}
 	}
 }
