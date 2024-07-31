@@ -21,10 +21,7 @@ use lazy_regex::{
 	Regex,
 };
 use std::io;
-use std::path::{
-	Path,
-	PathBuf,
-};
+use std::path::PathBuf;
 use url::Url;
 
 /// Regex for replacing the signature part of a tag message.
@@ -268,15 +265,14 @@ impl Repository {
 					}
 
 					// get the full path of the file
-					let name =
-						Path::new(entry.name().expect("Failed to get entry name"));
+					let name = entry.name().expect("Failed to get entry name");
 					let entry_path = if dir != "," {
-						Path::new(dir).join(name)
+						format!("{}/{}", dir, name)
 					} else {
-						name.to_path_buf()
+						name.to_string()
 					};
 
-					changed_files.push(entry_path);
+					changed_files.push(entry_path.into());
 
 					0
 				})
