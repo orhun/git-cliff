@@ -87,10 +87,10 @@ impl Repository {
 		if include_path.is_some() || exclude_path.is_some() {
 			// Normalize the glob patterns
 			let include_patterns = include_path.map(|patterns| {
-				patterns.into_iter().map(Self::normalize_glob).collect()
+				patterns.into_iter().map(Self::normalize_pattern).collect()
 			});
 			let exclude_patterns = exclude_path.map(|patterns| {
-				patterns.into_iter().map(Self::normalize_glob).collect()
+				patterns.into_iter().map(Self::normalize_pattern).collect()
 			});
 
 			commits.retain(|commit| {
@@ -104,13 +104,26 @@ impl Repository {
 		Ok(commits)
 	}
 
-	/// Normalizes the glob pattern by removing the leading `./`.
-	fn normalize_glob(pattern: Pattern) -> Pattern {
-		match pattern.as_str().strip_prefix("./") {
+	/// Normalizes the glob pattern to match the git diff paths.
+	///
+	/// It removes the leading `./` and adds `**` to the end if the pattern is a
+	/// directory.
+	fn normalize_pattern(pattern: Pattern) -> Pattern {
+		// add `**` to the end if the pattern ends with `/` or `\` (directory).
+		let star_added = match pattern.as_str().chars().last() {
+			Some('/') | Some('\\') => Pattern::new(&format!("{}**", pattern))
+				.expect("Adding ** to the end will not fail"),
+			_ => pattern,
+		};
+
+		// remove the leading `./`.
+		let pattern_normal = match star_added.as_str().strip_prefix("./") {
 			Some(stripped) => Pattern::new(stripped)
 				.expect("Removing the leading ./ will not fail"),
-			None => pattern,
-		}
+			None => star_added,
+		};
+
+		pattern_normal
 	}
 
 	/// Calculates whether the commit should be retained or not.
