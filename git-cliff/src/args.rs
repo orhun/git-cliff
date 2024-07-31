@@ -30,12 +30,6 @@ pub enum Strip {
 	All,
 }
 
-#[derive(Debug, Clone)]
-pub enum BumpOption {
-	Auto,
-	Specific(BumpType),
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 pub enum Sort {
 	Oldest,
@@ -366,6 +360,12 @@ impl TypedValueParser for RemoteValueParser {
 	}
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum BumpOption {
+	Auto,
+	Specific(BumpType),
+}
+
 impl ValueParserFactory for BumpOption {
 	type Parser = BumpOptionParser;
 	fn value_parser() -> Self::Parser {
@@ -463,6 +463,31 @@ mod tests {
 		assert!(remote_value_parser
 			.parse_ref(&Opt::command(), None, OsStr::new(""))
 			.is_err());
+		Ok(())
+	}
+
+	#[test]
+	fn bump_option_parser() -> Result<(), clap::Error> {
+		let bump_option_parser = BumpOptionParser;
+		assert_eq!(
+			BumpOption::Auto,
+			bump_option_parser.parse_ref(
+				&Opt::command(),
+				None,
+				OsStr::new("auto")
+			)?
+		);
+		assert!(bump_option_parser
+			.parse_ref(&Opt::command(), None, OsStr::new("test"))
+			.is_err());
+		assert_eq!(
+			BumpOption::Specific(BumpType::Major),
+			bump_option_parser.parse_ref(
+				&Opt::command(),
+				None,
+				OsStr::new("major")
+			)?
+		);
 		Ok(())
 	}
 }

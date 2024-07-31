@@ -131,7 +131,6 @@ impl<'a> Release<'a> {
 						custom_minor_increment_regex,
 					)?;
 				}
-
 				let next_version = if let Some(bump_type) = &config.bump_type {
 					match bump_type {
 						BumpType::Major => semver?.increment_major().to_string(),

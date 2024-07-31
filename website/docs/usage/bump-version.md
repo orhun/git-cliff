@@ -22,16 +22,30 @@ How it works is that for a semantic versioning such as `<MAJOR>.<MINOR>.<PATCH>`
 - "feat:" -> increments `MINOR`
 - "scope!" (breaking changes) -> increments `MAJOR`
 
+## Get version
+
 You can also calculate and print the next semantic version to `stdout`:
 
 ```bash
 git cliff --bumped-version
 ```
 
-Tip: you can also get the bumped version [from the context](/docs/usage/print-context) as follows:
+:::tip
+
+You can also get the bumped version [from the context](/docs/usage/print-context) as follows:
 
 ```bash
 git cliff --unreleased --bump --context | jq -r .[0].version
+```
+
+:::
+
+## Bump to a specific version type
+
+Optionally, you can specify a bump type in `--bump`:
+
+```bash
+git cliff --bump [major|minor|patch]
 ```
 
 ## Zero-based versioning scheme
@@ -42,12 +56,3 @@ A switch from `0` to `1` should indicate a higher API stability level.
 
 You can modify the bumping rules to preserve the zero-based versioning scheme in the
 [configuration file](/docs/configuration/bump).
-
-
-## Bump to specific version type
-
-Optionally you can specify bump type in `--bump`:
-
-```bash
-git cliff --bump [major|minor|patch]
-```

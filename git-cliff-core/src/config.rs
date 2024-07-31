@@ -174,14 +174,14 @@ impl Remote {
 	}
 }
 
-/// Version bump type
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+/// Version bump type.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq)]
 pub enum BumpType {
-	/// Bump major version
+	/// Bump major version.
 	Major,
-	/// Bump minor version
+	/// Bump minor version.
 	Minor,
-	/// Bump patch version
+	/// Bump patch version.
 	Patch,
 }
 
@@ -230,7 +230,7 @@ pub struct Bump {
 	/// `commit type` according to the spec is only `[a-zA-Z]+`
 	pub custom_minor_increment_regex: Option<String>,
 
-	/// force to always bump in major, minor or patch.
+	/// Force to always bump in major, minor or patch.
 	pub bump_type: Option<BumpType>,
 }
 
