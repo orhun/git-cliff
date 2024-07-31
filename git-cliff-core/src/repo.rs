@@ -268,7 +268,8 @@ impl Repository {
 					}
 
 					// get the full path of the file
-					let name = Path::new(entry.name().unwrap());
+					let name =
+						Path::new(entry.name().expect("Failed to get entry name"));
 					let entry_path = if dir != "," {
 						Path::new(dir).join(name)
 					} else {
@@ -588,10 +589,33 @@ mod test {
 			.current_dir(temp_dir.path())
 			.output()
 			.expect("failed to execute git init");
-		assert!(output.status.success(), "git init failed");
+		assert!(output.status.success(), "git init failed {:?}", output);
 
 		let repo = Repository::init(temp_dir.path().to_path_buf())
 			.expect("failed to init repo");
+
+		// add email and name to the git config
+		let output = Command::new("git")
+			.args(["config", "user.email", "test@gmail.com"])
+			.current_dir(temp_dir.path())
+			.output()
+			.expect("failed to execute git config user.email");
+		assert!(
+			output.status.success(),
+			"git config user.email failed {:?}",
+			output
+		);
+
+		let output = Command::new("git")
+			.args(["config", "user.name", "test"])
+			.current_dir(temp_dir.path())
+			.output()
+			.expect("failed to execute git config user.name");
+		assert!(
+			output.status.success(),
+			"git config user.name failed {:?}",
+			output
+		);
 
 		(repo, temp_dir)
 	}
@@ -615,15 +639,15 @@ mod test {
 			.current_dir(&repo.path)
 			.output()
 			.expect("failed to execute git add");
-		assert!(output.status.success(), "git add failed");
+		assert!(output.status.success(), "git add failed {:?}", output);
 
 		// git commit
 		let output = Command::new("git")
-			.args(["commit", "-m", "test commit"])
+			.args(["commit", "--no-gpg-sign", "-m", "test commit"])
 			.current_dir(&repo.path)
 			.output()
 			.expect("failed to execute git commit");
-		assert!(output.status.success(), "git commit failed");
+		assert!(output.status.success(), "git commit failed {:?}", output);
 
 		// get the last commit via git2 API
 		let last_commit = repo
@@ -642,7 +666,9 @@ mod test {
 
 		// create a new pattern with the given input and normalize it
 		let new_pattern = |input: &str| {
-			Repository::normalize_pattern(Pattern::new(input).unwrap())
+			Repository::normalize_pattern(
+				Pattern::new(input).expect("valid pattern"),
+			)
 		};
 
 		let first_commit = create_commit_with_files(&repo, vec![
