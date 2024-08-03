@@ -562,12 +562,10 @@ pub fn run(mut args: Opt) -> Result<()> {
 			return Ok(());
 		}
 	}
-
 	if args.context {
 		changelog.write_context(&mut out)?;
 		return Ok(());
 	}
-
 	if let Some(path) = &args.prepend {
 		let changelog_before = fs::read_to_string(path)?;
 		let mut out = io::BufWriter::new(File::create(path)?);
