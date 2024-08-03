@@ -1,6 +1,6 @@
 [package]
 name = "git-cliff"
-version = "2.3.0" # managed by release.sh
+version = "2.4.0" # managed by release.sh
 description = "A highly customizable changelog generator ⛰️"
 authors = ["git-cliff contributors <git-cliff@protonmail.com>"]
 license = "MIT OR Apache-2.0"
@@ -36,6 +36,9 @@ gitlab = ["remote", "git-cliff-core/gitlab"]
 gitea = ["remote", "git-cliff-core/gitea"]
 # enable Bitbucket integration
 bitbucket = ["remote", "git-cliff-core/bitbucket"]
+# performance profiler
+profiler = ["dep:pprof", "dep:rand", "profiler-flamegraph"]
+profiler-flamegraph = ["pprof/flamegraph"]
 
 [dependencies]
 glob.workspace = true
@@ -51,9 +54,11 @@ shellexpand = "3.1.0"
 update-informer = { version = "1.1.0", optional = true }
 indicatif = { version = "0.17.8", optional = true }
 env_logger = "0.10.2"
+pprof = { version = "0.13", optional = true }
+rand = { version = "0.8.4", optional = true }
 
 [dependencies.git-cliff-core]
-version = "2.3.0" # managed by release.sh
+version = "2.4.0" # managed by release.sh
 path = "../git-cliff-core"
 
 [dev-dependencies]

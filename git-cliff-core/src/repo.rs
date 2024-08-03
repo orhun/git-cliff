@@ -25,7 +25,8 @@ use url::Url;
 
 /// Regex for replacing the signature part of a tag message.
 static TAG_SIGNATURE_REGEX: Lazy<Regex> = lazy_regex!(
-	r"(?s)-----BEGIN PGP SIGNATURE-----(.*?)-----END PGP SIGNATURE-----"
+	// https://git-scm.com/docs/gitformat-signature#_description
+	r"(?s)-----BEGIN (PGP|SSH|SIGNED) (SIGNATURE|MESSAGE)-----(.*?)-----END (PGP|SSH|SIGNED) (SIGNATURE|MESSAGE)-----"
 );
 
 /// Wrapper for [`Repository`] type from git2.

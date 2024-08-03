@@ -183,3 +183,21 @@ jobs:
                   exit 1
               fi
           done
+
+  profiler:
+    name: Run profiler
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Run profiler
+        run: cargo run --profile bench --features profiler -- --no-exec
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: git-cliff.${{ github.run_id }}-profiler-report
+          path: git-cliff.**.flamegraph.svg

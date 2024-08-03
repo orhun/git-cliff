@@ -2,7 +2,7 @@
 # https://git-cliff.org/docs/configuration
 
 [changelog]
-# template for the changelog footer
+# template for the changelog header
 header = """
 # Changelog\n
 All notable changes to this project will be documented in this file.\n

@@ -63,6 +63,8 @@ GITLAB_TOKEN="***" git cliff --gitlab-repo "orhun/git-cliff"
 
 You can use the `GITLAB_API_URL` environment variable want to override the API URL. This is useful if you are using your own GitLab instance.
 
+When your project on your own GitLab has one or many subgroups (e.g my.gitlab.com/myGroup/mySubgroup/myProject) you don't need to URL encode the owner in the configuration. (i.e. simply use "myGroup/mySubgroup")
+
 :::
 
 ## Templating

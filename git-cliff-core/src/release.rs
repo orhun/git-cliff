@@ -1,5 +1,3 @@
-use crate::commit::Commit;
-use crate::config::Bump;
 use crate::error::Result;
 #[cfg(feature = "remote")]
 use crate::remote::{
@@ -8,7 +6,16 @@ use crate::remote::{
 	RemotePullRequest,
 	RemoteReleaseMetadata,
 };
-use next_version::VersionUpdater;
+use crate::{
+	commit::Commit,
+	config::Bump,
+	config::BumpType,
+};
+
+use next_version::{
+	NextVersion,
+	VersionUpdater,
+};
 use semver::Version;
 use serde::{
 	Deserialize,
@@ -124,15 +131,23 @@ impl<'a> Release<'a> {
 						custom_minor_increment_regex,
 					)?;
 				}
-				let next_version = next_version
-					.increment(
-						&semver?,
-						self.commits
-							.iter()
-							.map(|commit| commit.message.trim_end().to_string())
-							.collect::<Vec<String>>(),
-					)
-					.to_string();
+				let next_version = if let Some(bump_type) = &config.bump_type {
+					match bump_type {
+						BumpType::Major => semver?.increment_major().to_string(),
+						BumpType::Minor => semver?.increment_minor().to_string(),
+						BumpType::Patch => semver?.increment_patch().to_string(),
+					}
+				} else {
+					next_version
+						.increment(
+							&semver?,
+							self.commits
+								.iter()
+								.map(|commit| commit.message.trim_end().to_string())
+								.collect::<Vec<String>>(),
+						)
+						.to_string()
+				};
 				if let Some(prefix) = prefix {
 					Ok(format!("{prefix}{next_version}"))
 				} else {
@@ -282,6 +297,7 @@ mod test {
 					initial_tag:                  None,
 					custom_major_increment_regex: None,
 					custom_minor_increment_regex: None,
+					bump_type:                    None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -305,6 +321,7 @@ mod test {
 					initial_tag:                  None,
 					custom_major_increment_regex: None,
 					custom_minor_increment_regex: None,
+					bump_type:                    None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -328,6 +345,7 @@ mod test {
 					initial_tag:                  None,
 					custom_major_increment_regex: None,
 					custom_minor_increment_regex: None,
+					bump_type:                    None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -351,6 +369,7 @@ mod test {
 					initial_tag:                  None,
 					custom_major_increment_regex: None,
 					custom_minor_increment_regex: None,
+					bump_type:                    None,
 				})?
 			);
 		}
