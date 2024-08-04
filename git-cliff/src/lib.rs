@@ -115,6 +115,7 @@ fn process_repository<'a>(
 				debug!("No GitHub remote is set, using remote: {}", remote);
 				config.remote.github.owner = remote.owner;
 				config.remote.github.repo = remote.repo;
+				config.remote.github.is_custom = remote.is_custom;
 			}
 			Err(e) => {
 				debug!("Failed to get remote from GitHub repository: {:?}", e);
@@ -126,6 +127,7 @@ fn process_repository<'a>(
 				debug!("No GitLab remote is set, using remote: {}", remote);
 				config.remote.gitlab.owner = remote.owner;
 				config.remote.gitlab.repo = remote.repo;
+				config.remote.gitlab.is_custom = remote.is_custom;
 			}
 			Err(e) => {
 				debug!("Failed to get remote from GitLab repository: {:?}", e);
@@ -137,6 +139,7 @@ fn process_repository<'a>(
 				debug!("No Gitea remote is set, using remote: {}", remote);
 				config.remote.gitea.owner = remote.owner;
 				config.remote.gitea.repo = remote.repo;
+				config.remote.gitea.is_custom = remote.is_custom;
 			}
 			Err(e) => {
 				debug!("Failed to get remote from Gitea repository: {:?}", e);
@@ -148,6 +151,7 @@ fn process_repository<'a>(
 				debug!("No Bitbucket remote is set, using remote: {}", remote);
 				config.remote.bitbucket.owner = remote.owner;
 				config.remote.bitbucket.repo = remote.repo;
+				config.remote.bitbucket.is_custom = remote.is_custom;
 			}
 			Err(e) => {
 				debug!("Failed to get remote from Bitbucket repository: {:?}", e);
@@ -465,14 +469,22 @@ pub fn run(mut args: Opt) -> Result<()> {
 	if let Some(ref remote) = args.github_repo {
 		config.remote.github.owner = remote.0.owner.to_string();
 		config.remote.github.repo = remote.0.repo.to_string();
+		config.remote.github.is_custom = true;
 	}
 	if let Some(ref remote) = args.gitlab_repo {
 		config.remote.gitlab.owner = remote.0.owner.to_string();
 		config.remote.gitlab.repo = remote.0.repo.to_string();
+		config.remote.gitlab.is_custom = true;
 	}
 	if let Some(ref remote) = args.bitbucket_repo {
 		config.remote.bitbucket.owner = remote.0.owner.to_string();
 		config.remote.bitbucket.repo = remote.0.repo.to_string();
+		config.remote.bitbucket.is_custom = true;
+	}
+	if let Some(ref remote) = args.gitea_repo {
+		config.remote.gitea.owner = remote.0.owner.to_string();
+		config.remote.gitea.repo = remote.0.repo.to_string();
+		config.remote.gitea.is_custom = true;
 	}
 	if args.no_exec {
 		if let Some(ref mut preprocessors) = config.git.commit_preprocessors {

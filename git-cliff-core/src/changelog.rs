@@ -206,9 +206,9 @@ impl<'a> Changelog<'a> {
 	#[cfg(feature = "github")]
 	fn get_github_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
 		use crate::remote::github;
-		if self
-			.body_template
-			.contains_variable(github::TEMPLATE_VARIABLES) ||
+		if self.config.remote.github.is_custom ||
+			self.body_template
+				.contains_variable(github::TEMPLATE_VARIABLES) ||
 			self.footer_template
 				.as_ref()
 				.map(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
@@ -262,9 +262,9 @@ impl<'a> Changelog<'a> {
 	#[cfg(feature = "gitlab")]
 	fn get_gitlab_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
 		use crate::remote::gitlab;
-		if self
-			.body_template
-			.contains_variable(gitlab::TEMPLATE_VARIABLES) ||
+		if self.config.remote.gitlab.is_custom ||
+			self.body_template
+				.contains_variable(gitlab::TEMPLATE_VARIABLES) ||
 			self.footer_template
 				.as_ref()
 				.map(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
@@ -326,9 +326,9 @@ impl<'a> Changelog<'a> {
 	#[cfg(feature = "gitea")]
 	fn get_gitea_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
 		use crate::remote::gitea;
-		if self
-			.body_template
-			.contains_variable(gitea::TEMPLATE_VARIABLES) ||
+		if self.config.remote.gitea.is_custom ||
+			self.body_template
+				.contains_variable(gitea::TEMPLATE_VARIABLES) ||
 			self.footer_template
 				.as_ref()
 				.map(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
@@ -379,9 +379,9 @@ impl<'a> Changelog<'a> {
 	#[cfg(feature = "bitbucket")]
 	fn get_bitbucket_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
 		use crate::remote::bitbucket;
-		if self
-			.body_template
-			.contains_variable(bitbucket::TEMPLATE_VARIABLES) ||
+		if self.config.remote.bitbucket.is_custom ||
+			self.body_template
+				.contains_variable(bitbucket::TEMPLATE_VARIABLES) ||
 			self.footer_template
 				.as_ref()
 				.map(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
@@ -791,24 +791,28 @@ mod test {
 			},
 			remote:    RemoteConfig {
 				github:    Remote {
-					owner: String::from("coolguy"),
-					repo:  String::from("awesome"),
-					token: None,
+					owner:     String::from("coolguy"),
+					repo:      String::from("awesome"),
+					token:     None,
+					is_custom: false,
 				},
 				gitlab:    Remote {
-					owner: String::from("coolguy"),
-					repo:  String::from("awesome"),
-					token: None,
+					owner:     String::from("coolguy"),
+					repo:      String::from("awesome"),
+					token:     None,
+					is_custom: false,
 				},
 				gitea:     Remote {
-					owner: String::from("coolguy"),
-					repo:  String::from("awesome"),
-					token: None,
+					owner:     String::from("coolguy"),
+					repo:      String::from("awesome"),
+					token:     None,
+					is_custom: false,
 				},
 				bitbucket: Remote {
-					owner: String::from("coolguy"),
-					repo:  String::from("awesome"),
-					token: None,
+					owner:     String::from("coolguy"),
+					repo:      String::from("awesome"),
+					token:     None,
+					is_custom: false,
 				},
 			},
 			bump:      Bump::default(),
