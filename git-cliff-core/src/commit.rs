@@ -37,7 +37,7 @@ static SHA1_REGEX: Lazy<Regex> = lazy_regex!(r#"^\b([a-f0-9]{40})\b (.*)$"#);
 
 /// Object representing a link
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all(serialize = "camelCase"))]
 pub struct Link {
 	/// Text of the link.
 	pub text: String,
@@ -98,7 +98,7 @@ impl<'a> From<CommitSignature<'a>> for Signature {
 
 /// Common commit object that is parsed from a repository.
 #[derive(Debug, Default, Clone, PartialEq, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all(serialize = "camelCase"))]
 pub struct Commit<'a> {
 	/// Commit ID.
 	pub id:            String,

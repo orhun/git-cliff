@@ -231,6 +231,15 @@ pub struct Opt {
 	/// Prints changelog context as JSON.
 	#[arg(short = 'x', long, help_heading = Some("FLAGS"))]
 	pub context:          bool,
+	/// Generates changelog from a JSON context.
+	#[arg(
+        long,
+        help_heading = Some("FLAGS"),
+	    value_name = "PATH",
+	    value_parser = Opt::parse_dir,
+	    num_args = 0..=1,
+    )]
+	pub from_context:     Option<PathBuf>,
 	/// Strips the given parts from the changelog.
 	#[arg(short, long, value_name = "PART", value_enum)]
 	pub strip:            Option<Strip>,
