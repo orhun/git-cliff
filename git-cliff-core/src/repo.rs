@@ -244,9 +244,10 @@ impl Repository {
 					(segments.get(1), segments.first())
 				{
 					return Ok(Remote {
-						owner: owner.to_string(),
-						repo:  repo.trim_end_matches(".git").to_string(),
-						token: None,
+						owner:     owner.to_string(),
+						repo:      repo.trim_end_matches(".git").to_string(),
+						token:     None,
+						is_custom: false,
 					});
 				}
 			}
@@ -360,9 +361,10 @@ mod test {
 		let remote = repository.upstream_remote()?;
 		assert_eq!(
 			Remote {
-				owner: String::from("orhun"),
-				repo:  String::from("git-cliff"),
-				token: None,
+				owner:     String::from("orhun"),
+				repo:      String::from("git-cliff"),
+				token:     None,
+				is_custom: false,
 			},
 			remote
 		);
