@@ -30,14 +30,16 @@ static TAG_SIGNATURE_REGEX: Lazy<Regex> = lazy_regex!(
 	r"(?s)-----BEGIN (PGP|SSH|SIGNED) (SIGNATURE|MESSAGE)-----(.*?)-----END (PGP|SSH|SIGNED) (SIGNATURE|MESSAGE)-----"
 );
 
+/// Name of the cache file for changed files.
+const CHANGED_FILES_CACHE: &str = "changed_files_cache";
+
 /// Wrapper for [`Repository`] type from git2.
 ///
 /// [`Repository`]: GitRepository
 pub struct Repository {
-	inner:    GitRepository,
+	inner:                    GitRepository,
 	/// Repository path.
-	pub path: PathBuf,
-
+	pub path:                 PathBuf,
 	/// Cache path for the changed files of the commits.
 	changed_files_cache_path: PathBuf,
 }
@@ -47,11 +49,10 @@ impl Repository {
 	pub fn init(path: PathBuf) -> Result<Self> {
 		if path.exists() {
 			let inner = GitRepository::open(&path)?;
-
-			// hash the path to create a unique cache id
-			let changed_files_cache_path =
-				inner.path().join("git-cliff").join("changed_files_cache");
-
+			let changed_files_cache_path = inner
+				.path()
+				.join(env!("CARGO_PKG_NAME"))
+				.join(CHANGED_FILES_CACHE);
 			Ok(Self {
 				inner,
 				path,
@@ -86,14 +87,12 @@ impl Repository {
 			.filter_map(|id| self.inner.find_commit(id).ok())
 			.collect();
 		if include_path.is_some() || exclude_path.is_some() {
-			// Normalize the glob patterns
 			let include_patterns = include_path.map(|patterns| {
 				patterns.into_iter().map(Self::normalize_pattern).collect()
 			});
 			let exclude_patterns = exclude_path.map(|patterns| {
 				patterns.into_iter().map(Self::normalize_pattern).collect()
 			});
-
 			commits.retain(|commit| {
 				self.should_retain_commit(
 					commit,
@@ -110,20 +109,16 @@ impl Repository {
 	/// It removes the leading `./` and adds `**` to the end if the pattern is a
 	/// directory.
 	fn normalize_pattern(pattern: Pattern) -> Pattern {
-		// add `**` to the end if the pattern ends with `/` or `\` (directory).
 		let star_added = match pattern.as_str().chars().last() {
-			Some('/') | Some('\\') => Pattern::new(&format!("{}**", pattern))
-				.expect("Adding ** to the end will not fail"),
+			Some('/') | Some('\\') => Pattern::new(&format!("{pattern}**"))
+				.expect("failed to add '**' to the end of glob"),
 			_ => pattern,
 		};
-
-		// remove the leading `./`.
 		let pattern_normal = match star_added.as_str().strip_prefix("./") {
 			Some(stripped) => Pattern::new(stripped)
-				.expect("Removing the leading ./ will not fail"),
+				.expect("failed to remove leading ./ from glob"),
 			None => star_added,
 		};
-
 		pattern_normal
 	}
 
@@ -138,7 +133,6 @@ impl Repository {
 		exclude_patterns: &Option<Vec<Pattern>>,
 	) -> bool {
 		let changed_files = self.commit_changed_files(commit);
-
 		match (include_patterns, exclude_patterns) {
 			(Some(include_pattern), Some(exclude_pattern)) => {
 				// check if the commit has any changed files that match any of the
@@ -177,8 +171,8 @@ impl Repository {
 	/// Returns the changed files of the commit.
 	///
 	/// It uses a cache to speed up checks to store the changed files of the
-	/// commits under `./.git/git-cliff/changed_files_cache`. The speed-up was
-	/// measured to be around 260x for large repositories.
+	/// commits under `./.git/git-cliff-core/changed_files_cache`. The speed-up
+	/// was measured to be around 260x for large repositories.
 	///
 	/// If the cache is not found, it calculates the changed files and adds them
 	/// to the cache via [`Self::commit_changed_files_no_cache`].
@@ -188,11 +182,9 @@ impl Repository {
 
 		// Check the cache first.
 		{
-			// Read the cache.
 			if let Ok(result) =
 				cacache::read_sync(&self.changed_files_cache_path, &cache_key)
 			{
-				// Deserialize the result via bincode.
 				if let Ok((files, _)) =
 					bincode::decode_from_slice(&result, bincode::config::standard())
 				{
@@ -203,27 +195,22 @@ impl Repository {
 
 		// If the cache is not found, calculate the result and set it to the cache.
 		let result = self.commit_changed_files_no_cache(commit);
-
-		// Add the result to the cache.
-		// Serialize the result via bincode.
-		match bincode::encode_to_vec(&result, bincode::config::standard()) {
-			Ok(result_serialized) => {
-				// Store the serialized result in the cache.
-				let set_res = cacache::write_sync_with_algo(
+		match bincode::encode_to_vec(
+			&self.commit_changed_files_no_cache(commit),
+			bincode::config::standard(),
+		) {
+			Ok(v) => {
+				if let Err(e) = cacache::write_sync_with_algo(
 					cacache::Algorithm::Xxh3,
 					&self.changed_files_cache_path,
 					cache_key,
-					result_serialized,
-				);
-				if let Err(err) = set_res {
-					error!("Failed to set cache for repo {:?}: {}", self.path, err);
+					v,
+				) {
+					error!("Failed to set cache for repo {:?}: {e}", self.path);
 				}
 			}
-			Err(err) => {
-				error!(
-					"Failed to serialize cache for repo {:?}: {}",
-					self.path, err
-				);
+			Err(e) => {
+				error!("Failed to serialize cache for repo {:?}: {e}", self.path);
 			}
 		}
 
@@ -235,7 +222,6 @@ impl Repository {
 	/// This function does not use the cache (directly calls git2).
 	fn commit_changed_files_no_cache(&self, commit: &Commit) -> Vec<PathBuf> {
 		let mut changed_files = Vec::new();
-
 		if let Ok(prev_commit) = commit.parent(0) {
 			// Compare the current commit with the previous commit to get the
 			// changed files.
@@ -257,29 +243,23 @@ impl Repository {
 			// So get all the files in the tree.
 			if let Ok(tree) = commit.tree() {
 				tree.walk(TreeWalkMode::PreOrder, |dir, entry| {
-					// filter out non files
-					if entry.kind().expect("Failed to get entry kind") !=
+					if entry.kind().expect("failed to get entry kind") !=
 						git2::ObjectType::Blob
 					{
 						return 0;
 					}
-
-					// get the full path of the file
-					let name = entry.name().expect("Failed to get entry name");
+					let name = entry.name().expect("failed to get entry name");
 					let entry_path = if dir != "," {
-						format!("{}/{}", dir, name)
+						format!("{dir}/{name}")
 					} else {
 						name.to_string()
 					};
-
 					changed_files.push(entry_path.into());
-
 					0
 				})
-				.expect("Failed to get the changed files of the first commit");
+				.expect("failed to get the changed files of the first commit");
 			}
 		}
-
 		changed_files
 	}
 
@@ -579,7 +559,6 @@ mod test {
 		let temp_dir =
 			TempDir::with_prefix("git-cliff-").expect("failed to create temp dir");
 
-		// run `git init`
 		let output = Command::new("git")
 			.args(["init"])
 			.current_dir(temp_dir.path())
@@ -589,8 +568,6 @@ mod test {
 
 		let repo = Repository::init(temp_dir.path().to_path_buf())
 			.expect("failed to init repo");
-
-		// add email and name to the git config
 		let output = Command::new("git")
 			.args(["config", "user.email", "test@gmail.com"])
 			.current_dir(temp_dir.path())
@@ -620,7 +597,6 @@ mod test {
 		repo: &'a Repository,
 		files: Vec<(&'a str, &'a str)>,
 	) -> Commit<'a> {
-		// create files
 		for (path, content) in files {
 			if let Some(parent) = repo.path.join(path).parent() {
 				std::fs::create_dir_all(parent).expect("failed to create dir");
@@ -629,7 +605,6 @@ mod test {
 				.expect("failed to write file");
 		}
 
-		// git add
 		let output = Command::new("git")
 			.args(["add", "."])
 			.current_dir(&repo.path)
@@ -637,7 +612,6 @@ mod test {
 			.expect("failed to execute git add");
 		assert!(output.status.success(), "git add failed {:?}", output);
 
-		// git commit
 		let output = Command::new("git")
 			.args(["commit", "--no-gpg-sign", "-m", "test commit"])
 			.current_dir(&repo.path)
@@ -645,7 +619,6 @@ mod test {
 			.expect("failed to execute git commit");
 		assert!(output.status.success(), "git commit failed {:?}", output);
 
-		// get the last commit via git2 API
 		let last_commit = repo
 			.inner
 			.head()
@@ -658,9 +631,7 @@ mod test {
 	#[test]
 	fn test_should_retain_commit() {
 		let (repo, _temp_dir) = create_temp_repo();
-		// _temp_dir.leak();
 
-		// create a new pattern with the given input and normalize it
 		let new_pattern = |input: &str| {
 			Repository::normalize_pattern(
 				Pattern::new(input).expect("valid pattern"),
