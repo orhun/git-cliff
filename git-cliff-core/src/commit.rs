@@ -294,9 +294,15 @@ impl Commit<'_> {
 			if let (Some(field_name), Some(pattern_regex)) =
 				(parser.field.as_ref(), parser.pattern.as_ref())
 			{
-				match tera::dotted_pointer(&lookup_context, field_name) {
+				let value = if field_name == "body" {
+					body.clone()
+				} else {
+					tera::dotted_pointer(&lookup_context, field_name)
+						.map(|v| v.to_string())
+				};
+				match value {
 					Some(value) => {
-						regex_checks.push((pattern_regex, value.to_string()));
+						regex_checks.push((pattern_regex, value));
 					}
 					None => {
 						return Err(AppError::FieldError(format!(
