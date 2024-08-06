@@ -196,7 +196,7 @@ impl Repository {
 		// If the cache is not found, calculate the result and set it to the cache.
 		let result = self.commit_changed_files_no_cache(commit);
 		match bincode::encode_to_vec(
-			&self.commit_changed_files_no_cache(commit),
+			self.commit_changed_files_no_cache(commit),
 			bincode::config::standard(),
 		) {
 			Ok(v) => {
