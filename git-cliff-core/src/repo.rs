@@ -71,8 +71,8 @@ impl Repository {
 	pub fn commits(
 		&self,
 		range: Option<&str>,
-		include_path: Option<&[Pattern]>,
-		exclude_path: Option<&[Pattern]>,
+		include_path: Option<Vec<Pattern>>,
+		exclude_path: Option<Vec<Pattern>>,
 	) -> Result<Vec<Commit>> {
 		let mut revwalk = self.inner.revwalk()?;
 		revwalk.set_sorting(Sort::TOPOLOGICAL)?;
@@ -539,7 +539,7 @@ mod test {
 		let remote = repository.upstream_remote()?;
 		assert_eq!(
 			Remote {
-				owner: 	   remote.owner.clone(),
+				owner:     remote.owner.clone(),
 				repo:      String::from("git-cliff"),
 				token:     None,
 				is_custom: false,

@@ -213,8 +213,8 @@ fn process_repository<'a>(
 	}
 	let mut commits = repository.commits(
 		commit_range.as_deref(),
-		args.include_path.as_deref(),
-		args.exclude_path.as_deref(),
+		args.include_path.clone(),
+		args.exclude_path.clone(),
 	)?;
 	if let Some(commit_limit_value) = config.git.limit_commits {
 		commits.truncate(commit_limit_value);
