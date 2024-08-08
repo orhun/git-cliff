@@ -266,11 +266,9 @@ impl Commit<'_> {
 	) -> Result<Self> {
 		let lookup_context = serde_json::to_value(&self).map_err(|e| {
 			AppError::FieldError(format!(
-				"failed to convert context into value: {}",
-				e
+				"failed to convert context into value: {e}",
 			))
 		})?;
-
 		for parser in parsers {
 			let mut regex_checks = Vec::new();
 			if let Some(message_regex) = parser.message.as_ref() {
@@ -306,8 +304,7 @@ impl Commit<'_> {
 					}
 					None => {
 						return Err(AppError::FieldError(format!(
-							"field {} does not have a value",
-							field_name
+							"field {field_name} does not have a value",
 						)));
 					}
 				}
