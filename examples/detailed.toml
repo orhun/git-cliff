@@ -16,7 +16,7 @@ body = """
     ## [unreleased]
 {% endif %}\
 {% if previous %}\
-    {% if previous.commit_id %}
+    {% if previous.commit_id and commit_id %}
         [{{ previous.commit_id | truncate(length=7, end="") }}]({{ previous.commit_id }})...\
             [{{ commit_id | truncate(length=7, end="") }}]({{ commit_id }})
     {% endif %}\
