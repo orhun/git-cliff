@@ -44,7 +44,7 @@ impl RemoteCommit for GitHubCommit {
 }
 
 impl RemoteEntry for GitHubCommit {
-	fn url(_id: i64, api_url: &str, remote: &Remote, page: i32) -> String {
+	fn url(_id: i64, api_url: &str, remote: &Remote, page: usize) -> String {
 		format!(
 			"{}/repos/{}/{}/commits?per_page={MAX_PAGE_SIZE}&page={page}",
 			api_url, remote.owner, remote.repo
@@ -78,7 +78,7 @@ pub struct PullRequestLabel {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitHubPullRequest {
 	/// Pull request number.
-	pub number:           i64,
+	pub number:           u64,
 	/// Pull request title.
 	pub title:            Option<String>,
 	/// SHA of the merge commit.
@@ -88,25 +88,25 @@ pub struct GitHubPullRequest {
 }
 
 impl RemotePullRequest for GitHubPullRequest {
-	fn number(&self) -> i64 {
+	fn number(&self) -> u64 {
 		self.number
 	}
 
-	fn title(&self) -> Option<String> {
-		self.title.clone()
+	fn title(&self) -> Option<&str> {
+		self.title.as_deref()
 	}
 
 	fn labels(&self) -> Vec<String> {
 		self.labels.iter().map(|v| v.name.clone()).collect()
 	}
 
-	fn merge_commit(&self) -> Option<String> {
-		self.merge_commit_sha.clone()
+	fn merge_commit(&self) -> Option<&str> {
+		self.merge_commit_sha.as_deref()
 	}
 }
 
 impl RemoteEntry for GitHubPullRequest {
-	fn url(_id: i64, api_url: &str, remote: &Remote, page: i32) -> String {
+	fn url(_id: i64, api_url: &str, remote: &Remote, page: usize) -> String {
 		format!(
 			"{}/repos/{}/{}/pulls?per_page={MAX_PAGE_SIZE}&page={page}&state=closed",
 			api_url, remote.owner, remote.repo
@@ -143,7 +143,7 @@ impl TryFrom<Remote> for GitHubClient {
 }
 
 impl RemoteClient for GitHubClient {
-	fn api_url() -> String {
+	fn api_url(&self) -> String {
 		env::var(GITHUB_API_URL_ENV)
 			.ok()
 			.unwrap_or_else(|| GITHUB_API_URL.to_string())
