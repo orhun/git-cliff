@@ -62,9 +62,9 @@ impl<'a> Changelog<'a> {
 			config,
 			additional_context: HashMap::new(),
 		};
+		changelog.add_remote_data()?;
 		changelog.process_commits();
 		changelog.process_releases();
-		changelog.add_remote_data()?;
 		Ok(changelog)
 	}
 

@@ -165,14 +165,17 @@ Examples:
 - `{ sha = "f6f2472bdf0bbb5f9fcaf2d72c1fa9f98f772bb2", group = "Stuff" }`
   - Set the group of the commit by using its SHA1.
 - `{ field = "author.name", pattern = "John Doe", group = "John's stuff" }`
-  - If the author's name attribute of the commit matches the pattern "John Doe" (as a regex), override the scope with "John' stuff". Supported commit attributes are:
+  - If the author's name attribute of the commit matches the pattern "John Doe" (as a regex), override the scope with "John's stuff".
+  - All values that are part of the commit context can be used. Nested fields can be accessed via the [dot notation](https://keats.github.io/tera/docs/#dot-notation). Some commonly used ones are:
     - `id`
     - `message`
-    - `body`
     - `author.name`
     - `author.email`
     - `committer.email`
     - `committer.name`
+  - `body` is a special field which contains the body of a convetional commit, if applicable.
+  - Be aware that all fields are converted to JSON strings before they are parsed by the given regex, especially when dealing with arrays.
+
 
 ### protect_breaking_commits
 
