@@ -24,7 +24,7 @@ use serde::{
 
 /// Representation of a release.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all(serialize = "camelCase"))]
 pub struct Release<'a> {
 	/// Release version, git tag.
 	pub version:    Option<String>,

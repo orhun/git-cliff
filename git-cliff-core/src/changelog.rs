@@ -18,7 +18,10 @@ use crate::remote::github::GitHubClient;
 use crate::remote::gitlab::GitLabClient;
 use crate::template::Template;
 use std::collections::HashMap;
-use std::io::Write;
+use std::io::{
+	Read,
+	Write,
+};
 use std::time::{
 	SystemTime,
 	UNIX_EPOCH,
@@ -39,8 +42,16 @@ pub struct Changelog<'a> {
 impl<'a> Changelog<'a> {
 	/// Constructs a new instance.
 	pub fn new(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
+		let mut changelog = Changelog::build(releases, config)?;
+		changelog.process_commits();
+		changelog.process_releases();
+		changelog.add_remote_data()?;
+		Ok(changelog)
+	}
+
+	fn build(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
 		let trim = config.changelog.trim.unwrap_or(true);
-		let mut changelog = Self {
+		Ok(Self {
 			releases,
 			header_template: match &config.changelog.header {
 				Some(header) => Some(Template::new(header.to_string(), trim)?),
@@ -61,11 +72,12 @@ impl<'a> Changelog<'a> {
 			},
 			config,
 			additional_context: HashMap::new(),
-		};
-		changelog.process_commits();
-		changelog.process_releases();
-		changelog.add_remote_data()?;
-		Ok(changelog)
+		})
+	}
+
+	/// Constructs an instance from a serialized context object.
+	pub fn from_context<R: Read>(input: &mut R, config: &'a Config) -> Result<Self> {
+		Changelog::build(serde_json::from_reader(input)?, config)
 	}
 
 	/// Adds a key value pair to the template context.
