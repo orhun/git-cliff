@@ -14,7 +14,6 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
 -h, --help            Prints help information
 -V, --version         Prints version information
 -v, --verbose...      Increases the logging verbosity
-    --bump            Bumps the version for unreleased changes
     --bumped-version  Prints bumped version for unreleased changes
 -l, --latest          Processes the commits starting from the latest tag
     --current         Processes the commits that belong to the current tag
@@ -28,6 +27,7 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
 
 ```
 -i, --init [<CONFIG>]              Writes the default configuration file to cliff.toml
+    --bump                         Bumps the version for unreleased changes [default: auto] [possible values: auto, major, minor, patch]
 -c, --config <PATH>                Sets the configuration file [env: GIT_CLIFF_CONFIG=] [default: cliff.toml]
 -w, --workdir <PATH>               Sets the working directory [env: GIT_CLIFF_WORKDIR=]
 -r, --repository <PATH>...         Sets the git repository [env: GIT_CLIFF_REPOSITORY=]

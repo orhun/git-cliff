@@ -14,6 +14,7 @@ pub mod logger;
 extern crate log;
 
 use args::{
+	BumpOption,
 	Opt,
 	Sort,
 	Strip,
@@ -44,11 +45,8 @@ use std::fs::{
 	self,
 	File,
 };
-use std::io::{
-	self,
-	Write,
-};
-use std::path::PathBuf;
+use std::io;
+use std::path::Path;
 use std::time::{
 	SystemTime,
 	UNIX_EPOCH,
@@ -89,41 +87,37 @@ fn process_repository<'a>(
 	let skip_regex = config.git.skip_tags.as_ref();
 	let ignore_regex = config.git.ignore_tags.as_ref();
 	let count_tags = config.git.count_tags.as_ref();
-	tags = tags
-		.into_iter()
-		.filter(|(_, tag)| {
-			let name = &tag.name;
+	tags.retain(|_, tag| {
+		let name = &tag.name;
 
-			// Keep skip tags to drop commits in the later stage.
-			let skip = skip_regex.map(|r| r.is_match(name)).unwrap_or_default();
+		// Keep skip tags to drop commits in the later stage.
+		let skip = skip_regex.is_some_and(|r| r.is_match(name));
+		if skip {
+			return true;
+		}
 
-			let count = count_tags
-				.map(|r| {
-					let count_tag = r.is_match(name);
-					if count_tag {
-						trace!("Counting release: {}", name)
-					}
-					count_tag
-				})
-				.unwrap_or(true);
+		let count = count_tags.is_some_and(|r| {
+			let count_tag = r.is_match(name);
+			if count_tag {
+				trace!("Counting release: {}", name)
+			}
+			count_tag
+		});
 
-			let ignore = ignore_regex
-				.map(|r| {
-					if r.as_str().trim().is_empty() {
-						return false;
-					}
+		let ignore = ignore_regex.is_some_and(|r| {
+			if r.as_str().trim().is_empty() {
+				return false;
+			}
 
-					let ignore_tag = r.is_match(name);
-					if ignore_tag {
-						trace!("Ignoring release: {}", name)
-					}
-					ignore_tag
-				})
-				.unwrap_or_default();
+			let ignore_tag = r.is_match(name);
+			if ignore_tag {
+				trace!("Ignoring release: {}", name)
+			}
+			ignore_tag
+		});
 
-			skip || (count && !ignore)
-		})
-		.collect();
+		count && !ignore
+	});
 
 	if !config.remote.github.is_set() {
 		match repository.upstream_remote() {
@@ -131,6 +125,7 @@ fn process_repository<'a>(
 				debug!("No GitHub remote is set, using remote: {}", remote);
 				config.remote.github.owner = remote.owner;
 				config.remote.github.repo = remote.repo;
+				config.remote.github.is_custom = remote.is_custom;
 			}
 			Err(e) => {
 				debug!("Failed to get remote from GitHub repository: {:?}", e);
@@ -142,6 +137,7 @@ fn process_repository<'a>(
 				debug!("No GitLab remote is set, using remote: {}", remote);
 				config.remote.gitlab.owner = remote.owner;
 				config.remote.gitlab.repo = remote.repo;
+				config.remote.gitlab.is_custom = remote.is_custom;
 			}
 			Err(e) => {
 				debug!("Failed to get remote from GitLab repository: {:?}", e);
@@ -153,6 +149,7 @@ fn process_repository<'a>(
 				debug!("No Gitea remote is set, using remote: {}", remote);
 				config.remote.gitea.owner = remote.owner;
 				config.remote.gitea.repo = remote.repo;
+				config.remote.gitea.is_custom = remote.is_custom;
 			}
 			Err(e) => {
 				debug!("Failed to get remote from Gitea repository: {:?}", e);
@@ -164,6 +161,7 @@ fn process_repository<'a>(
 				debug!("No Bitbucket remote is set, using remote: {}", remote);
 				config.remote.bitbucket.owner = remote.owner;
 				config.remote.bitbucket.repo = remote.repo;
+				config.remote.bitbucket.is_custom = remote.is_custom;
 			}
 			Err(e) => {
 				debug!("Failed to get remote from Bitbucket repository: {:?}", e);
@@ -224,14 +222,12 @@ fn process_repository<'a>(
 		}
 	}
 	let mut commits = repository.commits(
-		commit_range,
+		commit_range.as_deref(),
 		args.include_path.clone(),
 		args.exclude_path.clone(),
 	)?;
 	if let Some(commit_limit_value) = config.git.limit_commits {
-		commits = commits
-			.drain(..commits.len().min(commit_limit_value))
-			.collect();
+		commits.truncate(commit_limit_value);
 	}
 
 	// Update tags.
@@ -250,27 +246,19 @@ fn process_repository<'a>(
 
 	// Process releases.
 	let mut releases = vec![Release::default()];
-	let mut release_index = 0;
 	let mut previous_release = Release::default();
 	let mut first_processed_tag = None;
 	for git_commit in commits.iter().rev() {
+		let release = releases.last_mut().unwrap();
 		let commit = Commit::from(git_commit);
 		let commit_id = commit.id.to_string();
-		releases[release_index].repository =
-			Some(repository.path.to_string_lossy().to_string());
-		if args.sort == Sort::Newest {
-			releases[release_index].commits.insert(0, commit);
-		} else {
-			releases[release_index].commits.push(commit);
-		}
+		release.commits.push(commit);
+		release.repository = Some(repository.path.to_string_lossy().into_owned());
 		if let Some(tag) = tags.get(&commit_id) {
-			let tag_name = &tag.name;
-
-			releases[release_index].version = Some(tag_name.clone());
-			releases[release_index].message = tag.message.clone();
-			releases[release_index].commit_id = Some(commit_id);
-			releases[release_index].timestamp = if args.tag == Some(tag_name.clone())
-			{
+			release.version = Some(tag.name.to_string());
+			release.message = tag.message.clone();
+			release.commit_id = Some(commit_id);
+			release.timestamp = if args.tag.as_deref() == Some(tag.name.as_str()) {
 				SystemTime::now()
 					.duration_since(UNIX_EPOCH)?
 					.as_secs()
@@ -282,27 +270,32 @@ fn process_repository<'a>(
 				first_processed_tag = Some(tag);
 			}
 			previous_release.previous = None;
-			releases[release_index].previous = Some(Box::new(previous_release));
-			previous_release = releases[release_index].clone();
+			release.previous = Some(Box::new(previous_release));
+			previous_release = release.clone();
 			releases.push(Release::default());
-			release_index += 1;
 		}
 	}
 
-	if release_index > 0 {
+	debug_assert!(!releases.is_empty());
+
+	if releases.len() > 1 {
 		previous_release.previous = None;
-		releases[release_index].previous = Some(Box::new(previous_release));
+		releases.last_mut().unwrap().previous = Some(Box::new(previous_release));
+	}
+
+	if args.sort == Sort::Newest {
+		for release in &mut releases {
+			release.commits.reverse();
+		}
 	}
 
 	// Add custom commit messages to the latest release.
 	if let Some(custom_commits) = &args.with_commit {
-		if let Some(latest_release) = releases.iter_mut().last() {
-			custom_commits.iter().for_each(|message| {
-				latest_release
-					.commits
-					.push(Commit::from(message.to_string()))
-			});
-		}
+		releases
+			.last_mut()
+			.unwrap()
+			.commits
+			.extend(custom_commits.iter().cloned().map(Commit::from));
 	}
 
 	// Set custom message for the latest release.
@@ -313,12 +306,11 @@ fn process_repository<'a>(
 	}
 
 	// Set the previous release if the first release does not have one set.
-	if !releases.is_empty() &&
-		releases
-			.first()
-			.and_then(|r| r.previous.as_ref())
-			.and_then(|p| p.version.as_ref())
-			.is_none()
+	if releases[0]
+		.previous
+		.as_ref()
+		.and_then(|p| p.version.as_ref())
+		.is_none()
 	{
 		// Get the previous tag of the first processed tag in the release loop.
 		let first_tag = first_processed_tag
@@ -487,14 +479,22 @@ pub fn run(mut args: Opt) -> Result<()> {
 	if let Some(ref remote) = args.github_repo {
 		config.remote.github.owner = remote.0.owner.to_string();
 		config.remote.github.repo = remote.0.repo.to_string();
+		config.remote.github.is_custom = true;
 	}
 	if let Some(ref remote) = args.gitlab_repo {
 		config.remote.gitlab.owner = remote.0.owner.to_string();
 		config.remote.gitlab.repo = remote.0.repo.to_string();
+		config.remote.gitlab.is_custom = true;
 	}
 	if let Some(ref remote) = args.bitbucket_repo {
 		config.remote.bitbucket.owner = remote.0.owner.to_string();
 		config.remote.bitbucket.repo = remote.0.repo.to_string();
+		config.remote.bitbucket.is_custom = true;
+	}
+	if let Some(ref remote) = args.gitea_repo {
+		config.remote.gitea.owner = remote.0.owner.to_string();
+		config.remote.gitea.repo = remote.0.repo.to_string();
+		config.remote.gitea.is_custom = true;
 	}
 	if args.no_exec {
 		if let Some(ref mut preprocessors) = config.git.commit_preprocessors {
@@ -560,10 +560,22 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 
 	// Process commits and releases for the changelog.
+	if let Some(BumpOption::Specific(bump_type)) = args.bump {
+		config.bump.bump_type = Some(bump_type)
+	}
 	let mut changelog = Changelog::new(releases, &config)?;
 
 	// Print the result.
-	if args.bump || args.bumped_version {
+	let mut out: Box<dyn io::Write> = if let Some(path) = &args.output {
+		if path == Path::new("-") {
+			Box::new(io::stdout())
+		} else {
+			Box::new(io::BufWriter::new(File::create(path)?))
+		}
+	} else {
+		Box::new(io::stdout())
+	};
+	if args.bump.is_some() || args.bumped_version {
 		let next_version = if let Some(next_version) = changelog.bump_version()? {
 			next_version
 		} else if let Some(last_version) =
@@ -575,40 +587,22 @@ pub fn run(mut args: Opt) -> Result<()> {
 			return Ok(());
 		};
 		if args.bumped_version {
-			if let Some(path) = args.output {
-				let mut output = File::create(path)?;
-				output.write_all(next_version.as_bytes())?;
-			} else {
-				println!("{next_version}");
-			}
+			writeln!(out, "{next_version}")?;
 			return Ok(());
 		}
 	}
 	if args.context {
-		return if let Some(path) = args.output {
-			let mut output = File::create(path)?;
-			changelog.write_context(&mut output)
-		} else {
-			changelog.write_context(&mut io::stdout())
-		};
+		changelog.write_context(&mut out)?;
+		return Ok(());
 	}
-	if let Some(ref path) = args.prepend {
-		changelog.prepend(fs::read_to_string(path)?, &mut File::create(path)?)?;
+	if let Some(path) = &args.prepend {
+		let changelog_before = fs::read_to_string(path)?;
+		let mut out = io::BufWriter::new(File::create(path)?);
+		changelog.prepend(changelog_before, &mut out)?;
 	}
-	if let Some(path) = args.output {
-		let mut output: Box<dyn Write> = if path == PathBuf::from("-") {
-			Box::new(io::stdout())
-		} else {
-			Box::new(File::create(path)?)
-		};
-		if args.context {
-			changelog.write_context(&mut output)
-		} else {
-			changelog.generate(&mut output)
-		}
-	} else if args.prepend.is_none() {
-		changelog.generate(&mut io::stdout())
-	} else {
-		Ok(())
+	if args.output.is_some() || args.prepend.is_none() {
+		changelog.generate(&mut out)?;
 	}
+
+	Ok(())
 }

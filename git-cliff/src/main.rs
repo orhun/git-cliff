@@ -5,7 +5,12 @@ use git_cliff_core::error::Result;
 use std::env;
 use std::process;
 
+/// Profiler.
+#[cfg(feature = "profiler")]
+mod profiler;
+
 fn main() -> Result<()> {
+	// Parse the command line arguments
 	let args = Opt::parse();
 	if args.verbose == 1 {
 		env::set_var("RUST_LOG", "debug");
@@ -15,11 +20,32 @@ fn main() -> Result<()> {
 		env::set_var("RUST_LOG", "info");
 	}
 	logger::init()?;
-	match git_cliff::run(args) {
-		Ok(_) => process::exit(0),
+
+	// Initialize the profiler guard if the feature is enabled
+	let mut _profiler_guard = None;
+	#[cfg(feature = "profiler")]
+	{
+		_profiler_guard = profiler::start_profiling();
+	}
+	#[cfg(not(feature = "profiler"))]
+	{
+		_profiler_guard = Some(());
+	}
+
+	// Run git-cliff
+	let exit_code = match git_cliff::run(args) {
+		Ok(_) => 0,
 		Err(e) => {
 			log::error!("{}", e);
-			process::exit(1)
+			1
 		}
+	};
+
+	// Report the profiler if the feature is enabled
+	#[cfg(feature = "profiler")]
+	{
+		profiler::finish_profiling(_profiler_guard)?;
 	}
+
+	process::exit(exit_code);
 }

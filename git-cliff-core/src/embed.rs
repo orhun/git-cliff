@@ -30,7 +30,7 @@ impl EmbeddedConfig {
 	///
 	/// [`Config`]: Config
 	pub fn parse() -> Result<Config> {
-		Ok(toml::from_str(&Self::get_config()?)?)
+		Config::parse_from_str(&Self::get_config()?)
 	}
 }
 

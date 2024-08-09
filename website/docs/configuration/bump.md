@@ -81,3 +81,14 @@ git-cliff --bumped-version
 
 0.2.0
 ```
+
+### bump_type
+
+When set, it forces to always bump in major, minor or patch.
+
+e.g.
+
+```toml
+[bump]
+bump_type = "minor"
+```
