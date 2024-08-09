@@ -86,6 +86,7 @@ fn process_repository<'a>(
 	let mut tags = repository.tags(&config.git.tag_pattern, args.topo_order)?;
 	let skip_regex = config.git.skip_tags.as_ref();
 	let ignore_regex = config.git.ignore_tags.as_ref();
+	let count_tags = config.git.count_tags.as_ref();
 	tags.retain(|_, tag| {
 		let name = &tag.name;
 
@@ -94,6 +95,14 @@ fn process_repository<'a>(
 		if skip {
 			return true;
 		}
+
+		let count = count_tags.map_or(true, |r| {
+			let count_tag = r.is_match(name);
+			if count_tag {
+				trace!("Counting release: {}", name)
+			}
+			count_tag
+		});
 
 		let ignore = ignore_regex.is_some_and(|r| {
 			if r.as_str().trim().is_empty() {
@@ -106,7 +115,8 @@ fn process_repository<'a>(
 			}
 			ignore_tag
 		});
-		!ignore
+
+		count && !ignore
 	});
 
 	if !config.remote.github.is_set() {
@@ -507,6 +517,9 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 	if args.ignore_tags.is_some() {
 		config.git.ignore_tags.clone_from(&args.ignore_tags);
+	}
+	if args.count_tags.is_some() {
+		config.git.count_tags.clone_from(&args.count_tags);
 	}
 	// Process the repositories.
 	let repositories = args.repository.clone().unwrap_or(vec![env::current_dir()?]);
