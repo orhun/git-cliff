@@ -96,7 +96,7 @@ fn process_repository<'a>(
 			return true;
 		}
 
-		let count = count_tags.is_some_and(|r| {
+		let count = count_tags.map_or(true, |r| {
 			let count_tag = r.is_match(name);
 			if count_tag {
 				trace!("Counting release: {}", name)
