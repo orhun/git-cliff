@@ -43,9 +43,9 @@ impl<'a> Changelog<'a> {
 	/// Constructs a new instance.
 	pub fn new(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
 		let mut changelog = Changelog::build(releases, config)?;
+		changelog.add_remote_data()?;
 		changelog.process_commits();
 		changelog.process_releases();
-		changelog.add_remote_data()?;
 		Ok(changelog)
 	}
 
@@ -796,6 +796,7 @@ mod test {
 				tag_pattern:              None,
 				skip_tags:                Regex::new("v3.*").ok(),
 				ignore_tags:              None,
+				count_tags:               None,
 				topo_order:               Some(false),
 				sort_commits:             Some(String::from("oldest")),
 				link_parsers:             None,
