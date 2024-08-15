@@ -138,12 +138,20 @@ pub struct RemoteConfig {
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Remote {
 	/// Owner of the remote.
-	pub owner: String,
+	pub owner:     String,
 	/// Repository name.
-	pub repo:  String,
+	pub repo:      String,
 	/// Access token.
 	#[serde(skip_serializing)]
-	pub token: Option<SecretString>,
+	pub token:     Option<SecretString>,
+	/// Whether if the remote is set manually.
+	#[serde(skip_deserializing, default = "default_true")]
+	pub is_custom: bool,
+}
+
+/// Returns `true` for serde's `default` attribute.
+fn default_true() -> bool {
+	true
 }
 
 impl fmt::Display for Remote {
@@ -162,9 +170,10 @@ impl Remote {
 	/// Constructs a new instance.
 	pub fn new<S: Into<String>>(owner: S, repo: S) -> Self {
 		Self {
-			owner: owner.into(),
-			repo:  repo.into(),
-			token: None,
+			owner:     owner.into(),
+			repo:      repo.into(),
+			token:     None,
+			is_custom: false,
 		}
 	}
 
