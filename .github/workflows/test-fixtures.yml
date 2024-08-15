@@ -91,6 +91,8 @@ jobs:
           - fixtures-name: test-tag-message
           - fixtures-name: test-bump-unreleased-with-tag-message-arg
             command: --bump --unreleased --with-tag-message "Some text"
+          - fixtures-name: test-from-context
+            command: --from-context context.json
 
     steps:
       - name: Checkout

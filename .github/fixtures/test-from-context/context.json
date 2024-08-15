@@ -1,0 +1,626 @@
+[
+    {
+        "version": null,
+        "message": null,
+        "commits": [
+            {
+                "id": "c7541276668616c136d12a9ccd87087314d66fb6",
+                "message": "add tests",
+                "body": null,
+                "footers": [],
+                "group": "test",
+                "breaking_description": null,
+                "breaking": false,
+                "scope": null,
+                "links": [],
+                "author": {
+                    "name": "John Doe",
+                    "email": "john@doe.com",
+                    "timestamp": 1723730666
+                },
+                "committer": {
+                    "name": "John Doe",
+                    "email": "john@doe.com",
+                    "timestamp": 1649201113
+                },
+                "conventional": true,
+                "merge_commit": false,
+                "github": {
+                    "username": null,
+                    "pr_title": null,
+                    "pr_number": null,
+                    "pr_labels": [],
+                    "is_first_time": false
+                },
+                "gitlab": {
+                    "username": null,
+                    "pr_title": null,
+                    "pr_number": null,
+                    "pr_labels": [],
+                    "is_first_time": false
+                },
+                "gitea": {
+                    "username": null,
+                    "pr_title": null,
+                    "pr_number": null,
+                    "pr_labels": [],
+                    "is_first_time": false
+                },
+                "bitbucket": {
+                    "username": null,
+                    "pr_title": null,
+                    "pr_number": null,
+                    "pr_labels": [],
+                    "is_first_time": false
+                }
+            }
+        ],
+        "commit_id": null,
+        "timestamp": 0,
+        "previous": {
+            "version": "v0.2.0",
+            "message": null,
+            "commits": [
+                {
+                    "id": "ce8cecc9834e5cbdb5b4e79c8260cace3c0dd949",
+                    "message": "feat(gui): add feature 2\n",
+                    "group": null,
+                    "scope": null,
+                    "links": [],
+                    "author": {
+                        "name": "John Doe",
+                        "email": "john@doe.com",
+                        "timestamp": 1723730666
+                    },
+                    "committer": {
+                        "name": "John Doe",
+                        "email": "john@doe.com",
+                        "timestamp": 1649201111
+                    },
+                    "conventional": false,
+                    "merge_commit": false,
+                    "github": {
+                        "username": null,
+                        "pr_title": null,
+                        "pr_number": null,
+                        "pr_labels": [],
+                        "is_first_time": false
+                    },
+                    "gitlab": {
+                        "username": null,
+                        "pr_title": null,
+                        "pr_number": null,
+                        "pr_labels": [],
+                        "is_first_time": false
+                    },
+                    "gitea": {
+                        "username": null,
+                        "pr_title": null,
+                        "pr_number": null,
+                        "pr_labels": [],
+                        "is_first_time": false
+                    },
+                    "bitbucket": {
+                        "username": null,
+                        "pr_title": null,
+                        "pr_number": null,
+                        "pr_labels": [],
+                        "is_first_time": false
+                    }
+                },
+                {
+                    "id": "5061081d6272b1da2146fab49d803c193db309d9",
+                    "message": "fix(gui): fix feature 2\n",
+                    "group": null,
+                    "scope": null,
+                    "links": [],
+                    "author": {
+                        "name": "John Doe",
+                        "email": "john@doe.com",
+                        "timestamp": 1723730666
+                    },
+                    "committer": {
+                        "name": "John Doe",
+                        "email": "john@doe.com",
+                        "timestamp": 1649201112
+                    },
+                    "conventional": false,
+                    "merge_commit": false,
+                    "github": {
+                        "username": null,
+                        "pr_title": null,
+                        "pr_number": null,
+                        "pr_labels": [],
+                        "is_first_time": false
+                    },
+                    "gitlab": {
+                        "username": null,
+                        "pr_title": null,
+                        "pr_number": null,
+                        "pr_labels": [],
+                        "is_first_time": false
+                    },
+                    "gitea": {
+                        "username": null,
+                        "pr_title": null,
+                        "pr_number": null,
+                        "pr_labels": [],
+                        "is_first_time": false
+                    },
+                    "bitbucket": {
+                        "username": null,
+                        "pr_title": null,
+                        "pr_number": null,
+                        "pr_labels": [],
+                        "is_first_time": false
+                    }
+                }
+            ],
+            "commit_id": "5061081d6272b1da2146fab49d803c193db309d9",
+            "timestamp": 1649201112,
+            "previous": null,
+            "repository": "/home/johndoe/repo/",
+            "github": {
+                "contributors": []
+            },
+            "gitlab": {
+                "contributors": []
+            },
+            "gitea": {
+                "contributors": []
+            },
+            "bitbucket": {
+                "contributors": []
+            }
+        },
+        "repository": "/home/johndoe/repo/",
+        "github": {
+            "contributors": []
+        },
+        "gitlab": {
+            "contributors": []
+        },
+        "gitea": {
+            "contributors": []
+        },
+        "bitbucket": {
+            "contributors": []
+        }
+    },
+    {
+        "version": "v0.2.0",
+        "message": null,
+        "commits": [
+            {
+                "id": "ce8cecc9834e5cbdb5b4e79c8260cace3c0dd949",
+                "message": "add feature 2",
+                "body": null,
+                "footers": [],
+                "group": "Features",
+                "breaking_description": null,
+                "breaking": false,
+                "scope": "gui",
+                "links": [],
+                "author": {
+                    "name": "John Doe",
+                    "email": "john@doe.com",
+                    "timestamp": 1723730666
+                },
+                "committer": {
+                    "name": "John Doe",
+                    "email": "john@doe.com",
+                    "timestamp": 1649201111
+                },
+                "conventional": true,
+                "merge_commit": false,
+                "github": {
+                    "username": null,
+                    "pr_title": null,
+                    "pr_number": null,
+                    "pr_labels": [],
+                    "is_first_time": false
+                },
+                "gitlab": {
+                    "username": null,
+                    "pr_title": null,
+                    "pr_number": null,
+                    "pr_labels": [],
+                    "is_first_time": false
+                },
+                "gitea": {
+                    "username": null,
+                    "pr_title": null,
+                    "pr_number": null,
+                    "pr_labels": [],
+                    "is_first_time": false
+                },
+                "bitbucket": {
+                    "username": null,
+                    "pr_title": null,
+                    "pr_number": null,
+                    "pr_labels": [],
+                    "is_first_time": false
+                }
+            },
+            {
+                "id": "5061081d6272b1da2146fab49d803c193db309d9",
+                "message": "fix feature 2",
+                "body": null,
+                "footers": [],
+                "group": "Bug Fixes",
+                "breaking_description": null,
+                "breaking": false,
+                "scope": "cli",
+                "links": [],
+                "author": {
+                    "name": "John Doe",
+                    "email": "john@doe.com",
+                    "timestamp": 1723730666
+                },
+                "committer": {
+                    "name": "John Doe",
+                    "email": "john@doe.com",
+                    "timestamp": 1649201112
+                },
+                "conventional": true,
+                "merge_commit": false,
+                "extra": {
+                    "note": "that was a tough one"
+                },
+                "github": {
+                    "username": null,
+                    "pr_title": null,
+                    "pr_number": null,
+                    "pr_labels": [],
+                    "is_first_time": false
+                },
+                "gitlab": {
+                    "username": null,
+                    "pr_title": null,
+                    "pr_number": null,
+                    "pr_labels": [],
+                    "is_first_time": false
+                },
+                "gitea": {
+                    "username": null,
+                    "pr_title": null,
+                    "pr_number": null,
+                    "pr_labels": [],
+                    "is_first_time": false
+                },
+                "bitbucket": {
+                    "username": null,
+                    "pr_title": null,
+                    "pr_number": null,
+                    "pr_labels": [],
+                    "is_first_time": false
+                }
+            }
+        ],
+        "commit_id": "5061081d6272b1da2146fab49d803c193db309d9",
+        "timestamp": 1649201112,
+        "previous": {
+            "version": "v0.1.0",
+            "message": null,
+            "commits": [
+                {
+                    "id": "c6ba7fe73c3b639ff2f934f3f98e5f50350ab463",
+                    "message": "Initial commit\n",
+                    "group": null,
+                    "scope": null,
+                    "links": [],
+                    "author": {
+                        "name": "John Doe",
+                        "email": "john@doe.com",
+                        "timestamp": 1723730666
+                    },
+                    "committer": {
+                        "name": "John Doe",
+                        "email": "john@doe.com",
+                        "timestamp": 1649201108
+                    },
+                    "conventional": false,
+                    "merge_commit": false,
+                    "github": {
+                        "username": null,
+                        "pr_title": null,
+                        "pr_number": null,
+                        "pr_labels": [],
+                        "is_first_time": false
+                    },
+                    "gitlab": {
+                        "username": null,
+                        "pr_title": null,
+                        "pr_number": null,
+                        "pr_labels": [],
+                        "is_first_time": false
+                    },
+                    "gitea": {
+                        "username": null,
+                        "pr_title": null,
+                        "pr_number": null,
+                        "pr_labels": [],
+                        "is_first_time": false
+                    },
+                    "bitbucket": {
+                        "username": null,
+                        "pr_title": null,
+                        "pr_number": null,
+                        "pr_labels": [],
+                        "is_first_time": false
+                    }
+                },
+                {
+                    "id": "9c10e506bf103998e303d8164c7b4a1a841e2471",
+                    "message": "feat: add feature 1\n",
+                    "group": null,
+                    "scope": null,
+                    "links": [],
+                    "author": {
+                        "name": "John Doe",
+                        "email": "john@doe.com",
+                        "timestamp": 1723730666
+                    },
+                    "committer": {
+                        "name": "John Doe",
+                        "email": "john@doe.com",
+                        "timestamp": 1649201109
+                    },
+                    "conventional": false,
+                    "merge_commit": false,
+                    "github": {
+                        "username": null,
+                        "pr_title": null,
+                        "pr_number": null,
+                        "pr_labels": [],
+                        "is_first_time": false
+                    },
+                    "gitlab": {
+                        "username": null,
+                        "pr_title": null,
+                        "pr_number": null,
+                        "pr_labels": [],
+                        "is_first_time": false
+                    },
+                    "gitea": {
+                        "username": null,
+                        "pr_title": null,
+                        "pr_number": null,
+                        "pr_labels": [],
+                        "is_first_time": false
+                    },
+                    "bitbucket": {
+                        "username": null,
+                        "pr_title": null,
+                        "pr_number": null,
+                        "pr_labels": [],
+                        "is_first_time": false
+                    }
+                },
+                {
+                    "id": "98b1464c2f99a0c6812ce6d3ea4a5b953dd35fe2",
+                    "message": "fix: fix feature 1\n",
+                    "group": null,
+                    "scope": null,
+                    "links": [],
+                    "author": {
+                        "name": "John Doe",
+                        "email": "john@doe.com",
+                        "timestamp": 1723730666
+                    },
+                    "committer": {
+                        "name": "John Doe",
+                        "email": "john@doe.com",
+                        "timestamp": 1649201110
+                    },
+                    "conventional": false,
+                    "merge_commit": false,
+                    "github": {
+                        "username": null,
+                        "pr_title": null,
+                        "pr_number": null,
+                        "pr_labels": [],
+                        "is_first_time": false
+                    },
+                    "gitlab": {
+                        "username": null,
+                        "pr_title": null,
+                        "pr_number": null,
+                        "pr_labels": [],
+                        "is_first_time": false
+                    },
+                    "gitea": {
+                        "username": null,
+                        "pr_title": null,
+                        "pr_number": null,
+                        "pr_labels": [],
+                        "is_first_time": false
+                    },
+                    "bitbucket": {
+                        "username": null,
+                        "pr_title": null,
+                        "pr_number": null,
+                        "pr_labels": [],
+                        "is_first_time": false
+                    }
+                }
+            ],
+            "commit_id": "98b1464c2f99a0c6812ce6d3ea4a5b953dd35fe2",
+            "timestamp": 1649201110,
+            "previous": null,
+            "repository": "/home/johndoe/repo/",
+            "github": {
+                "contributors": []
+            },
+            "gitlab": {
+                "contributors": []
+            },
+            "gitea": {
+                "contributors": []
+            },
+            "bitbucket": {
+                "contributors": []
+            }
+        },
+        "extra": {
+            "note": "This is so awesome!"
+        },
+        "repository": "/home/johndoe/repo/",
+        "github": {
+            "contributors": []
+        },
+        "gitlab": {
+            "contributors": []
+        },
+        "gitea": {
+            "contributors": []
+        },
+        "bitbucket": {
+            "contributors": []
+        }
+    },
+    {
+        "version": "v0.1.0",
+        "message": null,
+        "commits": [
+            {
+                "id": "9c10e506bf103998e303d8164c7b4a1a841e2471",
+                "message": "add feature 1",
+                "body": null,
+                "footers": [],
+                "group": "Features",
+                "breaking_description": null,
+                "breaking": false,
+                "scope": "app",
+                "links": [],
+                "author": {
+                    "name": "John Doe",
+                    "email": "john@doe.com",
+                    "timestamp": 1723730666
+                },
+                "committer": {
+                    "name": "John Doe",
+                    "email": "john@doe.com",
+                    "timestamp": 1649201109
+                },
+                "conventional": true,
+                "merge_commit": false,
+                "github": {
+                    "username": null,
+                    "pr_title": null,
+                    "pr_number": null,
+                    "pr_labels": [],
+                    "is_first_time": false
+                },
+                "gitlab": {
+                    "username": null,
+                    "pr_title": null,
+                    "pr_number": null,
+                    "pr_labels": [],
+                    "is_first_time": false
+                },
+                "gitea": {
+                    "username": null,
+                    "pr_title": null,
+                    "pr_number": null,
+                    "pr_labels": [],
+                    "is_first_time": false
+                },
+                "bitbucket": {
+                    "username": null,
+                    "pr_title": null,
+                    "pr_number": null,
+                    "pr_labels": [],
+                    "is_first_time": false
+                }
+            },
+            {
+                "id": "98b1464c2f99a0c6812ce6d3ea4a5b953dd35fe2",
+                "message": "fix feature 1",
+                "body": null,
+                "footers": [],
+                "group": "Bug Fixes",
+                "breaking_description": null,
+                "breaking": false,
+                "scope": "cli",
+                "links": [],
+                "author": {
+                    "name": "John Doe",
+                    "email": "john@doe.com",
+                    "timestamp": 1723730666
+                },
+                "committer": {
+                    "name": "John Doe",
+                    "email": "john@doe.com",
+                    "timestamp": 1649201110
+                },
+                "conventional": true,
+                "merge_commit": false,
+                "github": {
+                    "username": null,
+                    "pr_title": null,
+                    "pr_number": null,
+                    "pr_labels": [],
+                    "is_first_time": false
+                },
+                "gitlab": {
+                    "username": null,
+                    "pr_title": null,
+                    "pr_number": null,
+                    "pr_labels": [],
+                    "is_first_time": false
+                },
+                "gitea": {
+                    "username": null,
+                    "pr_title": null,
+                    "pr_number": null,
+                    "pr_labels": [],
+                    "is_first_time": false
+                },
+                "bitbucket": {
+                    "username": null,
+                    "pr_title": null,
+                    "pr_number": null,
+                    "pr_labels": [],
+                    "is_first_time": false
+                }
+            }
+        ],
+        "commit_id": "98b1464c2f99a0c6812ce6d3ea4a5b953dd35fe2",
+        "timestamp": 1649201110,
+        "previous": {
+            "version": null,
+            "message": null,
+            "commits": [],
+            "commit_id": null,
+            "timestamp": 0,
+            "previous": null,
+            "repository": null,
+            "github": {
+                "contributors": []
+            },
+            "gitlab": {
+                "contributors": []
+            },
+            "gitea": {
+                "contributors": []
+            },
+            "bitbucket": {
+                "contributors": []
+            }
+        },
+        "repository": "/home/johndoe/repo/",
+        "github": {
+            "contributors": []
+        },
+        "gitlab": {
+            "contributors": []
+        },
+        "gitea": {
+            "contributors": []
+        },
+        "bitbucket": {
+            "contributors": []
+        }
+    }
+]
