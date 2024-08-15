@@ -30,6 +30,7 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
+use serde_json::value::Value;
 
 /// Regular expression for matching SHA1 and a following commit message
 /// separated by a whitespace.
@@ -122,6 +123,8 @@ pub struct Commit<'a> {
 	pub committer:     Signature,
 	/// Whether if the commit has two or more parents.
 	pub merge_commit:  bool,
+	/// Arbitrary data to be used with the `--from-context` CLI option.
+	pub extra:         Option<Value>,
 	/// GitHub metadata of the commit.
 	#[cfg(feature = "github")]
 	pub github:        crate::remote::RemoteContributor,

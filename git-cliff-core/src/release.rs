@@ -21,6 +21,7 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
+use serde_json::value::Value;
 
 /// Representation of a release.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -41,6 +42,8 @@ pub struct Release<'a> {
 	pub previous:   Option<Box<Release<'a>>>,
 	/// Repository path.
 	pub repository: Option<String>,
+	/// Arbitrary data to be used with the `--from-context` CLI option.
+	pub extra:      Option<Value>,
 	/// Contributors.
 	#[cfg(feature = "github")]
 	pub github:     RemoteReleaseMetadata,
