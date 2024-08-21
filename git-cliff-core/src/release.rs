@@ -154,19 +154,7 @@ impl<'a> Release<'a> {
 					Ok(next_version)
 				}
 			}
-			None => match config.initial_tag.clone() {
-				Some(tag) => {
-					warn!(
-						"No releases found, using initial tag '{tag}' as the next \
-						 version."
-					);
-					Ok(tag)
-				}
-				None => {
-					warn!("No releases found, using 0.1.0 as the next version.");
-					Ok(String::from("0.1.0"))
-				}
-			},
+			None => Ok(config.get_initial_tag()),
 		}
 	}
 }
