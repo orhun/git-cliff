@@ -320,6 +320,18 @@ impl Repository {
 	) -> Result<IndexMap<String, Tag>> {
 		let mut tags: Vec<(Commit, Tag)> = Vec::new();
 		let tag_names = self.inner.tag_names(None)?;
+
+		let head = self.inner.head()?;
+		let current_branch = head.shorthand().ok_or_else(|| {
+			Error::RepoError(String::from("You are on detached head"))
+		})?;
+
+		let branch_head_commit = self
+			.inner
+			.find_branch(current_branch, BranchType::Local)?
+			.get()
+			.peel_to_commit()?;
+
 		for name in tag_names
 			.iter()
 			.flatten()
@@ -330,22 +342,35 @@ impl Repository {
 		{
 			let obj = self.inner.revparse_single(&name)?;
 			if let Ok(commit) = obj.clone().into_commit() {
-				tags.push((commit, Tag {
-					name,
-					message: None,
-				}));
+				if self
+					.inner
+					.graph_descendant_of(branch_head_commit.id(), commit.id())?
+				{
+					tags.push((commit, Tag {
+						name,
+						message: None,
+					}));
+				}
 			} else if let Some(tag) = obj.as_tag() {
 				if let Some(commit) = tag
 					.target()
 					.ok()
 					.and_then(|target| target.into_commit().ok())
 				{
-					tags.push((commit, Tag {
-						name:    tag.name().map(String::from).unwrap_or(name),
-						message: tag.message().map(|msg| {
-							TAG_SIGNATURE_REGEX.replace(msg, "").trim().to_owned()
-						}),
-					}));
+					if self
+						.inner
+						.graph_descendant_of(branch_head_commit.id(), commit.id())?
+					{
+						tags.push((commit, Tag {
+							name:    tag.name().map(String::from).unwrap_or(name),
+							message: tag.message().map(|msg| {
+								TAG_SIGNATURE_REGEX
+									.replace(msg, "")
+									.trim()
+									.to_owned()
+							}),
+						}));
+					}
 				}
 			}
 		}
