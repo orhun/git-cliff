@@ -197,6 +197,7 @@ mod test {
 			Release {
 				version: None,
 				message: None,
+				extra: None,
 				commits: commits
 					.iter()
 					.map(|v| Commit::from(v.to_string()))
@@ -392,6 +393,7 @@ mod test {
 		let mut release = Release {
 			version: None,
 			message: None,
+			extra: None,
 			commits: vec![
 				Commit::from(String::from(
 					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \
@@ -679,6 +681,7 @@ mod test {
 		let mut release = Release {
 			version: None,
 			message: None,
+			extra: None,
 			commits: vec![
 				Commit::from(String::from(
 					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \
@@ -1024,6 +1027,7 @@ mod test {
 		let mut release = Release {
 			version: None,
 			message: None,
+			extra: None,
 			commits: vec![
 				Commit::from(String::from(
 					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \
