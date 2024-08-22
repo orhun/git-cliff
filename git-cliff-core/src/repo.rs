@@ -1,3 +1,4 @@
+use crate::commit;
 use crate::config::Remote;
 use crate::error::{
 	Error,
@@ -310,6 +311,17 @@ impl Repository {
 		None
 	}
 
+	fn should_include_tag(
+		&self,
+		head_commit: &Commit,
+		commit: &Commit,
+	) -> Result<bool> {
+		Ok(self
+			.inner
+			.graph_descendant_of(head_commit.id(), commit.id())? ||
+			head_commit.id() == commit.id())
+	}
+
 	/// Parses and returns a commit-tag map.
 	///
 	/// It collects lightweight and annotated tags.
@@ -321,16 +333,7 @@ impl Repository {
 		let mut tags: Vec<(Commit, Tag)> = Vec::new();
 		let tag_names = self.inner.tag_names(None)?;
 
-		let head = self.inner.head()?;
-		let current_branch = head.shorthand().ok_or_else(|| {
-			Error::RepoError(String::from("You are on detached head"))
-		})?;
-
-		let branch_head_commit = self
-			.inner
-			.find_branch(current_branch, BranchType::Local)?
-			.get()
-			.peel_to_commit()?;
+		let head_commit = self.inner.head()?.peel_to_commit()?;
 
 		for name in tag_names
 			.iter()
@@ -342,11 +345,7 @@ impl Repository {
 		{
 			let obj = self.inner.revparse_single(&name)?;
 			if let Ok(commit) = obj.clone().into_commit() {
-				if self
-					.inner
-					.graph_descendant_of(branch_head_commit.id(), commit.id())? ||
-					branch_head_commit.id() == commit.id()
-				{
+				if self.should_include_tag(&head_commit, &commit)? {
 					tags.push((commit, Tag {
 						name,
 						message: None,
@@ -358,11 +357,7 @@ impl Repository {
 					.ok()
 					.and_then(|target| target.into_commit().ok())
 				{
-					if self
-						.inner
-						.graph_descendant_of(branch_head_commit.id(), commit.id())? ||
-						branch_head_commit.id() == commit.id()
-					{
+					if self.should_include_tag(&head_commit, &commit)? {
 						tags.push((commit, Tag {
 							name:    tag.name().map(String::from).unwrap_or(name),
 							message: tag.message().map(|msg| {
