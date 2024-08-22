@@ -457,7 +457,7 @@ impl Serialize for Commit<'_> {
 		commit.serialize_field("committer", &self.committer)?;
 		commit.serialize_field("conventional", &self.conv.is_some())?;
 		commit.serialize_field("merge_commit", &self.merge_commit)?;
-        commit.serialize_field("extra", &self.extra)?;
+		commit.serialize_field("extra", &self.extra)?;
 		#[cfg(feature = "github")]
 		commit.serialize_field("github", &self.github)?;
 		#[cfg(feature = "gitlab")]
