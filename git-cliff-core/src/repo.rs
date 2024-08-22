@@ -344,7 +344,8 @@ impl Repository {
 			if let Ok(commit) = obj.clone().into_commit() {
 				if self
 					.inner
-					.graph_descendant_of(branch_head_commit.id(), commit.id())?
+					.graph_descendant_of(branch_head_commit.id(), commit.id())? ||
+					branch_head_commit.id() == commit.id()
 				{
 					tags.push((commit, Tag {
 						name,
@@ -359,7 +360,8 @@ impl Repository {
 				{
 					if self
 						.inner
-						.graph_descendant_of(branch_head_commit.id(), commit.id())?
+						.graph_descendant_of(branch_head_commit.id(), commit.id())? ||
+						branch_head_commit.id() == commit.id()
 					{
 						tags.push((commit, Tag {
 							name:    tag.name().map(String::from).unwrap_or(name),
