@@ -8,7 +8,7 @@ All notable changes to this project will be documented in this file.
 
 - Add tests
 
-## [0.2.0] - 2022-04-06 - This is so awesome!
+## [0.2.0] - 2022-04-05 - This is so awesome!
 
 ### Bug Fixes
 
@@ -18,7 +18,7 @@ All notable changes to this project will be documented in this file.
 
 - Add feature 2
 
-## [0.1.0] - 2022-04-06
+## [0.1.0] - 2022-04-05
 
 ### Bug Fixes
 
