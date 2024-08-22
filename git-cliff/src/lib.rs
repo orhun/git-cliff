@@ -583,6 +583,8 @@ pub fn run(mut args: Opt) -> Result<()> {
 		{
 			warn!("There is nothing to bump.");
 			last_version
+		} else if changelog.releases.is_empty() {
+			config.bump.get_initial_tag()
 		} else {
 			return Ok(());
 		};
