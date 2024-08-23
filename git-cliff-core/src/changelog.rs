@@ -49,6 +49,7 @@ impl<'a> Changelog<'a> {
 		Ok(changelog)
 	}
 
+	/// Builds a changelog from releases and config.
 	fn build(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
 		let trim = config.changelog.trim.unwrap_or(true);
 		Ok(Self {

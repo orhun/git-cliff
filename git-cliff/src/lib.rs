@@ -45,8 +45,14 @@ use std::fs::{
 	self,
 	File,
 };
-use std::io;
-use std::path::Path;
+use std::io::{
+	self,
+	IsTerminal,
+};
+use std::path::{
+	Path,
+	PathBuf,
+};
 use std::time::{
 	SystemTime,
 	UNIX_EPOCH,
@@ -521,18 +527,25 @@ pub fn run(mut args: Opt) -> Result<()> {
 	if args.count_tags.is_some() {
 		config.git.count_tags.clone_from(&args.count_tags);
 	}
+	if !std::io::stdin().is_terminal() {
+		args.from_context = Some(PathBuf::from("-"));
+	}
 
 	// Process commits and releases for the changelog.
 	if let Some(BumpOption::Specific(bump_type)) = args.bump {
 		config.bump.bump_type = Some(bump_type)
 	}
 
+	// Generate changelog from context.
 	let mut changelog: Changelog = if let Some(context_path) = args.from_context {
-		if context_path == Path::new("-") {
-			Changelog::from_context(&mut io::stdin(), &config)?
+		let mut input: Box<dyn io::Read> = if context_path == Path::new("-") {
+			Box::new(io::stdin())
 		} else {
-			Changelog::from_context(&mut File::open(context_path)?, &config)?
-		}
+			Box::new(File::open(context_path)?)
+		};
+		let mut changelog = Changelog::from_context(&mut input, &config)?;
+		changelog.add_remote_data()?;
+		changelog
 	} else {
 		// Process the repositories.
 		let repositories =
