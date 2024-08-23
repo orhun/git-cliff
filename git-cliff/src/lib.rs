@@ -45,14 +45,8 @@ use std::fs::{
 	self,
 	File,
 };
-use std::io::{
-	self,
-	IsTerminal,
-};
-use std::path::{
-	Path,
-	PathBuf,
-};
+use std::io;
+use std::path::Path;
 use std::time::{
 	SystemTime,
 	UNIX_EPOCH,
@@ -526,9 +520,6 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 	if args.count_tags.is_some() {
 		config.git.count_tags.clone_from(&args.count_tags);
-	}
-	if !std::io::stdin().is_terminal() {
-		args.from_context = Some(PathBuf::from("-"));
 	}
 
 	// Process commits and releases for the changelog.

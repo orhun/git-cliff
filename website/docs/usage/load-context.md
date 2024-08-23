@@ -21,9 +21,6 @@ git cliff --from-context context.json
 
 # process context loaded from stdin
 git cliff --from-context -
-
-# or simply
-cat context.json | git-cliff
 ```
 
 Free-form metadata can be added to release objects and commit objects in the context using the `extra` field:
