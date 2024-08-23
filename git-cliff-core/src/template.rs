@@ -101,6 +101,13 @@ impl Template {
 				for node in &forloop.empty_body.clone().unwrap_or_default() {
 					Self::find_identifiers(node, names);
 				}
+				for (_, expr) in
+					forloop.container.filters.iter().flat_map(|v| v.args.iter())
+				{
+					if let ast::ExprVal::String(ref v) = expr.val {
+						names.insert(v.clone());
+					}
+				}
 			}
 			ast::Node::If(cond, _) => {
 				for (_, expr, nodes) in &cond.conditions {
@@ -128,6 +135,7 @@ impl Template {
 		for node in ast {
 			Self::find_identifiers(node, &mut variables);
 		}
+		trace!("Template variables: {variables:?}");
 		Ok(variables.into_iter().collect())
 	}
 
