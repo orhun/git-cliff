@@ -1,4 +1,3 @@
-use crate::commit;
 use crate::config::Remote;
 use crate::error::{
 	Error,
