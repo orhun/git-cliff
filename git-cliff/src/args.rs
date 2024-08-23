@@ -237,10 +237,9 @@ pub struct Opt {
 	/// Generates changelog from a JSON context.
 	#[arg(
         long,
-        help_heading = Some("FLAGS"),
 	    value_name = "PATH",
 	    value_parser = Opt::parse_dir,
-	    num_args = 0..=1,
+		env = "GIT_CLIFF_CONTEXT",
     )]
 	pub from_context:     Option<PathBuf>,
 	/// Strips the given parts from the changelog.
