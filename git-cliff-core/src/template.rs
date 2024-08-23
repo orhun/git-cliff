@@ -190,6 +190,7 @@ mod test {
 		Release {
 			version: Some(String::from("1.0")),
 			message: None,
+			extra: None,
 			commits: vec![
 				Commit::new(
 					String::from("123123"),

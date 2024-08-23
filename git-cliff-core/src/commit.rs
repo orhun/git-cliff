@@ -30,6 +30,7 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
+use serde_json::value::Value;
 
 /// Regular expression for matching SHA1 and a following commit message
 /// separated by a whitespace.
@@ -37,7 +38,7 @@ static SHA1_REGEX: Lazy<Regex> = lazy_regex!(r#"^\b([a-f0-9]{40})\b (.*)$"#);
 
 /// Object representing a link
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all(serialize = "camelCase"))]
 pub struct Link {
 	/// Text of the link.
 	pub text: String,
@@ -98,7 +99,7 @@ impl<'a> From<CommitSignature<'a>> for Signature {
 
 /// Common commit object that is parsed from a repository.
 #[derive(Debug, Default, Clone, PartialEq, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all(serialize = "camelCase"))]
 pub struct Commit<'a> {
 	/// Commit ID.
 	pub id:            String,
@@ -122,6 +123,8 @@ pub struct Commit<'a> {
 	pub committer:     Signature,
 	/// Whether if the commit has two or more parents.
 	pub merge_commit:  bool,
+	/// Arbitrary data to be used with the `--from-context` CLI option.
+	pub extra:         Option<Value>,
 	/// GitHub metadata of the commit.
 	#[cfg(feature = "github")]
 	pub github:        crate::remote::RemoteContributor,
@@ -454,6 +457,7 @@ impl Serialize for Commit<'_> {
 		commit.serialize_field("committer", &self.committer)?;
 		commit.serialize_field("conventional", &self.conv.is_some())?;
 		commit.serialize_field("merge_commit", &self.merge_commit)?;
+		commit.serialize_field("extra", &self.extra)?;
 		#[cfg(feature = "github")]
 		commit.serialize_field("github", &self.github)?;
 		#[cfg(feature = "gitlab")]
