@@ -31,11 +31,20 @@ fn main() -> Result<()> {
 		// Handle events.
 		match tui.events.next()? {
 			Event::Tick => state.tick(),
-			Event::Key(key_event) => {
-				event::handle_key_events(key_event, &mut state)?
-			}
-			Event::Mouse(_) => {}
+			Event::Key(key_event) => event::handle_key_events(
+				key_event,
+				tui.events.sender.clone(),
+				&mut state,
+			)?,
+			Event::Mouse(mouse_event) => event::handle_mouse_events(
+				mouse_event,
+				tui.events.sender.clone(),
+				&mut state,
+			)?,
 			Event::Resize(_, _) => {}
+			Event::Generate(i) => {
+				state.selected_config = i;
+			}
 		}
 	}
 

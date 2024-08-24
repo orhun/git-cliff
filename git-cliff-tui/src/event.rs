@@ -1,8 +1,9 @@
 use crate::state::{Result, State};
 use ratatui::crossterm::event::{
 	self, Event as CrosstermEvent, KeyCode, KeyEvent, KeyEventKind, KeyModifiers,
-	MouseEvent,
+	MouseButton, MouseEvent, MouseEventKind,
 };
+use ratatui::layout::Position;
 use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
@@ -18,6 +19,8 @@ pub enum Event {
 	Mouse(MouseEvent),
 	/// Terminal resize.
 	Resize(u16, u16),
+	/// Generate changelog.
+	Generate(usize),
 }
 
 /// Terminal event handler.
@@ -25,7 +28,7 @@ pub enum Event {
 #[derive(Debug)]
 pub struct EventHandler {
 	/// Event sender channel.
-	sender: mpsc::Sender<Event>,
+	pub sender: mpsc::Sender<Event>,
 	/// Event receiver channel.
 	receiver: mpsc::Receiver<Event>,
 	/// Event handler thread.
@@ -90,7 +93,11 @@ impl EventHandler {
 }
 
 /// Handles the key events and updates the state of [`State`].
-pub fn handle_key_events(key_event: KeyEvent, state: &mut State) -> Result<()> {
+pub fn handle_key_events(
+	key_event: KeyEvent,
+	sender: mpsc::Sender<Event>,
+	state: &mut State,
+) -> Result<()> {
 	match key_event.code {
 		KeyCode::Esc | KeyCode::Char('q') => {
 			state.quit();
@@ -98,6 +105,45 @@ pub fn handle_key_events(key_event: KeyEvent, state: &mut State) -> Result<()> {
 		KeyCode::Char('c') | KeyCode::Char('C') => {
 			if key_event.modifiers == KeyModifiers::CONTROL {
 				state.quit();
+			}
+		}
+		KeyCode::Char('k') | KeyCode::Char('K') | KeyCode::Up => {
+			state.selected_config = if state.selected_config == 0 {
+				state.configs.len() - 1
+			} else {
+				state.selected_config - 1
+			}
+		}
+		KeyCode::Char('j') | KeyCode::Char('J') | KeyCode::Down => {
+			state.selected_config =
+				if state.selected_config >= state.configs.len() - 1 {
+					0
+				} else {
+					state.selected_config + 1
+				}
+		}
+		KeyCode::Enter => sender.send(Event::Generate(state.selected_config))?,
+		_ => {}
+	}
+	Ok(())
+}
+
+/// Handles the mouse events and updates the state.
+pub(crate) fn handle_mouse_events(
+	mouse_event: MouseEvent,
+	sender: mpsc::Sender<Event>,
+	state: &mut State,
+) -> Result<()> {
+	match mouse_event.kind {
+		MouseEventKind::Moved => {
+			let position = Position::new(mouse_event.column, mouse_event.row);
+			state.configs.iter_mut().for_each(|config| {
+				config.is_hovered = config.area.contains(position);
+			})
+		}
+		MouseEventKind::Down(MouseButton::Left) => {
+			if let Some(i) = state.configs.iter().position(|p| p.is_hovered) {
+				sender.send(Event::Generate(i))?;
 			}
 		}
 		_ => {}
