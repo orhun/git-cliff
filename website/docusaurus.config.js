@@ -101,6 +101,12 @@ const config = {
           },
         ],
       },
+      announcementBar: {
+        content: `⛰️ <b><a target="_blank" href="https://git-cliff.org/blog/2.5.0">git-cliff v2.5.0</a> is now out!</b> 🥳️`,
+        backgroundColor: "#243840",
+        textColor: "#ffffff",
+        isCloseable: true,
+      },
       colorMode: {
         defaultMode: "dark",
         disableSwitch: false,

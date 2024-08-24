@@ -1,6 +1,6 @@
 ---
 slug: 2.4.0
-title: "What's new in 2.4.0? \U0001F195"
+title: What's new in 2.4.0?
 date: 2024-06-26T00:00:00.000Z
 authors: orhun
 tags:
