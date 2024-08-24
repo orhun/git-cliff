@@ -75,15 +75,6 @@ impl Repository {
 		}
 	}
 
-	/// Returns the path of the repository.
-	pub fn path(&self) -> PathBuf {
-		let mut path = self.inner.path().to_path_buf();
-		if path.ends_with(".git") {
-			path.pop();
-		}
-		path
-	}
-
 	/// Sets the range for the commit search.
 	///
 	/// When a single SHA is provided as the range, start from the
@@ -102,6 +93,15 @@ impl Repository {
 			revwalk.push_head()?;
 		}
 		Ok(())
+	}
+
+	/// Returns the path of the repository.
+	pub fn path(&self) -> PathBuf {
+		let mut path = self.inner.path().to_path_buf();
+		if path.ends_with(".git") {
+			path.pop();
+		}
+		path
 	}
 
 	/// Parses and returns the commits.
