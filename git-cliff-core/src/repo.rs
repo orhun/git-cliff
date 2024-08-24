@@ -313,18 +313,18 @@ impl Repository {
 	/// Decide whether to include tag
 	///
 	/// `head_commit` is the `latest` commit to generate changelog. It can be a
-	/// branch head or a detached head. `commit` is a tagged commit. If the
+	/// branch head or a detached head. `tag_commit` is a tagged commit. If the
 	/// commit is in the descendant graph of the head_commit or is the
 	/// head_commit itself, Changelog should include the tag.
 	fn should_include_tag(
 		&self,
 		head_commit: &Commit,
-		commit: &Commit,
+		tag_commit: &Commit,
 	) -> Result<bool> {
 		Ok(self
 			.inner
-			.graph_descendant_of(head_commit.id(), commit.id())? ||
-			head_commit.id() == commit.id())
+			.graph_descendant_of(head_commit.id(), tag_commit.id())? ||
+			head_commit.id() == tag_commit.id())
 	}
 
 	/// Parses and returns a commit-tag map.
