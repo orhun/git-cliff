@@ -310,6 +310,12 @@ impl Repository {
 		None
 	}
 
+	/// Decide whether to include tag
+	///
+	/// `head_commit` is the `latest` commit to generate changelog. It can be a
+	/// branch head or a detached head. `commit` is a tagged commmit. If the
+	/// commit is in the descendant graph of the head_commit or is the
+	/// head_commit itself, Changelog should include the tag.
 	fn should_include_tag(
 		&self,
 		head_commit: &Commit,
