@@ -50,14 +50,11 @@ const config = {
       ({
         docs: {
           sidebarPath: require.resolve("./sidebars.js"),
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
           editUrl: "https://github.com/orhun/git-cliff/tree/main/website/",
         },
         blog: {
+          onUntruncatedBlogPosts: "ignore",
           showReadingTime: true,
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
           editUrl: "https://github.com/orhun/git-cliff/tree/main/website/",
         },
         theme: {
