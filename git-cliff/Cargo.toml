@@ -56,6 +56,7 @@ indicatif = { version = "0.17.8", optional = true }
 env_logger = "0.10.2"
 pprof = { version = "0.13", optional = true }
 rand = { version = "0.8.4", optional = true }
+url.workspace = true
 
 [dependencies.git-cliff-core]
 version = "2.4.0" # managed by release.sh

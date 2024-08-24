@@ -852,6 +852,7 @@ dependencies = [
  "secrecy",
  "shellexpand",
  "update-informer",
+ "url",
 ]
 
 [[package]]
