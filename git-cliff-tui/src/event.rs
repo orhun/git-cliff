@@ -1,12 +1,25 @@
-use crate::state::{Result, State};
+use crate::state::{
+	Result,
+	State,
+};
 use ratatui::crossterm::event::{
-	self, Event as CrosstermEvent, KeyCode, KeyEvent, KeyEventKind, KeyModifiers,
-	MouseButton, MouseEvent, MouseEventKind,
+	self,
+	Event as CrosstermEvent,
+	KeyCode,
+	KeyEvent,
+	KeyEventKind,
+	KeyModifiers,
+	MouseButton,
+	MouseEvent,
+	MouseEventKind,
 };
 use ratatui::layout::Position;
 use std::sync::mpsc;
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::{
+	Duration,
+	Instant,
+};
 
 /// Terminal events.
 #[derive(Clone, Copy, Debug)]
@@ -30,9 +43,9 @@ pub struct EventHandler {
 	/// Event sender channel.
 	pub sender: mpsc::Sender<Event>,
 	/// Event receiver channel.
-	receiver: mpsc::Receiver<Event>,
+	receiver:   mpsc::Receiver<Event>,
 	/// Event handler thread.
-	handler: thread::JoinHandle<()>,
+	handler:    thread::JoinHandle<()>,
 }
 
 impl EventHandler {

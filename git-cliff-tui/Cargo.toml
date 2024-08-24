@@ -1,9 +1,13 @@
 [package]
 name = "git-cliff-tui"
-version = "0.1.0"
+version = "2.5.0" # managed by release.sh
 authors = ["Orhun Parmaksız <orhunparmaksiz@gmail.com>"]
 license = "MIT"
 edition = "2021"
 
 [dependencies]
 ratatui = "0.28.0"
+
+[dependencies.git-cliff-core]
+version = "2.5.0" # managed by release.sh
+path = "../git-cliff-core"

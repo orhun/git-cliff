@@ -1,9 +1,26 @@
 use crate::state::State;
 use ratatui::{
-	layout::{Alignment, Constraint, Layout, Rect},
-	style::{Color, Style, Stylize},
-	text::{Line, Span},
-	widgets::{Block, BorderType, Paragraph},
+	layout::{
+		Alignment,
+		Constraint,
+		Layout,
+		Rect,
+	},
+	style::{
+		Color,
+		Style,
+		Stylize,
+	},
+	text::{
+		Line,
+		Span,
+	},
+	widgets::{
+		Block,
+		BorderType,
+		Paragraph,
+		Wrap,
+	},
 	Frame,
 };
 
@@ -31,6 +48,7 @@ pub fn render(state: &mut State, frame: &mut Frame) {
 		Layout::horizontal([Constraint::Percentage(20), Constraint::Percentage(80)])
 			.split(rects[0]);
 	render_list(state, frame, rects[0]);
+	render_changelog(state, frame, rects[1]);
 }
 
 fn render_key_bindings(frame: &mut Frame, rect: Rect) {
@@ -67,7 +85,7 @@ fn render_key_bindings(frame: &mut Frame, rect: Rect) {
 fn render_list(state: &mut State, frame: &mut Frame, rect: Rect) {
 	frame.render_widget(
 		Block::bordered()
-			.title_top("|Packages|".yellow())
+			.title_top("|Config|".yellow())
 			.title_alignment(Alignment::Center)
 			.border_type(BorderType::Rounded)
 			.border_style(Style::default().fg(Color::Rgb(100, 100, 100))),
@@ -114,4 +132,19 @@ fn render_list(state: &mut State, frame: &mut Frame, rect: Rect) {
 			);
 		}
 	}
+}
+
+fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
+	frame.render_widget(
+		Paragraph::new(Line::from(state.changelog.clone()))
+			.block(
+				Block::bordered()
+					.title_top("|Changelog|".yellow())
+					.title_alignment(Alignment::Center)
+					.border_type(BorderType::Rounded)
+					.border_style(Style::default().fg(Color::Rgb(100, 100, 100))),
+			)
+			.wrap(Wrap { trim: false }),
+		rect,
+	);
 }

@@ -1,10 +1,18 @@
 use crate::event::EventHandler;
-use crate::state::{Result, State};
+use crate::state::{
+	Result,
+	State,
+};
 use crate::ui;
 use ratatui::backend::Backend;
-use ratatui::crossterm::event::{DisableMouseCapture, EnableMouseCapture};
+use ratatui::crossterm::event::{
+	DisableMouseCapture,
+	EnableMouseCapture,
+};
 use ratatui::crossterm::terminal::{
-	self, EnterAlternateScreen, LeaveAlternateScreen,
+	self,
+	EnterAlternateScreen,
+	LeaveAlternateScreen,
 };
 use ratatui::Terminal;
 use std::io;
@@ -17,7 +25,7 @@ use std::panic;
 #[derive(Debug)]
 pub struct Tui<B: Backend> {
 	/// Interface to the Terminal.
-	terminal: Terminal<B>,
+	terminal:   Terminal<B>,
 	/// Terminal event handler.
 	pub events: EventHandler,
 }
@@ -40,7 +48,8 @@ impl<B: Backend> Tui<B> {
 		)?;
 
 		// Define a custom panic hook to reset the terminal properties.
-		// This way, you won't have your terminal messed up if an unexpected error happens.
+		// This way, you won't have your terminal messed up if an unexpected error
+		// happens.
 		let panic_hook = panic::take_hook();
 		panic::set_hook(Box::new(move |panic| {
 			Self::reset().expect("failed to reset the terminal");

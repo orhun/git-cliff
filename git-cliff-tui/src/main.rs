@@ -1,10 +1,19 @@
 use std::io;
 
-use ratatui::{backend::CrosstermBackend, Terminal};
+use ratatui::{
+	backend::CrosstermBackend,
+	Terminal,
+};
 
 use crate::{
-	event::{Event, EventHandler},
-	state::{Result, State},
+	event::{
+		Event,
+		EventHandler,
+	},
+	state::{
+		Result,
+		State,
+	},
 	tui::Tui,
 };
 
@@ -12,6 +21,7 @@ pub mod event;
 pub mod state;
 pub mod tui;
 pub mod ui;
+pub mod util;
 
 fn main() -> Result<()> {
 	// Create an application state.
@@ -44,6 +54,15 @@ fn main() -> Result<()> {
 			Event::Resize(_, _) => {}
 			Event::Generate(i) => {
 				state.selected_config = i;
+				state.changelog = match util::run_git_cliff(&[
+					"-c".into(),
+					state.configs[state.selected_config].file.to_string(),
+					"-u".into(),
+					"--no-exec".into(),
+				]) {
+					Ok(v) => v,
+					Err(e) => e.to_string(),
+				}
 			}
 		}
 	}

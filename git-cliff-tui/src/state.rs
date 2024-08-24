@@ -1,3 +1,4 @@
+use git_cliff_core::embed::BuiltinConfig;
 use ratatui::layout::Rect;
 use std::error;
 
@@ -8,9 +9,9 @@ pub type Result<T> = std::result::Result<T, Box<dyn error::Error>>;
 #[derive(Debug)]
 pub struct Config {
 	/// Name/path of the configuration.
-	pub file: String,
+	pub file:       String,
 	/// Widget area.
-	pub area: Rect,
+	pub area:       Rect,
 	/// Is the widget hovered?
 	pub is_hovered: bool,
 }
@@ -19,60 +20,29 @@ pub struct Config {
 #[derive(Debug)]
 pub struct State {
 	/// Is the application running?
-	pub running: bool,
+	pub running:         bool,
 	/// Configuration files.
-	pub configs: Vec<Config>,
+	pub configs:         Vec<Config>,
 	/// Index of the selected configuration.
 	pub selected_config: usize,
+	/// Changelog contents.
+	pub changelog:       String,
 }
 
 impl Default for State {
 	fn default() -> Self {
+		let configs = BuiltinConfig::iter()
+			.map(|file| Config {
+				file:       file.to_string(),
+				area:       Rect::default(),
+				is_hovered: false,
+			})
+			.collect();
 		Self {
 			running: true,
-			configs: vec![
-				Config {
-					file: String::from("github.toml"),
-					area: Rect::default(),
-					is_hovered: false,
-				},
-				Config {
-					file: String::from("keepachangelog.toml"),
-					area: Rect::default(),
-					is_hovered: false,
-				},
-				Config {
-					file: String::from("keepachangelog.toml"),
-					area: Rect::default(),
-					is_hovered: false,
-				},
-				Config {
-					file: String::from("keepachangelog.toml"),
-					area: Rect::default(),
-					is_hovered: false,
-				},
-				Config {
-					file: String::from("keepachangelog.toml"),
-					area: Rect::default(),
-					is_hovered: false,
-				},
-				Config {
-					file: String::from("keepachangelog.toml"),
-					area: Rect::default(),
-					is_hovered: false,
-				},
-				Config {
-					file: String::from("keepachangelog.toml"),
-					area: Rect::default(),
-					is_hovered: false,
-				},
-				Config {
-					file: String::from("keepachangelog.toml"),
-					area: Rect::default(),
-					is_hovered: false,
-				},
-			],
+			configs,
 			selected_config: 0,
+			changelog: String::new(),
 		}
 	}
 }

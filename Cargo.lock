@@ -1024,8 +1024,9 @@ dependencies = [
 
 [[package]]
 name = "git-cliff-tui"
-version = "0.1.0"
+version = "2.5.0"
 dependencies = [
+ "git-cliff-core",
  "ratatui",
 ]
 
