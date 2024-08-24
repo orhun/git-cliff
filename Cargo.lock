@@ -866,7 +866,7 @@ checksum = "40ecd4077b5ae9fd2e9e169b102c6c330d0605168eb0e8bf79952b256dbefffd"
 
 [[package]]
 name = "git-cliff"
-version = "2.4.0"
+version = "2.5.0"
 dependencies = [
  "clap",
  "clap_complete",
@@ -890,7 +890,7 @@ dependencies = [
 
 [[package]]
 name = "git-cliff-core"
-version = "2.4.0"
+version = "2.5.0"
 dependencies = [
  "bincode 2.0.0-rc.3",
  "cacache",
