@@ -22,6 +22,7 @@ use glob::Pattern;
 use regex::Regex;
 use secrecy::SecretString;
 use std::path::PathBuf;
+use url::Url;
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum Strip {
@@ -353,10 +354,16 @@ impl TypedValueParser for RemoteValueParser {
 		value: &std::ffi::OsStr,
 	) -> Result<Self::Value, clap::Error> {
 		let inner = clap::builder::StringValueParser::new();
-		let value = inner.parse_ref(cmd, arg, value)?;
-		let parts = value.split('/').rev().collect::<Vec<&str>>();
-		if let (Some(owner), Some(repo)) = (parts.get(1), parts.first()) {
-			Ok(RemoteValue(Remote::new(*owner, *repo)))
+		let mut value = inner.parse_ref(cmd, arg, value)?;
+		if let Ok(url) = Url::parse(&value) {
+			value = url.path().trim_start_matches('/').to_string();
+		}
+		let parts = value.rsplit_once('/');
+		if let Some((owner, repo)) = parts {
+			Ok(RemoteValue(Remote::new(
+				owner.to_string(),
+				repo.to_string(),
+			)))
 		} else {
 			let mut err = clap::Error::new(ErrorKind::ValueValidation).with_cmd(cmd);
 			if let Some(arg) = arg {
@@ -460,9 +467,14 @@ mod tests {
 				OsStr::new("test/repo")
 			)?
 		);
-		assert!(remote_value_parser
-			.parse_ref(&Opt::command(), None, OsStr::new("test"))
-			.is_err());
+		assert_eq!(
+			RemoteValue(Remote::new("gitlab/group/test", "repo")),
+			remote_value_parser.parse_ref(
+				&Opt::command(),
+				None,
+				OsStr::new("gitlab/group/test/repo")
+			)?
+		);
 		assert_eq!(
 			RemoteValue(Remote::new("test", "testrepo")),
 			remote_value_parser.parse_ref(
@@ -471,6 +483,17 @@ mod tests {
 				OsStr::new("https://github.com/test/testrepo")
 			)?
 		);
+		assert_eq!(
+			RemoteValue(Remote::new("archlinux/packaging/packages", "arch-repro-status")),
+			remote_value_parser.parse_ref(
+				&Opt::command(),
+				None,
+				OsStr::new("https://gitlab.archlinux.org/archlinux/packaging/packages/arch-repro-status")
+			)?
+		);
+		assert!(remote_value_parser
+			.parse_ref(&Opt::command(), None, OsStr::new("test"))
+			.is_err());
 		assert!(remote_value_parser
 			.parse_ref(&Opt::command(), None, OsStr::new(""))
 			.is_err());
