@@ -1,0 +1,9 @@
+[package]
+name = "git-cliff-tui"
+version = "0.1.0"
+authors = ["Orhun Parmaksız <orhunparmaksiz@gmail.com>"]
+license = "MIT"
+edition = "2021"
+
+[dependencies]
+ratatui = "0.28.0"
