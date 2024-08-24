@@ -176,6 +176,7 @@ See [the implementation](https://github.com/orhun/git-cliff/pull/599) for more d
 ### 🦊 GitLab integration fixes
 
 - _(gitlab)_ URL-encode the owner in remote requests for GitLab ([#742](https://github.com/orhun/git-cliff/issues/742)) - ([e3e7c07](https://github.com/orhun/git-cliff/commit/e3e7c0794082e418a78f99e7d9c09161f4d14d5f))
+- _(args)_ Allow GitLab groups with `--gitlab-repo` ([#807](https://github.com/orhun/git-cliff/issues/807)) - ([6fbfdb5](https://github.com/orhun/git-cliff/commit/6fbfdb5963ad7d39a389001b660df5bf7f38dd37))
 
 ---
 
@@ -202,6 +203,7 @@ See [the implementation](https://github.com/orhun/git-cliff/pull/599) for more d
 - @tonybutt made their first contribution in [#742](https://github.com/orhun/git-cliff/pull/742)
 - @PigeonF made their first contribution in [#748](https://github.com/orhun/git-cliff/pull/748)
 - @janbuchar made their first contribution in [#784](https://github.com/orhun/git-cliff/pull/784)
+- @weichweich made their first contribution in [#807](https://github.com/orhun/git-cliff/pull/807)
 
 Any contribution is highly appreciated! See the [contribution guidelines](https://github.com/orhun/git-cliff/blob/main/CONTRIBUTING.md) for getting started.
 
