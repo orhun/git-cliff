@@ -51,7 +51,7 @@ Although this is enough for a couple of runs of **git-cliff**, it is suggested t
 
 :::tip
 
-Follow [this guide](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) for creating an access token. It can be either a classic or fine-grained token _without_ permissions.
+Follow [this guide](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) for creating an access token. It can be either a classic or fine-grained token **without permissions**. Also, if you are running **git-cliff** in GitHub Actions, using `${{ secrets.GITHUB_TOKEN }}` is also enough.
 
 :::
 

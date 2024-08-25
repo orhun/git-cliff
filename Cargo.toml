@@ -3,12 +3,13 @@ resolver = "2"
 members = ["git-cliff-core", "git-cliff"]
 
 [workspace.dependencies]
-regex = "1.10.5"
+regex = "1.10.6"
 glob = "0.3.1"
 log = "0.4.21"
 secrecy = { version = "0.8.0", features = ["serde"] }
 lazy_static = "1.5.0"
 dirs = "5.0.1"
+url = "2.5.2"
 
 [profile.dev]
 opt-level = 0

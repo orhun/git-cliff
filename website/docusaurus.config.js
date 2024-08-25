@@ -50,14 +50,11 @@ const config = {
       ({
         docs: {
           sidebarPath: require.resolve("./sidebars.js"),
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
           editUrl: "https://github.com/orhun/git-cliff/tree/main/website/",
         },
         blog: {
+          onUntruncatedBlogPosts: "ignore",
           showReadingTime: true,
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
           editUrl: "https://github.com/orhun/git-cliff/tree/main/website/",
         },
         theme: {
@@ -96,10 +93,16 @@ const config = {
             className: "header-github-link",
             position: "right",
           },
+          {
+            href: "https://discord.gg/W3mAwMDWH4",
+            "aria-label": "Discord server",
+            position: "right",
+            className: "header-discord-link",
+          },
         ],
       },
       announcementBar: {
-        content: `⛰️ <b><a target="_blank" href="https://git-cliff.org/blog/2.0.0">git-cliff v2.0</a> is now out!</b> 🥳️`,
+        content: `⛰️ <b><a target="_blank" href="https://git-cliff.org/blog/2.5.0">git-cliff v2.5.0</a> is now out!</b> 🥳️`,
         backgroundColor: "#243840",
         textColor: "#ffffff",
         isCloseable: true,

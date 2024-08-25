@@ -22,6 +22,7 @@ jobs:
           - fixtures-name: test-gitea-integration
           - fixtures-name: test-bitbucket-integration
           - fixtures-name: test-ignore-tags
+          - fixtures-name: test-invert-ignore-tags
           - fixtures-name: test-topo-order
             command: --latest
           - fixtures-name: test-date-order
@@ -90,6 +91,8 @@ jobs:
           - fixtures-name: test-tag-message
           - fixtures-name: test-bump-unreleased-with-tag-message-arg
             command: --bump --unreleased --with-tag-message "Some text"
+          - fixtures-name: test-from-context
+            command: --from-context context.json
 
     steps:
       - name: Checkout

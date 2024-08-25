@@ -165,14 +165,17 @@ Examples:
 - `{ sha = "f6f2472bdf0bbb5f9fcaf2d72c1fa9f98f772bb2", group = "Stuff" }`
   - Set the group of the commit by using its SHA1.
 - `{ field = "author.name", pattern = "John Doe", group = "John's stuff" }`
-  - If the author's name attribute of the commit matches the pattern "John Doe" (as a regex), override the scope with "John' stuff". Supported commit attributes are:
+  - If the author's name attribute of the commit matches the pattern "John Doe" (as a regex), override the scope with "John's stuff".
+  - All values that are part of the commit context can be used. Nested fields can be accessed via the [dot notation](https://keats.github.io/tera/docs/#dot-notation). Some commonly used ones are:
     - `id`
     - `message`
-    - `body`
     - `author.name`
     - `author.email`
     - `committer.email`
     - `committer.name`
+  - `body` is a special field which contains the body of a convetional commit, if applicable.
+  - Be aware that all fields are converted to JSON strings before they are parsed by the given regex, especially when dealing with arrays.
+
 
 ### protect_breaking_commits
 
@@ -197,12 +200,28 @@ A regex for skip processing the matched tags.
 
 A regex for ignore processing the matched tags.
 
-This value can be also overridden with using the `--ignore-tags` argument.
-
 While `skip_tags` drop commits from the changelog, `ignore_tags` include ignored commits into the next tag.
 
-* Note that if a commit has multiple tags, any matched tag will result in all associated tags being ignored, including those not explicitly matched by the regex. This is because git-cliff processes tags at the commit level rather than individually.
-For more details, you can view the discussion [here](https://github.com/orhun/git-cliff/discussions/707)
+:::note
+
+Note that if a commit has multiple tags, any matched tag will result in all associated tags being ignored, including those not explicitly matched by the regex. This is because git-cliff processes tags at the commit level rather than individually.
+For more details, you can view the discussion [here](https://github.com/orhun/git-cliff/discussions/707).
+
+:::
+
+This value can be also overridden with using the `--ignore-tags` argument.
+
+### count_tags
+
+A regex for _counting in_ the matched tags in the final result.
+
+:::info
+
+`count_tags` work like an inverted version of `ignore_tags`, that include all the commits but only count the specific tags.
+
+:::
+
+This value can be also overridden with using the `--count-tags` argument.
 
 ### topo_order
 

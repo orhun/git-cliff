@@ -21,10 +21,11 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
+use serde_json::value::Value;
 
 /// Representation of a release.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all(serialize = "camelCase"))]
 pub struct Release<'a> {
 	/// Release version, git tag.
 	pub version:    Option<String>,
@@ -41,6 +42,8 @@ pub struct Release<'a> {
 	pub previous:   Option<Box<Release<'a>>>,
 	/// Repository path.
 	pub repository: Option<String>,
+	/// Arbitrary data to be used with the `--from-context` CLI option.
+	pub extra:      Option<Value>,
 	/// Contributors.
 	#[cfg(feature = "github")]
 	pub github:     RemoteReleaseMetadata,
@@ -154,19 +157,7 @@ impl<'a> Release<'a> {
 					Ok(next_version)
 				}
 			}
-			None => match config.initial_tag.clone() {
-				Some(tag) => {
-					warn!(
-						"No releases found, using initial tag '{tag}' as the next \
-						 version."
-					);
-					Ok(tag)
-				}
-				None => {
-					warn!("No releases found, using 0.1.0 as the next version.");
-					Ok(String::from("0.1.0"))
-				}
-			},
+			None => Ok(config.get_initial_tag()),
 		}
 	}
 }
@@ -194,6 +185,7 @@ mod test {
 			Release {
 				version: None,
 				message: None,
+				extra: None,
 				commits: commits
 					.iter()
 					.map(|v| Commit::from(v.to_string()))
@@ -389,6 +381,7 @@ mod test {
 		let mut release = Release {
 			version: None,
 			message: None,
+			extra: None,
 			commits: vec![
 				Commit::from(String::from(
 					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \
@@ -676,6 +669,7 @@ mod test {
 		let mut release = Release {
 			version: None,
 			message: None,
+			extra: None,
 			commits: vec![
 				Commit::from(String::from(
 					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \
@@ -1021,6 +1015,7 @@ mod test {
 		let mut release = Release {
 			version: None,
 			message: None,
+			extra: None,
 			commits: vec![
 				Commit::from(String::from(
 					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \

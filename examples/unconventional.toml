@@ -18,7 +18,7 @@ body = """
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | upper_first }}
     {% for commit in commits %}
-        - {{ commit.message | upper_first | trim_end }} {% if commit.conventional %}✔️{% else %}❌{% endif %}\
+        - {{ commit.message | split(pat="\n") | first | trim_end }}\
     {% endfor %}
 {% endfor %}\n
 """
@@ -32,7 +32,7 @@ trim = true
 
 [git]
 # parse the commits based on https://www.conventionalcommits.org
-conventional_commits = true
+conventional_commits = false
 # filter out the commits that are not conventional
 filter_unconventional = false
 # process each line of a commit as an individual commit
@@ -51,16 +51,8 @@ commit_parsers = [
     { body = ".*security", group = "Security" },
     { body = ".*", group = "Other (unconventional)" },
 ]
-# protect breaking changes from being skipped due to matching a skipping commit_parser
-protect_breaking_commits = false
 # filter out the commits that are not matched by commit parsers
 filter_commits = false
-# regex for matching git tags
-tag_pattern = "v[0-9].*"
-# regex for skipping tags
-skip_tags = "v0.1.0-beta.1"
-# regex for ignoring tags
-ignore_tags = ""
 # sort the tags topologically
 topo_order = false
 # sort the commits inside sections by oldest/newest order

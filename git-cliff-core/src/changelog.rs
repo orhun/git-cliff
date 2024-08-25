@@ -18,7 +18,10 @@ use crate::remote::github::GitHubClient;
 use crate::remote::gitlab::GitLabClient;
 use crate::template::Template;
 use std::collections::HashMap;
-use std::io::Write;
+use std::io::{
+	Read,
+	Write,
+};
 use std::time::{
 	SystemTime,
 	UNIX_EPOCH,
@@ -39,8 +42,17 @@ pub struct Changelog<'a> {
 impl<'a> Changelog<'a> {
 	/// Constructs a new instance.
 	pub fn new(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
+		let mut changelog = Changelog::build(releases, config)?;
+		changelog.add_remote_data()?;
+		changelog.process_commits();
+		changelog.process_releases();
+		Ok(changelog)
+	}
+
+	/// Builds a changelog from releases and config.
+	fn build(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
 		let trim = config.changelog.trim.unwrap_or(true);
-		let mut changelog = Self {
+		Ok(Self {
 			releases,
 			header_template: match &config.changelog.header {
 				Some(header) => Some(Template::new(header.to_string(), trim)?),
@@ -61,11 +73,12 @@ impl<'a> Changelog<'a> {
 			},
 			config,
 			additional_context: HashMap::new(),
-		};
-		changelog.process_commits();
-		changelog.process_releases();
-		changelog.add_remote_data()?;
-		Ok(changelog)
+		})
+	}
+
+	/// Constructs an instance from a serialized context object.
+	pub fn from_context<R: Read>(input: &mut R, config: &'a Config) -> Result<Self> {
+		Changelog::build(serde_json::from_reader(input)?, config)
 	}
 
 	/// Adds a key value pair to the template context.
@@ -784,6 +797,7 @@ mod test {
 				tag_pattern:              None,
 				skip_tags:                Regex::new("v3.*").ok(),
 				ignore_tags:              None,
+				count_tags:               None,
 				topo_order:               Some(false),
 				sort_commits:             Some(String::from("oldest")),
 				link_parsers:             None,
@@ -820,6 +834,7 @@ mod test {
 		let test_release = Release {
 			version: Some(String::from("v1.0.0")),
 			message: None,
+			extra: None,
 			commits: vec![
 				Commit::new(
 					String::from("coffee"),
@@ -916,6 +931,7 @@ mod test {
 			Release {
 				version: None,
 				message: None,
+				extra: None,
 				commits: vec![
 					Commit::new(
 						String::from("abc123"),

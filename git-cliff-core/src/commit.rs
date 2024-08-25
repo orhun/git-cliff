@@ -30,6 +30,7 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
+use serde_json::value::Value;
 
 /// Regular expression for matching SHA1 and a following commit message
 /// separated by a whitespace.
@@ -37,7 +38,7 @@ static SHA1_REGEX: Lazy<Regex> = lazy_regex!(r#"^\b([a-f0-9]{40})\b (.*)$"#);
 
 /// Object representing a link
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all(serialize = "camelCase"))]
 pub struct Link {
 	/// Text of the link.
 	pub text: String,
@@ -98,7 +99,7 @@ impl<'a> From<CommitSignature<'a>> for Signature {
 
 /// Common commit object that is parsed from a repository.
 #[derive(Debug, Default, Clone, PartialEq, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all(serialize = "camelCase"))]
 pub struct Commit<'a> {
 	/// Commit ID.
 	pub id:            String,
@@ -122,6 +123,8 @@ pub struct Commit<'a> {
 	pub committer:     Signature,
 	/// Whether if the commit has two or more parents.
 	pub merge_commit:  bool,
+	/// Arbitrary data to be used with the `--from-context` CLI option.
+	pub extra:         Option<Value>,
 	/// GitHub metadata of the commit.
 	#[cfg(feature = "github")]
 	pub github:        crate::remote::RemoteContributor,
@@ -264,6 +267,11 @@ impl Commit<'_> {
 		protect_breaking: bool,
 		filter: bool,
 	) -> Result<Self> {
+		let lookup_context = serde_json::to_value(&self).map_err(|e| {
+			AppError::FieldError(format!(
+				"failed to convert context into value: {e}",
+			))
+		})?;
 		for parser in parsers {
 			let mut regex_checks = Vec::new();
 			if let Some(message_regex) = parser.message.as_ref() {
@@ -287,25 +295,22 @@ impl Commit<'_> {
 			if let (Some(field_name), Some(pattern_regex)) =
 				(parser.field.as_ref(), parser.pattern.as_ref())
 			{
-				regex_checks.push((
-					pattern_regex,
-					match field_name.as_str() {
-						"id" => Some(self.id.clone()),
-						"message" => Some(self.message.clone()),
-						"body" => body,
-						"author.name" => self.author.name.clone(),
-						"author.email" => self.author.email.clone(),
-						"committer.name" => self.committer.name.clone(),
-						"committer.email" => self.committer.email.clone(),
-						_ => None,
+				let value = if field_name == "body" {
+					body.clone()
+				} else {
+					tera::dotted_pointer(&lookup_context, field_name)
+						.map(|v| v.to_string())
+				};
+				match value {
+					Some(value) => {
+						regex_checks.push((pattern_regex, value));
 					}
-					.ok_or_else(|| {
-						AppError::FieldError(format!(
-							"field {} does not have a value",
-							field_name
-						))
-					})?,
-				));
+					None => {
+						return Err(AppError::FieldError(format!(
+							"field {field_name} does not have a value",
+						)));
+					}
+				}
 			}
 			if parser.sha.clone().map(|v| v.to_lowercase()).as_deref() ==
 				Some(&self.id)
@@ -452,6 +457,7 @@ impl Serialize for Commit<'_> {
 		commit.serialize_field("committer", &self.committer)?;
 		commit.serialize_field("conventional", &self.conv.is_some())?;
 		commit.serialize_field("merge_commit", &self.merge_commit)?;
+		commit.serialize_field("extra", &self.extra)?;
 		#[cfg(feature = "github")]
 		commit.serialize_field("github", &self.github)?;
 		#[cfg(feature = "gitlab")]
@@ -726,6 +732,57 @@ mod test {
 		)?;
 		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
 
+		Ok(())
+	}
+
+	#[test]
+	fn field_name_regex() -> Result<()> {
+		let commit = Commit {
+			message: String::from("feat: do something"),
+			author: Signature {
+				name:      Some("John Doe".to_string()),
+				email:     None,
+				timestamp: 0x0,
+			},
+			..Default::default()
+		};
+		let parsed_commit = commit.clone().parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("author.name")),
+				pattern:       Regex::new("Something else").ok(),
+			}],
+			false,
+			true,
+		);
+
+		assert!(parsed_commit.is_err());
+
+		let parsed_commit = commit.parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("author.name")),
+				pattern:       Regex::new("John Doe").ok(),
+			}],
+			false,
+			false,
+		)?;
+
+		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
 		Ok(())
 	}
 }

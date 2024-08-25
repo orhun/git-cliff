@@ -22,6 +22,7 @@ use glob::Pattern;
 use regex::Regex;
 use secrecy::SecretString;
 use std::path::PathBuf;
+use url::Url;
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum Strip {
@@ -154,6 +155,9 @@ pub struct Opt {
 	/// Sets the tags to ignore in the changelog.
 	#[arg(long, env = "GIT_CLIFF_IGNORE_TAGS", value_name = "PATTERN")]
 	pub ignore_tags:      Option<Regex>,
+	/// Sets the tags to count in the changelog.
+	#[arg(long, env = "GIT_CLIFF_COUNT_TAGS", value_name = "PATTERN")]
+	pub count_tags:       Option<Regex>,
 	/// Sets commits that will be skipped in the changelog.
 	#[arg(
 		long,
@@ -231,6 +235,14 @@ pub struct Opt {
 	/// Prints changelog context as JSON.
 	#[arg(short = 'x', long, help_heading = Some("FLAGS"))]
 	pub context:          bool,
+	/// Generates changelog from a JSON context.
+	#[arg(
+        long,
+	    value_name = "PATH",
+	    value_parser = Opt::parse_dir,
+		env = "GIT_CLIFF_CONTEXT",
+    )]
+	pub from_context:     Option<PathBuf>,
 	/// Strips the given parts from the changelog.
 	#[arg(short, long, value_name = "PART", value_enum)]
 	pub strip:            Option<Strip>,
@@ -342,10 +354,16 @@ impl TypedValueParser for RemoteValueParser {
 		value: &std::ffi::OsStr,
 	) -> Result<Self::Value, clap::Error> {
 		let inner = clap::builder::StringValueParser::new();
-		let value = inner.parse_ref(cmd, arg, value)?;
-		let parts = value.split('/').rev().collect::<Vec<&str>>();
-		if let (Some(owner), Some(repo)) = (parts.get(1), parts.first()) {
-			Ok(RemoteValue(Remote::new(*owner, *repo)))
+		let mut value = inner.parse_ref(cmd, arg, value)?;
+		if let Ok(url) = Url::parse(&value) {
+			value = url.path().trim_start_matches('/').to_string();
+		}
+		let parts = value.rsplit_once('/');
+		if let Some((owner, repo)) = parts {
+			Ok(RemoteValue(Remote::new(
+				owner.to_string(),
+				repo.to_string(),
+			)))
 		} else {
 			let mut err = clap::Error::new(ErrorKind::ValueValidation).with_cmd(cmd);
 			if let Some(arg) = arg {
@@ -449,9 +467,14 @@ mod tests {
 				OsStr::new("test/repo")
 			)?
 		);
-		assert!(remote_value_parser
-			.parse_ref(&Opt::command(), None, OsStr::new("test"))
-			.is_err());
+		assert_eq!(
+			RemoteValue(Remote::new("gitlab/group/test", "repo")),
+			remote_value_parser.parse_ref(
+				&Opt::command(),
+				None,
+				OsStr::new("gitlab/group/test/repo")
+			)?
+		);
 		assert_eq!(
 			RemoteValue(Remote::new("test", "testrepo")),
 			remote_value_parser.parse_ref(
@@ -460,6 +483,17 @@ mod tests {
 				OsStr::new("https://github.com/test/testrepo")
 			)?
 		);
+		assert_eq!(
+			RemoteValue(Remote::new("archlinux/packaging/packages", "arch-repro-status")),
+			remote_value_parser.parse_ref(
+				&Opt::command(),
+				None,
+				OsStr::new("https://gitlab.archlinux.org/archlinux/packaging/packages/arch-repro-status")
+			)?
+		);
+		assert!(remote_value_parser
+			.parse_ref(&Opt::command(), None, OsStr::new("test"))
+			.is_err());
 		assert!(remote_value_parser
 			.parse_ref(&Opt::command(), None, OsStr::new(""))
 			.is_err());

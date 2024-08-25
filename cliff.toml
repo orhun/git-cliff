@@ -5,6 +5,10 @@
 # Configuration options are organized into tables and keys.
 # See documentation for more information on available options.
 
+[remote.github]
+owner = "orhun"
+repo = "git-cliff"
+
 [changelog]
 # template for the changelog header
 header = """
@@ -48,7 +52,19 @@ body = """
             {{ self::print_commit(commit=commit) }}
         {% endif -%}
     {% endfor -%}
-{% endfor %}\n
+{% endfor -%}
+{%- if github -%}
+{% if github.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
+  ## New Contributors ❤️
+{% endif %}\
+{% for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
+  * @{{ contributor.username }} made their first contribution
+    {%- if contributor.pr_number %} in \
+      [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}) \
+    {%- endif %}
+{%- endfor -%}
+{%- endif %}
+{% raw %}\n{% endraw -%}
 """
 # template for the changelog footer
 footer = """

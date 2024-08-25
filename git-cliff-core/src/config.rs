@@ -14,6 +14,9 @@ use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 
+/// Default initial tag.
+const DEFAULT_INITIAL_TAG: &str = "0.1.0";
+
 /// Manifest file information and regex for matching contents.
 #[derive(Debug)]
 struct ManifestInfo {
@@ -109,6 +112,9 @@ pub struct GitConfig {
 	/// Regex to ignore matched tags.
 	#[serde(with = "serde_regex", default)]
 	pub ignore_tags:              Option<Regex>,
+	/// Regex to count matched tags.
+	#[serde(with = "serde_regex", default)]
+	pub count_tags:               Option<Regex>,
 	/// Whether to sort tags topologically.
 	pub topo_order:               Option<bool>,
 	/// Sorting of the commits inside sections.
@@ -241,6 +247,30 @@ pub struct Bump {
 
 	/// Force to always bump in major, minor or patch.
 	pub bump_type: Option<BumpType>,
+}
+
+impl Bump {
+	/// Returns the initial tag.
+	///
+	/// This function also logs the returned value.
+	pub fn get_initial_tag(&self) -> String {
+		match self.initial_tag.clone() {
+			Some(tag) => {
+				warn!(
+					"No releases found, using initial tag '{tag}' as the next \
+					 version."
+				);
+				tag
+			}
+			None => {
+				warn!(
+					"No releases found, using {DEFAULT_INITIAL_TAG} as the next \
+					 version."
+				);
+				DEFAULT_INITIAL_TAG.into()
+			}
+		}
+	}
 }
 
 /// Parser for grouping commits.

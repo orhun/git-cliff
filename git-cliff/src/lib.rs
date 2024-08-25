@@ -86,6 +86,7 @@ fn process_repository<'a>(
 	let mut tags = repository.tags(&config.git.tag_pattern, args.topo_order)?;
 	let skip_regex = config.git.skip_tags.as_ref();
 	let ignore_regex = config.git.ignore_tags.as_ref();
+	let count_tags = config.git.count_tags.as_ref();
 	tags.retain(|_, tag| {
 		let name = &tag.name;
 
@@ -94,6 +95,14 @@ fn process_repository<'a>(
 		if skip {
 			return true;
 		}
+
+		let count = count_tags.map_or(true, |r| {
+			let count_tag = r.is_match(name);
+			if count_tag {
+				trace!("Counting release: {}", name)
+			}
+			count_tag
+		});
 
 		let ignore = ignore_regex.is_some_and(|r| {
 			if r.as_str().trim().is_empty() {
@@ -106,7 +115,8 @@ fn process_repository<'a>(
 			}
 			ignore_tag
 		});
-		!ignore
+
+		count && !ignore
 	});
 
 	if !config.remote.github.is_set() {
@@ -508,49 +518,66 @@ pub fn run(mut args: Opt) -> Result<()> {
 	if args.ignore_tags.is_some() {
 		config.git.ignore_tags.clone_from(&args.ignore_tags);
 	}
-	// Process the repositories.
-	let repositories = args.repository.clone().unwrap_or(vec![env::current_dir()?]);
-	let mut releases = Vec::<Release>::new();
-	for repository in repositories {
-		// Skip commits
-		let mut skip_list = Vec::new();
-		let ignore_file = repository.join(IGNORE_FILE);
-		if ignore_file.exists() {
-			let contents = fs::read_to_string(ignore_file)?;
-			let commits = contents
-				.lines()
-				.filter(|v| !(v.starts_with('#') || v.trim().is_empty()))
-				.map(|v| String::from(v.trim()))
-				.collect::<Vec<String>>();
-			skip_list.extend(commits);
-		}
-		if let Some(ref skip_commit) = args.skip_commit {
-			skip_list.extend(skip_commit.clone());
-		}
-		if let Some(commit_parsers) = config.git.commit_parsers.as_mut() {
-			for sha1 in skip_list {
-				commit_parsers.insert(0, CommitParser {
-					sha: Some(sha1.to_string()),
-					skip: Some(true),
-					..Default::default()
-				})
-			}
-		}
-
-		// Process the repository.
-		let repository = Repository::init(repository)?;
-		releases.extend(process_repository(
-			Box::leak(Box::new(repository)),
-			&mut config,
-			&args,
-		)?);
+	if args.count_tags.is_some() {
+		config.git.count_tags.clone_from(&args.count_tags);
 	}
 
 	// Process commits and releases for the changelog.
 	if let Some(BumpOption::Specific(bump_type)) = args.bump {
 		config.bump.bump_type = Some(bump_type)
 	}
-	let mut changelog = Changelog::new(releases, &config)?;
+
+	// Generate changelog from context.
+	let mut changelog: Changelog = if let Some(context_path) = args.from_context {
+		let mut input: Box<dyn io::Read> = if context_path == Path::new("-") {
+			Box::new(io::stdin())
+		} else {
+			Box::new(File::open(context_path)?)
+		};
+		let mut changelog = Changelog::from_context(&mut input, &config)?;
+		changelog.add_remote_data()?;
+		changelog
+	} else {
+		// Process the repositories.
+		let repositories =
+			args.repository.clone().unwrap_or(vec![env::current_dir()?]);
+		let mut releases = Vec::<Release>::new();
+		for repository in repositories {
+			// Skip commits
+			let mut skip_list = Vec::new();
+			let ignore_file = repository.join(IGNORE_FILE);
+			if ignore_file.exists() {
+				let contents = fs::read_to_string(ignore_file)?;
+				let commits = contents
+					.lines()
+					.filter(|v| !(v.starts_with('#') || v.trim().is_empty()))
+					.map(|v| String::from(v.trim()))
+					.collect::<Vec<String>>();
+				skip_list.extend(commits);
+			}
+			if let Some(ref skip_commit) = args.skip_commit {
+				skip_list.extend(skip_commit.clone());
+			}
+			if let Some(commit_parsers) = config.git.commit_parsers.as_mut() {
+				for sha1 in skip_list {
+					commit_parsers.insert(0, CommitParser {
+						sha: Some(sha1.to_string()),
+						skip: Some(true),
+						..Default::default()
+					})
+				}
+			}
+
+			// Process the repository.
+			let repository = Repository::init(repository)?;
+			releases.extend(process_repository(
+				Box::leak(Box::new(repository)),
+				&mut config,
+				&args,
+			)?);
+		}
+		Changelog::new(releases, &config)?
+	};
 
 	// Print the result.
 	let mut out: Box<dyn io::Write> = if let Some(path) = &args.output {
@@ -570,6 +597,8 @@ pub fn run(mut args: Opt) -> Result<()> {
 		{
 			warn!("There is nothing to bump.");
 			last_version
+		} else if changelog.releases.is_empty() {
+			config.bump.get_initial_tag()
 		} else {
 			return Ok(());
 		};
