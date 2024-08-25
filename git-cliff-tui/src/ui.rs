@@ -1,9 +1,11 @@
 use crate::state::State;
+use md_tui::nodes::root::Component;
 use ratatui::{
 	layout::{
 		Alignment,
 		Constraint,
 		Layout,
+		Margin,
 		Rect,
 	},
 	style::{
@@ -19,7 +21,6 @@ use ratatui::{
 		Block,
 		BorderType,
 		Paragraph,
-		Wrap,
 	},
 	Frame,
 };
@@ -135,16 +136,27 @@ fn render_list(state: &mut State, frame: &mut Frame, rect: Rect) {
 }
 
 fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
+	state.markdown_area = rect.inner(Margin {
+		horizontal: 1,
+		vertical:   1,
+	});
 	frame.render_widget(
-		Paragraph::new(Line::from(state.changelog.clone()))
-			.block(
-				Block::bordered()
-					.title_top("|Changelog|".yellow())
-					.title_alignment(Alignment::Center)
-					.border_type(BorderType::Rounded)
-					.border_style(Style::default().fg(Color::Rgb(100, 100, 100))),
-			)
-			.wrap(Wrap { trim: false }),
+		Block::bordered()
+			.title_top("|Changelog|".yellow())
+			.title_alignment(Alignment::Center)
+			.border_type(BorderType::Rounded)
+			.border_style(Style::default().fg(Color::Rgb(100, 100, 100))),
 		rect,
 	);
+	if let Some(markdown) = &mut state.markdown {
+		markdown.set_scroll(0);
+		for child in markdown.children() {
+			match child {
+				Component::TextComponent(c) => {
+					frame.render_widget(c.clone(), state.markdown_area);
+				}
+				_ => {}
+			}
+		}
+	}
 }

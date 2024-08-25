@@ -51,7 +51,9 @@ fn main() -> Result<()> {
 				tui.events.sender.clone(),
 				&mut state,
 			)?,
-			Event::Resize(_, _) => {}
+			Event::Resize(_, _) => {
+				tui.events.sender.clone().send(Event::RenderMarkdown)?
+			}
 			Event::Generate(i) => {
 				state.selected_config = i;
 				state.changelog = match util::run_git_cliff(&[
@@ -62,7 +64,15 @@ fn main() -> Result<()> {
 				]) {
 					Ok(v) => v,
 					Err(e) => e.to_string(),
-				}
+				};
+				tui.events.sender.clone().send(Event::RenderMarkdown)?;
+			}
+			Event::RenderMarkdown => {
+				state.markdown = Some(md_tui::parser::parse_markdown(
+					None,
+					&state.changelog,
+					state.markdown_area.width,
+				));
 			}
 		}
 	}

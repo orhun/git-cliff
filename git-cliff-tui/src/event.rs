@@ -34,6 +34,8 @@ pub enum Event {
 	Resize(u16, u16),
 	/// Generate changelog.
 	Generate(usize),
+	/// Render markdown.
+	RenderMarkdown,
 }
 
 /// Terminal event handler.

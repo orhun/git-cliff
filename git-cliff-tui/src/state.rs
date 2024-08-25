@@ -1,4 +1,5 @@
 use git_cliff_core::embed::BuiltinConfig;
+use md_tui::nodes::root::ComponentRoot;
 use ratatui::layout::Rect;
 use std::error;
 
@@ -17,7 +18,6 @@ pub struct Config {
 }
 
 /// Application state.
-#[derive(Debug)]
 pub struct State {
 	/// Is the application running?
 	pub running:         bool,
@@ -27,6 +27,10 @@ pub struct State {
 	pub selected_config: usize,
 	/// Changelog contents.
 	pub changelog:       String,
+	/// Markdown content.
+	pub markdown:        Option<ComponentRoot>,
+	/// Widget area.
+	pub markdown_area:   Rect,
 }
 
 impl Default for State {
@@ -43,6 +47,8 @@ impl Default for State {
 			configs,
 			selected_config: 0,
 			changelog: String::new(),
+			markdown: None,
+			markdown_area: Rect::default(),
 		}
 	}
 }
