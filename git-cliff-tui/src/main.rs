@@ -1,10 +1,3 @@
-use std::io;
-
-use ratatui::{
-	backend::CrosstermBackend,
-	Terminal,
-};
-
 use crate::{
 	event::{
 		Event,
@@ -14,12 +7,10 @@ use crate::{
 		Result,
 		State,
 	},
-	tui::Tui,
 };
 
 pub mod event;
 pub mod state;
-pub mod tui;
 pub mod ui;
 pub mod util;
 
@@ -28,31 +19,28 @@ fn main() -> Result<()> {
 	let mut state = State::new();
 
 	// Initialize the terminal user interface.
-	let backend = CrosstermBackend::new(io::stderr());
-	let terminal = Terminal::new(backend)?;
 	let events = EventHandler::new(250);
-	let mut tui = Tui::new(terminal, events);
-	tui.init()?;
+	let mut terminal = ratatui::init();
 
 	// Start the main loop.
 	while state.running {
 		// Render the user interface.
-		tui.draw(&mut state)?;
+		terminal.draw(|frame| ui::render(&mut state, frame))?;
 		// Handle events.
-		match tui.events.next()? {
+		match events.next()? {
 			Event::Tick => state.tick(),
 			Event::Key(key_event) => event::handle_key_events(
 				key_event,
-				tui.events.sender.clone(),
+				events.sender.clone(),
 				&mut state,
 			)?,
 			Event::Mouse(mouse_event) => event::handle_mouse_events(
 				mouse_event,
-				tui.events.sender.clone(),
+				events.sender.clone(),
 				&mut state,
 			)?,
 			Event::Resize(_, _) => {
-				tui.events.sender.clone().send(Event::RenderMarkdown)?
+				events.sender.clone().send(Event::RenderMarkdown)?
 			}
 			Event::Generate(i) => {
 				state.selected_config = i;
@@ -65,7 +53,7 @@ fn main() -> Result<()> {
 					Ok(v) => v,
 					Err(e) => e.to_string(),
 				};
-				tui.events.sender.clone().send(Event::RenderMarkdown)?;
+				events.sender.clone().send(Event::RenderMarkdown)?;
 			}
 			Event::RenderMarkdown => {
 				state.markdown = Some(md_tui::parser::parse_markdown(
@@ -77,7 +65,6 @@ fn main() -> Result<()> {
 		}
 	}
 
-	// Exit the user interface.
-	tui.exit()?;
+	ratatui::restore();
 	Ok(())
 }
