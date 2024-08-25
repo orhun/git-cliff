@@ -8,6 +8,7 @@ use crate::error::{
 	Error as AppError,
 	Result,
 };
+use std::collections::HashMap;
 #[cfg(feature = "repo")]
 use git2::{
 	Commit as GitCommit,
@@ -125,6 +126,9 @@ pub struct Commit<'a> {
 	pub merge_commit:  bool,
 	/// Arbitrary data to be used with the `--from-context` CLI option.
 	pub extra:         Option<Value>,
+	/// Arbitrary fields that can be added to the commit.
+	#[serde(skip_deserializing)]
+	pub extra_map:     HashMap<&'static str, Value>,
 	/// GitHub metadata of the commit.
 	#[cfg(feature = "github")]
 	pub github:        crate::remote::RemoteContributor,
@@ -458,6 +462,9 @@ impl Serialize for Commit<'_> {
 		commit.serialize_field("conventional", &self.conv.is_some())?;
 		commit.serialize_field("merge_commit", &self.merge_commit)?;
 		commit.serialize_field("extra", &self.extra)?;
+		for (key, value) in &self.extra_map {
+			commit.serialize_field(key, &value)?;
+		}
 		#[cfg(feature = "github")]
 		commit.serialize_field("github", &self.github)?;
 		#[cfg(feature = "gitlab")]
