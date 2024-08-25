@@ -8,7 +8,6 @@ use crate::error::{
 	Error as AppError,
 	Result,
 };
-use std::collections::HashMap;
 #[cfg(feature = "repo")]
 use git2::{
 	Commit as GitCommit,
@@ -32,6 +31,7 @@ use serde::{
 	Serialize,
 };
 use serde_json::value::Value;
+use std::collections::HashMap;
 
 /// Regular expression for matching SHA1 and a following commit message
 /// separated by a whitespace.
