@@ -535,7 +535,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 			Box::new(File::open(context_path)?)
 		};
 		let mut changelog = Changelog::from_context(&mut input, &config)?;
-		changelog.add_remote_data()?;
+		changelog.add_remote_context()?;
 		changelog
 	} else {
 		// Process the repositories.
