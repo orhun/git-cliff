@@ -430,13 +430,20 @@ impl<'a> Changelog<'a> {
 		}
 	}
 
-	/// Adds remote data (e.g. GitHub commits) to the releases.
-	pub fn add_remote_data(&mut self) -> Result<()> {
-		debug!("Adding remote data...");
+	/// Adds information about the remote to the template context.
+	pub fn add_remote_context(&mut self) -> Result<()> {
 		self.additional_context.insert(
 			"remote".to_string(),
 			serde_json::to_value(self.config.remote.clone())?,
 		);
+		Ok(())
+	}
+
+	/// Adds remote data (e.g. GitHub commits) to the releases.
+	pub fn add_remote_data(&mut self) -> Result<()> {
+		debug!("Adding remote data...");
+		self.add_remote_context()?;
+
 		#[cfg(feature = "github")]
 		let (github_commits, github_pull_requests) = if self.config.remote.github.is_set()
 		{
