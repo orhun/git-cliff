@@ -125,6 +125,8 @@ pub struct Commit<'a> {
 	pub merge_commit:  bool,
 	/// Arbitrary data to be used with the `--from-context` CLI option.
 	pub extra:         Option<Value>,
+	/// Remote metadata of the commit.
+	pub remote:        Option<crate::remote::RemoteContributor>,
 	/// GitHub metadata of the commit.
 	#[cfg(feature = "github")]
 	pub github:        crate::remote::RemoteContributor,
@@ -458,6 +460,7 @@ impl Serialize for Commit<'_> {
 		commit.serialize_field("conventional", &self.conv.is_some())?;
 		commit.serialize_field("merge_commit", &self.merge_commit)?;
 		commit.serialize_field("extra", &self.extra)?;
+		commit.serialize_field("remote", &self.remote)?;
 		#[cfg(feature = "github")]
 		commit.serialize_field("github", &self.github)?;
 		#[cfg(feature = "gitlab")]
