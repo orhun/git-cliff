@@ -15,43 +15,21 @@ pub mod bitbucket;
 pub mod gitea;
 
 use crate::config::Remote;
-use crate::error::{
-	Error,
-	Result,
-};
+use crate::error::{Error, Result};
+use crate::remote_contributor::RemoteContributor;
 use dyn_clone::DynClone;
-use futures::{
-	future,
-	stream,
-	StreamExt,
-};
+use futures::{future, stream, StreamExt};
 use http_cache_reqwest::{
-	CACacheManager,
-	Cache,
-	CacheMode,
-	HttpCache,
-	HttpCacheOptions,
+	CACacheManager, Cache, CacheMode, HttpCache, HttpCacheOptions,
 };
-use reqwest::header::{
-	HeaderMap,
-	HeaderValue,
-};
+use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::Client;
-use reqwest_middleware::{
-	ClientBuilder,
-	ClientWithMiddleware,
-};
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use secrecy::ExposeSecret;
 use serde::de::DeserializeOwned;
-use serde::{
-	Deserialize,
-	Serialize,
-};
+use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
-use std::hash::{
-	Hash,
-	Hasher,
-};
+use std::hash::Hash;
 use std::time::Duration;
 
 /// User agent for interacting with the GitHub API.
@@ -114,27 +92,6 @@ pub struct RemoteReleaseMetadata {
 	pub contributors: Vec<RemoteContributor>,
 }
 
-/// Representation of a remote contributor.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
-pub struct RemoteContributor {
-	/// Username.
-	pub username:      Option<String>,
-	/// Title of the pull request.
-	pub pr_title:      Option<String>,
-	/// The pull request that the user created.
-	pub pr_number:     Option<i64>,
-	/// Labels of the pull request.
-	pub pr_labels:     Vec<String>,
-	/// Whether if the user contributed for the first time.
-	pub is_first_time: bool,
-}
-
-impl Hash for RemoteContributor {
-	fn hash<H: Hasher>(&self, state: &mut H) {
-		self.username.hash(state);
-	}
-}
-
 /// Creates a HTTP client for the remote.
 fn create_remote_client(
 	remote: &Remote,
@@ -162,7 +119,7 @@ fn create_remote_client(
 		.build()?;
 	let client = ClientBuilder::new(client)
 		.with(Cache(HttpCache {
-			mode:    CacheMode::Default,
+			mode: CacheMode::Default,
 			manager: CACacheManager {
 				path: dirs::cache_dir()
 					.ok_or_else(|| {
@@ -343,10 +300,10 @@ macro_rules! update_release_metadata {
 							.any(|v| commit.$remote.username == v.username)
 						{
 							contributors.push(RemoteContributor {
-								username:      commit.$remote.username.clone(),
-								pr_title:      commit.$remote.pr_title.clone(),
-								pr_number:     commit.$remote.pr_number,
-								pr_labels:     commit.$remote.pr_labels.clone(),
+								username: commit.$remote.username.clone(),
+								pr_title: commit.$remote.pr_title.clone(),
+								pr_number: commit.$remote.pr_number,
+								pr_labels: commit.$remote.pr_labels.clone(),
 								is_first_time: false,
 							});
 						}

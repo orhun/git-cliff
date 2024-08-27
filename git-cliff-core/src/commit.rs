@@ -126,19 +126,19 @@ pub struct Commit<'a> {
 	/// Arbitrary data to be used with the `--from-context` CLI option.
 	pub extra:         Option<Value>,
 	/// Remote metadata of the commit.
-	pub remote:        Option<crate::remote::RemoteContributor>,
+	pub remote:        Option<crate::remote_contributor::RemoteContributor>,
 	/// GitHub metadata of the commit.
 	#[cfg(feature = "github")]
-	pub github:        crate::remote::RemoteContributor,
+	pub github:        crate::remote_contributor::RemoteContributor,
 	/// GitLab metadata of the commit.
 	#[cfg(feature = "gitlab")]
-	pub gitlab:        crate::remote::RemoteContributor,
+	pub gitlab:        crate::remote_contributor::RemoteContributor,
 	/// Gitea metadata of the commit.
 	#[cfg(feature = "gitea")]
-	pub gitea:         crate::remote::RemoteContributor,
+	pub gitea:         crate::remote_contributor::RemoteContributor,
 	/// Bitbucket metadata of the commit.
 	#[cfg(feature = "bitbucket")]
-	pub bitbucket:     crate::remote::RemoteContributor,
+	pub bitbucket:     crate::remote_contributor::RemoteContributor,
 }
 
 impl<'a> From<String> for Commit<'a> {

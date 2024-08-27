@@ -30,6 +30,8 @@ pub mod release;
 #[cfg(feature = "remote")]
 #[allow(async_fn_in_trait)]
 pub mod remote;
+/// Remote contributor.
+pub mod remote_contributor;
 /// Git repository.
 #[cfg(feature = "repo")]
 pub mod repo;
