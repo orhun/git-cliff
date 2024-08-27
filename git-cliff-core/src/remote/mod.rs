@@ -15,19 +15,39 @@ pub mod bitbucket;
 pub mod gitea;
 
 use crate::config::Remote;
-use crate::error::{Error, Result};
+use crate::error::{
+	Error,
+	Result,
+};
 use crate::remote_contributor::RemoteContributor;
 use dyn_clone::DynClone;
-use futures::{future, stream, StreamExt};
-use http_cache_reqwest::{
-	CACacheManager, Cache, CacheMode, HttpCache, HttpCacheOptions,
+use futures::{
+	future,
+	stream,
+	StreamExt,
 };
-use reqwest::header::{HeaderMap, HeaderValue};
+use http_cache_reqwest::{
+	CACacheManager,
+	Cache,
+	CacheMode,
+	HttpCache,
+	HttpCacheOptions,
+};
+use reqwest::header::{
+	HeaderMap,
+	HeaderValue,
+};
 use reqwest::Client;
-use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+use reqwest_middleware::{
+	ClientBuilder,
+	ClientWithMiddleware,
+};
 use secrecy::ExposeSecret;
 use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
+use serde::{
+	Deserialize,
+	Serialize,
+};
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::time::Duration;
@@ -119,7 +139,7 @@ fn create_remote_client(
 		.build()?;
 	let client = ClientBuilder::new(client)
 		.with(Cache(HttpCache {
-			mode: CacheMode::Default,
+			mode:    CacheMode::Default,
 			manager: CACacheManager {
 				path: dirs::cache_dir()
 					.ok_or_else(|| {
@@ -300,10 +320,10 @@ macro_rules! update_release_metadata {
 							.any(|v| commit.$remote.username == v.username)
 						{
 							contributors.push(RemoteContributor {
-								username: commit.$remote.username.clone(),
-								pr_title: commit.$remote.pr_title.clone(),
-								pr_number: commit.$remote.pr_number,
-								pr_labels: commit.$remote.pr_labels.clone(),
+								username:      commit.$remote.username.clone(),
+								pr_title:      commit.$remote.pr_title.clone(),
+								pr_number:     commit.$remote.pr_number,
+								pr_labels:     commit.$remote.pr_labels.clone(),
 								is_first_time: false,
 							});
 						}
