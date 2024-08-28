@@ -1212,6 +1212,7 @@ version = "2.5.0"
 dependencies = [
  "git-cliff-core",
  "md-tui",
+ "notify",
  "ratatui",
 ]
 
@@ -2081,9 +2082,9 @@ dependencies = [
 
 [[package]]
 name = "md-tui"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3a55bdc1ef70fcd1fb6f87df169f033cce0d53494f4937d9bb5b0f38f7156d1"
+checksum = "800ab166bcff601da943a9a85b727e57bd74722016b4321f385b0caddf4d1107"
 dependencies = [
  "better-panic",
  "cc",

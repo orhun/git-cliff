@@ -136,26 +136,47 @@ fn render_list(state: &mut State, frame: &mut Frame, rect: Rect) {
 }
 
 fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
-	state.markdown_area = rect.inner(Margin {
+	state.markdown.area = rect.inner(Margin {
 		horizontal: 1,
 		vertical:   1,
 	});
 	frame.render_widget(
 		Block::bordered()
-			.title_top("|Changelog|".yellow())
-			.title_alignment(Alignment::Center)
+			.title_top("|Changelog|".yellow().into_centered_line())
+			.title_bottom(
+				if state.markdown.component.is_some() {
+					Line::from(vec![
+						"|".fg(Color::Rgb(100, 100, 100)),
+						state.configs[state.markdown.config_index]
+							.file
+							.clone()
+							.white(),
+						"|".fg(Color::Rgb(100, 100, 100)),
+						" |".fg(Color::Rgb(100, 100, 100)),
+						if state.autoload {
+							"a".green().bold()
+						} else {
+							"a".red().bold()
+						},
+						"utoload".white(),
+						"|".fg(Color::Rgb(100, 100, 100)),
+					])
+				} else {
+					"|Select config to start|".white().into()
+				}
+				.left_aligned(),
+			)
 			.border_type(BorderType::Rounded)
 			.border_style(Style::default().fg(Color::Rgb(100, 100, 100))),
 		rect,
 	);
-	if let Some(markdown) = &mut state.markdown {
-		markdown.set_scroll(0);
-		for child in markdown.children() {
-			match child {
-				Component::TextComponent(c) => {
-					frame.render_widget(c.clone(), state.markdown_area);
-				}
-				_ => {}
+	if let Some(component) = &mut state.markdown.component {
+		component.set_scroll(0);
+		for child in component.children() {
+			if let Component::TextComponent(c) = child {
+				let mut c = c.clone();
+				c.set_y_offset(c.y_offset() + 2);
+				frame.render_widget(c.clone(), state.markdown.area);
 			}
 		}
 	}

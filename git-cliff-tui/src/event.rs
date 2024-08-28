@@ -22,7 +22,7 @@ use std::time::{
 };
 
 /// Terminal events.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Event {
 	/// Terminal tick.
 	Tick,
@@ -33,7 +33,9 @@ pub enum Event {
 	/// Terminal resize.
 	Resize(u16, u16),
 	/// Generate changelog.
-	Generate(usize),
+	Generate,
+	/// Generate changelog when the file changes.
+	AutoGenerate,
 	/// Render markdown.
 	RenderMarkdown,
 }
@@ -137,7 +139,13 @@ pub fn handle_key_events(
 					state.selected_config + 1
 				}
 		}
-		KeyCode::Enter => sender.send(Event::Generate(state.selected_config))?,
+		KeyCode::Enter => {
+			state.markdown.config_index = state.selected_config;
+			sender.send(Event::Generate)?
+		}
+		KeyCode::Char('a') | KeyCode::Char('A') => {
+			state.autoload = !state.autoload;
+		}
 		_ => {}
 	}
 	Ok(())
@@ -157,8 +165,8 @@ pub(crate) fn handle_mouse_events(
 			})
 		}
 		MouseEventKind::Down(MouseButton::Left) => {
-			if let Some(i) = state.configs.iter().position(|p| p.is_hovered) {
-				sender.send(Event::Generate(i))?;
+			if state.configs.iter().any(|p| p.is_hovered) {
+				sender.send(Event::Generate)?;
 			}
 		}
 		_ => {}

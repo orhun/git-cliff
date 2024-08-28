@@ -7,7 +7,7 @@ use std::error;
 pub type Result<T> = std::result::Result<T, Box<dyn error::Error>>;
 
 /// Changelog configuration.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Config {
 	/// Name/path of the configuration.
 	pub file:       String,
@@ -17,6 +17,18 @@ pub struct Config {
 	pub is_hovered: bool,
 }
 
+/// Markdown content.
+#[derive(Default)]
+pub struct Markdown {
+	/// Rendered component.
+	pub component:    Option<ComponentRoot>,
+	/// Widget area.
+	pub area:         Rect,
+	/// Selected config index.
+	pub config_index: usize,
+}
+
+/// Is the application running?
 /// Application state.
 pub struct State {
 	/// Is the application running?
@@ -27,10 +39,10 @@ pub struct State {
 	pub selected_config: usize,
 	/// Changelog contents.
 	pub changelog:       String,
-	/// Markdown content.
-	pub markdown:        Option<ComponentRoot>,
-	/// Widget area.
-	pub markdown_area:   Rect,
+	/// Rendered markdown.
+	pub markdown:        Markdown,
+	/// Autoload changes.
+	pub autoload:        bool,
 }
 
 impl Default for State {
@@ -47,8 +59,8 @@ impl Default for State {
 			configs,
 			selected_config: 0,
 			changelog: String::new(),
-			markdown: None,
-			markdown_area: Rect::default(),
+			markdown: Markdown::default(),
+			autoload: true,
 		}
 	}
 }
