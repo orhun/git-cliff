@@ -14,7 +14,6 @@ use clap::{
 		ErrorKind,
 	},
 	ArgAction,
-	Parser,
 	ValueEnum,
 };
 use git_cliff_core::{
@@ -29,16 +28,27 @@ use secrecy::SecretString;
 use std::path::PathBuf;
 use url::Url;
 
+// Re-export parser.
+pub use clap::Parser;
+
+/// Strip parts of the changelog.
 #[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum Strip {
+	/// Header.
 	Header,
+	/// Footer.
 	Footer,
+	/// All.
 	All,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+/// Sort order.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, ValueEnum)]
 pub enum Sort {
+	/// Oldest commits.
+	#[default]
 	Oldest,
+	/// Newest commits.
 	Newest,
 }
 
@@ -49,7 +59,7 @@ const STYLES: Styles = Styles::styled()
 	.placeholder(AnsiColor::Green.on_default());
 
 /// Command-line arguments to parse.
-#[derive(Debug, Parser)]
+#[derive(Clone, Debug, Default, Parser)]
 #[command(
     version,
     author = clap::crate_authors!("\n"),
@@ -69,7 +79,8 @@ const STYLES: Styles = Styles::styled()
 	disable_version_flag = true,
     styles(STYLES),
 )]
-pub struct Opt {
+pub struct Args {
+	/// Prints help information.
 	#[arg(
 		short,
 		long,
@@ -79,12 +90,12 @@ pub struct Opt {
 		help_heading = "FLAGS"
 	)]
 	pub help:             Option<bool>,
+	/// Prints version information.
 	#[arg(
 		short = 'V',
 		long,
 		action = ArgAction::Version,
 		global = true,
-		help = "Prints version information",
 		help_heading = "FLAGS"
 	)]
 	pub version:          Option<bool>,
@@ -107,7 +118,7 @@ pub struct Opt {
 	    env = "GIT_CLIFF_CONFIG",
 	    value_name = "PATH",
 	    default_value = DEFAULT_CONFIG,
-	    value_parser = Opt::parse_dir
+	    value_parser = Args::parse_dir
 	)]
 	pub config:           PathBuf,
 	/// Sets the working directory.
@@ -116,7 +127,7 @@ pub struct Opt {
 	    long,
 	    env = "GIT_CLIFF_WORKDIR",
 	    value_name = "PATH",
-	    value_parser = Opt::parse_dir
+	    value_parser = Args::parse_dir
 	)]
 	pub workdir:          Option<PathBuf>,
 	/// Sets the git repository.
@@ -126,7 +137,7 @@ pub struct Opt {
 		env = "GIT_CLIFF_REPOSITORY",
 		value_name = "PATH",
 		num_args(1..),
-		value_parser = Opt::parse_dir
+		value_parser = Args::parse_dir
 	)]
 	pub repository:       Option<Vec<PathBuf>>,
 	/// Sets the path to include related commits.
@@ -184,7 +195,7 @@ pub struct Opt {
 	    long,
 	    env = "GIT_CLIFF_PREPEND",
 	    value_name = "PATH",
-	    value_parser = Opt::parse_dir
+	    value_parser = Args::parse_dir
 	)]
 	pub prepend:          Option<PathBuf>,
 	/// Writes output to the given file.
@@ -193,7 +204,7 @@ pub struct Opt {
 	    long,
 	    env = "GIT_CLIFF_OUTPUT",
 	    value_name = "PATH",
-	    value_parser = Opt::parse_dir,
+	    value_parser = Args::parse_dir,
 	    num_args = 0..=1,
 	    default_missing_value = DEFAULT_OUTPUT
 	)]
@@ -254,7 +265,7 @@ pub struct Opt {
 	#[arg(
         long,
 	    value_name = "PATH",
-	    value_parser = Opt::parse_dir,
+	    value_parser = Args::parse_dir,
 		env = "GIT_CLIFF_CONTEXT",
     )]
 	pub from_context:     Option<PathBuf>,
@@ -393,9 +404,12 @@ impl TypedValueParser for RemoteValueParser {
 	}
 }
 
+/// Bump option.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum BumpOption {
+	/// Auto bump.
 	Auto,
+	/// Specific bump.
 	Specific(BumpType),
 }
 
@@ -441,7 +455,7 @@ impl TypedValueParser for BumpOptionParser {
 	}
 }
 
-impl Opt {
+impl Args {
 	/// Custom string parser for directories.
 	///
 	/// Expands the tilde (`~`) character in the beginning of the
@@ -461,13 +475,13 @@ mod tests {
 
 	#[test]
 	fn verify_cli() {
-		Opt::command().debug_assert();
+		Args::command().debug_assert();
 	}
 
 	#[test]
 	fn path_tilde_expansion() {
 		let home_dir = dirs::home_dir().expect("cannot retrieve home directory");
-		let dir = Opt::parse_dir("~/").expect("cannot expand tilde");
+		let dir = Args::parse_dir("~/").expect("cannot expand tilde");
 		assert_eq!(home_dir, dir);
 	}
 
@@ -477,7 +491,7 @@ mod tests {
 		assert_eq!(
 			RemoteValue(Remote::new("test", "repo")),
 			remote_value_parser.parse_ref(
-				&Opt::command(),
+				&Args::command(),
 				None,
 				OsStr::new("test/repo")
 			)?
@@ -485,7 +499,7 @@ mod tests {
 		assert_eq!(
 			RemoteValue(Remote::new("gitlab/group/test", "repo")),
 			remote_value_parser.parse_ref(
-				&Opt::command(),
+				&Args::command(),
 				None,
 				OsStr::new("gitlab/group/test/repo")
 			)?
@@ -493,7 +507,7 @@ mod tests {
 		assert_eq!(
 			RemoteValue(Remote::new("test", "testrepo")),
 			remote_value_parser.parse_ref(
-				&Opt::command(),
+				&Args::command(),
 				None,
 				OsStr::new("https://github.com/test/testrepo")
 			)?
@@ -501,16 +515,16 @@ mod tests {
 		assert_eq!(
 			RemoteValue(Remote::new("archlinux/packaging/packages", "arch-repro-status")),
 			remote_value_parser.parse_ref(
-				&Opt::command(),
+				&Args::command(),
 				None,
 				OsStr::new("https://gitlab.archlinux.org/archlinux/packaging/packages/arch-repro-status")
 			)?
 		);
 		assert!(remote_value_parser
-			.parse_ref(&Opt::command(), None, OsStr::new("test"))
+			.parse_ref(&Args::command(), None, OsStr::new("test"))
 			.is_err());
 		assert!(remote_value_parser
-			.parse_ref(&Opt::command(), None, OsStr::new(""))
+			.parse_ref(&Args::command(), None, OsStr::new(""))
 			.is_err());
 		Ok(())
 	}
@@ -521,18 +535,18 @@ mod tests {
 		assert_eq!(
 			BumpOption::Auto,
 			bump_option_parser.parse_ref(
-				&Opt::command(),
+				&Args::command(),
 				None,
 				OsStr::new("auto")
 			)?
 		);
 		assert!(bump_option_parser
-			.parse_ref(&Opt::command(), None, OsStr::new("test"))
+			.parse_ref(&Args::command(), None, OsStr::new("test"))
 			.is_err());
 		assert_eq!(
 			BumpOption::Specific(BumpType::Major),
 			bump_option_parser.parse_ref(
-				&Opt::command(),
+				&Args::command(),
 				None,
 				OsStr::new("major")
 			)?

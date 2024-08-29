@@ -1,4 +1,5 @@
-use git_cliff_core::embed::BuiltinConfig;
+use git_cliff::args::Args;
+use git_cliff::core::embed::BuiltinConfig;
 use md_tui::nodes::root::ComponentRoot;
 use ratatui::layout::Rect;
 use std::error;
@@ -31,6 +32,8 @@ pub struct Markdown {
 /// Is the application running?
 /// Application state.
 pub struct State {
+	/// git-cliff arguments.
+	pub args:            Args,
 	/// Is the application running?
 	pub running:         bool,
 	/// Configuration files.
@@ -55,6 +58,7 @@ impl Default for State {
 			})
 			.collect();
 		Self {
+			args: Args::default(),
 			running: true,
 			configs,
 			selected_config: 0,
@@ -67,8 +71,11 @@ impl Default for State {
 
 impl State {
 	/// Constructs a new instance.
-	pub fn new() -> Self {
-		Self::default()
+	pub fn new(args: Args) -> Self {
+		Self {
+			args,
+			..Default::default()
+		}
 	}
 
 	/// Handles the tick event of the terminal.

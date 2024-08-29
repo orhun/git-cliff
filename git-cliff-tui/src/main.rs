@@ -1,4 +1,7 @@
-use std::path::Path;
+use std::path::{
+	Path,
+	PathBuf,
+};
 
 use crate::{
 	event::{
@@ -15,16 +18,22 @@ use crate::{
 pub mod event;
 pub mod state;
 pub mod ui;
-pub mod util;
 
+use git_cliff::args::{
+	Args,
+	Parser,
+};
 use notify::{
 	RecursiveMode,
 	Watcher,
 };
 
 fn main() -> Result<()> {
+	// Parse command-line arguments.
+	let args = Args::parse();
+
 	// Create an application state.
-	let mut state = State::new();
+	let mut state = State::new(args);
 
 	// Add default configuration file.
 	if Path::new("cliff.toml").exists() {
@@ -86,15 +95,11 @@ fn main() -> Result<()> {
 				if event == Event::AutoGenerate && !state.autoload {
 					continue;
 				}
-				state.changelog = match util::run_git_cliff(&[
-					"-c".into(),
-					state.configs[state.markdown.config_index].file.to_string(),
-					"-u".into(),
-					"--no-exec".into(),
-				]) {
-					Ok(v) => v,
-					Err(e) => e.to_string(),
-				};
+				let mut output = Vec::new();
+				state.args.config =
+					PathBuf::from(state.configs[state.selected_config].file.clone());
+				git_cliff::run(state.args.clone(), &mut output)?;
+				state.changelog = String::from_utf8_lossy(&output).to_string();
 				events.sender.clone().send(Event::RenderMarkdown)?;
 			}
 			Event::RenderMarkdown => {

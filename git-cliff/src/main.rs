@@ -1,8 +1,11 @@
 use clap::Parser;
-use git_cliff::args::Opt;
+use git_cliff::args::Args;
 use git_cliff::logger;
 use git_cliff_core::error::Result;
 use std::env;
+use std::fs::File;
+use std::io;
+use std::path::Path;
 use std::process;
 
 /// Profiler.
@@ -11,7 +14,7 @@ mod profiler;
 
 fn main() -> Result<()> {
 	// Parse the command line arguments
-	let args = Opt::parse();
+	let args = Args::parse();
 	if args.verbose == 1 {
 		env::set_var("RUST_LOG", "debug");
 	} else if args.verbose > 1 {
@@ -33,8 +36,17 @@ fn main() -> Result<()> {
 	}
 
 	// Run git-cliff
-	let exit_code = match git_cliff::run(args) {
-		Ok(()) => 0,
+	let out: Box<dyn io::Write> = if let Some(path) = &args.output {
+		if path == Path::new("-") {
+			Box::new(io::stdout())
+		} else {
+			Box::new(io::BufWriter::new(File::create(path)?))
+		}
+	} else {
+		Box::new(io::stdout())
+	};
+	let exit_code = match git_cliff::run(args, out) {
+		Ok(_) => 0,
 		Err(e) => {
 			log::error!("{}", e);
 			1

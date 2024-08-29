@@ -10,6 +10,8 @@ ratatui = "0.28.1"
 md-tui = { version = "0.8.6", default-features = false }
 notify = { version = "6.1.1", default-features = false }
 
-[dependencies.git-cliff-core]
+[dependencies.git-cliff]
 version = "2.5.0" # managed by release.sh
-path = "../git-cliff-core"
+path = "../git-cliff"
+default-features = false
+features = ["github", "gitlab", "gitea", "bitbucket"]

@@ -3,6 +3,7 @@
 	html_logo_url = "https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff.png",
 	html_favicon_url = "https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/favicon/favicon.ico"
 )]
+#![warn(missing_docs)]
 
 /// Command-line argument parser.
 pub mod args;
@@ -10,12 +11,15 @@ pub mod args;
 /// Custom logger implementation.
 pub mod logger;
 
+/// Re-export core library.
+pub use git_cliff_core as core;
+
 #[macro_use]
 extern crate log;
 
 use args::{
+	Args,
 	BumpOption,
-	Opt,
 	Sort,
 	Strip,
 };
@@ -81,7 +85,7 @@ fn check_new_version() {
 fn process_repository<'a>(
 	repository: &'static Repository,
 	config: &mut Config,
-	args: &Opt,
+	args: &Args,
 ) -> Result<Vec<Release<'a>>> {
 	let mut tags = repository.tags(
 		&config.git.tag_pattern,
@@ -347,7 +351,7 @@ fn process_repository<'a>(
 }
 
 /// Runs `git-cliff`.
-pub fn run(mut args: Opt) -> Result<()> {
+pub fn run<W: io::Write>(mut args: Args, mut out: W) -> Result<()> {
 	// Check if there is a new version available.
 	#[cfg(feature = "update-informer")]
 	check_new_version();
@@ -592,15 +596,6 @@ pub fn run(mut args: Opt) -> Result<()> {
 	};
 
 	// Print the result.
-	let mut out: Box<dyn io::Write> = if let Some(path) = &output {
-		if path == Path::new("-") {
-			Box::new(io::stdout())
-		} else {
-			Box::new(io::BufWriter::new(File::create(path)?))
-		}
-	} else {
-		Box::new(io::stdout())
-	};
 	if args.bump.is_some() || args.bumped_version {
 		let next_version = if let Some(next_version) = changelog.bump_version()? {
 			next_version
