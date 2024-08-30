@@ -652,6 +652,7 @@ mod test {
 					replace:         Some(String::from("exciting")),
 					replace_command: None,
 				}]),
+				output:         None,
 			},
 			git:       GitConfig {
 				conventional_commits:     Some(true),
