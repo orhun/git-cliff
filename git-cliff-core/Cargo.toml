@@ -68,7 +68,7 @@ reqwest = { version = "0.12.7", default-features = false, features = [
 ], optional = true }
 http-cache-reqwest = { version = "0.14.0", optional = true }
 reqwest-middleware = { version = "0.3.3", optional = true }
-tokio = { version = "1.39.3", features = [
+tokio = { version = "1.40.0", features = [
   "rt-multi-thread",
   "macros",
 ], optional = true }
