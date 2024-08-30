@@ -416,6 +416,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 
 	// Update the configuration based on command line arguments and vice versa.
+	let output = args.output.clone().or(config.changelog.output.clone());
 	match args.strip {
 		Some(Strip::Header) => {
 			config.changelog.header = None;
@@ -437,9 +438,9 @@ pub fn run(mut args: Opt) -> Result<()> {
 			)));
 		}
 	}
-	if args.output.is_some() &&
+	if output.is_some() &&
 		args.prepend.is_some() &&
-		args.output.as_ref() == args.prepend.as_ref()
+		output.as_ref() == args.prepend.as_ref()
 	{
 		return Err(Error::ArgumentError(String::from(
 			"'-o' and '-p' can only be used together if they point to different \
@@ -580,7 +581,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 	};
 
 	// Print the result.
-	let mut out: Box<dyn io::Write> = if let Some(path) = &args.output {
+	let mut out: Box<dyn io::Write> = if let Some(path) = &output {
 		if path == Path::new("-") {
 			Box::new(io::stdout())
 		} else {
@@ -616,7 +617,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		let mut out = io::BufWriter::new(File::create(path)?);
 		changelog.prepend(changelog_before, &mut out)?;
 	}
-	if args.output.is_some() || args.prepend.is_none() {
+	if output.is_some() || args.prepend.is_none() {
 		changelog.generate(&mut out)?;
 	}
 

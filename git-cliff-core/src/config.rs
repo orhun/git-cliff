@@ -79,6 +79,8 @@ pub struct ChangelogConfig {
 	pub trim:           Option<bool>,
 	/// Changelog postprocessors.
 	pub postprocessors: Option<Vec<TextProcessor>>,
+	/// Output file path.
+	pub output:         Option<PathBuf>,
 }
 
 /// Git configuration
