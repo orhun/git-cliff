@@ -174,6 +174,10 @@ impl RemotePullRequest for GitLabMergeRequest {
 	fn merge_commit(&self) -> Option<String> {
 		self.merge_commit_sha.clone()
 	}
+
+	fn try_get_author(&self) -> Option<String> {
+		Some(self.author.name.clone())
+	}
 }
 
 impl RemoteEntry for GitLabMergeRequest {

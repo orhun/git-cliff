@@ -85,6 +85,8 @@ pub struct GitHubPullRequest {
 	pub merge_commit_sha: Option<String>,
 	/// Labels of the pull request.
 	pub labels:           Vec<PullRequestLabel>,
+	/// Author of the pull request.
+	pub user:             GitHubCommitAuthor,
 }
 
 impl RemotePullRequest for GitHubPullRequest {
@@ -102,6 +104,10 @@ impl RemotePullRequest for GitHubPullRequest {
 
 	fn merge_commit(&self) -> Option<String> {
 		self.merge_commit_sha.clone()
+	}
+
+	fn try_get_author(&self) -> Option<String> {
+		self.user.login.clone()
 	}
 }
 

@@ -59,7 +59,76 @@ pub struct Release<'a> {
 }
 
 #[cfg(feature = "github")]
-crate::update_release_metadata!(github, update_github_metadata);
+impl<'a> Release<'a> {
+	/// Updates the remote metadata that is contained in the release.
+	///
+	/// This function takes two arguments:
+	///
+	/// - Commits: needed for associating the Git user with the GitHub username.
+	/// - Pull requests: needed for generating the contributor list for the
+	///   release.
+	pub fn update_github_metadata(
+		&mut self,
+		mut commits: Vec<Box<dyn RemoteCommit>>,
+		pull_requests: Vec<Box<dyn RemotePullRequest>>,
+	) -> Result<()> {
+		let mut contributors: Vec<RemoteContributor> = Vec::new();
+		// retain the commits that are not a part of this release for later
+		// on checking the first contributors.
+		commits.retain(|v| {
+			if let Some(commit) =
+				self.commits.iter_mut().find(|commit| commit.id == v.id())
+			{
+				let pull_request = pull_requests
+					.iter()
+					.find(|pr| pr.merge_commit() == Some(v.id().clone()));
+				debug!("-------------------------");
+				debug!("{:?}", pull_request);
+				debug!("{:?}", commit);
+				commit.github.username = pull_request
+				.map(|v| v.try_get_author())
+				.unwrap_or(v.username());
+
+				commit.github.pr_number = pull_request.map(|v| v.number());
+				commit.github.pr_title =
+					pull_request.and_then(|v| v.title().clone());
+				commit.github.pr_labels =
+					pull_request.map(|v| v.labels().clone()).unwrap_or_default();
+				if let Some(contributor) = contributors
+					.iter_mut()
+					.find(|v| commit.github.username == v.username)
+				{
+					trace!("{:?}", contributor);
+					contributor.username = commit.github.username.clone();
+					contributor.pr_number.get_or_insert(commit.github.pr_number.unwrap_or_default());
+				} else {
+					contributors.push(RemoteContributor {
+						username:      commit.github.username.clone(),
+						pr_title:      commit.github.pr_title.clone(),
+						pr_number:     commit.github.pr_number,
+						pr_labels:     commit.github.pr_labels.clone(),
+						is_first_time: false,
+					});
+				}
+				false
+			} else {
+				true
+			}
+		});
+		// mark contributors as first-time
+		self.github.contributors = contributors
+			.into_iter()
+			.map(|mut v| {
+				v.is_first_time = !commits
+					.iter()
+					.map(|v| v.username())
+					.any(|login| login == v.username);
+				v
+			})
+			.collect();
+		Ok(())
+	}
+}
 
 #[cfg(feature = "gitlab")]
 crate::update_release_metadata!(gitlab, update_gitlab_metadata);
@@ -493,6 +562,7 @@ mod test {
 					labels:           vec![PullRequestLabel {
 						name: String::from("rust"),
 					}],
+					user:             GitHubCommitAuthor { login: None },
 				},
 				GitHubPullRequest {
 					title:            Some(String::from("2")),
@@ -503,6 +573,7 @@ mod test {
 					labels:           vec![PullRequestLabel {
 						name: String::from("rust"),
 					}],
+					user:             GitHubCommitAuthor { login: None },
 				},
 				GitHubPullRequest {
 					title:            Some(String::from("3")),
@@ -513,6 +584,7 @@ mod test {
 					labels:           vec![PullRequestLabel {
 						name: String::from("deps"),
 					}],
+					user:             GitHubCommitAuthor { login: None },
 				},
 				GitHubPullRequest {
 					title:            Some(String::from("4")),
@@ -523,6 +595,7 @@ mod test {
 					labels:           vec![PullRequestLabel {
 						name: String::from("deps"),
 					}],
+					user:             GitHubCommitAuthor { login: None },
 				},
 				GitHubPullRequest {
 					title:            Some(String::from("5")),
@@ -533,6 +606,9 @@ mod test {
 					labels:           vec![PullRequestLabel {
 						name: String::from("github"),
 					}],
+					user:             GitHubCommitAuthor {
+						login: Some(String::from("idk")),
+					},
 				},
 			]
 			.into_iter()
@@ -648,6 +724,13 @@ mod test {
 					pr_title:      Some(String::from("4")),
 					pr_number:     Some(1000),
 					pr_labels:     vec![String::from("deps")],
+					is_first_time: true,
+				},
+				RemoteContributor {
+					username:      Some(String::from("idk")),
+					pr_title:      Some(String::from("5")),
+					pr_number:     Some(999999),
+					pr_labels:     vec![String::from("github")],
 					is_first_time: true,
 				},
 			],
@@ -1127,6 +1210,7 @@ mod test {
 					labels:           vec![PullRequestLabel {
 						name: String::from("rust"),
 					}],
+					user:             GiteaCommitAuthor { login: None },
 				},
 				GiteaPullRequest {
 					title:            Some(String::from("2")),
@@ -1137,6 +1221,7 @@ mod test {
 					labels:           vec![PullRequestLabel {
 						name: String::from("rust"),
 					}],
+					user:             GiteaCommitAuthor { login: None },
 				},
 				GiteaPullRequest {
 					title:            Some(String::from("3")),
@@ -1147,6 +1232,7 @@ mod test {
 					labels:           vec![PullRequestLabel {
 						name: String::from("deps"),
 					}],
+					user:             GiteaCommitAuthor { login: None },
 				},
 				GiteaPullRequest {
 					title:            Some(String::from("4")),
@@ -1157,6 +1243,7 @@ mod test {
 					labels:           vec![PullRequestLabel {
 						name: String::from("deps"),
 					}],
+					user:             GiteaCommitAuthor { login: None },
 				},
 				GiteaPullRequest {
 					title:            Some(String::from("5")),
@@ -1167,6 +1254,7 @@ mod test {
 					labels:           vec![PullRequestLabel {
 						name: String::from("github"),
 					}],
+					user:             GiteaCommitAuthor { login: None },
 				},
 			]
 			.into_iter()
