@@ -150,7 +150,8 @@ fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
 						state.configs[state.markdown.config_index]
 							.file
 							.clone()
-							.white(),
+							.white()
+							.italic(),
 						"|".fg(Color::Rgb(100, 100, 100)),
 						" |".fg(Color::Rgb(100, 100, 100)),
 						if state.autoload {
