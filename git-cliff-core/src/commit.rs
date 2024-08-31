@@ -473,7 +473,9 @@ impl Serialize for Commit<'_> {
 		serialize_remote::<S>(&mut commit, "gitea", &self.gitea)?;
 		#[cfg(feature = "bitbucket")]
 		serialize_remote::<S>(&mut commit, "bitbucket", &self.bitbucket)?;
-		commit.serialize_field("remote", &self.remote)?;
+		if let Some(remote) = &self.remote {
+			commit.serialize_field("remote", &self.remote)?;
+		}
 		commit.end()
 	}
 }
@@ -491,6 +493,9 @@ where
 		 the `remote` field instead."
 	);
 	commit.serialize_field(field, value)?;
+	if value != &crate::remote_contributor::RemoteContributor::default() {
+		commit.serialize_field("remote", value)
+	}
 	Ok(())
 }
 
