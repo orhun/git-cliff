@@ -539,6 +539,7 @@ mod test {
 			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
 			.collect(),
 		)?;
+		#[allow(deprecated)]
 		let expected_commits = vec![
 			Commit {
 				id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
@@ -703,6 +704,7 @@ mod test {
 			github: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
+			#[cfg(feature = "gitlab")]
 			gitlab: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
@@ -884,6 +886,7 @@ mod test {
 				labels:            vec![String::from("rust")],
 			})],
 		)?;
+		#[allow(deprecated)]
 		let expected_commits = vec![
 			Commit {
 				id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
@@ -1053,6 +1056,7 @@ mod test {
 			gitlab: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
+			#[cfg(feature = "gitea")]
 			gitea: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
@@ -1173,6 +1177,7 @@ mod test {
 			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
 			.collect(),
 		)?;
+		#[allow(deprecated)]
 		let expected_commits = vec![
 			Commit {
 				id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
