@@ -474,7 +474,7 @@ impl Serialize for Commit<'_> {
 		#[cfg(feature = "bitbucket")]
 		serialize_remote::<S>(&mut commit, "bitbucket", &self.bitbucket)?;
 		if let Some(remote) = &self.remote {
-			commit.serialize_field("remote", &self.remote)?;
+			commit.serialize_field("remote", remote)?;
 		}
 		commit.end()
 	}
@@ -494,7 +494,7 @@ where
 	);
 	commit.serialize_field(field, value)?;
 	if value != &crate::remote_contributor::RemoteContributor::default() {
-		commit.serialize_field("remote", value)
+		commit.serialize_field("remote", value)?;
 	}
 	Ok(())
 }
