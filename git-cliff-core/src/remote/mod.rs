@@ -293,6 +293,7 @@ macro_rules! update_release_metadata {
 			///   username.
 			/// - Pull requests: needed for generating the contributor list for the
 			///   release.
+			#[allow(deprecated)]
 			pub fn $fn(
 				&mut self,
 				mut commits: Vec<Box<dyn RemoteCommit>>,

@@ -129,15 +129,19 @@ pub struct Commit<'a> {
 	pub remote:        Option<crate::remote_contributor::RemoteContributor>,
 	/// GitHub metadata of the commit.
 	#[cfg(feature = "github")]
+	#[deprecated(note = "Use `remote` field instead")]
 	pub github:        crate::remote_contributor::RemoteContributor,
 	/// GitLab metadata of the commit.
 	#[cfg(feature = "gitlab")]
+	#[deprecated(note = "Use `remote` field instead")]
 	pub gitlab:        crate::remote_contributor::RemoteContributor,
 	/// Gitea metadata of the commit.
 	#[cfg(feature = "gitea")]
+	#[deprecated(note = "Use `remote` field instead")]
 	pub gitea:         crate::remote_contributor::RemoteContributor,
 	/// Bitbucket metadata of the commit.
 	#[cfg(feature = "bitbucket")]
+	#[deprecated(note = "Use `remote` field instead")]
 	pub bitbucket:     crate::remote_contributor::RemoteContributor,
 }
 
@@ -400,6 +404,7 @@ impl Commit<'_> {
 }
 
 impl Serialize for Commit<'_> {
+	#[allow(deprecated)]
 	fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
 	where
 		S: Serializer,
@@ -460,17 +465,33 @@ impl Serialize for Commit<'_> {
 		commit.serialize_field("conventional", &self.conv.is_some())?;
 		commit.serialize_field("merge_commit", &self.merge_commit)?;
 		commit.serialize_field("extra", &self.extra)?;
-		commit.serialize_field("remote", &self.remote)?;
 		#[cfg(feature = "github")]
-		commit.serialize_field("github", &self.github)?;
+		serialize_remote::<S>(&mut commit, "github", &self.github)?;
 		#[cfg(feature = "gitlab")]
-		commit.serialize_field("gitlab", &self.gitlab)?;
+		serialize_remote::<S>(&mut commit, "gitlab", &self.gitlab)?;
 		#[cfg(feature = "gitea")]
-		commit.serialize_field("gitea", &self.gitea)?;
+		serialize_remote::<S>(&mut commit, "gitea", &self.gitea)?;
 		#[cfg(feature = "bitbucket")]
-		commit.serialize_field("bitbucket", &self.bitbucket)?;
+		serialize_remote::<S>(&mut commit, "bitbucket", &self.bitbucket)?;
+		commit.serialize_field("remote", &self.remote)?;
 		commit.end()
 	}
+}
+
+fn serialize_remote<S>(
+	commit: &mut <S>::SerializeStruct,
+	field: &'static str,
+	value: &crate::remote_contributor::RemoteContributor,
+) -> std::result::Result<(), S::Error>
+where
+	S: Serializer,
+{
+	warn!(
+		"The `{field}` field is deprecated and will be removed in the future. Use \
+		 the `remote` field instead."
+	);
+	commit.serialize_field(field, value)?;
+	Ok(())
 }
 
 #[cfg(test)]
