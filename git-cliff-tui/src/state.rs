@@ -1,3 +1,4 @@
+use copypasta::ClipboardContext;
 use git_cliff::args::Args;
 use git_cliff::core::embed::BuiltinConfig;
 use md_tui::nodes::root::ComponentRoot;
@@ -46,10 +47,13 @@ pub struct State {
 	pub markdown:        Markdown,
 	/// Autoload changes.
 	pub autoload:        bool,
+	/// Clipboard context.
+	pub clipboard:       Option<ClipboardContext>,
 }
 
-impl Default for State {
-	fn default() -> Self {
+impl State {
+	/// Constructs a new instance.
+	pub fn new(args: Args) -> Result<Self> {
 		let configs = BuiltinConfig::iter()
 			.map(|file| Config {
 				file:       file.to_string(),
@@ -57,25 +61,22 @@ impl Default for State {
 				is_hovered: false,
 			})
 			.collect();
-		Self {
-			args: Args::default(),
+		Ok(Self {
+			args,
 			running: true,
 			configs,
 			selected_config: 0,
 			changelog: String::new(),
 			markdown: Markdown::default(),
 			autoload: true,
-		}
-	}
-}
-
-impl State {
-	/// Constructs a new instance.
-	pub fn new(args: Args) -> Self {
-		Self {
-			args,
-			..Default::default()
-		}
+			clipboard: match ClipboardContext::new() {
+				Ok(ctx) => Some(ctx),
+				Err(e) => {
+					eprintln!("Failed to initialize clipboard: {e}");
+					None
+				}
+			},
+		})
 	}
 
 	/// Handles the tick event of the terminal.

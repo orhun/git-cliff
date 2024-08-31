@@ -2,6 +2,7 @@ use crate::state::{
 	Result,
 	State,
 };
+use copypasta::ClipboardProvider;
 use ratatui::crossterm::event::{
 	self,
 	Event as CrosstermEvent,
@@ -122,6 +123,10 @@ pub fn handle_key_events(
 		KeyCode::Char('c') | KeyCode::Char('C') => {
 			if key_event.modifiers == KeyModifiers::CONTROL {
 				state.quit();
+			} else if let Some(clipboard) = &mut state.clipboard {
+				if let Err(e) = clipboard.set_contents(state.changelog.clone()) {
+					eprintln!("Failed to set clipboard contents: {e}");
+				}
 			}
 		}
 		KeyCode::Char('k') | KeyCode::Char('K') | KeyCode::Up => {

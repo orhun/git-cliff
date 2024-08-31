@@ -160,6 +160,11 @@ fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
 						},
 						"utoload".white(),
 						"|".fg(Color::Rgb(100, 100, 100)),
+						"|".fg(Color::Rgb(100, 100, 100)),
+						" |".fg(Color::Rgb(100, 100, 100)),
+						"c".yellow().bold(),
+						"opy".white(),
+						"|".fg(Color::Rgb(100, 100, 100)),
 					])
 				} else {
 					"|Select config to start|".white().into()

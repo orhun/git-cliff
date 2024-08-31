@@ -33,7 +33,7 @@ fn main() -> Result<()> {
 	let args = Args::parse();
 
 	// Create an application state.
-	let mut state = State::new(args);
+	let mut state = State::new(args.clone())?;
 
 	// Add default configuration file.
 	if Path::new("cliff.toml").exists() {
@@ -41,6 +41,16 @@ fn main() -> Result<()> {
 			file: "cliff.toml".into(),
 			..Default::default()
 		});
+	}
+
+	// Add the configuration file from the command-line arguments.
+	if &args.config != &PathBuf::from("cliff.toml") {
+		if args.config.exists() {
+			state.configs.insert(0, Config {
+				file: args.config.to_string_lossy().to_string(),
+				..Default::default()
+			});
+		}
 	}
 
 	// Initialize the terminal user interface.

@@ -9,6 +9,7 @@ edition = "2021"
 ratatui = "0.28.1"
 md-tui = { version = "0.8.6", default-features = false }
 notify = { version = "6.1.1", default-features = false }
+copypasta = "0.10.1"
 
 [dependencies.git-cliff]
 version = "2.5.0" # managed by release.sh
