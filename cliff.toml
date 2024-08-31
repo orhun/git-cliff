@@ -45,9 +45,8 @@ body = """
     | filter(attribute="scope")
     | sort(attribute="scope") %}
         {{ self::print_commit(commit=commit) }}
-    {%- endfor -%}
-    {% raw %}\n{% endraw %}\
-    {%- for commit in commits %}
+    {%- endfor %}
+    {% for commit in commits %}
         {%- if not commit.scope -%}
             {{ self::print_commit(commit=commit) }}
         {% endif -%}
@@ -64,7 +63,8 @@ body = """
     {%- endif %}
 {%- endfor -%}
 {%- endif %}
-{% raw %}\n{% endraw -%}
+
+
 """
 # template for the changelog footer
 footer = """
