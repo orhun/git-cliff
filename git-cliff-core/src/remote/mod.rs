@@ -61,7 +61,7 @@ pub(crate) const USER_AGENT: &str =
 /// Request timeout value in seconds.
 pub(crate) const REQUEST_TIMEOUT: u64 = 30;
 
-/// TCP keeplive value in seconds.
+/// TCP keepalive value in seconds.
 pub(crate) const REQUEST_KEEP_ALIVE: u64 = 60;
 
 /// Maximum number of entries to fetch in a single page.
