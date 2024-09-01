@@ -9,7 +9,7 @@ use crate::{
 	commit::Commit,
 	config::Bump,
 	config::BumpType,
-	remote_contributor::RemoteContributor,
+	contributor::RemoteContributor,
 };
 
 use next_version::{

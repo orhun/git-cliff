@@ -19,7 +19,7 @@ use crate::error::{
 	Error,
 	Result,
 };
-use crate::remote_contributor::RemoteContributor;
+use crate::contributor::RemoteContributor;
 use dyn_clone::DynClone;
 use futures::{
 	future,

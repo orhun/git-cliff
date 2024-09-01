@@ -126,23 +126,23 @@ pub struct Commit<'a> {
 	/// Arbitrary data to be used with the `--from-context` CLI option.
 	pub extra:         Option<Value>,
 	/// Remote metadata of the commit.
-	pub remote:        Option<crate::remote_contributor::RemoteContributor>,
+	pub remote:        Option<crate::contributor::RemoteContributor>,
 	/// GitHub metadata of the commit.
 	#[cfg(feature = "github")]
 	#[deprecated(note = "Use `remote` field instead")]
-	pub github:        crate::remote_contributor::RemoteContributor,
+	pub github:        crate::contributor::RemoteContributor,
 	/// GitLab metadata of the commit.
 	#[cfg(feature = "gitlab")]
 	#[deprecated(note = "Use `remote` field instead")]
-	pub gitlab:        crate::remote_contributor::RemoteContributor,
+	pub gitlab:        crate::contributor::RemoteContributor,
 	/// Gitea metadata of the commit.
 	#[cfg(feature = "gitea")]
 	#[deprecated(note = "Use `remote` field instead")]
-	pub gitea:         crate::remote_contributor::RemoteContributor,
+	pub gitea:         crate::contributor::RemoteContributor,
 	/// Bitbucket metadata of the commit.
 	#[cfg(feature = "bitbucket")]
 	#[deprecated(note = "Use `remote` field instead")]
-	pub bitbucket:     crate::remote_contributor::RemoteContributor,
+	pub bitbucket:     crate::contributor::RemoteContributor,
 }
 
 impl<'a> From<String> for Commit<'a> {
@@ -483,13 +483,13 @@ impl Serialize for Commit<'_> {
 fn serialize_remote<S>(
 	commit: &mut <S>::SerializeStruct,
 	field: &'static str,
-	value: &crate::remote_contributor::RemoteContributor,
+	value: &crate::contributor::RemoteContributor,
 ) -> std::result::Result<(), S::Error>
 where
 	S: Serializer,
 {
 	commit.serialize_field(field, value)?;
-	if value != &crate::remote_contributor::RemoteContributor::default() {
+	if value != &crate::contributor::RemoteContributor::default() {
 		commit.serialize_field("remote", value)?;
 	}
 	Ok(())
