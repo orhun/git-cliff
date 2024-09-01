@@ -20,6 +20,8 @@ pub mod command;
 pub mod commit;
 /// Config file parser.
 pub mod config;
+/// Remote contributor.
+pub mod contributor;
 /// Embedded file handler.
 pub mod embed;
 /// Error handling.
@@ -30,8 +32,6 @@ pub mod release;
 #[cfg(feature = "remote")]
 #[allow(async_fn_in_trait)]
 pub mod remote;
-/// Remote contributor.
-pub mod contributor;
 /// Git repository.
 #[cfg(feature = "repo")]
 pub mod repo;

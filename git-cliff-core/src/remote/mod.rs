@@ -15,11 +15,11 @@ pub mod bitbucket;
 pub mod gitea;
 
 use crate::config::Remote;
+use crate::contributor::RemoteContributor;
 use crate::error::{
 	Error,
 	Result,
 };
-use crate::contributor::RemoteContributor;
 use dyn_clone::DynClone;
 use futures::{
 	future,
