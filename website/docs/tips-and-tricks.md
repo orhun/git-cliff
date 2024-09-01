@@ -65,7 +65,7 @@ commit_parsers = [
 ## Skip commits by GitHub PR label
 
 ```jinja2
-{% if commit.github.pr_labels is containing("skip-release-notes") %}
+{% if commit.remote.pr_labels is containing("skip-release-notes") %}
     {% continue %}
 {% endif %}
 ```

@@ -27,9 +27,9 @@ body = """
     ### {{ group | upper_first }}
     {%- for commit in commits %}
         - {{ commit.message | split(pat="\n") | first | upper_first | trim }}\
-            {% if commit.github.username %} by @{{ commit.github.username }}{%- endif -%}
-            {% if commit.github.pr_number %} in \
-            [#{{ commit.github.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.github.pr_number }}) \
+            {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif -%}
+            {% if commit.remote.pr_number %} in \
+            [#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }}) \
             {%- endif -%}
     {% endfor %}
 {% endfor %}
