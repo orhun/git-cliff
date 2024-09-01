@@ -72,7 +72,7 @@ pub(crate) const MAX_PAGE_SIZE: usize = 100;
 /// Trait for handling the different entries returned from the remote.
 pub trait RemoteEntry {
 	/// Returns the API URL for fetching the entries at the specified page.
-	fn url(project_id: i64, api_url: &str, remote: &Remote, page: i32) -> String;
+	fn url(project_id: i64, api_url: &str, remote: &Remote, page: usize) -> String;
 	/// Returns the request buffer size.
 	fn buffer_size() -> usize;
 	/// Whether if exit early.
@@ -92,13 +92,13 @@ dyn_clone::clone_trait_object!(RemoteCommit);
 /// Trait for handling remote pull requests.
 pub trait RemotePullRequest: DynClone {
 	/// Number.
-	fn number(&self) -> i64;
+	fn number(&self) -> u64;
 	/// Title.
-	fn title(&self) -> Option<String>;
+	fn title(&self) -> Option<&str>;
 	/// Labels of the pull request.
 	fn labels(&self) -> Vec<String>;
 	/// Merge commit SHA.
-	fn merge_commit(&self) -> Option<String>;
+	fn merge_commit(&self) -> Option<&str>;
 }
 
 dyn_clone::clone_trait_object!(RemotePullRequest);
@@ -181,7 +181,7 @@ fn create_remote_client(
 /// Trait for handling the API connection and fetching.
 pub trait RemoteClient {
 	/// Returns the API url.
-	fn api_url() -> String;
+	fn api_url(&self) -> String;
 
 	/// Returns the remote repository information.
 	fn remote(&self) -> Remote;
@@ -198,9 +198,9 @@ pub trait RemoteClient {
 	async fn get_entry<T: DeserializeOwned + RemoteEntry>(
 		&self,
 		project_id: i64,
-		page: i32,
+		page: usize,
 	) -> Result<T> {
-		let url = T::url(project_id, &Self::api_url(), &self.remote(), page);
+		let url = T::url(project_id, &self.api_url(), &self.remote(), page);
 		debug!("Sending request to: {url}");
 		let response = self.client().get(&url).send().await?;
 		let response_text = if response.status().is_success() {
@@ -219,9 +219,9 @@ pub trait RemoteClient {
 	async fn get_entries_with_page<T: DeserializeOwned + RemoteEntry>(
 		&self,
 		project_id: i64,
-		page: i32,
+		page: usize,
 	) -> Result<Vec<T>> {
-		let url = T::url(project_id, &Self::api_url(), &self.remote(), page);
+		let url = T::url(project_id, &self.api_url(), &self.remote(), page);
 		debug!("Sending request to: {url}");
 		let response = self.client().get(&url).send().await?;
 		let response_text = if response.status().is_success() {
@@ -330,11 +330,12 @@ macro_rules! update_release_metadata {
 					{
 						let pull_request = pull_requests
 							.iter()
-							.find(|pr| pr.merge_commit() == Some(v.id().clone()));
+							.find(|pr| pr.merge_commit() == Some(&v.id()));
 						commit.$remote.username = v.username();
-						commit.$remote.pr_number = pull_request.map(|v| v.number());
-						commit.$remote.pr_title =
-							pull_request.and_then(|v| v.title().clone());
+						commit.$remote.pr_number =
+							pull_request.map(|v| v.number() as i64);
+						commit.$remote.pr_title = pull_request
+							.and_then(|v| v.title().map(ToOwned::to_owned));
 						commit.$remote.pr_labels = pull_request
 							.map(|v| v.labels().clone())
 							.unwrap_or_default();

@@ -46,7 +46,7 @@ pub struct GitLabProject {
 }
 
 impl RemoteEntry for GitLabProject {
-	fn url(_id: i64, api_url: &str, remote: &Remote, _page: i32) -> String {
+	fn url(_id: i64, api_url: &str, remote: &Remote, _page: usize) -> String {
 		format!(
 			"{}/projects/{}%2F{}",
 			api_url,
@@ -108,7 +108,7 @@ impl RemoteCommit for GitLabCommit {
 }
 
 impl RemoteEntry for GitLabCommit {
-	fn url(id: i64, api_url: &str, _remote: &Remote, page: i32) -> String {
+	fn url(id: i64, api_url: &str, _remote: &Remote, page: usize) -> String {
 		let commit_page = page + 1;
 		format!(
 			"{}/projects/{}/repository/commits?per_page={MAX_PAGE_SIZE}&\
@@ -131,11 +131,11 @@ impl RemoteEntry for GitLabCommit {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitLabMergeRequest {
 	/// Id
-	pub id:                i64,
+	pub id:                u64,
 	/// Iid
-	pub iid:               i64,
+	pub iid:               u64,
 	/// ProjectId
-	pub project_id:        i64,
+	pub project_id:        u64,
 	/// Title
 	pub title:             String,
 	/// Description
@@ -159,25 +159,25 @@ pub struct GitLabMergeRequest {
 }
 
 impl RemotePullRequest for GitLabMergeRequest {
-	fn number(&self) -> i64 {
+	fn number(&self) -> u64 {
 		self.iid
 	}
 
-	fn title(&self) -> Option<String> {
-		Some(self.title.clone())
+	fn title(&self) -> Option<&str> {
+		Some(&self.title)
 	}
 
 	fn labels(&self) -> Vec<String> {
 		self.labels.clone()
 	}
 
-	fn merge_commit(&self) -> Option<String> {
-		self.merge_commit_sha.clone()
+	fn merge_commit(&self) -> Option<&str> {
+		self.merge_commit_sha.as_deref()
 	}
 }
 
 impl RemoteEntry for GitLabMergeRequest {
-	fn url(id: i64, api_url: &str, _remote: &Remote, page: i32) -> String {
+	fn url(id: i64, api_url: &str, _remote: &Remote, page: usize) -> String {
 		format!(
 			"{}/projects/{}/merge_requests?per_page={MAX_PAGE_SIZE}&page={page}&\
 			 state=merged",
@@ -243,7 +243,7 @@ impl TryFrom<Remote> for GitLabClient {
 }
 
 impl RemoteClient for GitLabClient {
-	fn api_url() -> String {
+	fn api_url(&self) -> String {
 		env::var(GITLAB_API_URL_ENV)
 			.ok()
 			.unwrap_or_else(|| GITLAB_API_URL.to_string())
