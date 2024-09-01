@@ -189,7 +189,7 @@ impl Commit<'_> {
 	///
 	/// * converts commit to a conventional commit
 	/// * sets the group for the commit
-	/// * extacts links and generates URLs
+	/// * extracts links and generates URLs
 	pub fn process(&self, config: &GitConfig) -> Result<Self> {
 		let mut commit = self.clone();
 		if let Some(preprocessors) = &config.commit_preprocessors {
