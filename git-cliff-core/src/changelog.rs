@@ -1,13 +1,7 @@
 use crate::commit::Commit;
-use crate::config::{
-	Config,
-	GitConfig,
-};
+use crate::config::{Config, GitConfig};
 use crate::error::Result;
-use crate::release::{
-	Release,
-	Releases,
-};
+use crate::release::{Release, Releases};
 #[cfg(feature = "bitbucket")]
 use crate::remote::bitbucket::BitbucketClient;
 #[cfg(feature = "gitea")]
@@ -18,24 +12,18 @@ use crate::remote::github::GitHubClient;
 use crate::remote::gitlab::GitLabClient;
 use crate::template::Template;
 use std::collections::HashMap;
-use std::io::{
-	Read,
-	Write,
-};
-use std::time::{
-	SystemTime,
-	UNIX_EPOCH,
-};
+use std::io::{Read, Write};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Changelog generator.
 #[derive(Debug)]
 pub struct Changelog<'a> {
 	/// Releases that the changelog will contain.
-	pub releases:       Vec<Release<'a>>,
-	header_template:    Option<Template>,
-	body_template:      Template,
-	footer_template:    Option<Template>,
-	config:             &'a Config,
+	pub releases: Vec<Release<'a>>,
+	header_template: Option<Template>,
+	body_template: Template,
+	footer_template: Option<Template>,
+	config: &'a Config,
 	additional_context: HashMap<String, serde_json::Value>,
 }
 
@@ -180,8 +168,8 @@ impl<'a> Changelog<'a> {
 				release
 					.previous
 					.as_ref()
-					.and_then(|release| release.version.as_ref()) ==
-					Some(skipped_tag)
+					.and_then(|release| release.version.as_ref())
+					== Some(skipped_tag)
 			}) {
 				if let Some(previous_release) =
 					self.releases.get_mut(release_index + 1)
@@ -212,10 +200,12 @@ impl<'a> Changelog<'a> {
 	#[cfg(feature = "github")]
 	fn get_github_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
 		use crate::remote::github;
-		if self.config.remote.github.is_custom ||
-			self.body_template
-				.contains_variable(github::TEMPLATE_VARIABLES) ||
-			self.footer_template
+		if self.config.remote.github.is_custom
+			|| self
+				.body_template
+				.contains_variable(github::TEMPLATE_VARIABLES)
+			|| self
+				.footer_template
 				.as_ref()
 				.map(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
 				.unwrap_or(false)
@@ -268,10 +258,12 @@ impl<'a> Changelog<'a> {
 	#[cfg(feature = "gitlab")]
 	fn get_gitlab_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
 		use crate::remote::gitlab;
-		if self.config.remote.gitlab.is_custom ||
-			self.body_template
-				.contains_variable(gitlab::TEMPLATE_VARIABLES) ||
-			self.footer_template
+		if self.config.remote.gitlab.is_custom
+			|| self
+				.body_template
+				.contains_variable(gitlab::TEMPLATE_VARIABLES)
+			|| self
+				.footer_template
 				.as_ref()
 				.map(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
 				.unwrap_or(false)
@@ -332,10 +324,12 @@ impl<'a> Changelog<'a> {
 	#[cfg(feature = "gitea")]
 	fn get_gitea_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
 		use crate::remote::gitea;
-		if self.config.remote.gitea.is_custom ||
-			self.body_template
-				.contains_variable(gitea::TEMPLATE_VARIABLES) ||
-			self.footer_template
+		if self.config.remote.gitea.is_custom
+			|| self
+				.body_template
+				.contains_variable(gitea::TEMPLATE_VARIABLES)
+			|| self
+				.footer_template
 				.as_ref()
 				.map(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
 				.unwrap_or(false)
@@ -385,10 +379,12 @@ impl<'a> Changelog<'a> {
 	#[cfg(feature = "bitbucket")]
 	fn get_bitbucket_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
 		use crate::remote::bitbucket;
-		if self.config.remote.bitbucket.is_custom ||
-			self.body_template
-				.contains_variable(bitbucket::TEMPLATE_VARIABLES) ||
-			self.footer_template
+		if self.config.remote.bitbucket.is_custom
+			|| self
+				.body_template
+				.contains_variable(bitbucket::TEMPLATE_VARIABLES)
+			|| self
+				.footer_template
 				.as_ref()
 				.map(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
 				.unwrap_or(false)
@@ -438,16 +434,14 @@ impl<'a> Changelog<'a> {
 		self.add_remote_context()?;
 
 		#[cfg(feature = "github")]
-		let (github_commits, github_pull_requests) = if self.config.remote.github.is_set()
-		{
+		let (github_commits, github_pull_requests) = if self.config.remote.github.is_set() {
 			self.get_github_metadata()
 				.expect("Could not get github metadata")
 		} else {
 			(vec![], vec![])
 		};
 		#[cfg(feature = "gitlab")]
-		let (gitlab_commits, gitlab_merge_request) = if self.config.remote.gitlab.is_set()
-		{
+		let (gitlab_commits, gitlab_merge_request) = if self.config.remote.gitlab.is_set() {
 			self.get_gitlab_metadata()
 				.expect("Could not get gitlab metadata")
 		} else {
@@ -612,18 +606,16 @@ fn get_body_template(config: &Config) -> String {
 		.as_deref()
 		.unwrap_or_default()
 		.to_string();
-	warn_on_deprecated_commit_vars(&body_template, &[
-		"github",
-		"gitea",
-		"gitlab",
-		"bitbucket",
-	]);
+	warn_on_deprecated_commit_vars(
+		&body_template,
+		&["github", "gitea", "gitlab", "bitbucket"],
+	);
 	body_template
 }
 
 fn warn_on_deprecated_commit_vars(body_template: &str, vars: &[&str]) {
 	for var in vars {
-		if body_template.contains(format!("commit.{var}")) {
+		if body_template.contains(&format!("commit.{var}")) {
 			warn!(
 				"The commit.`{var}` field is deprecated and will be removed in the \
 				 future. Use the `remote` field instead."
@@ -636,12 +628,7 @@ fn warn_on_deprecated_commit_vars(body_template: &str, vars: &[&str]) {
 mod test {
 	use super::*;
 	use crate::config::{
-		Bump,
-		ChangelogConfig,
-		CommitParser,
-		Remote,
-		RemoteConfig,
-		TextProcessor,
+		Bump, ChangelogConfig, CommitParser, Remote, RemoteConfig, TextProcessor,
 	};
 	use pretty_assertions::assert_eq;
 	use regex::Regex;
@@ -650,8 +637,8 @@ mod test {
 	fn get_test_data() -> (Config, Vec<Release<'static>>) {
 		let config = Config {
 			changelog: ChangelogConfig {
-				header:         Some(String::from("# Changelog")),
-				body:           Some(String::from(
+				header: Some(String::from("# Changelog")),
+				body: Some(String::from(
 					r#"{% if version %}
 				## Release [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }} - ({{ repository }})
 				{% if commit_id %}({{ commit_id }}){% endif %}{% else %}
@@ -662,201 +649,198 @@ mod test {
 				- {{ commit.message }}{% endfor %}
 				{% endfor %}{% endfor %}"#,
 				)),
-				footer:         Some(String::from(
+				footer: Some(String::from(
 					r#"-- total releases: {{ releases | length }} --"#,
 				)),
-				trim:           Some(true),
+				trim: Some(true),
 				postprocessors: Some(vec![TextProcessor {
-					pattern:         Regex::new("boring")
-						.expect("failed to compile regex"),
-					replace:         Some(String::from("exciting")),
+					pattern: Regex::new("boring").expect("failed to compile regex"),
+					replace: Some(String::from("exciting")),
 					replace_command: None,
 				}]),
 			},
-			git:       GitConfig {
-				conventional_commits:     Some(true),
-				filter_unconventional:    Some(false),
-				split_commits:            Some(false),
-				commit_preprocessors:     Some(vec![TextProcessor {
-					pattern:         Regex::new("<preprocess>")
+			git: GitConfig {
+				conventional_commits: Some(true),
+				filter_unconventional: Some(false),
+				split_commits: Some(false),
+				commit_preprocessors: Some(vec![TextProcessor {
+					pattern: Regex::new("<preprocess>")
 						.expect("failed to compile regex"),
-					replace:         Some(String::from(
-						"this commit is preprocessed",
-					)),
+					replace: Some(String::from("this commit is preprocessed")),
 					replace_command: None,
 				}]),
-				commit_parsers:           Some(vec![
+				commit_parsers: Some(vec![
 					CommitParser {
-						sha:           Some(String::from("tea")),
-						message:       None,
-						body:          None,
-						footer:        None,
-						group:         Some(String::from("I love tea")),
+						sha: Some(String::from("tea")),
+						message: None,
+						body: None,
+						footer: None,
+						group: Some(String::from("I love tea")),
 						default_scope: None,
-						scope:         None,
-						skip:          None,
-						field:         None,
-						pattern:       None,
+						scope: None,
+						skip: None,
+						field: None,
+						pattern: None,
 					},
 					CommitParser {
-						sha:           Some(String::from("coffee")),
-						message:       None,
-						body:          None,
-						footer:        None,
-						group:         None,
+						sha: Some(String::from("coffee")),
+						message: None,
+						body: None,
+						footer: None,
+						group: None,
 						default_scope: None,
-						scope:         None,
-						skip:          Some(true),
-						field:         None,
-						pattern:       None,
+						scope: None,
+						skip: Some(true),
+						field: None,
+						pattern: None,
 					},
 					CommitParser {
-						sha:           Some(String::from("coffee2")),
-						message:       None,
-						body:          None,
-						footer:        None,
-						group:         None,
+						sha: Some(String::from("coffee2")),
+						message: None,
+						body: None,
+						footer: None,
+						group: None,
 						default_scope: None,
-						scope:         None,
-						skip:          Some(true),
-						field:         None,
-						pattern:       None,
+						scope: None,
+						skip: Some(true),
+						field: None,
+						pattern: None,
 					},
 					CommitParser {
-						sha:           None,
-						message:       Regex::new(r".*merge.*").ok(),
-						body:          None,
-						footer:        None,
-						group:         None,
+						sha: None,
+						message: Regex::new(r".*merge.*").ok(),
+						body: None,
+						footer: None,
+						group: None,
 						default_scope: None,
-						scope:         None,
-						skip:          Some(true),
-						field:         None,
-						pattern:       None,
+						scope: None,
+						skip: Some(true),
+						field: None,
+						pattern: None,
 					},
 					CommitParser {
-						sha:           None,
-						message:       Regex::new("feat*").ok(),
-						body:          None,
-						footer:        None,
-						group:         Some(String::from("New features")),
+						sha: None,
+						message: Regex::new("feat*").ok(),
+						body: None,
+						footer: None,
+						group: Some(String::from("New features")),
 						default_scope: Some(String::from("other")),
-						scope:         None,
-						skip:          None,
-						field:         None,
-						pattern:       None,
+						scope: None,
+						skip: None,
+						field: None,
+						pattern: None,
 					},
 					CommitParser {
-						sha:           None,
-						message:       Regex::new("^fix*").ok(),
-						body:          None,
-						footer:        None,
-						group:         Some(String::from("Bug Fixes")),
+						sha: None,
+						message: Regex::new("^fix*").ok(),
+						body: None,
+						footer: None,
+						group: Some(String::from("Bug Fixes")),
 						default_scope: None,
-						scope:         None,
-						skip:          None,
-						field:         None,
-						pattern:       None,
+						scope: None,
+						skip: None,
+						field: None,
+						pattern: None,
 					},
 					CommitParser {
-						sha:           None,
-						message:       Regex::new("doc:").ok(),
-						body:          None,
-						footer:        None,
-						group:         Some(String::from("Documentation")),
+						sha: None,
+						message: Regex::new("doc:").ok(),
+						body: None,
+						footer: None,
+						group: Some(String::from("Documentation")),
 						default_scope: None,
-						scope:         Some(String::from("documentation")),
-						skip:          None,
-						field:         None,
-						pattern:       None,
+						scope: Some(String::from("documentation")),
+						skip: None,
+						field: None,
+						pattern: None,
 					},
 					CommitParser {
-						sha:           None,
-						message:       Regex::new("docs:").ok(),
-						body:          None,
-						footer:        None,
-						group:         Some(String::from("Documentation")),
+						sha: None,
+						message: Regex::new("docs:").ok(),
+						body: None,
+						footer: None,
+						group: Some(String::from("Documentation")),
 						default_scope: None,
-						scope:         Some(String::from("documentation")),
-						skip:          None,
-						field:         None,
-						pattern:       None,
+						scope: Some(String::from("documentation")),
+						skip: None,
+						field: None,
+						pattern: None,
 					},
 					CommitParser {
-						sha:           None,
-						message:       Regex::new(r"match\((.*)\):.*").ok(),
-						body:          None,
-						footer:        None,
-						group:         Some(String::from("Matched ($1)")),
+						sha: None,
+						message: Regex::new(r"match\((.*)\):.*").ok(),
+						body: None,
+						footer: None,
+						group: Some(String::from("Matched ($1)")),
 						default_scope: None,
-						scope:         None,
-						skip:          None,
-						field:         None,
-						pattern:       None,
+						scope: None,
+						skip: None,
+						field: None,
+						pattern: None,
 					},
 					CommitParser {
-						sha:           None,
-						message:       None,
-						body:          None,
-						footer:        Regex::new("Footer:.*").ok(),
-						group:         Some(String::from("Footer")),
+						sha: None,
+						message: None,
+						body: None,
+						footer: Regex::new("Footer:.*").ok(),
+						group: Some(String::from("Footer")),
 						default_scope: None,
-						scope:         Some(String::from("footer")),
-						skip:          None,
-						field:         None,
-						pattern:       None,
+						scope: Some(String::from("footer")),
+						skip: None,
+						field: None,
+						pattern: None,
 					},
 					CommitParser {
-						sha:           None,
-						message:       Regex::new(".*").ok(),
-						body:          None,
-						footer:        None,
-						group:         Some(String::from("Other")),
+						sha: None,
+						message: Regex::new(".*").ok(),
+						body: None,
+						footer: None,
+						group: Some(String::from("Other")),
 						default_scope: Some(String::from("other")),
-						scope:         None,
-						skip:          None,
-						field:         None,
-						pattern:       None,
+						scope: None,
+						skip: None,
+						field: None,
+						pattern: None,
 					},
 				]),
 				protect_breaking_commits: None,
-				filter_commits:           Some(false),
-				tag_pattern:              None,
-				skip_tags:                Regex::new("v3.*").ok(),
-				ignore_tags:              None,
-				count_tags:               None,
-				topo_order:               Some(false),
-				sort_commits:             Some(String::from("oldest")),
-				link_parsers:             None,
-				limit_commits:            None,
+				filter_commits: Some(false),
+				tag_pattern: None,
+				skip_tags: Regex::new("v3.*").ok(),
+				ignore_tags: None,
+				count_tags: None,
+				topo_order: Some(false),
+				sort_commits: Some(String::from("oldest")),
+				link_parsers: None,
+				limit_commits: None,
 			},
-			remote:    RemoteConfig {
-				github:    Remote {
-					owner:     String::from("coolguy"),
-					repo:      String::from("awesome"),
-					token:     None,
+			remote: RemoteConfig {
+				github: Remote {
+					owner: String::from("coolguy"),
+					repo: String::from("awesome"),
+					token: None,
 					is_custom: false,
 				},
-				gitlab:    Remote {
-					owner:     String::from("coolguy"),
-					repo:      String::from("awesome"),
-					token:     None,
+				gitlab: Remote {
+					owner: String::from("coolguy"),
+					repo: String::from("awesome"),
+					token: None,
 					is_custom: false,
 				},
-				gitea:     Remote {
-					owner:     String::from("coolguy"),
-					repo:      String::from("awesome"),
-					token:     None,
+				gitea: Remote {
+					owner: String::from("coolguy"),
+					repo: String::from("awesome"),
+					token: None,
 					is_custom: false,
 				},
 				bitbucket: Remote {
-					owner:     String::from("coolguy"),
-					repo:      String::from("awesome"),
-					token:     None,
+					owner: String::from("coolguy"),
+					repo: String::from("awesome"),
+					token: None,
 					is_custom: false,
 				},
 			},
-			bump:      Bump::default(),
+			bump: Bump::default(),
 		};
 		let test_release = Release {
 			version: Some(String::from("v1.0.0")),
