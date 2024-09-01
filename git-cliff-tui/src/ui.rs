@@ -29,6 +29,7 @@ use ratatui::{
 const KEY_BINDINGS: &[(&str, &str)] = &[
 	("⏎ ", "Generate Changelog"),
 	("↕ ↔ ", "Scroll"),
+	("t", "Toggle"),
 	("q", "Quit"),
 ];
 
@@ -40,14 +41,17 @@ pub fn render(state: &mut State, frame: &mut Frame) {
 			.title_alignment(Alignment::Center),
 		frame.area(),
 	);
+
 	let rects = Layout::vertical([Constraint::Percentage(100), Constraint::Min(3)])
 		.margin(1)
 		.split(frame.area());
 	render_key_bindings(frame, rects[1]);
 
-	let rects =
-		Layout::horizontal([Constraint::Percentage(20), Constraint::Percentage(80)])
-			.split(rects[0]);
+	let rects = Layout::horizontal([
+		Constraint::Percentage(state.is_toggled as u16 * 20),
+		Constraint::Fill(1),
+	])
+	.split(rects[0]);
 	render_list(state, frame, rects[0]);
 	render_changelog(state, frame, rects[1]);
 }
@@ -160,7 +164,6 @@ fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
 							"a".red().bold()
 						},
 						"utoload".white(),
-						"|".fg(Color::Rgb(100, 100, 100)),
 						"|".fg(Color::Rgb(100, 100, 100)),
 						" |".fg(Color::Rgb(100, 100, 100)),
 						"c".yellow().bold(),

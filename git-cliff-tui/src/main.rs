@@ -81,7 +81,7 @@ fn main() -> Result<()> {
 	}
 
 	// Start the main loop.
-	while state.running {
+	while state.is_running {
 		// Render the user interface.
 		terminal.draw(|frame| ui::render(&mut state, frame))?;
 		// Handle events.

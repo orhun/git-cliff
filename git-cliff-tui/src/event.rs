@@ -151,6 +151,9 @@ pub fn handle_key_events(
 		KeyCode::Char('a') | KeyCode::Char('A') => {
 			state.autoload = !state.autoload;
 		}
+		KeyCode::Char('t') | KeyCode::Char('T') => {
+			state.is_toggled = !state.is_toggled;
+		}
 		_ => {}
 	}
 	Ok(())

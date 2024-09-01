@@ -36,7 +36,7 @@ pub struct State {
 	/// git-cliff arguments.
 	pub args:            Args,
 	/// Is the application running?
-	pub running:         bool,
+	pub is_running:      bool,
 	/// Configuration files.
 	pub configs:         Vec<Config>,
 	/// Index of the selected configuration.
@@ -49,6 +49,8 @@ pub struct State {
 	pub autoload:        bool,
 	/// Clipboard context.
 	pub clipboard:       Option<ClipboardContext>,
+	/// Is the sidebar toggled?
+	pub is_toggled:      bool,
 }
 
 impl State {
@@ -63,7 +65,8 @@ impl State {
 			.collect();
 		Ok(Self {
 			args,
-			running: true,
+			is_running: true,
+			is_toggled: true,
 			configs,
 			selected_config: 0,
 			changelog: String::new(),
@@ -84,6 +87,6 @@ impl State {
 
 	/// Set running to false to quit the application.
 	pub fn quit(&mut self) {
-		self.running = false;
+		self.is_running = false;
 	}
 }
