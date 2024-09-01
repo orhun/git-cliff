@@ -488,10 +488,6 @@ fn serialize_remote<S>(
 where
 	S: Serializer,
 {
-	warn!(
-		"The `{field}` field is deprecated and will be removed in the future. Use \
-		 the `remote` field instead."
-	);
 	commit.serialize_field(field, value)?;
 	if value != &crate::remote_contributor::RemoteContributor::default() {
 		commit.serialize_field("remote", value)?;
