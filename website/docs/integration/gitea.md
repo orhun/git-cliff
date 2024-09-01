@@ -104,7 +104,7 @@ For each commit, Gitea related values are added as a nested object (named `gitea
 
   "...": "<strip>",
 
-  "gitea": {
+  "remote": {
     "username": "orhun",
     "pr_title": "some things have changed",
     "pr_number": 420,

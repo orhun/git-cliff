@@ -106,7 +106,7 @@ For each commit, GitLab related values are added as a nested object (named `gitl
 
   "...": "<strip>",
 
-  "gitlab": {
+  "remote": {
     "username": "orhun",
     "pr_title": "some things have changed",
     "pr_number": 420,

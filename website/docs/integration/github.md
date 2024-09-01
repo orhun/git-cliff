@@ -108,7 +108,7 @@ For each commit, GitHub related values are added as a nested object (named `gith
 
   "...": "<strip>",
 
-  "github": {
+  "remote": {
     "username": "orhun",
     "pr_title": "some things have changed",
     "pr_number": 420,
