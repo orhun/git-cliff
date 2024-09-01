@@ -1,5 +1,11 @@
+# configuration for https://github.com/crate-ci/typos
+
 [type.md]
 extend-ignore-re = [
   "\\[[[:xdigit:]]{7}\\]\\(https://github.com/orhun/git-cliff/commit/[[:xdigit:]]{40}\\)",
   "\\[halp\\]\\(https://github.com/orhun/halp\\)",
+  "upport",
 ]
+
+[default.extend-words]
+upport = "upport"
