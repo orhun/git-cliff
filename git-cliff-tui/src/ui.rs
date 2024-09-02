@@ -10,6 +10,7 @@ use ratatui::{
 	},
 	style::{
 		Color,
+		Modifier,
 		Style,
 		Stylize,
 	},
@@ -21,6 +22,7 @@ use ratatui::{
 		Block,
 		BorderType,
 		Paragraph,
+		Wrap,
 	},
 	Frame,
 };
@@ -53,7 +55,11 @@ pub fn render(state: &mut State, frame: &mut Frame) {
 	])
 	.split(rects[0]);
 	render_list(state, frame, rects[0]);
-	render_changelog(state, frame, rects[1]);
+	if state.error.is_some() {
+		render_error(state, frame, rects[1]);
+	} else {
+		render_changelog(state, frame, rects[1]);
+	}
 }
 
 fn render_key_bindings(frame: &mut Frame, rect: Rect) {
@@ -188,5 +194,48 @@ fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
 				frame.render_widget(c.clone(), state.markdown.area);
 			}
 		}
+	}
+
+	if state.is_generating {
+		let throbber_area = Rect::new(
+			rect.right().saturating_sub(3),
+			rect.bottom().saturating_sub(1),
+			1,
+			1,
+		);
+		frame.render_stateful_widget(
+			throbber_widgets_tui::Throbber::default()
+				.style(Style::default().fg(Color::Yellow))
+				.throbber_style(
+					Style::default()
+						.fg(Color::Yellow)
+						.add_modifier(Modifier::BOLD),
+				)
+				.throbber_set(throbber_widgets_tui::BLACK_CIRCLE)
+				.use_type(throbber_widgets_tui::WhichUse::Spin),
+			throbber_area,
+			&mut state.throbber_state,
+		);
+	}
+}
+
+fn render_error(state: &mut State, frame: &mut Frame, rect: Rect) {
+	if let Some(error) = &state.error {
+		frame.render_widget(
+			Block::bordered()
+				.title_top("|Error|".red().into_centered_line())
+				.border_type(BorderType::Rounded)
+				.border_style(Style::default().fg(Color::Rgb(100, 100, 100))),
+			rect,
+		);
+		frame.render_widget(
+			Paragraph::new(Line::from(error.clone()))
+				.alignment(Alignment::Center)
+				.wrap(Wrap { trim: false }),
+			rect.inner(Margin {
+				horizontal: 1,
+				vertical:   1,
+			}),
+		);
 	}
 }

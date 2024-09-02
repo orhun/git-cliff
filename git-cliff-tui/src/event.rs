@@ -23,7 +23,7 @@ use std::time::{
 };
 
 /// Terminal events.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Event {
 	/// Terminal tick.
 	Tick,
@@ -38,7 +38,9 @@ pub enum Event {
 	/// Generate changelog when the file changes.
 	AutoGenerate,
 	/// Render markdown.
-	RenderMarkdown,
+	RenderMarkdown(String),
+	/// Error event.
+	Error(String),
 }
 
 /// Terminal event handler.

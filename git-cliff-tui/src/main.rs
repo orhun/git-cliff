@@ -1,6 +1,9 @@
-use std::path::{
-	Path,
-	PathBuf,
+use std::{
+	path::{
+		Path,
+		PathBuf,
+	},
+	thread,
 };
 
 use crate::{
@@ -98,26 +101,39 @@ fn main() -> Result<()> {
 				events.sender.clone(),
 				&mut state,
 			)?,
-			Event::Resize(_, _) => {
-				events.sender.clone().send(Event::RenderMarkdown)?
-			}
+			Event::Resize(_, _) => {}
 			Event::Generate | Event::AutoGenerate => {
 				if event == Event::AutoGenerate && !state.autoload {
 					continue;
 				}
-				let mut output = Vec::new();
+				let sender = events.sender.clone();
+				let args = state.args.clone();
+				state.is_generating = true;
 				state.args.config =
 					PathBuf::from(state.configs[state.selected_config].file.clone());
-				git_cliff::run(state.args.clone(), &mut output)?;
-				state.changelog = String::from_utf8_lossy(&output).to_string();
-				events.sender.clone().send(Event::RenderMarkdown)?;
+				thread::spawn(move || {
+					let mut output = Vec::new();
+					sender
+						.send(match git_cliff::run(args, &mut output) {
+							Ok(()) => Event::RenderMarkdown(
+								String::from_utf8_lossy(&output).to_string(),
+							),
+							Err(e) => Event::Error(e.to_string()),
+						})
+						.expect("failed to send event");
+				});
 			}
-			Event::RenderMarkdown => {
+			Event::RenderMarkdown(changelog) => {
+				state.is_generating = false;
+				state.changelog = changelog;
 				state.markdown.component = Some(md_tui::parser::parse_markdown(
 					None,
 					&state.changelog,
 					state.markdown.area.width,
 				));
+			}
+			Event::Error(e) => {
+				state.error = Some(e);
 			}
 		}
 	}
