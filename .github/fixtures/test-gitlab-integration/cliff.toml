@@ -11,8 +11,8 @@ body = """
 {%- if version %} in {{ version }}{%- endif -%}
 {% for commit in commits %}
   * {{ commit.message | split(pat="\n") | first | trim }}\
-    {% if commit.gitlab.username %} by @{{ commit.gitlab.username }}{%- endif -%}
-    {% if commit.gitlab.pr_number %} in #{{ commit.gitlab.pr_number }}{%- endif %}
+    {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif -%}
+    {% if commit.remote.pr_number %} in #{{ commit.remote.pr_number }}{%- endif %}
 {%- endfor -%}
 
 {% if gitlab.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
