@@ -1,15 +1,17 @@
 use crate::error::Result;
-#[cfg(feature = "remote")]
-use crate::remote::{
-	RemoteCommit,
-	RemotePullRequest,
-	RemoteReleaseMetadata,
-};
 use crate::{
 	commit::Commit,
 	config::Bump,
 	config::BumpType,
+};
+#[cfg(feature = "remote")]
+use crate::{
 	contributor::RemoteContributor,
+	remote::{
+		RemoteCommit,
+		RemotePullRequest,
+		RemoteReleaseMetadata,
+	},
 };
 
 use next_version::{
