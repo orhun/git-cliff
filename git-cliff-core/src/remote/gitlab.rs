@@ -22,7 +22,8 @@ pub const START_FETCHING_MSG: &str = "Retrieving data from GitLab...";
 pub const FINISHED_FETCHING_MSG: &str = "Done fetching GitLab data.";
 
 /// Template variables related to this remote.
-pub(crate) const TEMPLATE_VARIABLES: &[&str] = &["gitlab", "commit.gitlab"];
+pub(crate) const TEMPLATE_VARIABLES: &[&str] =
+	&["gitlab", "commit.gitlab", "commit.remote"];
 
 /// Representation of a single GitLab Project.
 ///

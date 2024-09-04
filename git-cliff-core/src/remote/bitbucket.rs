@@ -22,7 +22,8 @@ pub const START_FETCHING_MSG: &str = "Retrieving data from Bitbucket...";
 pub const FINISHED_FETCHING_MSG: &str = "Done fetching Bitbucket data.";
 
 /// Template variables related to this remote.
-pub(crate) const TEMPLATE_VARIABLES: &[&str] = &["bitbucket", "commit.bitbucket"];
+pub(crate) const TEMPLATE_VARIABLES: &[&str] =
+	&["bitbucket", "commit.bitbucket", "commit.remote"];
 
 /// Maximum number of entries to fetch for bitbucket pull requests.
 pub(crate) const BITBUCKET_MAX_PAGE_PRS: usize = 50;
