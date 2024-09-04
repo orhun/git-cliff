@@ -52,14 +52,13 @@ impl<'a> Changelog<'a> {
 	/// Builds a changelog from releases and config.
 	fn build(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
 		let trim = config.changelog.trim.unwrap_or(true);
-		let body_template = get_body_template(config);
 		Ok(Self {
 			releases,
 			header_template: match &config.changelog.header {
 				Some(header) => Some(Template::new(header.to_string(), trim)?),
 				None => None,
 			},
-			body_template: Template::new(body_template, trim)?,
+			body_template: get_body_template(config, trim)?,
 			footer_template: match &config.changelog.footer {
 				Some(footer) => Some(Template::new(footer.to_string(), trim)?),
 				None => None,
@@ -605,31 +604,27 @@ impl<'a> Changelog<'a> {
 	}
 }
 
-fn get_body_template(config: &Config) -> String {
-	let body_template = config
+fn get_body_template(config: &Config, trim: bool) -> Result<Template> {
+	let template_str = config
 		.changelog
 		.body
 		.as_deref()
 		.unwrap_or_default()
 		.to_string();
-	warn_on_deprecated_commit_vars(&body_template, &[
-		"github",
-		"gitea",
-		"gitlab",
-		"bitbucket",
-	]);
-	body_template
-}
-
-fn warn_on_deprecated_commit_vars(body_template: &str, vars: &[&str]) {
-	for var in vars {
-		if body_template.contains(&format!("commit.{var}")) {
-			warn!(
-				"The commit.`{var}` field is deprecated and will be removed in the \
-				 future. Use the `remote` field instead."
-			);
-		}
+	let template = Template::new(template_str, trim)?;
+	let deprecated_vars = [
+		"commit.github",
+		"commit.gitea",
+		"commit.gitlab",
+		"commit.bitbucket",
+	];
+	if template.contains_variable(&deprecated_vars) {
+		warn!(
+			"Variables {deprecated_vars:?} are deprecated and will be removed in \
+			 the future. Use `commit.remote` instead."
+		);
 	}
+	Ok(template)
 }
 
 #[cfg(test)]
