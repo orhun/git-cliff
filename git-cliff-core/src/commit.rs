@@ -466,33 +466,18 @@ impl Serialize for Commit<'_> {
 		commit.serialize_field("merge_commit", &self.merge_commit)?;
 		commit.serialize_field("extra", &self.extra)?;
 		#[cfg(feature = "github")]
-		serialize_remote::<S>(&mut commit, "github", &self.github)?;
+		commit.serialize_field("github", &self.github)?;
 		#[cfg(feature = "gitlab")]
-		serialize_remote::<S>(&mut commit, "gitlab", &self.gitlab)?;
+		commit.serialize_field("gitlab", &self.gitlab)?;
 		#[cfg(feature = "gitea")]
-		serialize_remote::<S>(&mut commit, "gitea", &self.gitea)?;
+		commit.serialize_field("gitea", &self.gitea)?;
 		#[cfg(feature = "bitbucket")]
-		serialize_remote::<S>(&mut commit, "bitbucket", &self.bitbucket)?;
+		commit.serialize_field("bitbucket", &self.bitbucket)?;
 		if let Some(remote) = &self.remote {
 			commit.serialize_field("remote", remote)?;
 		}
 		commit.end()
 	}
-}
-
-fn serialize_remote<S>(
-	commit: &mut <S>::SerializeStruct,
-	field: &'static str,
-	value: &crate::contributor::RemoteContributor,
-) -> std::result::Result<(), S::Error>
-where
-	S: Serializer,
-{
-	commit.serialize_field(field, value)?;
-	if value != &crate::contributor::RemoteContributor::default() {
-		commit.serialize_field("remote", value)?;
-	}
-	Ok(())
 }
 
 #[cfg(test)]
