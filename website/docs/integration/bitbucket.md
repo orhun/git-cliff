@@ -119,8 +119,8 @@ This can be used in the template as follows:
 ```
 {% for commit in commits %}
   * {{ commit.message | split(pat="\n") | first | trim }}\
-    {% if commit.bitbucket.username %} by @{{ commit.bitbucket.username }}{%- endif %}\
-    {% if commit.bitbucket.pr_number %} in #{{ commit.bitbucket.pr_number }}{%- endif %}
+    {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif %}\
+    {% if commit.remote.pr_number %} in #{{ commit.remote.pr_number }}{%- endif %}
 {%- endfor -%}
 ```
 
