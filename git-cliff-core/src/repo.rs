@@ -334,6 +334,7 @@ impl Repository {
 		&self,
 		pattern: &Option<Regex>,
 		topo_order: bool,
+		use_branch_tags: bool,
 	) -> Result<IndexMap<String, Tag>> {
 		let mut tags: Vec<(Commit, Tag)> = Vec::new();
 		let tag_names = self.inner.tag_names(None)?;
@@ -350,29 +351,33 @@ impl Repository {
 		{
 			let obj = self.inner.revparse_single(&name)?;
 			if let Ok(commit) = obj.clone().into_commit() {
-				if self.should_include_tag(&head_commit, &commit)? {
-					tags.push((commit, Tag {
-						name,
-						message: None,
-					}));
+				if use_branch_tags &&
+					!self.should_include_tag(&head_commit, &commit)?
+				{
+					continue;
 				}
+
+				tags.push((commit, Tag {
+					name,
+					message: None,
+				}));
 			} else if let Some(tag) = obj.as_tag() {
 				if let Some(commit) = tag
 					.target()
 					.ok()
 					.and_then(|target| target.into_commit().ok())
 				{
-					if self.should_include_tag(&head_commit, &commit)? {
-						tags.push((commit, Tag {
-							name:    tag.name().map(String::from).unwrap_or(name),
-							message: tag.message().map(|msg| {
-								TAG_SIGNATURE_REGEX
-									.replace(msg, "")
-									.trim()
-									.to_owned()
-							}),
-						}));
+					if use_branch_tags &&
+						!self.should_include_tag(&head_commit, &commit)?
+					{
+						continue;
 					}
+					tags.push((commit, Tag {
+						name:    tag.name().map(String::from).unwrap_or(name),
+						message: tag.message().map(|msg| {
+							TAG_SIGNATURE_REGEX.replace(msg, "").trim().to_owned()
+						}),
+					}));
 				}
 			}
 		}
@@ -495,7 +500,7 @@ mod test {
 	#[test]
 	fn get_latest_tag() -> Result<()> {
 		let repository = get_repository()?;
-		let tags = repository.tags(&None, false)?;
+		let tags = repository.tags(&None, false, false)?;
 		assert_eq!(get_last_tag()?, tags.last().expect("no tags found").1.name);
 		Ok(())
 	}
@@ -503,7 +508,7 @@ mod test {
 	#[test]
 	fn git_tags() -> Result<()> {
 		let repository = get_repository()?;
-		let tags = repository.tags(&None, true)?;
+		let tags = repository.tags(&None, true, false)?;
 		assert_eq!(
 			tags.get("2b8b4d3535f29231e05c3572e919634b9af907b6")
 				.expect(
@@ -527,6 +532,7 @@ mod test {
 					.expect("the regex is not valid"),
 			),
 			true,
+			false,
 		)?;
 		assert_eq!(
 			tags.get("2b8b4d3535f29231e05c3572e919634b9af907b6")

@@ -83,7 +83,11 @@ fn process_repository<'a>(
 	config: &mut Config,
 	args: &Opt,
 ) -> Result<Vec<Release<'a>>> {
-	let mut tags = repository.tags(&config.git.tag_pattern, args.topo_order)?;
+	let mut tags = repository.tags(
+		&config.git.tag_pattern,
+		args.topo_order,
+		args.use_branch_tags,
+	)?;
 	let skip_regex = config.git.skip_tags.as_ref();
 	let ignore_regex = config.git.ignore_tags.as_ref();
 	let count_tags = config.git.count_tags.as_ref();

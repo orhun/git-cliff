@@ -229,6 +229,9 @@ pub struct Opt {
 	/// Sorts the tags topologically.
 	#[arg(long, help_heading = Some("FLAGS"))]
 	pub topo_order:       bool,
+	/// Only include the tags belong to current branch.
+	#[arg(long, help_heading = Some("FLAGS"))]
+	pub use_branch_tags:  bool,
 	/// Disables the external command execution.
 	#[arg(long, help_heading = Some("FLAGS"))]
 	pub no_exec:          bool,
