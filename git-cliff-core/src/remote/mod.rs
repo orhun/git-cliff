@@ -328,6 +328,7 @@ macro_rules! update_release_metadata {
 								is_first_time: false,
 							});
 						}
+						commit.remote = Some(commit.$remote.clone());
 						false
 					} else {
 						true
