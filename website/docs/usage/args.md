@@ -52,7 +52,7 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
     --gitlab-token <TOKEN>         Sets the GitLab API token [env: GITLAB_TOKEN]
     --gitlab-repo <OWNER/REPO>     Sets the GitLab repository [env: GITLAB_REPO=]
     --gitea-token <TOKEN>          Sets the Gitea API token [env: GITEA_TOKEN]
-    --gitea-repo <OWNER/REPO>      Sets the GitLab repository [env: GITEA_REPO=]
+    --gitea-repo <OWNER/REPO>      Sets the Gitea repository [env: GITEA_REPO=]
     --bitbucket-token <TOKEN>      Sets the Bitbucket API token [env: BITBUCKET_TOKEN]
     --bitbucket-repo <OWNER/REPO>  Sets the Bitbucket repository [env: BITBUCKET_REPO=]
 ```
