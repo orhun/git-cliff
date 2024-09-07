@@ -9,7 +9,7 @@ export type Options = Partial<{
   includePath: string;
   excludePath: string;
   withCommit: string;
-  skipCommit: string;
+  skipCommit: string | string[];
   prepend: string;
   output: string;
   tag: string;
