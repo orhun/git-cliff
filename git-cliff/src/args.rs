@@ -301,7 +301,7 @@ pub struct Opt {
 		hide = !cfg!(feature = "gitea"),
 	)]
 	pub gitea_token:      Option<SecretString>,
-	/// Sets the GitLab repository.
+	/// Sets the Gitea repository.
 	#[arg(
 		long,
 		env = "GITEA_REPO",
