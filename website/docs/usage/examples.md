@@ -45,6 +45,12 @@ git cliff v2.2.1..
 git cliff v0.1.0..HEAD
 ```
 
+Only include the tags from the current branch:
+
+```bash
+git cliff --use-branch-tags
+```
+
 Sort the commits inside sections:
 
 ```bash

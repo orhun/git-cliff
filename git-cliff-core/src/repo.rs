@@ -338,9 +338,7 @@ impl Repository {
 	) -> Result<IndexMap<String, Tag>> {
 		let mut tags: Vec<(Commit, Tag)> = Vec::new();
 		let tag_names = self.inner.tag_names(None)?;
-
 		let head_commit = self.inner.head()?.peel_to_commit()?;
-
 		for name in tag_names
 			.iter()
 			.flatten()
