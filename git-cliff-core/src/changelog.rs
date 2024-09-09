@@ -805,6 +805,7 @@ mod test {
 				skip_tags:                Regex::new("v3.*").ok(),
 				ignore_tags:              None,
 				count_tags:               None,
+				use_branch_tags:          Some(false),
 				topo_order:               Some(false),
 				sort_commits:             Some(String::from("oldest")),
 				link_parsers:             None,

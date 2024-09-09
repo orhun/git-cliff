@@ -310,6 +310,23 @@ impl Repository {
 		None
 	}
 
+	/// Decide whether to include tag
+	///
+	/// `head_commit` is the `latest` commit to generate changelog. It can be a
+	/// branch head or a detached head. `tag_commit` is a tagged commit. If the
+	/// commit is in the descendant graph of the head_commit or is the
+	/// head_commit itself, Changelog should include the tag.
+	fn should_include_tag(
+		&self,
+		head_commit: &Commit,
+		tag_commit: &Commit,
+	) -> Result<bool> {
+		Ok(self
+			.inner
+			.graph_descendant_of(head_commit.id(), tag_commit.id())? ||
+			head_commit.id() == tag_commit.id())
+	}
+
 	/// Parses and returns a commit-tag map.
 	///
 	/// It collects lightweight and annotated tags.
@@ -317,9 +334,11 @@ impl Repository {
 		&self,
 		pattern: &Option<Regex>,
 		topo_order: bool,
+		use_branch_tags: bool,
 	) -> Result<IndexMap<String, Tag>> {
 		let mut tags: Vec<(Commit, Tag)> = Vec::new();
 		let tag_names = self.inner.tag_names(None)?;
+		let head_commit = self.inner.head()?.peel_to_commit()?;
 		for name in tag_names
 			.iter()
 			.flatten()
@@ -330,6 +349,12 @@ impl Repository {
 		{
 			let obj = self.inner.revparse_single(&name)?;
 			if let Ok(commit) = obj.clone().into_commit() {
+				if use_branch_tags &&
+					!self.should_include_tag(&head_commit, &commit)?
+				{
+					continue;
+				}
+
 				tags.push((commit, Tag {
 					name,
 					message: None,
@@ -340,6 +365,11 @@ impl Repository {
 					.ok()
 					.and_then(|target| target.into_commit().ok())
 				{
+					if use_branch_tags &&
+						!self.should_include_tag(&head_commit, &commit)?
+					{
+						continue;
+					}
 					tags.push((commit, Tag {
 						name:    tag.name().map(String::from).unwrap_or(name),
 						message: tag.message().map(|msg| {
@@ -468,7 +498,7 @@ mod test {
 	#[test]
 	fn get_latest_tag() -> Result<()> {
 		let repository = get_repository()?;
-		let tags = repository.tags(&None, false)?;
+		let tags = repository.tags(&None, false, false)?;
 		assert_eq!(get_last_tag()?, tags.last().expect("no tags found").1.name);
 		Ok(())
 	}
@@ -476,7 +506,7 @@ mod test {
 	#[test]
 	fn git_tags() -> Result<()> {
 		let repository = get_repository()?;
-		let tags = repository.tags(&None, true)?;
+		let tags = repository.tags(&None, true, false)?;
 		assert_eq!(
 			tags.get("2b8b4d3535f29231e05c3572e919634b9af907b6")
 				.expect(
@@ -500,6 +530,7 @@ mod test {
 					.expect("the regex is not valid"),
 			),
 			true,
+			false,
 		)?;
 		assert_eq!(
 			tags.get("2b8b4d3535f29231e05c3572e919634b9af907b6")

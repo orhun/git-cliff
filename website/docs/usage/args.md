@@ -11,16 +11,17 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
 ## Flags
 
 ```
--h, --help            Prints help information
--V, --version         Prints version information
--v, --verbose...      Increases the logging verbosity
-    --bumped-version  Prints bumped version for unreleased changes
--l, --latest          Processes the commits starting from the latest tag
-    --current         Processes the commits that belong to the current tag
--u, --unreleased      Processes the commits that do not belong to a tag
-    --topo-order      Sorts the tags topologically
-    --no-exec         Disables the external command execution
--x, --context         Prints changelog context as JSON
+-h, --help             Prints help information
+-V, --version          Prints version information
+-v, --verbose...       Increases the logging verbosity
+    --bumped-version   Prints bumped version for unreleased changes
+-l, --latest           Processes the commits starting from the latest tag
+    --current          Processes the commits that belong to the current tag
+-u, --unreleased       Processes the commits that do not belong to a tag
+    --topo-order       Sorts the tags topologically
+    --use-branch-tags  Include only the tags that belong to the current branch
+    --no-exec          Disables the external command execution
+-x, --context          Prints changelog context as JSON
 ```
 
 ## Options

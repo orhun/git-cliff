@@ -115,6 +115,8 @@ pub struct GitConfig {
 	/// Regex to count matched tags.
 	#[serde(with = "serde_regex", default)]
 	pub count_tags:               Option<Regex>,
+	/// Include only the tags that belong to the current branch.
+	pub use_branch_tags:          Option<bool>,
 	/// Whether to sort tags topologically.
 	pub topo_order:               Option<bool>,
 	/// Sorting of the commits inside sections.

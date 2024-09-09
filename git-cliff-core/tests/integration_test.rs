@@ -119,6 +119,7 @@ fn generate_changelog() -> Result<()> {
 		skip_tags:                None,
 		ignore_tags:              None,
 		count_tags:               None,
+		use_branch_tags:          None,
 		topo_order:               None,
 		sort_commits:             None,
 		link_parsers:             Some(vec![
