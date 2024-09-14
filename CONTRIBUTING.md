@@ -23,21 +23,33 @@ git clone https://github.com/{username}/git-cliff && cd git-cliff
 cargo build
 ```
 
-4. Start committing your changes. Follow the [conventional commit specification](https://www.conventionalcommits.org/) while doing so.
-
-5. Add your tests (if you haven't already) or update the existing tests according to the changes. And check if the tests are passed.
+4. Make sure your initial state is successfully prepared by running the tests.
 
 ```sh
 cargo test
 ```
 
-6. If needed, update the snapshot tests (i.e. tests using `expect_test`):
+If you want to execute tests successfully, you need tags in your repository. The easiest way to do this is to fetch tags from the [git-cliff](https://github.com/orhun/git-cliff) repository.
+
+```sh
+git fetch --tags https://github.com/orhun/git-cliff
+```
+
+5. Start committing your changes. Follow the [conventional commit specification](https://www.conventionalcommits.org/) while doing so.
+
+6. Add your tests (if you haven't already) or update the existing tests according to the changes. And check if the tests are passed.
+
+```sh
+cargo test
+```
+
+7. If needed, update the snapshot tests (i.e. tests using `expect_test`):
 
 ```sh
 env UPDATE_EXPECT=1 cargo test
 ```
 
-7. Make sure [rustfmt](https://github.com/rust-lang/rustfmt) and [clippy](https://github.com/rust-lang/rust-clippy) don't complain about your changes.
+8. Make sure [rustfmt](https://github.com/rust-lang/rustfmt) and [clippy](https://github.com/rust-lang/rust-clippy) don't complain about your changes.
 
 We use the `nightly` channel for `rustfmt` so please set the appropriate settings for your editor/IDE for that.
 
