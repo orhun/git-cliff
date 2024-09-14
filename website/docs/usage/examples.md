@@ -15,7 +15,7 @@ git cliff
 Set a tag for the unreleased changes:
 
 ```bash
-# it doesn't have to be an existing tag
+# generates a changelog for the tag '1.0.0' without creating the tag itself
 git cliff --tag 1.0.0
 ```
 
