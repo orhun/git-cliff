@@ -464,6 +464,13 @@ pub fn run(mut args: Opt) -> Result<()> {
 			args.topo_order = topo_order;
 		}
 	}
+
+	if !args.use_branch_tags {
+		if let Some(use_branch_tags) = config.git.use_branch_tags {
+			args.use_branch_tags = use_branch_tags;
+		}
+	}
+
 	if args.github_token.is_some() {
 		config.remote.github.token.clone_from(&args.github_token);
 	}
