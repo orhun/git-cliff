@@ -144,7 +144,7 @@ impl<'a> Changelog<'a> {
 
 	/// Processes the releases and filters them out based on the configuration.
 	fn process_releases(&mut self) {
-		debug!("Processing the releases...");
+		debug!("Processing {} release(s)...", self.releases.len());
 		let skip_regex = self.config.git.skip_tags.as_ref();
 		let mut skipped_tags = Vec::new();
 		self.releases = self
@@ -157,7 +157,7 @@ impl<'a> Changelog<'a> {
 					if let Some(version) = release.version.as_ref().cloned() {
 						trace!("Release doesn't have any commits: {}", version);
 					}
-					false
+					self.config.changelog.always_render.unwrap_or(false)
 				} else if let Some(version) = &release.version {
 					!skip_regex
 						.map(|r| {

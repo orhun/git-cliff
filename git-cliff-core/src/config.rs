@@ -77,6 +77,8 @@ pub struct ChangelogConfig {
 	pub footer:         Option<String>,
 	/// Trim the template.
 	pub trim:           Option<bool>,
+	/// Always render the body template.
+	pub always_render:  Option<bool>,
 	/// Changelog postprocessors.
 	pub postprocessors: Option<Vec<TextProcessor>>,
 }

@@ -50,6 +50,10 @@ If set to `true`, leading and trailing whitespace are removed from the [`body`](
 
 It is useful for adding indentation to the template for readability, as shown [in the example](#changelog).
 
+### always_render
+
+If set to `true`, the changelog [body](#body) will be rendered even if there are no releases to process.
+
 ### postprocessors
 
 An array of commit postprocessors for manipulating the changelog before outputting.
