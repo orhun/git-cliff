@@ -58,15 +58,7 @@ impl<'a> Changelog<'a> {
 				Some(header) => Some(Template::new(header.to_string(), trim)?),
 				None => None,
 			},
-			body_template: Template::new(
-				config
-					.changelog
-					.body
-					.as_deref()
-					.unwrap_or_default()
-					.to_string(),
-				trim,
-			)?,
+			body_template: get_body_template(config, trim)?,
 			footer_template: match &config.changelog.footer {
 				Some(footer) => Some(Template::new(footer.to_string(), trim)?),
 				None => None,
@@ -610,6 +602,29 @@ impl<'a> Changelog<'a> {
 		writeln!(out, "{output}")?;
 		Ok(())
 	}
+}
+
+fn get_body_template(config: &Config, trim: bool) -> Result<Template> {
+	let template_str = config
+		.changelog
+		.body
+		.as_deref()
+		.unwrap_or_default()
+		.to_string();
+	let template = Template::new(template_str, trim)?;
+	let deprecated_vars = [
+		"commit.github",
+		"commit.gitea",
+		"commit.gitlab",
+		"commit.bitbucket",
+	];
+	if template.contains_variable(&deprecated_vars) {
+		warn!(
+			"Variables {deprecated_vars:?} are deprecated and will be removed in \
+			 the future. Use `commit.remote` instead."
+		);
+	}
+	Ok(template)
 }
 
 #[cfg(test)]

@@ -22,7 +22,8 @@ pub const START_FETCHING_MSG: &str = "Retrieving data from GitHub...";
 pub const FINISHED_FETCHING_MSG: &str = "Done fetching GitHub data.";
 
 /// Template variables related to this remote.
-pub(crate) const TEMPLATE_VARIABLES: &[&str] = &["github", "commit.github"];
+pub(crate) const TEMPLATE_VARIABLES: &[&str] =
+	&["github", "commit.github", "commit.remote"];
 
 /// Representation of a single commit.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]

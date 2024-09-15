@@ -1,15 +1,17 @@
 use crate::error::Result;
-#[cfg(feature = "remote")]
-use crate::remote::{
-	RemoteCommit,
-	RemoteContributor,
-	RemotePullRequest,
-	RemoteReleaseMetadata,
-};
 use crate::{
 	commit::Commit,
 	config::Bump,
 	config::BumpType,
+};
+#[cfg(feature = "remote")]
+use crate::{
+	contributor::RemoteContributor,
+	remote::{
+		RemoteCommit,
+		RemotePullRequest,
+		RemoteReleaseMetadata,
+	},
 };
 
 use next_version::{
@@ -179,6 +181,7 @@ impl<'a> Releases<'a> {
 #[cfg(test)]
 mod test {
 	use super::*;
+	use pretty_assertions::assert_eq;
 	#[test]
 	fn bump_version() -> Result<()> {
 		fn build_release<'a>(version: &str, commits: &'a [&str]) -> Release<'a> {
@@ -539,6 +542,7 @@ mod test {
 			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
 			.collect(),
 		)?;
+		#[allow(deprecated)]
 		let expected_commits = vec![
 			Commit {
 				id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
@@ -550,6 +554,13 @@ mod test {
 					pr_labels:     vec![String::from("rust")],
 					is_first_time: false,
 				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      Some(String::from("1")),
+					pr_number:     Some(42),
+					pr_labels:     vec![String::from("rust")],
+					is_first_time: false,
+				}),
 				..Default::default()
 			},
 			Commit {
@@ -562,6 +573,13 @@ mod test {
 					pr_labels:     vec![String::from("rust")],
 					is_first_time: false,
 				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      Some(String::from("2")),
+					pr_number:     Some(66),
+					pr_labels:     vec![String::from("rust")],
+					is_first_time: false,
+				}),
 				..Default::default()
 			},
 			Commit {
@@ -574,6 +592,13 @@ mod test {
 					pr_labels:     vec![String::from("deps")],
 					is_first_time: false,
 				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("nuhro")),
+					pr_title:      Some(String::from("3")),
+					pr_number:     Some(53),
+					pr_labels:     vec![String::from("deps")],
+					is_first_time: false,
+				}),
 				..Default::default()
 			},
 			Commit {
@@ -586,6 +611,13 @@ mod test {
 					pr_labels:     vec![String::from("deps")],
 					is_first_time: false,
 				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("awesome_contributor")),
+					pr_title:      Some(String::from("4")),
+					pr_number:     Some(1000),
+					pr_labels:     vec![String::from("deps")],
+					is_first_time: false,
+				}),
 				..Default::default()
 			},
 			Commit {
@@ -598,6 +630,13 @@ mod test {
 					pr_labels:     vec![String::from("github")],
 					is_first_time: false,
 				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      Some(String::from("5")),
+					pr_number:     Some(999999),
+					pr_labels:     vec![String::from("github")],
+					is_first_time: false,
+				}),
 				..Default::default()
 			},
 			Commit {
@@ -610,6 +649,13 @@ mod test {
 					pr_labels:     vec![],
 					is_first_time: false,
 				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("someone")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				}),
 				..Default::default()
 			},
 		];
@@ -703,6 +749,7 @@ mod test {
 			github: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
+			#[cfg(feature = "gitlab")]
 			gitlab: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
@@ -884,6 +931,7 @@ mod test {
 				labels:            vec![String::from("rust")],
 			})],
 		)?;
+		#[allow(deprecated)]
 		let expected_commits = vec![
 			Commit {
 				id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
@@ -895,6 +943,13 @@ mod test {
 					pr_labels:     vec![String::from("rust")],
 					is_first_time: false,
 				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      Some(String::from("1")),
+					pr_number:     Some(1),
+					pr_labels:     vec![String::from("rust")],
+					is_first_time: false,
+				}),
 				..Default::default()
 			},
 			Commit {
@@ -907,6 +962,13 @@ mod test {
 					pr_labels:     vec![],
 					is_first_time: false,
 				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				}),
 				..Default::default()
 			},
 			Commit {
@@ -919,6 +981,13 @@ mod test {
 					pr_labels:     vec![],
 					is_first_time: false,
 				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("nuhro")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				}),
 				..Default::default()
 			},
 			Commit {
@@ -931,6 +1000,13 @@ mod test {
 					pr_labels:     vec![],
 					is_first_time: false,
 				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("awesome_contributor")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				}),
 				..Default::default()
 			},
 			Commit {
@@ -943,6 +1019,13 @@ mod test {
 					pr_labels:     vec![],
 					is_first_time: false,
 				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				}),
 				..Default::default()
 			},
 			Commit {
@@ -955,6 +1038,13 @@ mod test {
 					pr_labels:     vec![],
 					is_first_time: false,
 				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("someone")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				}),
 				..Default::default()
 			},
 		];
@@ -1053,6 +1143,7 @@ mod test {
 			gitlab: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
+			#[cfg(feature = "gitea")]
 			gitea: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
@@ -1173,6 +1264,7 @@ mod test {
 			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
 			.collect(),
 		)?;
+		#[allow(deprecated)]
 		let expected_commits = vec![
 			Commit {
 				id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
@@ -1184,6 +1276,13 @@ mod test {
 					pr_labels:     vec![String::from("rust")],
 					is_first_time: false,
 				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      Some(String::from("1")),
+					pr_number:     Some(42),
+					pr_labels:     vec![String::from("rust")],
+					is_first_time: false,
+				}),
 				..Default::default()
 			},
 			Commit {
@@ -1196,6 +1295,13 @@ mod test {
 					pr_labels:     vec![String::from("rust")],
 					is_first_time: false,
 				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      Some(String::from("2")),
+					pr_number:     Some(66),
+					pr_labels:     vec![String::from("rust")],
+					is_first_time: false,
+				}),
 				..Default::default()
 			},
 			Commit {
@@ -1208,6 +1314,13 @@ mod test {
 					pr_labels:     vec![String::from("deps")],
 					is_first_time: false,
 				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("nuhro")),
+					pr_title:      Some(String::from("3")),
+					pr_number:     Some(53),
+					pr_labels:     vec![String::from("deps")],
+					is_first_time: false,
+				}),
 				..Default::default()
 			},
 			Commit {
@@ -1220,6 +1333,13 @@ mod test {
 					pr_labels:     vec![String::from("deps")],
 					is_first_time: false,
 				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("awesome_contributor")),
+					pr_title:      Some(String::from("4")),
+					pr_number:     Some(1000),
+					pr_labels:     vec![String::from("deps")],
+					is_first_time: false,
+				}),
 				..Default::default()
 			},
 			Commit {
@@ -1232,6 +1352,13 @@ mod test {
 					pr_labels:     vec![String::from("github")],
 					is_first_time: false,
 				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      Some(String::from("5")),
+					pr_number:     Some(999999),
+					pr_labels:     vec![String::from("github")],
+					is_first_time: false,
+				}),
 				..Default::default()
 			},
 			Commit {
@@ -1244,6 +1371,13 @@ mod test {
 					pr_labels:     vec![],
 					is_first_time: false,
 				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("someone")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				}),
 				..Default::default()
 			},
 		];

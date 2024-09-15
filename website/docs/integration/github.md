@@ -108,7 +108,7 @@ For each commit, GitHub related values are added as a nested object (named `gith
 
   "...": "<strip>",
 
-  "github": {
+  "remote": {
     "username": "orhun",
     "pr_title": "some things have changed",
     "pr_number": 420,
@@ -123,8 +123,8 @@ This can be used in the template as follows:
 ```
 {% for commit in commits %}
   * {{ commit.message | split(pat="\n") | first | trim }}\
-    {% if commit.github.username %} by @{{ commit.github.username }}{%- endif %}\
-    {% if commit.github.pr_number %} in #{{ commit.github.pr_number }}{%- endif %}
+    {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif %}\
+    {% if commit.remote.pr_number %} in #{{ commit.remote.pr_number }}{%- endif %}
 {%- endfor -%}
 ```
 

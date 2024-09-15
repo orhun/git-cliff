@@ -140,7 +140,6 @@ impl Template {
 	}
 
 	/// Returns `true` if the template contains one of the given variables.
-	#[cfg(feature = "remote")]
 	pub(crate) fn contains_variable(&self, variables: &[&str]) -> bool {
 		variables
 			.iter()
