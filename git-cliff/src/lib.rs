@@ -414,7 +414,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 		EmbeddedConfig::parse()?
 	};
-	if config.changelog.body.is_none() && !args.context {
+	if config.changelog.body.is_none() && !args.context && !args.bumped_version {
 		warn!("Changelog body is not specified, using the default template.");
 		config.changelog.body = EmbeddedConfig::parse()?.changelog.body;
 	}
