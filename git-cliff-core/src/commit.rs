@@ -275,7 +275,7 @@ impl Commit<'_> {
 		for parser in parsers {
 			let mut regex_checks = Vec::new();
 			if let Some(message_regex) = parser.message.as_ref() {
-				regex_checks.push((message_regex, self.message.to_string()))
+				regex_checks.push((message_regex, self.message.to_string()));
 			}
 			let body = self
 				.conv
@@ -283,7 +283,7 @@ impl Commit<'_> {
 				.and_then(|v| v.body())
 				.map(|v| v.to_string());
 			if let Some(body_regex) = parser.body.as_ref() {
-				regex_checks.push((body_regex, body.clone().unwrap_or_default()))
+				regex_checks.push((body_regex, body.clone().unwrap_or_default()));
 			}
 			if let (Some(footer_regex), Some(footers)) = (
 				parser.footer.as_ref(),
@@ -489,7 +489,7 @@ mod test {
 			),
 		];
 		for (commit, is_conventional) in &test_cases {
-			assert_eq!(is_conventional, &commit.clone().into_conventional().is_ok())
+			assert_eq!(is_conventional, &commit.clone().into_conventional().is_ok());
 		}
 		let commit = test_cases[0].0.clone().parse(
 			&[CommitParser {
@@ -585,7 +585,7 @@ mod test {
 			),
 		];
 		for (commit, is_conventional) in &test_cases {
-			assert_eq!(is_conventional, &commit.clone().into_conventional().is_ok())
+			assert_eq!(is_conventional, &commit.clone().into_conventional().is_ok());
 		}
 		let commit = Commit::new(
 			String::from("123123"),

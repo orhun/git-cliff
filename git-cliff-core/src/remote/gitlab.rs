@@ -301,6 +301,6 @@ mod test {
 		assert_eq!(
 			"https://gitlab.test.com/api/v4/projects/abc%2Fdef%2Fxyz1",
 			GitLabProject::url(1, "https://gitlab.test.com/api/v4", &remote, 0)
-		)
+		);
 	}
 }

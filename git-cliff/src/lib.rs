@@ -103,7 +103,7 @@ fn process_repository<'a>(
 		let count = count_tags.map_or(true, |r| {
 			let count_tag = r.is_match(name);
 			if count_tag {
-				trace!("Counting release: {}", name)
+				trace!("Counting release: {}", name);
 			}
 			count_tag
 		});
@@ -115,7 +115,7 @@ fn process_repository<'a>(
 
 			let ignore_tag = r.is_match(name);
 			if ignore_tag {
-				trace!("Ignoring release: {}", name)
+				trace!("Ignoring release: {}", name);
 			}
 			ignore_tag
 		});
@@ -239,7 +239,7 @@ fn process_repository<'a>(
 		if let Some(commit_id) = commits.first().map(|c| c.id().to_string()) {
 			match tags.get(&commit_id) {
 				Some(tag) => {
-					warn!("There is already a tag ({:?}) for {}", tag, commit_id)
+					warn!("There is already a tag ({:?}) for {}", tag, commit_id);
 				}
 				None => {
 					tags.insert(commit_id, repository.resolve_tag(tag));
@@ -535,7 +535,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 
 	// Process commits and releases for the changelog.
 	if let Some(BumpOption::Specific(bump_type)) = args.bump {
-		config.bump.bump_type = Some(bump_type)
+		config.bump.bump_type = Some(bump_type);
 	}
 
 	// Generate changelog from context.
@@ -575,7 +575,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 						sha: Some(sha1.to_string()),
 						skip: Some(true),
 						..Default::default()
-					})
+					});
 				}
 			}
 

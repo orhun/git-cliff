@@ -36,7 +36,7 @@ impl Template {
 				.lines()
 				.map(|v| v.trim())
 				.collect::<Vec<&str>>()
-				.join("\n")
+				.join("\n");
 		}
 		let mut tera = Tera::default();
 		if let Err(e) = tera.add_raw_template("template", &template) {
