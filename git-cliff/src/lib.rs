@@ -239,7 +239,7 @@ fn process_repository<'a>(
 		if let Some(commit_id) = commits.first().map(|c| c.id().to_string()) {
 			match tags.get(&commit_id) {
 				Some(tag) => {
-					warn!("There is already a tag ({:?}) for {}", tag, commit_id);
+					warn!("There is already a tag ({}) for {}", tag.name, commit_id);
 				}
 				None => {
 					tags.insert(commit_id, repository.resolve_tag(tag));
@@ -302,13 +302,6 @@ fn process_repository<'a>(
 			.extend(custom_commits.iter().cloned().map(Commit::from));
 	}
 
-	// Set custom message for the latest release.
-	if let Some(message) = &args.with_tag_message {
-		if let Some(latest_release) = releases.iter_mut().last() {
-			latest_release.message = Some(message.to_owned());
-		}
-	}
-
 	// Set the previous release if the first release does not have one set.
 	if releases[0]
 		.previous
@@ -340,6 +333,17 @@ fn process_repository<'a>(
 				..Default::default()
 			};
 			releases[0].previous = Some(Box::new(previous_release));
+		}
+	}
+
+	// Set custom message for the latest release.
+	if let Some(message) = &args.with_tag_message {
+		if let Some(latest_release) = releases
+			.iter_mut()
+			.filter(|release| !release.commits.is_empty())
+			.last()
+		{
+			latest_release.message = Some(message.to_owned());
 		}
 	}
 
