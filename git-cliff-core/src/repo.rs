@@ -110,7 +110,7 @@ impl Repository {
 	/// directory.
 	fn normalize_pattern(pattern: Pattern) -> Pattern {
 		let star_added = match pattern.as_str().chars().last() {
-			Some('/') | Some('\\') => Pattern::new(&format!("{pattern}**"))
+			Some('/' | '\\') => Pattern::new(&format!("{pattern}**"))
 				.expect("failed to add '**' to the end of glob"),
 			_ => pattern,
 		};
