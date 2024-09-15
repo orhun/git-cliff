@@ -4,6 +4,7 @@ use crate::error::{
 	Result,
 };
 use rust_embed::RustEmbed;
+use std::path::Path;
 use std::str;
 
 /// Default configuration file embedder/extractor.
@@ -44,7 +45,10 @@ pub struct BuiltinConfig;
 impl BuiltinConfig {
 	/// Extracts the embedded content.
 	pub fn get_config(mut name: String) -> Result<String> {
-		if !name.ends_with(".toml") {
+		if !Path::new(&name)
+			.extension()
+			.map_or(false, |ext| ext.eq_ignore_ascii_case("toml"))
+		{
 			name = format!("{name}.toml");
 		}
 		let contents = match Self::get(&name) {
