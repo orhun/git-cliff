@@ -467,6 +467,7 @@ impl<'a> Changelog<'a> {
 			} else {
 				(vec![], vec![])
 			};
+		#[cfg(feature = "remote")]
 		for release in self.releases.iter_mut() {
 			#[cfg(feature = "github")]
 			release.update_github_metadata(
