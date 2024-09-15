@@ -261,7 +261,7 @@ fn generate_changelog() -> Result<()> {
 	];
 
 	let out = &mut String::new();
-	let template = Template::new(changelog_config.body.unwrap(), false)?;
+	let template = Template::new("test", changelog_config.body.unwrap(), false)?;
 
 	writeln!(out, "{}", changelog_config.header.unwrap()).unwrap();
 	for release in releases {

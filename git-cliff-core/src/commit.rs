@@ -345,9 +345,9 @@ impl Commit<'_> {
 						}
 						value
 					};
-					self.group = parser.group.as_ref().cloned().map(regex_replace);
-					self.scope = parser.scope.as_ref().cloned().map(regex_replace);
-					self.default_scope = parser.default_scope.as_ref().cloned();
+					self.group = parser.group.clone().map(regex_replace);
+					self.scope = parser.scope.clone().map(regex_replace);
+					self.default_scope = parser.default_scope.clone();
 					return Ok(self);
 				}
 			}

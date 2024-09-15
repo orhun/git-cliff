@@ -55,12 +55,16 @@ impl<'a> Changelog<'a> {
 		Ok(Self {
 			releases,
 			header_template: match &config.changelog.header {
-				Some(header) => Some(Template::new(header.to_string(), trim)?),
+				Some(header) => {
+					Some(Template::new("header", header.to_string(), trim)?)
+				}
 				None => None,
 			},
 			body_template: get_body_template(config, trim)?,
 			footer_template: match &config.changelog.footer {
-				Some(footer) => Some(Template::new(footer.to_string(), trim)?),
+				Some(footer) => {
+					Some(Template::new("footer", footer.to_string(), trim)?)
+				}
 				None => None,
 			},
 			config,
@@ -154,7 +158,7 @@ impl<'a> Changelog<'a> {
 			.rev()
 			.filter(|release| {
 				if release.commits.is_empty() {
-					if let Some(version) = release.version.as_ref().cloned() {
+					if let Some(version) = release.version.clone() {
 						trace!("Release doesn't have any commits: {}", version);
 					}
 					false
@@ -612,7 +616,7 @@ fn get_body_template(config: &Config, trim: bool) -> Result<Template> {
 		.as_deref()
 		.unwrap_or_default()
 		.to_string();
-	let template = Template::new(template_str, trim)?;
+	let template = Template::new("body", template_str, trim)?;
 	let deprecated_vars = [
 		"commit.github",
 		"commit.gitea",
