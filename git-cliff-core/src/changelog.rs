@@ -172,7 +172,7 @@ impl<'a> Changelog<'a> {
 							let skip_tag = r.is_match(version);
 							if skip_tag {
 								skipped_tags.push(version.clone());
-								trace!("Skipping release: {}", version)
+								trace!("Skipping release: {}", version);
 							}
 							skip_tag
 						})
@@ -1082,7 +1082,7 @@ mod test {
 
 		if let Some(parsers) = config.git.commit_parsers.as_mut() {
 			for parser in parsers.iter_mut().filter(|p| p.footer.is_some()) {
-				parser.skip = Some(true)
+				parser.skip = Some(true);
 			}
 		}
 

@@ -449,7 +449,7 @@ mod tests {
 
 	#[test]
 	fn verify_cli() {
-		Opt::command().debug_assert()
+		Opt::command().debug_assert();
 	}
 
 	#[test]
