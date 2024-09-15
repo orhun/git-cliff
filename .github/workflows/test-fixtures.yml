@@ -94,7 +94,7 @@ jobs:
           - fixtures-name: test-from-context
             command: --from-context context.json
           - fixtures-name: test-always-render
-            command: --unreleaesd
+            command: --unreleased
 
     steps:
       - name: Checkout
