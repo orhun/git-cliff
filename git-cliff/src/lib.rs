@@ -261,8 +261,9 @@ fn process_repository<'a>(
 		if let Some(tag) = tags.get(&commit_id) {
 			release.version = Some(tag.name.to_string());
 			release.message = tag.message.clone();
-			release.commit_id = Some(commit_id);
-			release.timestamp = if args.tag.as_deref() == Some(tag.name.as_str()) {
+			release.timestamp = if args.tag.as_deref() == Some(tag.name.as_str()) &&
+				tags.get(&commit_id).is_none()
+			{
 				SystemTime::now()
 					.duration_since(UNIX_EPOCH)?
 					.as_secs()
@@ -270,6 +271,7 @@ fn process_repository<'a>(
 			} else {
 				git_commit.time().seconds()
 			};
+			release.commit_id = Some(commit_id);
 			if first_processed_tag.is_none() {
 				first_processed_tag = Some(tag);
 			}
