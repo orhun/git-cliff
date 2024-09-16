@@ -63,7 +63,7 @@ version = "2.5.0" # managed by release.sh
 path = "../git-cliff-core"
 
 [dev-dependencies]
-pretty_assertions = "1.4.0"
+pretty_assertions = "1.4.1"
 
 # metadata for cargo-binstall to get the right artifacts
 [package.metadata.binstall]
