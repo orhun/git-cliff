@@ -191,7 +191,7 @@ mod test {
 				extra: None,
 				commits: commits
 					.iter()
-					.map(|v| Commit::from(v.to_string()))
+					.map(|&v| Commit::from(v.to_string()))
 					.collect(),
 				commit_id: None,
 				timestamp: 0,

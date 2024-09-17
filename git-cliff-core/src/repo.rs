@@ -427,7 +427,7 @@ impl Repository {
 					})?
 					.rev()
 					.collect();
-				if let (Some(owner), Some(repo)) =
+				if let (Some(&owner), Some(&repo)) =
 					(segments.get(1), segments.first())
 				{
 					return Ok(Remote {

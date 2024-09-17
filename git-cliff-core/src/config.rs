@@ -327,8 +327,11 @@ impl TextProcessor {
 			*rendered = self.pattern.replace_all(rendered, text).to_string();
 		} else if let Some(command) = &self.replace_command {
 			if self.pattern.is_match(rendered) {
-				*rendered =
-					command::run(command, Some(rendered.to_string()), command_envs)?;
+				*rendered = command::run(
+					command,
+					Some((*rendered).to_string()),
+					command_envs,
+				)?;
 			}
 		}
 		Ok(())
