@@ -163,16 +163,14 @@ impl<'a> Changelog<'a> {
 					}
 					false
 				} else if let Some(version) = &release.version {
-					!skip_regex
-						.map(|r| {
-							let skip_tag = r.is_match(version);
-							if skip_tag {
-								skipped_tags.push(version.clone());
-								trace!("Skipping release: {}", version);
-							}
-							skip_tag
-						})
-						.unwrap_or_default()
+					!skip_regex.is_some_and(|r| {
+						let skip_tag = r.is_match(version);
+						if skip_tag {
+							skipped_tags.push(version.clone());
+							trace!("Skipping release: {}", version);
+						}
+						skip_tag
+					})
 				} else {
 					true
 				}
