@@ -157,7 +157,13 @@ impl<'a> Changelog<'a> {
 					if let Some(version) = release.version.as_ref().cloned() {
 						trace!("Release doesn't have any commits: {}", version);
 					}
-					self.config.changelog.always_render.unwrap_or(false)
+					let always_render = match &release.previous {
+						Some(prev_release) if prev_release.commits.is_empty() => {
+							self.config.changelog.always_render.unwrap_or(false)
+						}
+						_ => false,
+					};
+					always_render
 				} else if let Some(version) = &release.version {
 					!skip_regex
 						.map(|r| {

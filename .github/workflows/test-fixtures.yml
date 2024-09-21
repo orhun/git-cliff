@@ -93,8 +93,10 @@ jobs:
             command: --bump --unreleased --with-tag-message "Some text"
           - fixtures-name: test-from-context
             command: --from-context context.json
-          - fixtures-name: test-always-render
+          - fixtures-name: test-always-render-unreleased
             command: --unreleased
+          - fixtures-name: test-always-render
+            command: --unreleased --tag v0.2.0
 
     steps:
       - name: Checkout

@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 
-## [0.2.0] - 2024-09-21
+## [unreleased]
 
 
 No significant changes.
