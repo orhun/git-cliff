@@ -157,13 +157,13 @@ impl<'a> Changelog<'a> {
 					if let Some(version) = release.version.as_ref().cloned() {
 						trace!("Release doesn't have any commits: {}", version);
 					}
-					let always_render = match &release.previous {
+					let render_always = match &release.previous {
 						Some(prev_release) if prev_release.commits.is_empty() => {
-							self.config.changelog.always_render.unwrap_or(false)
+							self.config.changelog.render_always.unwrap_or(false)
 						}
 						_ => false,
 					};
-					always_render
+					render_always
 				} else if let Some(version) = &release.version {
 					!skip_regex
 						.map(|r| {
@@ -674,7 +674,7 @@ mod test {
 					replace:         Some(String::from("exciting")),
 					replace_command: None,
 				}]),
-				always_render:  None,
+				render_always:  None,
 			},
 			git:       GitConfig {
 				conventional_commits:     Some(true),

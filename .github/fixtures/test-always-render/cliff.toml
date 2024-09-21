@@ -30,4 +30,4 @@ footer = """
 # remove the leading and trailing whitespace from the templates
 trim = true
 # render body even when there are no releases to process
-always_render = true
+render_always = true
