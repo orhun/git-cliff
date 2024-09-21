@@ -235,11 +235,13 @@ fn process_repository<'a>(
 	}
 
 	// Update tags.
+	let mut tag_timestamp = None;
 	if let Some(ref tag) = args.tag {
 		if let Some(commit_id) = commits.first().map(|c| c.id().to_string()) {
 			match tags.get(&commit_id) {
 				Some(tag) => {
 					warn!("There is already a tag ({:?}) for {}", tag, commit_id);
+					tag_timestamp = Some(commits[0].time().seconds());
 				}
 				None => {
 					tags.insert(commit_id, repository.resolve_tag(tag));
@@ -261,13 +263,14 @@ fn process_repository<'a>(
 		if let Some(tag) = tags.get(&commit_id) {
 			release.version = Some(tag.name.to_string());
 			release.message = tag.message.clone();
-			release.timestamp = if args.tag.as_deref() == Some(tag.name.as_str()) &&
-				tags.get(&commit_id).is_none()
-			{
-				SystemTime::now()
-					.duration_since(UNIX_EPOCH)?
-					.as_secs()
-					.try_into()?
+			release.timestamp = if args.tag.as_deref() == Some(tag.name.as_str()) {
+				match tag_timestamp {
+					Some(timestamp) => timestamp,
+					None => SystemTime::now()
+						.duration_since(UNIX_EPOCH)?
+						.as_secs()
+						.try_into()?,
+				}
 			} else {
 				git_commit.time().seconds()
 			};
