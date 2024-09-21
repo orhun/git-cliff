@@ -42,7 +42,7 @@ impl Template {
 				.join("\n");
 		}
 		let mut tera = Tera::default();
-		if let Err(e) = tera.add_raw_template(&name, &content) {
+		if let Err(e) = tera.add_raw_template(name, &content) {
 			return if let Some(error_source) = e.source() {
 				Err(Error::TemplateParseError(error_source.to_string()))
 			} else {

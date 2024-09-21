@@ -240,7 +240,7 @@ fn process_repository<'a>(
 		if let Some(commit_id) = commits.first().map(|c| c.id().to_string()) {
 			match tags.get(&commit_id) {
 				Some(tag) => {
-					warn!("There is already a tag ({:?}) for {}", tag, commit_id);
+					warn!("There is already a tag ({}) for {}", tag.name, commit_id);
 					tag_timestamp = Some(commits[0].time().seconds());
 				}
 				None => {
@@ -307,13 +307,6 @@ fn process_repository<'a>(
 			.extend(custom_commits.iter().cloned().map(Commit::from));
 	}
 
-	// Set custom message for the latest release.
-	if let Some(message) = &args.with_tag_message {
-		if let Some(latest_release) = releases.iter_mut().last() {
-			latest_release.message = Some(message.to_owned());
-		}
-	}
-
 	// Set the previous release if the first release does not have one set.
 	if releases[0]
 		.previous
@@ -345,6 +338,17 @@ fn process_repository<'a>(
 				..Default::default()
 			};
 			releases[0].previous = Some(Box::new(previous_release));
+		}
+	}
+
+	// Set custom message for the latest release.
+	if let Some(message) = &args.with_tag_message {
+		if let Some(latest_release) = releases
+			.iter_mut()
+			.filter(|release| !release.commits.is_empty())
+			.last()
+		{
+			latest_release.message = Some(message.to_owned());
 		}
 	}
 
@@ -419,12 +423,13 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 		EmbeddedConfig::parse()?
 	};
-	if config.changelog.body.is_none() && !args.context {
+	if config.changelog.body.is_none() && !args.context && !args.bumped_version {
 		warn!("Changelog body is not specified, using the default template.");
 		config.changelog.body = EmbeddedConfig::parse()?.changelog.body;
 	}
 
 	// Update the configuration based on command line arguments and vice versa.
+	let output = args.output.clone().or(config.changelog.output.clone());
 	match args.strip {
 		Some(Strip::Header) => {
 			config.changelog.header = None;
@@ -446,9 +451,9 @@ pub fn run(mut args: Opt) -> Result<()> {
 			)));
 		}
 	}
-	if args.output.is_some() &&
+	if output.is_some() &&
 		args.prepend.is_some() &&
-		args.output.as_ref() == args.prepend.as_ref()
+		output.as_ref() == args.prepend.as_ref()
 	{
 		return Err(Error::ArgumentError(String::from(
 			"'-o' and '-p' can only be used together if they point to different \
@@ -596,7 +601,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 	};
 
 	// Print the result.
-	let mut out: Box<dyn io::Write> = if let Some(path) = &args.output {
+	let mut out: Box<dyn io::Write> = if let Some(path) = &output {
 		if path == Path::new("-") {
 			Box::new(io::stdout())
 		} else {
@@ -632,7 +637,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		let mut out = io::BufWriter::new(File::create(path)?);
 		changelog.prepend(changelog_before, &mut out)?;
 	}
-	if args.output.is_some() || args.prepend.is_none() {
+	if output.is_some() || args.prepend.is_none() {
 		changelog.generate(&mut out)?;
 	}
 

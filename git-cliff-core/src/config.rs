@@ -79,6 +79,8 @@ pub struct ChangelogConfig {
 	pub trim:           Option<bool>,
 	/// Changelog postprocessors.
 	pub postprocessors: Option<Vec<TextProcessor>>,
+	/// Output file path.
+	pub output:         Option<PathBuf>,
 }
 
 /// Git configuration
@@ -351,7 +353,7 @@ impl Config {
 	/// Reads the config file contents from project manifest (e.g. Cargo.toml,
 	/// pyproject.toml)
 	pub fn read_from_manifest() -> Result<Option<String>> {
-		for info in (*MANIFEST_INFO).iter() {
+		for info in &(*MANIFEST_INFO) {
 			if info.path.exists() {
 				let contents = fs::read_to_string(&info.path)?;
 				if info.regex.is_match(&contents) {

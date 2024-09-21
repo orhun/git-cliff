@@ -13,7 +13,11 @@ export function optionsToStringArgs(options: Options): string[] {
   for (const [key, value] of Object.entries(options)) {
     const hyphenCaseKey = key.replace(/([A-Z])/g, "-$1").toLowerCase();
 
-    if (value === true) {
+    if (Array.isArray(value)) {
+      for (const arrValue of value) {
+        args.push(`--${hyphenCaseKey}`, arrValue);
+      }
+    } else if (value === true) {
       args.push(`--${hyphenCaseKey}`);
     } else if (value === false || value === null) {
       continue;

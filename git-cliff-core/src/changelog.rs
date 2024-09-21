@@ -158,21 +158,19 @@ impl<'a> Changelog<'a> {
 			.rev()
 			.filter(|release| {
 				if release.commits.is_empty() {
-					if let Some(version) = release.version.as_ref().cloned() {
+					if let Some(version) = release.version.clone() {
 						trace!("Release doesn't have any commits: {}", version);
 					}
 					false
 				} else if let Some(version) = &release.version {
-					!skip_regex
-						.map(|r| {
-							let skip_tag = r.is_match(version);
-							if skip_tag {
-								skipped_tags.push(version.clone());
-								trace!("Skipping release: {}", version);
-							}
-							skip_tag
-						})
-						.unwrap_or_default()
+					!skip_regex.is_some_and(|r| {
+						let skip_tag = r.is_match(version);
+						if skip_tag {
+							skipped_tags.push(version.clone());
+							trace!("Skipping release: {}", version);
+						}
+						skip_tag
+					})
 				} else {
 					true
 				}
@@ -472,7 +470,7 @@ impl<'a> Changelog<'a> {
 				(vec![], vec![])
 			};
 		#[cfg(feature = "remote")]
-		for release in self.releases.iter_mut() {
+		for release in &mut self.releases {
 			#[cfg(feature = "github")]
 			release.update_github_metadata(
 				github_commits.clone(),
@@ -672,6 +670,7 @@ mod test {
 					replace:         Some(String::from("exciting")),
 					replace_command: None,
 				}]),
+				output:         None,
 			},
 			git:       GitConfig {
 				conventional_commits:     Some(true),
