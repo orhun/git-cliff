@@ -22,6 +22,9 @@ use tera::{
 /// Wrapper for [`Tera`].
 #[derive(Debug)]
 pub struct Template {
+	/// Template name.
+	name:          String,
+	/// Internal Tera instance.
 	tera:          Tera,
 	/// Template variables.
 	#[cfg_attr(not(feature = "github"), allow(dead_code))]
@@ -30,16 +33,16 @@ pub struct Template {
 
 impl Template {
 	/// Constructs a new instance.
-	pub fn new(mut template: String, trim: bool) -> Result<Self> {
+	pub fn new(name: &str, mut content: String, trim: bool) -> Result<Self> {
 		if trim {
-			template = template
+			content = content
 				.lines()
 				.map(|v| v.trim())
 				.collect::<Vec<&str>>()
 				.join("\n");
 		}
 		let mut tera = Tera::default();
-		if let Err(e) = tera.add_raw_template("template", &template) {
+		if let Err(e) = tera.add_raw_template(name, &content) {
 			return if let Some(error_source) = e.source() {
 				Err(Error::TemplateParseError(error_source.to_string()))
 			} else {
@@ -48,7 +51,8 @@ impl Template {
 		}
 		tera.register_filter("upper_first", Self::upper_first_filter);
 		Ok(Self {
-			variables: Self::get_template_variables(&tera)?,
+			name: name.to_string(),
+			variables: Self::get_template_variables(name, &tera)?,
 			tera,
 		})
 	}
@@ -129,13 +133,13 @@ impl Template {
 	}
 
 	/// Returns the variable names that are used in the template.
-	fn get_template_variables(tera: &Tera) -> Result<Vec<String>> {
+	fn get_template_variables(name: &str, tera: &Tera) -> Result<Vec<String>> {
 		let mut variables = HashSet::new();
-		let ast = &tera.get_template("template")?.ast;
+		let ast = &tera.get_template(name)?.ast;
 		for node in ast {
 			Self::find_identifiers(node, &mut variables);
 		}
-		trace!("Template variables: {variables:?}");
+		trace!("Template variables for {name}: {variables:?}");
 		Ok(variables.into_iter().collect())
 	}
 
@@ -159,7 +163,7 @@ impl Template {
 				context.insert(key.clone(), &value);
 			}
 		}
-		match self.tera.render("template", &context) {
+		match self.tera.render(&self.name, &context) {
 			Ok(mut v) => {
 				for postprocessor in postprocessors {
 					postprocessor.replace(&mut v, vec![])?;
@@ -242,7 +246,7 @@ mod test {
 		### {{ commit.group }}
 		- {{ commit.message | upper_first }}
 		{% endfor %}"#;
-		let mut template = Template::new(template.to_string(), false)?;
+		let mut template = Template::new("test", template.to_string(), false)?;
 		let release = get_fake_release_data();
 		assert_eq!(
 			"\n\t\t## 1.0 - 2023\n\t\t\n\t\t### feat\n\t\t- Add xyz\n\t\t\n\t\t### \
@@ -281,7 +285,7 @@ mod test {
 		let template = r#"
 		##  {{ version }}
 		"#;
-		let template = Template::new(template.to_string(), true)?;
+		let template = Template::new("test", template.to_string(), true)?;
 		let release = get_fake_release_data();
 		assert_eq!(
 			"\n##  1.0\n",
@@ -300,7 +304,7 @@ mod test {
 		let template =
 			"{% set hello_variable = 'hello' %}{{ hello_variable | upper_first }}";
 		let release = get_fake_release_data();
-		let template = Template::new(template.to_string(), true)?;
+		let template = Template::new("test", template.to_string(), true)?;
 		let r = template.render(
 			&release,
 			Option::<HashMap<&str, String>>::None.as_ref(),

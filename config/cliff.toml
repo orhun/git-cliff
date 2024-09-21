@@ -38,6 +38,10 @@ trim = true
 postprocessors = [
   # { pattern = '<REPO>', replace = "https://github.com/orhun/git-cliff" }, # replace repository URL
 ]
+# render body even when there are no releases to process
+# render_always = true
+# output file path
+# output = "test.md"
 
 [git]
 # parse the commits based on https://www.conventionalcommits.org

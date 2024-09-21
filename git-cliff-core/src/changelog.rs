@@ -55,12 +55,16 @@ impl<'a> Changelog<'a> {
 		Ok(Self {
 			releases,
 			header_template: match &config.changelog.header {
-				Some(header) => Some(Template::new(header.to_string(), trim)?),
+				Some(header) => {
+					Some(Template::new("header", header.to_string(), trim)?)
+				}
 				None => None,
 			},
 			body_template: get_body_template(config, trim)?,
 			footer_template: match &config.changelog.footer {
-				Some(footer) => Some(Template::new(footer.to_string(), trim)?),
+				Some(footer) => {
+					Some(Template::new("footer", footer.to_string(), trim)?)
+				}
 				None => None,
 			},
 			config,
@@ -154,27 +158,24 @@ impl<'a> Changelog<'a> {
 			.rev()
 			.filter(|release| {
 				if release.commits.is_empty() {
-					if let Some(version) = release.version.as_ref().cloned() {
+					if let Some(version) = release.version.clone() {
 						trace!("Release doesn't have any commits: {}", version);
 					}
-					let render_always = match &release.previous {
+					match &release.previous {
 						Some(prev_release) if prev_release.commits.is_empty() => {
 							self.config.changelog.render_always.unwrap_or(false)
 						}
 						_ => false,
-					};
-					render_always
+					}
 				} else if let Some(version) = &release.version {
-					!skip_regex
-						.map(|r| {
-							let skip_tag = r.is_match(version);
-							if skip_tag {
-								skipped_tags.push(version.clone());
-								trace!("Skipping release: {}", version);
-							}
-							skip_tag
-						})
-						.unwrap_or_default()
+					!skip_regex.is_some_and(|r| {
+						let skip_tag = r.is_match(version);
+						if skip_tag {
+							skipped_tags.push(version.clone());
+							trace!("Skipping release: {}", version);
+						}
+						skip_tag
+					})
 				} else {
 					true
 				}
@@ -474,7 +475,7 @@ impl<'a> Changelog<'a> {
 				(vec![], vec![])
 			};
 		#[cfg(feature = "remote")]
-		for release in self.releases.iter_mut() {
+		for release in &mut self.releases {
 			#[cfg(feature = "github")]
 			release.update_github_metadata(
 				github_commits.clone(),
@@ -618,7 +619,7 @@ fn get_body_template(config: &Config, trim: bool) -> Result<Template> {
 		.as_deref()
 		.unwrap_or_default()
 		.to_string();
-	let template = Template::new(template_str, trim)?;
+	let template = Template::new("body", template_str, trim)?;
 	let deprecated_vars = [
 		"commit.github",
 		"commit.gitea",
@@ -675,6 +676,7 @@ mod test {
 					replace_command: None,
 				}]),
 				render_always:  None,
+				output:         None,
 			},
 			git:       GitConfig {
 				conventional_commits:     Some(true),

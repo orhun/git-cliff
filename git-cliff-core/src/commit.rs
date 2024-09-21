@@ -172,7 +172,7 @@ impl<'a> From<&GitCommit<'a>> for Commit<'a> {
 	fn from(commit: &GitCommit<'a>) -> Self {
 		Commit {
 			id: commit.id().to_string(),
-			message: commit.message().unwrap_or_default().to_string(),
+			message: commit.message().unwrap_or_default().trim_end().to_string(),
 			author: commit.author().into(),
 			committer: commit.committer().into(),
 			merge_commit: commit.parent_count() > 1,
@@ -347,11 +347,9 @@ impl Commit<'_> {
 							}
 							value
 						};
-						self.group =
-							parser.group.as_ref().cloned().map(regex_replace);
-						self.scope =
-							parser.scope.as_ref().cloned().map(regex_replace);
-						self.default_scope = parser.default_scope.as_ref().cloned();
+						self.group = parser.group.clone().map(regex_replace);
+						self.scope = parser.scope.clone().map(regex_replace);
+						self.default_scope = parser.default_scope.clone();
 						return Ok(self);
 					}
 				}
