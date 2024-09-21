@@ -148,7 +148,7 @@ impl<'a> Changelog<'a> {
 
 	/// Processes the releases and filters them out based on the configuration.
 	fn process_releases(&mut self) {
-		debug!("Processing the releases...");
+		debug!("Processing {} release(s)...", self.releases.len());
 		let skip_regex = self.config.git.skip_tags.as_ref();
 		let mut skipped_tags = Vec::new();
 		self.releases = self
@@ -161,7 +161,12 @@ impl<'a> Changelog<'a> {
 					if let Some(version) = release.version.clone() {
 						trace!("Release doesn't have any commits: {}", version);
 					}
-					false
+					match &release.previous {
+						Some(prev_release) if prev_release.commits.is_empty() => {
+							self.config.changelog.render_always.unwrap_or(false)
+						}
+						_ => false,
+					}
 				} else if let Some(version) = &release.version {
 					!skip_regex.is_some_and(|r| {
 						let skip_tag = r.is_match(version);
@@ -670,6 +675,7 @@ mod test {
 					replace:         Some(String::from("exciting")),
 					replace_command: None,
 				}]),
+				render_always:  None,
 				output:         None,
 			},
 			git:       GitConfig {

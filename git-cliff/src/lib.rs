@@ -235,6 +235,7 @@ fn process_repository<'a>(
 	}
 
 	// Update tags.
+	let mut releases = vec![Release::default()];
 	let mut tag_timestamp = None;
 	if let Some(ref tag) = args.tag {
 		if let Some(commit_id) = commits.first().map(|c| c.id().to_string()) {
@@ -247,11 +248,16 @@ fn process_repository<'a>(
 					tags.insert(commit_id, repository.resolve_tag(tag));
 				}
 			}
+		} else {
+			releases[0].version = Some(tag.to_string());
+			releases[0].timestamp = SystemTime::now()
+				.duration_since(UNIX_EPOCH)?
+				.as_secs()
+				.try_into()?;
 		}
 	}
 
 	// Process releases.
-	let mut releases = vec![Release::default()];
 	let mut previous_release = Release::default();
 	let mut first_processed_tag = None;
 	for git_commit in commits.iter().rev() {
