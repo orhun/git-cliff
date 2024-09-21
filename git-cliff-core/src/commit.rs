@@ -172,7 +172,7 @@ impl<'a> From<&GitCommit<'a>> for Commit<'a> {
 	fn from(commit: &GitCommit<'a>) -> Self {
 		Commit {
 			id: commit.id().to_string(),
-			message: commit.message().unwrap_or_default().to_string(),
+			message: commit.message().unwrap_or_default().trim_end().to_string(),
 			author: commit.author().into(),
 			committer: commit.committer().into(),
 			merge_commit: commit.parent_count() > 1,
