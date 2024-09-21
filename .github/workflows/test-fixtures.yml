@@ -97,6 +97,8 @@ jobs:
             command: --unreleased
           - fixtures-name: test-always-render
             command: --unreleased --tag v0.2.0
+          - fixtures-name: test-unchanged-tag-date
+            command: --tag v0.2.0
 
     steps:
       - name: Checkout
