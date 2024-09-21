@@ -50,12 +50,12 @@ secrecy.workspace = true
 dirs.workspace = true
 lazy_static.workspace = true
 thiserror = "1.0.63"
-serde = { version = "1.0.208", features = ["derive"] }
-serde_json = "1.0.125"
+serde = { version = "1.0.210", features = ["derive"] }
+serde_json = "1.0.128"
 bincode = "2.0.0-rc.3"
 serde_regex = "1.1.0"
 tera = "1.20.0"
-indexmap = { version = "2.4.0", optional = true }
+indexmap = { version = "2.5.0", optional = true }
 toml = "0.8.19"
 lazy-regex = "3.3.0"
 next_version = "0.2.19"
@@ -68,7 +68,7 @@ reqwest = { version = "0.12.7", default-features = false, features = [
 ], optional = true }
 http-cache-reqwest = { version = "0.14.0", optional = true }
 reqwest-middleware = { version = "0.3.3", optional = true }
-tokio = { version = "1.39.3", features = [
+tokio = { version = "1.40.0", features = [
   "rt-multi-thread",
   "macros",
 ], optional = true }
