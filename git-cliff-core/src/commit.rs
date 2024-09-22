@@ -349,7 +349,7 @@ impl Commit<'_> {
 						};
 						self.group = parser.group.clone().map(regex_replace);
 						self.scope = parser.scope.clone().map(regex_replace);
-						self.default_scope = parser.default_scope.clone();
+						self.default_scope.clone_from(&parser.default_scope);
 						return Ok(self);
 					}
 				}
