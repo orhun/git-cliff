@@ -96,7 +96,7 @@ impl<'a> Changelog<'a> {
 
 	/// Processes a single commit and returns/logs the result.
 	fn process_commit(
-		commit: Commit<'a>,
+		commit: &Commit<'a>,
 		git_config: &GitConfig,
 	) -> Option<Commit<'a>> {
 		match commit.process(git_config) {
@@ -122,7 +122,7 @@ impl<'a> Changelog<'a> {
 				.commits
 				.iter()
 				.cloned()
-				.filter_map(|commit| Self::process_commit(commit, &self.config.git))
+				.filter_map(|commit| Self::process_commit(&commit, &self.config.git))
 				.flat_map(|commit| {
 					if self.config.git.split_commits.unwrap_or(false) {
 						commit
@@ -132,7 +132,7 @@ impl<'a> Changelog<'a> {
 								let mut c = commit.clone();
 								c.message = line.to_string();
 								if !c.message.is_empty() {
-									Self::process_commit(c, &self.config.git)
+									Self::process_commit(&c, &self.config.git)
 								} else {
 									None
 								}
