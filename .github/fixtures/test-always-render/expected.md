@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 
-## [0.2.0] - 2024-09-21
+## [0.2.0] - <<DATE>>
 
 
 No significant changes.
