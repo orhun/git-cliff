@@ -1,5 +1,50 @@
 [![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)
 
+## [2.6.0](https://github.com/orhun/git-cliff/compare/v2.5.0..v2.6.0) - 2024-09-22
+
+### ⛰️  Features
+
+- *(changelog)* Support generating changelog for different branches ([#808](https://github.com/orhun/git-cliff/issues/808)) - ([2a581a8](https://github.com/orhun/git-cliff/commit/2a581a82bbdee057eff8051b261edc9a8c7f4491))
+- *(config)* Add changelog.render_always option ([#859](https://github.com/orhun/git-cliff/issues/859)) - ([ad039d5](https://github.com/orhun/git-cliff/commit/ad039d56b66563cc0299035650582a0518e94679))
+- *(config)* Allow configuring output file from config ([#829](https://github.com/orhun/git-cliff/issues/829)) - ([c2db791](https://github.com/orhun/git-cliff/commit/c2db791a6e2891b5eb46f40d43a490fc6923d038))
+- *(core)* Add `remote` to commit and deprecate fields ([#822](https://github.com/orhun/git-cliff/issues/822)) - ([87e2c1d](https://github.com/orhun/git-cliff/commit/87e2c1d0dd251c81796f607699d2c85ee12584ac))
+- *(npm)* Add missing options and document all options with tsdoc comments - ([2eae2f1](https://github.com/orhun/git-cliff/commit/2eae2f1f1f258b6c270e544d12fae1b150fb2610))
+- *(npm)* Add possibility for `skipCommit` to take an array of values - ([a6e3b78](https://github.com/orhun/git-cliff/commit/a6e3b78948a730aae18f156b2fb787b7ff26bb64))
+
+### 🐛 Bug Fixes
+
+- *(args)* Support using use_branch_tags from both config and args ([#848](https://github.com/orhun/git-cliff/issues/848)) - ([35b7fd8](https://github.com/orhun/git-cliff/commit/35b7fd8007e781b65ef6c3112a349bfd8c8fda15))
+- *(bump)* Suppress template warning when `--bumped-version` is used ([#855](https://github.com/orhun/git-cliff/issues/855)) - ([8bebbf9](https://github.com/orhun/git-cliff/commit/8bebbf9f575e6e3f1bc50332e5703fde9dd1b55f))
+- *(changelog)* Do not change the tag date if tag already exists ([#861](https://github.com/orhun/git-cliff/issues/861)) - ([fbb643b](https://github.com/orhun/git-cliff/commit/fbb643b2e1096ac74a6ea9e9881ed4fd8161d3be))
+- *(changelog)* Correctly set the tag message for the latest release ([#854](https://github.com/orhun/git-cliff/issues/854)) - ([e41e8dd](https://github.com/orhun/git-cliff/commit/e41e8dd4a2e5ed12149078492cf6fd6eedebd0fa))
+- *(changelog)* Don't change the context when provided via `--from-context` ([#820](https://github.com/orhun/git-cliff/issues/820)) - ([ff72406](https://github.com/orhun/git-cliff/commit/ff7240633fcb46e6190dfed22150cbf8d3012df5))
+- *(commit)* Trim the trailing newline for git2 commits ([#872](https://github.com/orhun/git-cliff/issues/872)) - ([1cdbbf6](https://github.com/orhun/git-cliff/commit/1cdbbf604c27c8a597f72985b1d15359244e5186))
+- *(core)* Avoid the unnecessary loop when no remote feature is activated - ([1d8a2fe](https://github.com/orhun/git-cliff/commit/1d8a2fe84917d7bc7c0cb26afc559198ad806184))
+- *(template)* Resolve parsing issues with `raw`/`endraw` in Jinja ([#824](https://github.com/orhun/git-cliff/issues/824)) - ([63bf5b7](https://github.com/orhun/git-cliff/commit/63bf5b7438e2660d410ca825c63b1982fd4d43f5))
+
+### 🚜 Refactor
+
+- *(template)* [**breaking**] Add name parameter to the constructor - ([e577113](https://github.com/orhun/git-cliff/commit/e577113bd69147936e391976c8b06cba76764eec))
+
+### 📚 Documentation
+
+- *(args)* Fix copy-paste mistake where gitea mentioned gitlab - ([c41eacb](https://github.com/orhun/git-cliff/commit/c41eacb0b8181a26d95744e26965272cc105f629))
+- *(contributing)* Mention fetching the tags for running tests successfully ([#850](https://github.com/orhun/git-cliff/issues/850)) - ([a82dac3](https://github.com/orhun/git-cliff/commit/a82dac3cb15490f5b4e543d2f404e54a5126395c))
+- *(website)* Add highlights for 2.6.0 ([#873](https://github.com/orhun/git-cliff/issues/873)) - ([050fb55](https://github.com/orhun/git-cliff/commit/050fb55e86fd2f33fccd5760ddd4913602d5a552))
+- *(website)* Clarify comment about tag argument - ([e56cd8d](https://github.com/orhun/git-cliff/commit/e56cd8de17f08461dcff4ff88518872577fb73fb))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(ci)* Check pedantic lints ([#853](https://github.com/orhun/git-cliff/issues/853)) - ([c77420c](https://github.com/orhun/git-cliff/commit/c77420cf5a35e2658125030b6d9aee97a1e1bd57))
+- *(examples)* Improve example templates ([#835](https://github.com/orhun/git-cliff/issues/835)) - ([08e761c](https://github.com/orhun/git-cliff/commit/08e761c20fb98730249aef2047da02a7dfca86ad))
+- *(lib)* Fix typos in code comments - ([81854d2](https://github.com/orhun/git-cliff/commit/81854d2166fc265168effde50fa892265b83efdf))
+- *(npm)* Bump dev dependencies - ([61b86f1](https://github.com/orhun/git-cliff/commit/61b86f162bee28fffb3b3b06f19261d568fbf60b))
+
+## New Contributors ❤️
+
+* @nejcgalof made their first contribution in [#853](https://github.com/orhun/git-cliff/pull/853)
+* @pplmx made their first contribution in [#824](https://github.com/orhun/git-cliff/pull/824)
+
 ## [2.5.0](https://github.com/orhun/git-cliff/compare/v2.4.0..v2.5.0) - 2024-08-24
 
 ### ⛰️  Features
@@ -54,14 +99,12 @@
 
 ## New Contributors ❤️
 
-* @weichweich made their first contribution in [#807](https://github.com/orhun/git-cliff/pull/807)
 * @janbuchar made their first contribution in [#784](https://github.com/orhun/git-cliff/pull/784)
 * @oberrich made their first contribution in [#809](https://github.com/orhun/git-cliff/pull/809)
 * @tisonkun made their first contribution in [#599](https://github.com/orhun/git-cliff/pull/599)
 * @DerTiedemann made their first contribution in [#758](https://github.com/orhun/git-cliff/pull/758)
 * @DaniPopes made their first contribution in [#709](https://github.com/orhun/git-cliff/pull/709)
 * @artrz made their first contribution in [#779](https://github.com/orhun/git-cliff/pull/779)
-* @braineo made their first contribution in [#744](https://github.com/orhun/git-cliff/pull/744)
 * @myl7 made their first contribution in [#776](https://github.com/orhun/git-cliff/pull/776)
 * @pawamoy made their first contribution in [#774](https://github.com/orhun/git-cliff/pull/774)
 * @tonybutt made their first contribution in [#742](https://github.com/orhun/git-cliff/pull/742)
