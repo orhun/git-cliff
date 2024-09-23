@@ -268,7 +268,7 @@ fn process_repository<'a>(
 		release.repository = Some(repository.path.to_string_lossy().into_owned());
 		if let Some(tag) = tags.get(&commit_id) {
 			release.version = Some(tag.name.to_string());
-			release.message = tag.message.clone();
+			release.message.clone_from(&tag.message);
 			release.commit_id = Some(commit_id);
 			release.timestamp = if args.tag.as_deref() == Some(tag.name.as_str()) {
 				match tag_timestamp {
