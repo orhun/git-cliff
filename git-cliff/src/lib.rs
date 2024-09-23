@@ -338,7 +338,7 @@ fn process_repository<'a>(
 				commit_id: Some(commit_id.to_string()),
 				version: Some(tag.name.clone()),
 				timestamp: repository
-					.find_commit(commit_id.to_string())
+					.find_commit(commit_id)
 					.map(|v| v.time().seconds())
 					.unwrap_or_default(),
 				..Default::default()
