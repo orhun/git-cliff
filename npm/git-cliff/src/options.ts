@@ -16,6 +16,8 @@ export type Options = Partial<{
   unreleased: boolean;
   /** Sorts the tags topologically */
   topoOrder: boolean;
+  /** Include only the tags that belong to the current branch */
+  useBranchTags: boolean;
   /** Disables the external command execution */
   noExec: boolean;
   /** Prints changelog context as JSON */

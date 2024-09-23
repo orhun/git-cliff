@@ -80,15 +80,15 @@
     "execa": "^8.0.1"
   },
   "devDependencies": {
-    "@eslint/js": "^9.10.0",
+    "@eslint/js": "^9.11.0",
     "@types/eslint__js": "^8.42.3",
     "@types/node": "^20.16.5",
-    "@typescript-eslint/eslint-plugin": "^8.4.0",
-    "@typescript-eslint/parser": "^8.4.0",
-    "eslint": "^9.10.0",
-    "tsup": "^8.2.4",
-    "typescript": "^5.5.4",
-    "typescript-eslint": "^8.4.0"
+    "@typescript-eslint/eslint-plugin": "^8.6.0",
+    "@typescript-eslint/parser": "^8.6.0",
+    "eslint": "^9.11.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.2",
+    "typescript-eslint": "^8.6.0"
   },
   "optionalDependencies": {
     "git-cliff-darwin-arm64": "2.6.0",
