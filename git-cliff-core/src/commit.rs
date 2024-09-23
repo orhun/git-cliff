@@ -349,7 +349,7 @@ impl Commit<'_> {
 						};
 						self.group = parser.group.clone().map(regex_replace);
 						self.scope = parser.scope.clone().map(regex_replace);
-						self.default_scope = parser.default_scope.clone();
+						self.default_scope.clone_from(&parser.default_scope);
 						return Ok(self);
 					}
 				}
@@ -425,38 +425,36 @@ impl Serialize for Commit<'_> {
 
 		let mut commit = serializer.serialize_struct("Commit", 9)?;
 		commit.serialize_field("id", &self.id)?;
-		match &self.conv {
-			Some(conv) => {
-				commit.serialize_field("message", conv.description())?;
-				commit.serialize_field("body", &conv.body())?;
-				commit.serialize_field("footers", &SerializeFooters(self))?;
-				commit.serialize_field(
-					"group",
-					self.group.as_ref().unwrap_or(&conv.type_().to_string()),
-				)?;
-				commit.serialize_field(
-					"breaking_description",
-					&conv.breaking_description(),
-				)?;
-				commit.serialize_field("breaking", &conv.breaking())?;
-				commit.serialize_field(
-					"scope",
-					&self
-						.scope
-						.as_deref()
-						.or_else(|| conv.scope().map(|v| v.as_str()))
-						.or(self.default_scope.as_deref()),
-				)?;
-			}
-			None => {
-				commit.serialize_field("message", &self.message)?;
-				commit.serialize_field("group", &self.group)?;
-				commit.serialize_field(
-					"scope",
-					&self.scope.as_deref().or(self.default_scope.as_deref()),
-				)?;
-			}
+		if let Some(conv) = &self.conv {
+			commit.serialize_field("message", conv.description())?;
+			commit.serialize_field("body", &conv.body())?;
+			commit.serialize_field("footers", &SerializeFooters(self))?;
+			commit.serialize_field(
+				"group",
+				self.group.as_ref().unwrap_or(&conv.type_().to_string()),
+			)?;
+			commit.serialize_field(
+				"breaking_description",
+				&conv.breaking_description(),
+			)?;
+			commit.serialize_field("breaking", &conv.breaking())?;
+			commit.serialize_field(
+				"scope",
+				&self
+					.scope
+					.as_deref()
+					.or_else(|| conv.scope().map(|v| v.as_str()))
+					.or(self.default_scope.as_deref()),
+			)?;
+		} else {
+			commit.serialize_field("message", &self.message)?;
+			commit.serialize_field("group", &self.group)?;
+			commit.serialize_field(
+				"scope",
+				&self.scope.as_deref().or(self.default_scope.as_deref()),
+			)?;
 		}
+
 		commit.serialize_field("links", &self.links)?;
 		commit.serialize_field("author", &self.author)?;
 		commit.serialize_field("committer", &self.committer)?;
