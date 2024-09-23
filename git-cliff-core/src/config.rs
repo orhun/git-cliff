@@ -260,21 +260,17 @@ impl Bump {
 	///
 	/// This function also logs the returned value.
 	pub fn get_initial_tag(&self) -> String {
-		match self.initial_tag.clone() {
-			Some(tag) => {
-				warn!(
-					"No releases found, using initial tag '{tag}' as the next \
-					 version."
-				);
-				tag
-			}
-			None => {
-				warn!(
-					"No releases found, using {DEFAULT_INITIAL_TAG} as the next \
-					 version."
-				);
-				DEFAULT_INITIAL_TAG.into()
-			}
+		if let Some(tag) = self.initial_tag.clone() {
+			warn!(
+				"No releases found, using initial tag '{tag}' as the next version."
+			);
+			tag
+		} else {
+			warn!(
+				"No releases found, using {DEFAULT_INITIAL_TAG} as the next \
+				 version."
+			);
+			DEFAULT_INITIAL_TAG.into()
 		}
 	}
 }
