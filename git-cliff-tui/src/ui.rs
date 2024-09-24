@@ -163,8 +163,8 @@ fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
 		Block::bordered()
 			.title_top("|Changelog|".yellow().into_centered_line())
 			.title_bottom(
-				if state.markdown.component.is_some() {
-					Line::from(vec![
+				Line::from(if state.markdown.component.is_some() {
+					vec![
 						"|".fg(Color::Rgb(100, 100, 100)),
 						state.configs[state.markdown.config_index]
 							.file
@@ -184,10 +184,20 @@ fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
 						"c".yellow().bold(),
 						"opy".white(),
 						"|".fg(Color::Rgb(100, 100, 100)),
-					])
+					]
+				} else if state.is_generating {
+					vec![
+						"|".fg(Color::Rgb(100, 100, 100)),
+						"> Generating...".white().into(),
+						"|".fg(Color::Rgb(100, 100, 100)),
+					]
 				} else {
-					"|Select config to start|".white().into()
-				}
+					vec![
+						"|".fg(Color::Rgb(100, 100, 100)),
+						"Select config to start".white().into(),
+						"|".fg(Color::Rgb(100, 100, 100)),
+					]
+				})
 				.left_aligned(),
 			)
 			.border_type(BorderType::Rounded)
@@ -207,7 +217,7 @@ fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
 
 	if state.is_generating {
 		let throbber_area = Rect::new(
-			rect.right().saturating_sub(3),
+			rect.left().saturating_add(2),
 			rect.bottom().saturating_sub(1),
 			1,
 			1,
