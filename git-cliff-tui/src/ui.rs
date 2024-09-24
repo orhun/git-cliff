@@ -163,7 +163,13 @@ fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
 		Block::bordered()
 			.title_top("|Changelog|".yellow().into_left_aligned_line())
 			.title_bottom(
-				Line::from(if state.markdown.component.is_some() {
+				Line::from(if state.is_generating {
+					vec![
+						"|".fg(Color::Rgb(100, 100, 100)),
+						"> Generating...".white().into(),
+						"|".fg(Color::Rgb(100, 100, 100)),
+					]
+				} else if state.markdown.component.is_some() {
 					vec![
 						"|".fg(Color::Rgb(100, 100, 100)),
 						state.configs[state.markdown.config_index]
@@ -183,12 +189,6 @@ fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
 						" |".fg(Color::Rgb(100, 100, 100)),
 						"c".yellow().bold(),
 						"opy".white(),
-						"|".fg(Color::Rgb(100, 100, 100)),
-					]
-				} else if state.is_generating {
-					vec![
-						"|".fg(Color::Rgb(100, 100, 100)),
-						"> Generating...".white().into(),
 						"|".fg(Color::Rgb(100, 100, 100)),
 					]
 				} else {
