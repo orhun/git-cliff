@@ -39,7 +39,7 @@ const KEY_BINDINGS: &[(&str, &str)] = &[
 pub fn render(state: &mut State, frame: &mut Frame) {
 	frame.render_widget(
 		Block::new()
-			.title_top(env!("CARGO_PKG_NAME").bold())
+			.title_top(format!("{} ⛰️", env!("CARGO_PKG_NAME")).bold())
 			.title_alignment(Alignment::Center),
 		frame.area(),
 	);
@@ -129,7 +129,7 @@ fn render_list(state: &mut State, frame: &mut Frame, rect: Rect) {
 				Block::bordered()
 					.border_type(BorderType::Rounded)
 					.border_style({
-						let mut style = Style::new().fg(Color::White);
+						let mut style = Style::new().fg(Color::Rgb(100, 100, 100));
 						if config.is_hovered {
 							style = style.yellow()
 						} else if state.selected_config == i + start_offset {
@@ -161,7 +161,7 @@ fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
 	});
 	frame.render_widget(
 		Block::bordered()
-			.title_top("|Changelog|".yellow().into_centered_line())
+			.title_top("|Changelog|".yellow().into_left_aligned_line())
 			.title_bottom(
 				Line::from(if state.markdown.component.is_some() {
 					vec![
