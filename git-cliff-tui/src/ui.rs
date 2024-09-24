@@ -50,8 +50,17 @@ pub fn render(state: &mut State, frame: &mut Frame) {
 	render_key_bindings(frame, rects[1]);
 
 	let rects = Layout::horizontal([
-		Constraint::Percentage(state.is_toggled as u16 * 20),
-		Constraint::Fill(1),
+		Constraint::Min(
+			state.is_toggled as u16 *
+				state
+					.configs
+					.iter()
+					.map(|c| c.file.len() as u16)
+					.map(|c| c + 6)
+					.max()
+					.unwrap_or_default(),
+		),
+		Constraint::Percentage(100),
 	])
 	.split(rects[0]);
 	render_list(state, frame, rects[0]);
