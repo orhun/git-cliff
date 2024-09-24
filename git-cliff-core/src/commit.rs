@@ -355,12 +355,12 @@ impl Commit<'_> {
 				}
 			}
 		}
-		if !filter {
-			Ok(self)
-		} else {
+		if filter {
 			Err(AppError::GroupError(String::from(
 				"Commit does not belong to any group",
 			)))
+		} else {
+			Ok(self)
 		}
 	}
 

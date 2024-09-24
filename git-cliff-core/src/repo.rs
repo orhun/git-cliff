@@ -249,10 +249,10 @@ impl Repository {
 						return 0;
 					}
 					let name = entry.name().expect("failed to get entry name");
-					let entry_path = if dir != "," {
-						format!("{dir}/{name}")
-					} else {
+					let entry_path = if dir == "," {
 						name.to_string()
+					} else {
+						format!("{dir}/{name}")
 					};
 					changed_files.push(entry_path.into());
 					0
