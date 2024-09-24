@@ -90,7 +90,7 @@ impl EventHandler {
 					}
 
 					if last_tick.elapsed() >= tick_rate {
-						sender.send(Event::Tick).expect("failed to send tick event");
+						let _ = sender.send(Event::Tick);
 						last_tick = Instant::now();
 					}
 				}
