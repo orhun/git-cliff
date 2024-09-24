@@ -223,8 +223,7 @@ impl<'a> Changelog<'a> {
 				.contains_variable(github::TEMPLATE_VARIABLES) ||
 			self.footer_template
 				.as_ref()
-				.map(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
-				.unwrap_or(false)
+				.is_some_and(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
 		{
 			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
 			let github_client =
@@ -279,8 +278,7 @@ impl<'a> Changelog<'a> {
 				.contains_variable(gitlab::TEMPLATE_VARIABLES) ||
 			self.footer_template
 				.as_ref()
-				.map(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
-				.unwrap_or(false)
+				.is_some_and(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
 		{
 			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
 			let gitlab_client =
@@ -343,8 +341,7 @@ impl<'a> Changelog<'a> {
 				.contains_variable(gitea::TEMPLATE_VARIABLES) ||
 			self.footer_template
 				.as_ref()
-				.map(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
-				.unwrap_or(false)
+				.is_some_and(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
 		{
 			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
 			let gitea_client =
@@ -394,11 +391,9 @@ impl<'a> Changelog<'a> {
 		if self.config.remote.bitbucket.is_custom ||
 			self.body_template
 				.contains_variable(bitbucket::TEMPLATE_VARIABLES) ||
-			self.footer_template
-				.as_ref()
-				.map(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
-				.unwrap_or(false)
-		{
+			self.footer_template.as_ref().is_some_and(|v| {
+				v.contains_variable(bitbucket::TEMPLATE_VARIABLES)
+			}) {
 			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
 			let bitbucket_client =
 				BitbucketClient::try_from(self.config.remote.bitbucket.clone())?;
