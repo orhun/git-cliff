@@ -40,7 +40,9 @@ fn generate_changelog() -> Result<()> {
 		)),
 		footer:         Some(String::from("eoc - end of changelog")),
 		trim:           None,
+		render_always:  None,
 		postprocessors: None,
+		output:         None,
 	};
 	let git_config = GitConfig {
 		conventional_commits:     Some(true),
@@ -119,6 +121,7 @@ fn generate_changelog() -> Result<()> {
 		skip_tags:                None,
 		ignore_tags:              None,
 		count_tags:               None,
+		use_branch_tags:          None,
 		topo_order:               None,
 		sort_commits:             None,
 		link_parsers:             Some(vec![
@@ -151,6 +154,7 @@ fn generate_changelog() -> Result<()> {
 		Release {
 			version:   Some(String::from("v2.0.0")),
 			message: None,
+            extra: None,
 			commits:   vec![
 
 				Commit::new(
@@ -216,6 +220,7 @@ fn generate_changelog() -> Result<()> {
 		Release {
 			version:   Some(String::from("v1.0.0")),
 			message: None,
+            extra: None,
 			commits:   vec![
 				Commit::new(
 					String::from("0bc123"),
@@ -258,7 +263,7 @@ fn generate_changelog() -> Result<()> {
 	];
 
 	let out = &mut String::new();
-	let template = Template::new(changelog_config.body.unwrap(), false)?;
+	let template = Template::new("test", changelog_config.body.unwrap(), false)?;
 
 	writeln!(out, "{}", changelog_config.header.unwrap()).unwrap();
 	for release in releases {

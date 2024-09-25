@@ -22,7 +22,8 @@ pub const START_FETCHING_MSG: &str = "Retrieving data from Gitea...";
 pub const FINISHED_FETCHING_MSG: &str = "Done fetching Gitea data.";
 
 /// Template variables related to this remote.
-pub(crate) const TEMPLATE_VARIABLES: &[&str] = &["gitea", "commit.gitea"];
+pub(crate) const TEMPLATE_VARIABLES: &[&str] =
+	&["gitea", "commit.gitea", "commit.remote"];
 
 /// Representation of a single commit.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]

@@ -15,6 +15,7 @@ pub mod bitbucket;
 pub mod gitea;
 
 use crate::config::Remote;
+use crate::contributor::RemoteContributor;
 use crate::error::{
 	Error,
 	Result,
@@ -48,10 +49,7 @@ use serde::{
 	Serialize,
 };
 use std::fmt::Debug;
-use std::hash::{
-	Hash,
-	Hasher,
-};
+use std::hash::Hash;
 use std::time::Duration;
 
 /// User agent for interacting with the GitHub API.
@@ -63,7 +61,7 @@ pub(crate) const USER_AGENT: &str =
 /// Request timeout value in seconds.
 pub(crate) const REQUEST_TIMEOUT: u64 = 30;
 
-/// TCP keeplive value in seconds.
+/// TCP keepalive value in seconds.
 pub(crate) const REQUEST_KEEP_ALIVE: u64 = 60;
 
 /// Maximum number of entries to fetch in a single page.
@@ -112,27 +110,6 @@ pub type RemoteMetadata =
 pub struct RemoteReleaseMetadata {
 	/// Contributors.
 	pub contributors: Vec<RemoteContributor>,
-}
-
-/// Representation of a remote contributor.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
-pub struct RemoteContributor {
-	/// Username.
-	pub username:      Option<String>,
-	/// Title of the pull request.
-	pub pr_title:      Option<String>,
-	/// The pull request that the user created.
-	pub pr_number:     Option<i64>,
-	/// Labels of the pull request.
-	pub pr_labels:     Vec<String>,
-	/// Whether if the user contributed for the first time.
-	pub is_first_time: bool,
-}
-
-impl Hash for RemoteContributor {
-	fn hash<H: Hasher>(&self, state: &mut H) {
-		self.username.hash(state);
-	}
 }
 
 /// Creates a HTTP client for the remote.
@@ -316,6 +293,7 @@ macro_rules! update_release_metadata {
 			///   username.
 			/// - Pull requests: needed for generating the contributor list for the
 			///   release.
+			#[allow(deprecated)]
 			pub fn $fn(
 				&mut self,
 				mut commits: Vec<Box<dyn RemoteCommit>>,
@@ -350,6 +328,7 @@ macro_rules! update_release_metadata {
 								is_first_time: false,
 							});
 						}
+						commit.remote = Some(commit.$remote.clone());
 						false
 					} else {
 						true

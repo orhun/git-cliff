@@ -104,7 +104,7 @@ For each commit, Gitea related values are added as a nested object (named `gitea
 
   "...": "<strip>",
 
-  "gitea": {
+  "remote": {
     "username": "orhun",
     "pr_title": "some things have changed",
     "pr_number": 420,
@@ -119,8 +119,8 @@ This can be used in the template as follows:
 ```
 {% for commit in commits %}
   * {{ commit.message | split(pat="\n") | first | trim }}\
-    {% if commit.gitea.username %} by @{{ commit.gitea.username }}{%- endif %}\
-    {% if commit.gitea.pr_number %} in #{{ commit.gitea.pr_number }}{%- endif %}
+    {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif %}\
+    {% if commit.remote.pr_number %} in #{{ commit.remote.pr_number }}{%- endif %}
 {%- endfor -%}
 ```
 

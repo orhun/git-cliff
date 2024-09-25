@@ -20,6 +20,8 @@ pub mod command;
 pub mod commit;
 /// Config file parser.
 pub mod config;
+/// Remote contributor.
+pub mod contributor;
 /// Embedded file handler.
 pub mod embed;
 /// Error handling.

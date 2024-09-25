@@ -17,6 +17,12 @@ Note that we have a [Code of Conduct](./CODE_OF_CONDUCT.md), please follow it in
 git clone https://github.com/{username}/git-cliff && cd git-cliff
 ```
 
+To ensure the successful execution of the tests, it is essential to fetch the tags as follows:
+
+```sh
+git fetch --tags https://github.com/orhun/git-cliff
+```
+
 3. Make sure that you have [Rust](https://www.rust-lang.org/) `1.64.0` or later installed and build the project.
 
 ```sh

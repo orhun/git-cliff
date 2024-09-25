@@ -14,6 +14,9 @@ use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 
+/// Default initial tag.
+const DEFAULT_INITIAL_TAG: &str = "0.1.0";
+
 /// Manifest file information and regex for matching contents.
 #[derive(Debug)]
 struct ManifestInfo {
@@ -74,8 +77,12 @@ pub struct ChangelogConfig {
 	pub footer:         Option<String>,
 	/// Trim the template.
 	pub trim:           Option<bool>,
+	/// Always render the body template.
+	pub render_always:  Option<bool>,
 	/// Changelog postprocessors.
 	pub postprocessors: Option<Vec<TextProcessor>>,
+	/// Output file path.
+	pub output:         Option<PathBuf>,
 }
 
 /// Git configuration
@@ -112,6 +119,8 @@ pub struct GitConfig {
 	/// Regex to count matched tags.
 	#[serde(with = "serde_regex", default)]
 	pub count_tags:               Option<Regex>,
+	/// Include only the tags that belong to the current branch.
+	pub use_branch_tags:          Option<bool>,
 	/// Whether to sort tags topologically.
 	pub topo_order:               Option<bool>,
 	/// Sorting of the commits inside sections.
@@ -135,6 +144,29 @@ pub struct RemoteConfig {
 	/// Bitbucket remote.
 	#[serde(default)]
 	pub bitbucket: Remote,
+}
+
+impl RemoteConfig {
+	/// Returns `true` if any remote is set.
+	pub fn is_any_set(&self) -> bool {
+		#[cfg(feature = "github")]
+		if self.github.is_set() {
+			return true;
+		}
+		#[cfg(feature = "gitlab")]
+		if self.gitlab.is_set() {
+			return true;
+		}
+		#[cfg(feature = "gitea")]
+		if self.gitea.is_set() {
+			return true;
+		}
+		#[cfg(feature = "bitbucket")]
+		if self.bitbucket.is_set() {
+			return true;
+		}
+		false
+	}
 }
 
 /// A single remote.
@@ -246,6 +278,26 @@ pub struct Bump {
 	pub bump_type: Option<BumpType>,
 }
 
+impl Bump {
+	/// Returns the initial tag.
+	///
+	/// This function also logs the returned value.
+	pub fn get_initial_tag(&self) -> String {
+		if let Some(tag) = self.initial_tag.clone() {
+			warn!(
+				"No releases found, using initial tag '{tag}' as the next version."
+			);
+			tag
+		} else {
+			warn!(
+				"No releases found, using {DEFAULT_INITIAL_TAG} as the next \
+				 version."
+			);
+			DEFAULT_INITIAL_TAG.into()
+		}
+	}
+}
+
 /// Parser for grouping commits.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct CommitParser {
@@ -322,7 +374,7 @@ impl Config {
 	/// Reads the config file contents from project manifest (e.g. Cargo.toml,
 	/// pyproject.toml)
 	pub fn read_from_manifest() -> Result<Option<String>> {
-		for info in (*MANIFEST_INFO).iter() {
+		for info in &(*MANIFEST_INFO) {
 			if info.path.exists() {
 				let contents = fs::read_to_string(&info.path)?;
 				if info.regex.is_match(&contents) {

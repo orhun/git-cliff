@@ -7,7 +7,7 @@ sidebar_position: 2
 ### Prerequisites
 
 - [Rust](https://www.rust-lang.org/) (nightly)
-  - The minimum supported Rust version is `1.74.1`.
+  - The minimum supported Rust version is `1.75.0`.
 - [zlib](https://zlib.net/)
 - [libgit2](https://libgit2.org/)
 

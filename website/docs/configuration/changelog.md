@@ -50,8 +50,16 @@ If set to `true`, leading and trailing whitespace are removed from the [`body`](
 
 It is useful for adding indentation to the template for readability, as shown [in the example](#changelog).
 
+### render_always
+
+If set to `true`, the changelog [body](#body) will be rendered even if there are no releases to process.
+
 ### postprocessors
 
 An array of commit postprocessors for manipulating the changelog before outputting.
 Can e.g. be used for replacing commit author with GitHub usernames.
 Internally postprocessors and preprocessors are the same. See [commit_preprocessors](/docs/configuration/git#commit_preprocessors) for more detail and examples, it uses the same syntax.
+
+### output
+
+Output file path for the changelog. You can also use the `--output` argument to override this value.

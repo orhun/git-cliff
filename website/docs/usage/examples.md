@@ -15,7 +15,7 @@ git cliff
 Set a tag for the unreleased changes:
 
 ```bash
-# it doesn't have to be an existing tag
+# generates a changelog for the tag '1.0.0' without creating the tag itself
 git cliff --tag 1.0.0
 ```
 
@@ -43,6 +43,12 @@ git cliff 4c7b043..HEAD
 git cliff HEAD~2..
 git cliff v2.2.1..
 git cliff v0.1.0..HEAD
+```
+
+Only include the tags from the current branch:
+
+```bash
+git cliff --use-branch-tags
 ```
 
 Sort the commits inside sections:
