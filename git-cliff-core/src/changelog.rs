@@ -131,10 +131,10 @@ impl<'a> Changelog<'a> {
 							.filter_map(|line| {
 								let mut c = commit.clone();
 								c.message = line.to_string();
-								if !c.message.is_empty() {
-									Self::process_commit(&c, &self.config.git)
-								} else {
+								if c.message.is_empty() {
 									None
+								} else {
+									Self::process_commit(&c, &self.config.git)
 								}
 							})
 							.collect()
