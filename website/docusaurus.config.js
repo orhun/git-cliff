@@ -96,13 +96,13 @@ const config = {
             className: "header-github-link",
             position: "right",
           },
+          {
+            href: "https://discord.gg/W3mAwMDWH4",
+            "aria-label": "Discord server",
+            position: "right",
+            className: "header-discord-link",
+          },
         ],
-      },
-      announcementBar: {
-        content: `⛰️ <b><a target="_blank" href="https://git-cliff.org/blog/2.0.0">git-cliff v2.0</a> is now out!</b> 🥳️`,
-        backgroundColor: "#243840",
-        textColor: "#ffffff",
-        isCloseable: true,
       },
       colorMode: {
         defaultMode: "dark",

@@ -189,6 +189,7 @@ mod test {
 	fn get_fake_release_data() -> Release<'static> {
 		Release {
 			version: Some(String::from("1.0")),
+			message: None,
 			commits: vec![
 				Commit::new(
 					String::from("123123"),
@@ -205,6 +206,7 @@ mod test {
 			commit_id: None,
 			timestamp: 0,
 			previous: None,
+			repository: Some(String::from("/root/repo")),
 			#[cfg(feature = "github")]
 			github: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],

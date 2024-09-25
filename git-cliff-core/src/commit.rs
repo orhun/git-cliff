@@ -264,6 +264,11 @@ impl Commit<'_> {
 		protect_breaking: bool,
 		filter: bool,
 	) -> Result<Self> {
+		let lookup_context = serde_json::to_value(&self).map_err(|e| {
+			AppError::FieldError(format!(
+				"failed to convert context into value: {e}",
+			))
+		})?;
 		for parser in parsers {
 			let mut regex_checks = Vec::new();
 			if let Some(message_regex) = parser.message.as_ref() {
@@ -277,28 +282,32 @@ impl Commit<'_> {
 			if let Some(body_regex) = parser.body.as_ref() {
 				regex_checks.push((body_regex, body.clone().unwrap_or_default()))
 			}
+			if let (Some(footer_regex), Some(footers)) = (
+				parser.footer.as_ref(),
+				self.conv.as_ref().map(|v| v.footers()),
+			) {
+				regex_checks
+					.extend(footers.iter().map(|f| (footer_regex, f.to_string())));
+			}
 			if let (Some(field_name), Some(pattern_regex)) =
 				(parser.field.as_ref(), parser.pattern.as_ref())
 			{
-				regex_checks.push((
-					pattern_regex,
-					match field_name.as_str() {
-						"id" => Some(self.id.clone()),
-						"message" => Some(self.message.clone()),
-						"body" => body,
-						"author.name" => self.author.name.clone(),
-						"author.email" => self.author.email.clone(),
-						"committer.name" => self.committer.name.clone(),
-						"committer.email" => self.committer.email.clone(),
-						_ => None,
+				let value = if field_name == "body" {
+					body.clone()
+				} else {
+					tera::dotted_pointer(&lookup_context, field_name)
+						.map(|v| v.to_string())
+				};
+				match value {
+					Some(value) => {
+						regex_checks.push((pattern_regex, value));
 					}
-					.ok_or_else(|| {
-						AppError::FieldError(format!(
-							"field {} does not have a value",
-							field_name
-						))
-					})?,
-				));
+					None => {
+						return Err(AppError::FieldError(format!(
+							"field {field_name} does not have a value",
+						)));
+					}
+				}
 			}
 			if parser.sha.clone().map(|v| v.to_lowercase()).as_deref() ==
 				Some(&self.id)
@@ -483,6 +492,7 @@ mod test {
 				sha:           None,
 				message:       Regex::new("test*").ok(),
 				body:          None,
+				footer:        None,
 				group:         Some(String::from("test_group")),
 				default_scope: Some(String::from("test_scope")),
 				scope:         None,
@@ -656,6 +666,7 @@ mod test {
 				sha:           None,
 				message:       None,
 				body:          None,
+				footer:        None,
 				group:         Some(String::from("Test group")),
 				default_scope: None,
 				scope:         None,
@@ -684,6 +695,7 @@ mod test {
 				)),
 				message:       None,
 				body:          None,
+				footer:        None,
 				group:         None,
 				default_scope: None,
 				scope:         None,
@@ -703,6 +715,7 @@ mod test {
 				)),
 				message:       None,
 				body:          None,
+				footer:        None,
 				group:         Some(String::from("Test group")),
 				default_scope: None,
 				scope:         None,
@@ -715,6 +728,57 @@ mod test {
 		)?;
 		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
 
+		Ok(())
+	}
+
+	#[test]
+	fn field_name_regex() -> Result<()> {
+		let commit = Commit {
+			message: String::from("feat: do something"),
+			author: Signature {
+				name:      Some("John Doe".to_string()),
+				email:     None,
+				timestamp: 0x0,
+			},
+			..Default::default()
+		};
+		let parsed_commit = commit.clone().parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("author.name")),
+				pattern:       Regex::new("Something else").ok(),
+			}],
+			false,
+			true,
+		);
+
+		assert!(parsed_commit.is_err());
+
+		let parsed_commit = commit.parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("author.name")),
+				pattern:       Regex::new("John Doe").ok(),
+			}],
+			false,
+			false,
+		)?;
+
+		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
 		Ok(())
 	}
 }

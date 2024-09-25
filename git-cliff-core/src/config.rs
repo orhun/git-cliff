@@ -109,6 +109,9 @@ pub struct GitConfig {
 	/// Regex to ignore matched tags.
 	#[serde(with = "serde_regex", default)]
 	pub ignore_tags:              Option<Regex>,
+	/// Regex to count matched tags.
+	#[serde(with = "serde_regex", default)]
+	pub count_tags:               Option<Regex>,
 	/// Whether to sort tags topologically.
 	pub topo_order:               Option<bool>,
 	/// Sorting of the commits inside sections.
@@ -138,12 +141,20 @@ pub struct RemoteConfig {
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Remote {
 	/// Owner of the remote.
-	pub owner: String,
+	pub owner:     String,
 	/// Repository name.
-	pub repo:  String,
+	pub repo:      String,
 	/// Access token.
 	#[serde(skip_serializing)]
-	pub token: Option<SecretString>,
+	pub token:     Option<SecretString>,
+	/// Whether if the remote is set manually.
+	#[serde(skip_deserializing, default = "default_true")]
+	pub is_custom: bool,
+}
+
+/// Returns `true` for serde's `default` attribute.
+fn default_true() -> bool {
+	true
 }
 
 impl fmt::Display for Remote {
@@ -162,9 +173,10 @@ impl Remote {
 	/// Constructs a new instance.
 	pub fn new<S: Into<String>>(owner: S, repo: S) -> Self {
 		Self {
-			owner: owner.into(),
-			repo:  repo.into(),
-			token: None,
+			owner:     owner.into(),
+			repo:      repo.into(),
+			token:     None,
+			is_custom: false,
 		}
 	}
 
@@ -172,6 +184,17 @@ impl Remote {
 	pub fn is_set(&self) -> bool {
 		!self.owner.is_empty() && !self.repo.is_empty()
 	}
+}
+
+/// Version bump type.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq)]
+pub enum BumpType {
+	/// Bump major version.
+	Major,
+	/// Bump minor version.
+	Minor,
+	/// Bump patch version.
+	Patch,
 }
 
 /// Bump version configuration.
@@ -200,6 +223,27 @@ pub struct Bump {
 	///
 	/// When set, the version will be set to this value if no tags are found.
 	pub initial_tag: Option<String>,
+
+	/// Configure a custom regex pattern for major version increments.
+	///
+	/// This will check only the type of the commit against the given pattern.
+	///
+	/// ### Note
+	///
+	/// `commit type` according to the spec is only `[a-zA-Z]+`
+	pub custom_major_increment_regex: Option<String>,
+
+	/// Configure a custom regex pattern for minor version increments.
+	///
+	/// This will check only the type of the commit against the given pattern.
+	///
+	/// ### Note
+	///
+	/// `commit type` according to the spec is only `[a-zA-Z]+`
+	pub custom_minor_increment_regex: Option<String>,
+
+	/// Force to always bump in major, minor or patch.
+	pub bump_type: Option<BumpType>,
 }
 
 /// Parser for grouping commits.
@@ -213,6 +257,9 @@ pub struct CommitParser {
 	/// Regex for matching the commit body.
 	#[serde(with = "serde_regex", default)]
 	pub body:          Option<Regex>,
+	/// Regex for matching the commit footer.
+	#[serde(with = "serde_regex", default)]
+	pub footer:        Option<Regex>,
 	/// Group of the commit.
 	pub group:         Option<String>,
 	/// Default scope of the commit.

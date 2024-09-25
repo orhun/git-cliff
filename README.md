@@ -49,6 +49,7 @@ Learn how to use **git-cliff** from the [documentation](https://git-cliff.org/do
 
 - [Turning Git commits into changelog with git-cliff](https://www.youtube.com/watch?v=RWh8qbiLRts) - RustLab 2023 (Talk)
 - [An Interview with Orhun of git-cliff](https://console.substack.com/p/console-141) - Console #141 (Newsletter)
+- [KaiCode Open Source Festival 2024](https://www.kaicode.org/2024.html) (Second place winner)
 
 ## Editor Support
 
@@ -65,6 +66,7 @@ Learn how to use **git-cliff** from the [documentation](https://git-cliff.org/do
   to semantically bump a NodeJS package and generate a git-cliff powered changelog.
 - [release-plz](https://github.com/MarcoIeni/release-plz) - Release Rust packages from CI.
 - [git-changelog-command-line](https://github.com/tomasbjerre/git-changelog-command-line) - Generate changelog and determine next version with conventional commits.
+- [git-changelog](https://github.com/pawamoy/git-changelog): Automatic Changelog generator using Jinja2 templates.
 
 ## Contributors
 

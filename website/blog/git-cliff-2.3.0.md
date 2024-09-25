@@ -1,6 +1,6 @@
 ---
 slug: 2.3.0
-title: "What's new in 2.3.0? \U0001F195"
+title: What's new in 2.3.0?
 date: 2024-06-03T00:00:00.000Z
 authors: orhun
 tags:
@@ -83,7 +83,7 @@ Big thanks to [dark0dave](https://github.com/dark0dave) for the [contribution](h
 
 Using `-` for `stdout` is common among CLI tools and `git-cliff` now supports this!
 
-```
+```sh
 $ git-cliff -o -
 ```
 

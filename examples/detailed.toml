@@ -2,7 +2,7 @@
 # https://git-cliff.org/docs/configuration
 
 [changelog]
-# changelog header
+# template for the changelog header
 header = """
 # Changelog\n
 All notable changes to this project will be documented in this file.\n
@@ -16,7 +16,7 @@ body = """
     ## [unreleased]
 {% endif %}\
 {% if previous %}\
-    {% if previous.commit_id %}
+    {% if previous.commit_id and commit_id %}
         [{{ previous.commit_id | truncate(length=7, end="") }}]({{ previous.commit_id }})...\
             [{{ commit_id | truncate(length=7, end="") }}]({{ commit_id }})
     {% endif %}\

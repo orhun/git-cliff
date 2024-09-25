@@ -47,7 +47,12 @@ pub struct GitLabProject {
 
 impl RemoteEntry for GitLabProject {
 	fn url(_id: i64, api_url: &str, remote: &Remote, _page: i32) -> String {
-		format!("{}/projects/{}%2F{}", api_url, remote.owner, remote.repo)
+		format!(
+			"{}/projects/{}%2F{}",
+			api_url,
+			urlencoding::encode(remote.owner.as_str()),
+			remote.repo
+		)
 	}
 
 	fn buffer_size() -> usize {
@@ -283,5 +288,19 @@ impl GitLabClient {
 			.into_iter()
 			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
 			.collect())
+	}
+}
+#[cfg(test)]
+mod test {
+	use super::*;
+	use pretty_assertions::assert_eq;
+
+	#[test]
+	fn gitlab_remote_encodes_owner() {
+		let remote = Remote::new("abc/def", "xyz1");
+		assert_eq!(
+			"https://gitlab.test.com/api/v4/projects/abc%2Fdef%2Fxyz1",
+			GitLabProject::url(1, "https://gitlab.test.com/api/v4", &remote, 0)
+		)
 	}
 }

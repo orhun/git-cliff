@@ -6,7 +6,7 @@
 # See documentation for more information on available options.
 
 [changelog]
-# changelog header
+# template for the changelog header
 header = """
 [![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)\n
 """

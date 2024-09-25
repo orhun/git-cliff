@@ -14,6 +14,7 @@ pub mod logger;
 extern crate log;
 
 use args::{
+	BumpOption,
 	Opt,
 	Sort,
 	Strip,
@@ -89,12 +90,23 @@ fn process_repository<'a>(
 		repository.tags(config.git.tag_pattern.as_ref(), args.topo_order)?;
 	let skip_regex = config.git.skip_tags.as_ref();
 	let ignore_regex = config.git.ignore_tags.as_ref();
-	tags.retain(|name| {
+	let count_tags = config.git.count_tags.as_ref();
+	tags.retain(|tag| {
+		let name = &tag.name;
+
 		// Keep skip tags to drop commits in the later stage.
 		let skip = skip_regex.is_some_and(|r| r.is_match(name));
 		if skip {
 			return true;
 		}
+
+		let count = count_tags.map_or(true, |r| {
+			let count_tag = r.is_match(name);
+			if count_tag {
+				trace!("Counting release: {}", name)
+			}
+			count_tag
+		});
 
 		let ignore = ignore_regex.is_some_and(|r| {
 			if r.as_str().trim().is_empty() {
@@ -107,7 +119,8 @@ fn process_repository<'a>(
 			}
 			ignore_tag
 		});
-		!ignore
+
+		count && !ignore
 	});
 
 	if !config.remote.github.is_set() {
@@ -116,6 +129,7 @@ fn process_repository<'a>(
 				debug!("No GitHub remote is set, using remote: {}", remote);
 				config.remote.github.owner = remote.owner;
 				config.remote.github.repo = remote.repo;
+				config.remote.github.is_custom = remote.is_custom;
 			}
 			Err(e) => {
 				debug!("Failed to get remote from GitHub repository: {:?}", e);
@@ -127,6 +141,7 @@ fn process_repository<'a>(
 				debug!("No GitLab remote is set, using remote: {}", remote);
 				config.remote.gitlab.owner = remote.owner;
 				config.remote.gitlab.repo = remote.repo;
+				config.remote.gitlab.is_custom = remote.is_custom;
 			}
 			Err(e) => {
 				debug!("Failed to get remote from GitLab repository: {:?}", e);
@@ -138,6 +153,7 @@ fn process_repository<'a>(
 				debug!("No Gitea remote is set, using remote: {}", remote);
 				config.remote.gitea.owner = remote.owner;
 				config.remote.gitea.repo = remote.repo;
+				config.remote.gitea.is_custom = remote.is_custom;
 			}
 			Err(e) => {
 				debug!("Failed to get remote from Gitea repository: {:?}", e);
@@ -149,6 +165,7 @@ fn process_repository<'a>(
 				debug!("No Bitbucket remote is set, using remote: {}", remote);
 				config.remote.bitbucket.owner = remote.owner;
 				config.remote.bitbucket.repo = remote.repo;
+				config.remote.bitbucket.is_custom = remote.is_custom;
 			}
 			Err(e) => {
 				debug!("Failed to get remote from Bitbucket repository: {:?}", e);
@@ -164,21 +181,22 @@ fn process_repository<'a>(
 	let mut commit_range = args.range.clone();
 	if args.unreleased {
 		if let Some(last_tag) = tags.last() {
-			commit_range = Some(format!("{last_tag}..HEAD"));
+			commit_range =
+				Some(format!("{last_tag}..HEAD", last_tag = last_tag.name));
 		}
 	} else if args.latest || args.current {
 		if tags.len() < 2 {
 			if let (Some((tag1, _)), Some(tag2)) =
 				(tags.commits.last(), tags.get_index(0))
 			{
-				commit_range = Some(format!("{tag1}..{tag2}"));
+				commit_range = Some(format!("{tag1}..{tag2}", tag2 = tag2.name));
 			}
 		} else {
 			let mut tag_index = tags.len() - 2;
 			if args.current {
 				if let Some(current_tag_index) =
 					repository.current_tag().as_ref().and_then(|tag| {
-						tags.tags().enumerate().position(|(_, v)| v == tag)
+						tags.tags().enumerate().position(|(_, t)| t == tag)
 					}) {
 					match current_tag_index.checked_sub(1) {
 						Some(i) => tag_index = i,
@@ -198,14 +216,18 @@ fn process_repository<'a>(
 			if let (Some(tag1), Some(tag2)) =
 				(tags.get_index(tag_index), tags.get_index(tag_index + 1))
 			{
-				commit_range = Some(format!("{tag1}..{tag2}"));
+				commit_range = Some(format!(
+					"{tag1}..{tag2}",
+					tag1 = tag1.name,
+					tag2 = tag2.name
+				));
 			}
 		}
 	}
 	let mut commits = repository.commits(
 		commit_range.as_deref(),
-		args.include_path.as_deref(),
-		args.exclude_path.as_deref(),
+		args.include_path.clone(),
+		args.exclude_path.clone(),
 	)?;
 	if let Some(commit_limit_value) = config.git.limit_commits {
 		commits.truncate(commit_limit_value);
@@ -216,43 +238,53 @@ fn process_repository<'a>(
 		if let Some(commit_id) = commits.first().map(|c| c.id().to_string()) {
 			match tags.get(&commit_id) {
 				Some(tag) => {
-					warn!("There is already a tag ({}) for {}", tag, commit_id)
+					warn!("There is already a tag ({:?}) for {}", tag, commit_id)
 				}
 				None => {
-					tags.insert(commit_id, tag.to_string());
+					tags.insert(commit_id, repository.resolve_tag(tag));
 				}
 			}
 		}
 	}
 
 	// Process releases.
-	let mut releases = Vec::<Release>::new();
-	let mut release = Release::default();
-	let mut current_tag = commits
-		.last()
-		.and_then(|root| tags.get_closest(&root.id().to_string()));
+	let mut releases = vec![Release::default()];
+	let mut previous_release = Release::default();
 	let mut first_processed_tag = None;
 	for git_commit in commits.iter().rev() {
+		let release = releases.last_mut().unwrap();
 		let commit = Commit::from(git_commit);
-
-		let new_tag = tags.get_closest(&commit.id);
-		if first_processed_tag.is_none() {
-			first_processed_tag = new_tag;
-		}
-		if new_tag == current_tag {
-			release.commits.push(commit);
-			continue;
-		}
-
-		// Found a new release, finalize the current one and append the commit to the
-		// new release.
-		fill_release(repository, &mut release, args, current_tag, &tags)?;
-		current_tag = new_tag;
-		append_release(&mut releases, &mut release);
+		let commit_id = commit.id.to_string();
 		release.commits.push(commit);
+		release.repository = Some(repository.path.to_string_lossy().into_owned());
+		if let Some(tag) = tags.get(&commit_id) {
+			release.version = Some(tag.name.to_string());
+			release.message = tag.message.clone();
+			release.commit_id = Some(commit_id);
+			release.timestamp = if args.tag.as_deref() == Some(tag.name.as_str()) {
+				SystemTime::now()
+					.duration_since(UNIX_EPOCH)?
+					.as_secs()
+					.try_into()?
+			} else {
+				git_commit.time().seconds()
+			};
+			if first_processed_tag.is_none() {
+				first_processed_tag = Some(tag);
+			}
+			previous_release.previous = None;
+			release.previous = Some(Box::new(previous_release));
+			previous_release = release.clone();
+			releases.push(Release::default());
+		}
 	}
-	fill_release(repository, &mut release, args, current_tag, &tags)?;
-	append_release(&mut releases, &mut release);
+
+	debug_assert!(!releases.is_empty());
+
+	if releases.len() > 1 {
+		previous_release.previous = None;
+		releases.last_mut().unwrap().previous = Some(Box::new(previous_release));
+	}
 
 	if args.sort == Sort::Newest {
 		for release in &mut releases {
@@ -269,6 +301,13 @@ fn process_repository<'a>(
 			.extend(custom_commits.iter().cloned().map(Commit::from));
 	}
 
+	// Set custom message for the latest release.
+	if let Some(message) = &args.with_tag_message {
+		if let Some(latest_release) = releases.iter_mut().last() {
+			latest_release.message = Some(message.to_owned());
+		}
+	}
+
 	// Set the previous release if the first release does not have one set.
 	if releases[0]
 		.previous
@@ -280,7 +319,7 @@ fn process_repository<'a>(
 		let first_tag = first_processed_tag
 			.map(|tag| {
 				tags.tags()
-					.position(|v| v == tag)
+					.position(|t| t == tag)
 					.and_then(|i| i.checked_sub(1))
 					.and_then(|i| tags.get_index(i))
 			})
@@ -289,10 +328,10 @@ fn process_repository<'a>(
 
 		// Set the previous release if the first tag is found.
 		if let Some(tag) = first_tag {
-			let commit_id = tags.get_commit(tag).unwrap();
+			let commit_id = tags.get_commit(&tag.name).unwrap();
 			let previous_release = Release {
 				commit_id: Some(commit_id.to_string()),
-				version: Some(tag.to_string()),
+				version: Some(tag.name.to_string()),
 				timestamp: repository
 					.find_commit(commit_id.to_string())
 					.map(|v| v.time().seconds())
@@ -479,14 +518,22 @@ pub fn run(mut args: Opt) -> Result<()> {
 	if let Some(ref remote) = args.github_repo {
 		config.remote.github.owner = remote.0.owner.to_string();
 		config.remote.github.repo = remote.0.repo.to_string();
+		config.remote.github.is_custom = true;
 	}
 	if let Some(ref remote) = args.gitlab_repo {
 		config.remote.gitlab.owner = remote.0.owner.to_string();
 		config.remote.gitlab.repo = remote.0.repo.to_string();
+		config.remote.gitlab.is_custom = true;
 	}
 	if let Some(ref remote) = args.bitbucket_repo {
 		config.remote.bitbucket.owner = remote.0.owner.to_string();
 		config.remote.bitbucket.repo = remote.0.repo.to_string();
+		config.remote.bitbucket.is_custom = true;
+	}
+	if let Some(ref remote) = args.gitea_repo {
+		config.remote.gitea.owner = remote.0.owner.to_string();
+		config.remote.gitea.repo = remote.0.repo.to_string();
+		config.remote.gitea.is_custom = true;
 	}
 	if args.no_exec {
 		if let Some(ref mut preprocessors) = config.git.commit_preprocessors {
@@ -507,7 +554,12 @@ pub fn run(mut args: Opt) -> Result<()> {
 	if args.tag.is_some() {
 		config.bump.initial_tag.clone_from(&args.tag);
 	}
-
+	if args.ignore_tags.is_some() {
+		config.git.ignore_tags.clone_from(&args.ignore_tags);
+	}
+	if args.count_tags.is_some() {
+		config.git.count_tags.clone_from(&args.count_tags);
+	}
 	// Process the repositories.
 	let repositories = args.repository.clone().unwrap_or(vec![env::current_dir()?]);
 	let mut releases = Vec::<Release>::new();
@@ -547,6 +599,9 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 
 	// Process commits and releases for the changelog.
+	if let Some(BumpOption::Specific(bump_type)) = args.bump {
+		config.bump.bump_type = Some(bump_type)
+	}
 	let mut changelog = Changelog::new(releases, &config)?;
 
 	// Print the result.
@@ -559,8 +614,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 	} else {
 		Box::new(io::stdout())
 	};
-	let out = &mut *out;
-	if args.bump || args.bumped_version {
+	if args.bump.is_some() || args.bumped_version {
 		let next_version = if let Some(next_version) = changelog.bump_version()? {
 			next_version
 		} else if let Some(last_version) =
@@ -578,15 +632,16 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 
 	if args.context {
-		changelog.write_context(out)?;
+		changelog.write_context(&mut out)?;
 		return Ok(());
 	}
-
 	if let Some(path) = &args.prepend {
-		changelog.prepend(fs::read_to_string(path)?, out)?;
+		let changelog_before = fs::read_to_string(path)?;
+		let mut out = io::BufWriter::new(File::create(path)?);
+		changelog.prepend(changelog_before, &mut out)?;
 	}
 	if args.output.is_some() || args.prepend.is_none() {
-		changelog.generate(out)?;
+		changelog.generate(&mut out)?;
 	}
 
 	Ok(())

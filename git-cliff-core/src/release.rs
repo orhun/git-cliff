@@ -1,5 +1,3 @@
-use crate::commit::Commit;
-use crate::config::Bump;
 use crate::error::Result;
 #[cfg(feature = "remote")]
 use crate::remote::{
@@ -8,7 +6,16 @@ use crate::remote::{
 	RemotePullRequest,
 	RemoteReleaseMetadata,
 };
-use next_version::VersionUpdater;
+use crate::{
+	commit::Commit,
+	config::Bump,
+	config::BumpType,
+};
+
+use next_version::{
+	NextVersion,
+	VersionUpdater,
+};
 use semver::Version;
 use serde::{
 	Deserialize,
@@ -20,28 +27,32 @@ use serde::{
 #[serde(rename_all = "camelCase")]
 pub struct Release<'a> {
 	/// Release version, git tag.
-	pub version:   Option<String>,
+	pub version:    Option<String>,
+	/// git tag's message.
+	pub message:    Option<String>,
 	/// Commits made for the release.
-	pub commits:   Vec<Commit<'a>>,
+	pub commits:    Vec<Commit<'a>>,
 	/// Commit ID of the tag.
 	#[serde(rename = "commit_id")]
-	pub commit_id: Option<String>,
+	pub commit_id:  Option<String>,
 	/// Timestamp of the release in seconds, from epoch.
-	pub timestamp: i64,
+	pub timestamp:  i64,
 	/// Previous release.
-	pub previous:  Option<Box<Release<'a>>>,
+	pub previous:   Option<Box<Release<'a>>>,
+	/// Repository path.
+	pub repository: Option<String>,
 	/// Contributors.
 	#[cfg(feature = "github")]
-	pub github:    RemoteReleaseMetadata,
+	pub github:     RemoteReleaseMetadata,
 	/// Contributors.
 	#[cfg(feature = "gitlab")]
-	pub gitlab:    RemoteReleaseMetadata,
+	pub gitlab:     RemoteReleaseMetadata,
 	/// Contributors.
 	#[cfg(feature = "gitea")]
-	pub gitea:     RemoteReleaseMetadata,
+	pub gitea:      RemoteReleaseMetadata,
 	/// Contributors.
 	#[cfg(feature = "bitbucket")]
-	pub bitbucket: RemoteReleaseMetadata,
+	pub bitbucket:  RemoteReleaseMetadata,
 }
 
 #[cfg(feature = "github")]
@@ -99,21 +110,44 @@ impl<'a> Release<'a> {
 						}
 					}
 				}
-				let next_version = VersionUpdater::new()
+				let mut next_version = VersionUpdater::new()
 					.with_features_always_increment_minor(
 						config.features_always_bump_minor.unwrap_or(true),
 					)
 					.with_breaking_always_increment_major(
 						config.breaking_always_bump_major.unwrap_or(true),
-					)
-					.increment(
-						&semver?,
-						self.commits
-							.iter()
-							.map(|commit| commit.message.trim_end().to_string())
-							.collect::<Vec<String>>(),
-					)
-					.to_string();
+					);
+				if let Some(custom_major_increment_regex) =
+					&config.custom_major_increment_regex
+				{
+					next_version = next_version.with_custom_major_increment_regex(
+						custom_major_increment_regex,
+					)?;
+				}
+				if let Some(custom_minor_increment_regex) =
+					&config.custom_minor_increment_regex
+				{
+					next_version = next_version.with_custom_minor_increment_regex(
+						custom_minor_increment_regex,
+					)?;
+				}
+				let next_version = if let Some(bump_type) = &config.bump_type {
+					match bump_type {
+						BumpType::Major => semver?.increment_major().to_string(),
+						BumpType::Minor => semver?.increment_minor().to_string(),
+						BumpType::Patch => semver?.increment_patch().to_string(),
+					}
+				} else {
+					next_version
+						.increment(
+							&semver?,
+							self.commits
+								.iter()
+								.map(|commit| commit.message.trim_end().to_string())
+								.collect::<Vec<String>>(),
+						)
+						.to_string()
+				};
 				if let Some(prefix) = prefix {
 					Ok(format!("{prefix}{next_version}"))
 				} else {
@@ -159,6 +193,7 @@ mod test {
 		fn build_release<'a>(version: &str, commits: &'a [&str]) -> Release<'a> {
 			Release {
 				version: None,
+				message: None,
 				commits: commits
 					.iter()
 					.map(|v| Commit::from(v.to_string()))
@@ -169,6 +204,7 @@ mod test {
 					version: Some(String::from(version)),
 					..Default::default()
 				})),
+				repository: Some(String::from("/root/repo")),
 				#[cfg(feature = "github")]
 				github: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
@@ -256,9 +292,12 @@ mod test {
 			let release = build_release(version, commits);
 			let next_version =
 				release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor: Some(false),
-					breaking_always_bump_major: Some(false),
-					initial_tag:                None,
+					features_always_bump_minor:   Some(false),
+					breaking_always_bump_major:   Some(false),
+					initial_tag:                  None,
+					custom_major_increment_regex: None,
+					custom_minor_increment_regex: None,
+					bump_type:                    None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -277,9 +316,12 @@ mod test {
 			let release = build_release(version, commits);
 			let next_version =
 				release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor: Some(true),
-					breaking_always_bump_major: Some(false),
-					initial_tag:                None,
+					features_always_bump_minor:   Some(true),
+					breaking_always_bump_major:   Some(false),
+					initial_tag:                  None,
+					custom_major_increment_regex: None,
+					custom_minor_increment_regex: None,
+					bump_type:                    None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -298,9 +340,12 @@ mod test {
 			let release = build_release(version, commits);
 			let next_version =
 				release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor: Some(false),
-					breaking_always_bump_major: Some(true),
-					initial_tag:                None,
+					features_always_bump_minor:   Some(false),
+					breaking_always_bump_major:   Some(true),
+					initial_tag:                  None,
+					custom_major_increment_regex: None,
+					custom_minor_increment_regex: None,
+					bump_type:                    None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -319,9 +364,12 @@ mod test {
 			assert_eq!(
 				"0.1.0",
 				empty_release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor: Some(features_always_bump_minor),
-					breaking_always_bump_major: Some(breaking_always_bump_major),
-					initial_tag:                None,
+					features_always_bump_minor:   Some(features_always_bump_minor),
+					breaking_always_bump_major:   Some(breaking_always_bump_major),
+					initial_tag:                  None,
+					custom_major_increment_regex: None,
+					custom_minor_increment_regex: None,
+					bump_type:                    None,
 				})?
 			);
 		}
@@ -340,6 +388,7 @@ mod test {
 
 		let mut release = Release {
 			version: None,
+			message: None,
 			commits: vec![
 				Commit::from(String::from(
 					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \
@@ -368,6 +417,7 @@ mod test {
 				version: Some(String::from("1.0.0")),
 				..Default::default()
 			})),
+			repository: Some(String::from("/root/repo")),
 			github: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
@@ -625,6 +675,7 @@ mod test {
 
 		let mut release = Release {
 			version: None,
+			message: None,
 			commits: vec![
 				Commit::from(String::from(
 					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \
@@ -653,6 +704,7 @@ mod test {
 				version: Some(String::from("1.0.0")),
 				..Default::default()
 			})),
+			repository: Some(String::from("/root/repo")),
 			#[cfg(feature = "github")]
 			github: RemoteReleaseMetadata {
 				contributors: vec![],
@@ -968,6 +1020,7 @@ mod test {
 
 		let mut release = Release {
 			version: None,
+			message: None,
 			commits: vec![
 				Commit::from(String::from(
 					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add github \
@@ -996,6 +1049,7 @@ mod test {
 				version: Some(String::from("1.0.0")),
 				..Default::default()
 			})),
+			repository: Some(String::from("/root/repo")),
 			#[cfg(feature = "github")]
 			github: RemoteReleaseMetadata {
 				contributors: vec![],

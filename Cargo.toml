@@ -7,7 +7,7 @@ regex = "1.10.5"
 glob = "0.3.1"
 log = "0.4.21"
 secrecy = { version = "0.8.0", features = ["serde"] }
-lazy_static = "1.4.0"
+lazy_static = "1.5.0"
 dirs = "5.0.1"
 
 [profile.dev]
@@ -29,4 +29,5 @@ strip = true
 
 [profile.bench]
 opt-level = 3
-debug = false
+debug = true # used by the profiler
+strip = false # keep symbols for the profiler
