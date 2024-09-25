@@ -35,10 +35,8 @@ use git_cliff_core::error::{
 	Result,
 };
 use git_cliff_core::release::Release;
-use git_cliff_core::repo::{
-	Repository,
-	TaggedCommits,
-};
+use git_cliff_core::repo::Repository;
+use git_cliff_core::tag::Tag;
 use git_cliff_core::{
 	DEFAULT_CONFIG,
 	IGNORE_FILE,
@@ -158,8 +156,8 @@ fn process_repository<'a>(
 	}
 
 	// Print debug information about configuration and arguments.
-	// log::trace!("Arguments: {:#?}", args);
-	// log::trace!("Config: {:#?}", config);
+	log::trace!("Arguments: {:#?}", args);
+	log::trace!("Config: {:#?}", config);
 
 	// Parse commits.
 	let mut commit_range = args.range.clone();
@@ -241,45 +239,60 @@ fn process_repository<'a>(
 	}
 
 	// Process releases.
-	let mut previous_release = Release::default();
+	let mut releases = Vec::<Release>::new();
+	let mut release = Release::default();
+	let mut current_tag = commits
+		.last()
+		.and_then(|root| tags.get_closest(&root.id().to_string()));
 	let mut first_processed_tag = None;
-	for git_commit in commits.iter().rev() {
-		let release = releases.last_mut().unwrap();
-		let commit = Commit::from(git_commit);
-		let commit_id = commit.id.to_string();
-		release.commits.push(commit);
+
+	let fill_release = |release: &mut Release, tag: Option<&Tag>| -> Result<()> {
 		release.repository = Some(repository.path.to_string_lossy().into_owned());
-		if let Some(tag) = tags.get(&commit_id) {
-			release.version = Some(tag.name.to_string());
-			release.message.clone_from(&tag.message);
-			release.commit_id = Some(commit_id);
-			release.timestamp = if args.tag.as_deref() == Some(tag.name.as_str()) {
-				match tag_timestamp {
-					Some(timestamp) => timestamp,
-					None => SystemTime::now()
-						.duration_since(UNIX_EPOCH)?
-						.as_secs()
-						.try_into()?,
-				}
-			} else {
-				git_commit.time().seconds()
-			};
-			if first_processed_tag.is_none() {
-				first_processed_tag = Some(tag);
+		let Some(tag) = tag else { return Ok(()) };
+		let Some(release_commit) = tags.get_commit(&tag.name) else {
+			return Ok(());
+		};
+		release.version = Some(tag.name.to_string());
+		release.message.clone_from(&tag.message);
+		release.commit_id = Some(release_commit.to_string());
+		release.timestamp = if args.tag.as_deref() == Some(&tag.name) {
+			match tag_timestamp {
+				Some(timestamp) => timestamp,
+				None => SystemTime::now()
+					.duration_since(UNIX_EPOCH)?
+					.as_secs()
+					.try_into()?,
 			}
-			previous_release.previous = None;
-			release.previous = Some(Box::new(previous_release));
-			previous_release = release.clone();
-			releases.push(Release::default());
+		} else {
+			repository
+				.find_commit(release_commit)
+				.map(|c| c.time().seconds())
+				.unwrap_or_default()
+		};
+		Ok(())
+	};
+
+	for git_commit in commits.iter().rev() {
+		let commit = Commit::from(git_commit);
+
+		let new_tag = tags.get_closest(&commit.id);
+		if first_processed_tag.is_none() {
+			first_processed_tag = new_tag;
 		}
-	}
+		if new_tag == current_tag {
+			release.commits.push(commit);
+			continue;
+		}
 
-	debug_assert!(!releases.is_empty());
-
-	if releases.len() > 1 {
-		previous_release.previous = None;
-		releases.last_mut().unwrap().previous = Some(Box::new(previous_release));
+		// Found a new release, finalize the current one and append the commit to the
+		// new release.
+		fill_release(&mut release, current_tag)?;
+		current_tag = new_tag;
+		append_release(&mut releases, &mut release);
+		release.commits.push(commit);
 	}
+	fill_release(&mut release, current_tag)?;
+	append_release(&mut releases, &mut release);
 
 	if args.sort == Sort::Newest {
 		for release in &mut releases {
@@ -342,33 +355,6 @@ fn process_repository<'a>(
 	}
 
 	Ok(releases)
-}
-
-fn fill_release(
-	repository: &Repository,
-	release: &mut Release<'_>,
-	args: &Opt,
-	tag: Option<&str>,
-	tags: &TaggedCommits<'_>,
-) -> Result<()> {
-	let Some(tag) = tag else { return Ok(()) };
-	let Some(release_commit) = tags.get_commit(tag) else {
-		return Ok(());
-	};
-	release.version = Some(tag.to_string());
-	release.commit_id = Some(release_commit.to_string());
-	release.timestamp = if args.tag.as_deref() == Some(tag) {
-		SystemTime::now()
-			.duration_since(UNIX_EPOCH)?
-			.as_secs()
-			.try_into()?
-	} else {
-		repository
-			.find_commit(release_commit)
-			.map(|c| c.time().seconds())
-			.unwrap_or_default()
-	};
-	Ok(())
 }
 
 /// Appends `release` to `releases`, also setting the `previous` field and
