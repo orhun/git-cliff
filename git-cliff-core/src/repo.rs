@@ -566,8 +566,9 @@ impl<'a> TaggedCommits<'a> {
 	/// Retains only the tags specified by the predicate.
 	pub fn retain(&mut self, mut f: impl FnMut(&Tag) -> bool) {
 		self.tag_indexes.retain(|&idx| {
-			let (commit_of_tag, _) = self.commits.get_index(idx).unwrap();
-			let tag = self.tags.get(commit_of_tag).unwrap();
+			let panic_msg = "invalid TaggedCommits state";
+			let (commit_of_tag, _) = self.commits.get_index(idx).expect(panic_msg);
+			let tag = self.tags.get(commit_of_tag).expect(panic_msg);
 			let retain = f(tag);
 			if !retain {
 				self.tags.shift_remove(commit_of_tag);
