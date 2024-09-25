@@ -21,7 +21,7 @@ runs:
       uses: dtolnay/rust-toolchain@nightly
 
     - name: Install git-cliff
-      run: cargo install --path git-cliff/
+      run: cargo install --path git-cliff/ --profile dev
       shell: bash
 
     - name: Set git config
