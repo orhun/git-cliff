@@ -123,52 +123,33 @@ fn process_repository<'a>(
 		count && !ignore
 	});
 
-	if !config.remote.github.is_set() {
+	if !config.remote.is_any_set() {
 		match repository.upstream_remote() {
 			Ok(remote) => {
-				debug!("No GitHub remote is set, using remote: {}", remote);
-				config.remote.github.owner = remote.owner;
-				config.remote.github.repo = remote.repo;
-				config.remote.github.is_custom = remote.is_custom;
+				if !config.remote.github.is_set() {
+					debug!("No GitHub remote is set, using remote: {}", remote);
+					config.remote.github.owner = remote.owner;
+					config.remote.github.repo = remote.repo;
+					config.remote.github.is_custom = remote.is_custom;
+				} else if !config.remote.gitlab.is_set() {
+					debug!("No GitLab remote is set, using remote: {}", remote);
+					config.remote.gitlab.owner = remote.owner;
+					config.remote.gitlab.repo = remote.repo;
+					config.remote.gitlab.is_custom = remote.is_custom;
+				} else if !config.remote.gitea.is_set() {
+					debug!("No Gitea remote is set, using remote: {}", remote);
+					config.remote.gitea.owner = remote.owner;
+					config.remote.gitea.repo = remote.repo;
+					config.remote.gitea.is_custom = remote.is_custom;
+				} else if !config.remote.bitbucket.is_set() {
+					debug!("No Bitbucket remote is set, using remote: {}", remote);
+					config.remote.bitbucket.owner = remote.owner;
+					config.remote.bitbucket.repo = remote.repo;
+					config.remote.bitbucket.is_custom = remote.is_custom;
+				}
 			}
 			Err(e) => {
-				debug!("Failed to get remote from GitHub repository: {:?}", e);
-			}
-		}
-	} else if !config.remote.gitlab.is_set() {
-		match repository.upstream_remote() {
-			Ok(remote) => {
-				debug!("No GitLab remote is set, using remote: {}", remote);
-				config.remote.gitlab.owner = remote.owner;
-				config.remote.gitlab.repo = remote.repo;
-				config.remote.gitlab.is_custom = remote.is_custom;
-			}
-			Err(e) => {
-				debug!("Failed to get remote from GitLab repository: {:?}", e);
-			}
-		}
-	} else if !config.remote.gitea.is_set() {
-		match repository.upstream_remote() {
-			Ok(remote) => {
-				debug!("No Gitea remote is set, using remote: {}", remote);
-				config.remote.gitea.owner = remote.owner;
-				config.remote.gitea.repo = remote.repo;
-				config.remote.gitea.is_custom = remote.is_custom;
-			}
-			Err(e) => {
-				debug!("Failed to get remote from Gitea repository: {:?}", e);
-			}
-		}
-	} else if !config.remote.bitbucket.is_set() {
-		match repository.upstream_remote() {
-			Ok(remote) => {
-				debug!("No Bitbucket remote is set, using remote: {}", remote);
-				config.remote.bitbucket.owner = remote.owner;
-				config.remote.bitbucket.repo = remote.repo;
-				config.remote.bitbucket.is_custom = remote.is_custom;
-			}
-			Err(e) => {
-				debug!("Failed to get remote from Bitbucket repository: {:?}", e);
+				debug!("Failed to get remote from repository: {:?}", e);
 			}
 		}
 	}
