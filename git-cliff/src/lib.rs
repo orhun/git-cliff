@@ -87,7 +87,7 @@ fn process_repository<'a>(
 	args: &Opt,
 ) -> Result<Vec<Release<'a>>> {
 	let mut tags = repository.tags(
-		&config.git.tag_pattern,
+		config.git.tag_pattern.as_ref(),
 		args.topo_order,
 		args.use_branch_tags,
 	)?;
@@ -364,7 +364,7 @@ fn fill_release(
 			.try_into()?
 	} else {
 		repository
-			.find_commit(release_commit.to_string())
+			.find_commit(release_commit)
 			.map(|c| c.time().seconds())
 			.unwrap_or_default()
 	};
