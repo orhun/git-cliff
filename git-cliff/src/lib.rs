@@ -92,6 +92,7 @@ fn process_repository<'a>(
 	let skip_regex = config.git.skip_tags.as_ref();
 	let ignore_regex = config.git.ignore_tags.as_ref();
 	let count_tags = config.git.count_tags.as_ref();
+	eprintln!("{tags:#?}");
 	tags.retain(|tag| {
 		let name = &tag.name;
 

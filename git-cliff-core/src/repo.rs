@@ -449,12 +449,12 @@ pub struct TaggedCommits<'a> {
 	pub commits: IndexMap<String, Commit<'a>>,
 	/// Commit ID to tag map.
 	tags:        IndexMap<String, Tag>,
-	/// List of tags' commit indexes.
+	/// List of tags' commit indexes. Points into `commits`.
 	///
 	/// Sorted in reverse order, meaning the first element is the latest tag.
 	///
 	/// Used for lookups.
-	tag_ids:     Vec<usize>,
+	tag_indexes: Vec<usize>,
 }
 
 impl<'a> TaggedCommits<'a> {
@@ -481,7 +481,7 @@ impl<'a> TaggedCommits<'a> {
 			.collect();
 		Ok(Self {
 			commits,
-			tag_ids,
+			tag_indexes: tag_ids,
 			tags,
 		})
 	}
@@ -524,13 +524,20 @@ impl<'a> TaggedCommits<'a> {
 
 	/// Returns the tag closest to the given commit.
 	pub fn get_closest(&self, commit: &str) -> Option<&Tag> {
+		// Try exact match first.
 		if let Some(tagged) = self.get(commit) {
 			return Some(tagged);
 		}
 
 		let index = self.commits.get_index_of(commit)?;
-		let tag_index = self.tag_ids.iter().find(|tag_idx| index >= **tag_idx)?;
-		Some(&self.tags[*tag_index])
+		let tag_index =
+			*self.tag_indexes.iter().find(|tag_idx| index >= **tag_idx)?;
+		self.get_tag_by_id(tag_index)
+	}
+
+	fn get_tag_by_id(&self, id: usize) -> Option<&Tag> {
+		let (commit_of_tag, _) = self.commits.get_index(id)?;
+		self.tags.get(commit_of_tag)
 	}
 
 	/// Returns the commit of the given tag.
@@ -550,7 +557,7 @@ impl<'a> TaggedCommits<'a> {
 	pub fn insert(&mut self, commit: String, tag: Tag) {
 		if let Some(index) = self.commits.get_index_of(&commit) {
 			if let Err(idx) = self.binary_search(index) {
-				self.tag_ids.insert(idx, index);
+				self.tag_indexes.insert(idx, index);
 			}
 		}
 		self.tags.insert(commit, tag);
@@ -558,13 +565,19 @@ impl<'a> TaggedCommits<'a> {
 
 	/// Retains only the tags specified by the predicate.
 	pub fn retain(&mut self, mut f: impl FnMut(&Tag) -> bool) {
-		self.tag_ids
-			.retain(|idx| f(self.tags.get_index(*idx).unwrap().1));
-		self.tags.retain(|_, tag| f(tag));
+		self.tag_indexes.retain(|&idx| {
+			let (commit_of_tag, _) = self.commits.get_index(idx).unwrap();
+			let tag = self.tags.get(commit_of_tag).unwrap();
+			let retain = f(tag);
+			if !retain {
+				self.tags.shift_remove(commit_of_tag);
+			}
+			retain
+		});
 	}
 
 	fn binary_search(&self, index: usize) -> std::result::Result<usize, usize> {
-		self.tag_ids
+		self.tag_indexes
 			.binary_search_by_key(&Reverse(index), |tag_idx| Reverse(*tag_idx))
 	}
 }
