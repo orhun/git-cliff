@@ -84,3 +84,9 @@ commit_parsers = [
   { field = "github.pr_labels", pattern = ".*", group = "<!-- 6 --> 🌀 Miscellaneous" },
 ]
 ```
+
+## Use GitLab CI variables
+
+```jinja2
+{{ get_env(name="CI_PROJECT_URL") }}/-/tags/{{ version }}
+```

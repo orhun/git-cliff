@@ -94,6 +94,16 @@ For example:
 https://gitlab.com/{{ remote.gitlab.owner }}/{{ remote.gitlab.repo }}/-/tags/{{ version }}
 ```
 
+:::tip
+
+If you are using GitLab CI, you can use [`CI_PROJECT_URL`](https://docs.gitlab.com/ee/ci/variables/predefined_variables.html) environment variable instead:
+
+```jinja2
+{{ get_env(name="CI_PROJECT_URL") }}/-/tags/{{ version }}
+```
+
+:::
+
 ### Commit authors
 
 For each commit, GitLab related values are added as a nested object (named `gitlab`) to the [template context](/docs/templating/context):
