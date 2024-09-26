@@ -327,7 +327,7 @@ pub struct CommitParser {
 	pub pattern:       Option<Regex>,
 }
 
-/// TextProcessor, e.g. for modifying commit messages.
+/// `TextProcessor`, e.g. for modifying commit messages.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TextProcessor {
 	/// Regex for matching a text to replace.

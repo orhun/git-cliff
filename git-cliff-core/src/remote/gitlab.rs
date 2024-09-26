@@ -135,7 +135,7 @@ pub struct GitLabMergeRequest {
 	pub id:                i64,
 	/// Iid
 	pub iid:               i64,
-	/// ProjectId
+	/// Project Id
 	pub project_id:        i64,
 	/// Title
 	pub title:             String,
@@ -153,7 +153,7 @@ pub struct GitLabMergeRequest {
 	pub merge_commit_sha:  Option<String>,
 	/// Squash Commit Sha
 	pub squash_commit_sha: Option<String>,
-	/// WebUrl
+	/// Web Url
 	pub web_url:           String,
 	/// Labels
 	pub labels:            Vec<String>,
