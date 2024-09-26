@@ -151,14 +151,14 @@ jobs:
         run: |
           for image in orhunp/git-cliff ghcr.io/${{ github.repository_owner }}/git-cliff/git-cliff; do
             docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-              $(printf '${image}@sha256:%s ' *)
+              $(printf "${image}@sha256:%s " *)
           done
 
       - name: Inspect image
         shell: bash
         run: |
           for image in orhunp/git-cliff ghcr.io/${{ github.repository_owner }}/git-cliff/git-cliff; do
-            docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
+            docker buildx imagetools inspect "${image}:${{ steps.meta.outputs.version }}"
           done
 
       - name: Scan the image
