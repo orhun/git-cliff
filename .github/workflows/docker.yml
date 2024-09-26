@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - docker_test
     tags:
       - "v*.*.*"
   pull_request:
