@@ -95,6 +95,9 @@ jobs:
           sbom: true
           provenance: true
 
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}
+
       - name: Export digest
         run: |
           mkdir -p /tmp/digests
