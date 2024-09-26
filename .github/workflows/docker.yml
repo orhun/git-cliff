@@ -77,7 +77,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push by digest
-        id: docker_build
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: ./
@@ -95,8 +95,8 @@ jobs:
 
       - name: Export digest
         run: |
-          mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
+          mkdir -p /tmp/digests
           touch "/tmp/digests/${digest#sha256:}"
           cat "/tmp/digests/${digest#sha256:}"
 
