@@ -97,7 +97,7 @@ commit_parsers = [
 pandoc --from=gfm --to=pdf -o CHANGELOG.pdf CHANGELOG.md
 ```
 
-To support unicode characters use `xelatex` as pdf engine and a font family which includes the needed unicode characters
+To support unicode characters, use `xelatex` as PDF engine and a font family which includes the needed unicode characters:
 
 ```bash
 pandoc --from=gfm --to=pdf --pdf-engine=xelatex -o CHANGELOG.pdf CHANGELOG.md --variable mainfont="Segoe UI Emoji"
