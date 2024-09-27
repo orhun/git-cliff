@@ -15,20 +15,20 @@ on:
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.build.OS }}
     strategy:
       fail-fast: false
       matrix:
-        platform:
-          - linux/amd64
-          - linux/arm64
+        build:
+          - { PLATFORM: linux/amd64, OS: ubuntu-22.04 }
+          - { PLATFORM: linux/arm64, OS: macos-14 }
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Prepare
         run: |
-          platform=${{ matrix.platform }}
+          platform=${{ matrix.build.PLATFORM }}
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
 
       - name: Docker meta
@@ -75,7 +75,7 @@ jobs:
         with:
           context: ./
           file: ./Dockerfile
-          platforms: ${{ matrix.platform }}
+          platforms: ${{ matrix.build.PLATFORM }}
           builder: ${{ steps.buildx.outputs.name }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=local,src=/tmp/.buildx-cache
