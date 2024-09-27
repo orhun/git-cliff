@@ -38,13 +38,6 @@ jobs:
           images: |
             orhunp/git-cliff
             ghcr.io/${{ github.repository_owner }}/git-cliff/git-cliff
-          tags: |
-            type=schedule
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha
-            type=raw,value=latest
-            type=semver,pattern={{version}}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -84,12 +77,10 @@ jobs:
           file: ./Dockerfile
           platforms: ${{ matrix.platform }}
           builder: ${{ steps.buildx.outputs.name }}
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
-          outputs: type=image,name=orhunp/git-cliff,name=ghcr.io/${{ github.repository_owner }}/git-cliff/git-cliff,push-by-digest=true,name-canonical=true
+          outputs: type=image,name=orhunp/git-cliff,name=ghcr.io/${{ github.repository_owner }}/git-cliff/git-cliff,push-by-digest=${{ github.event_name != 'pull_request' }},name-canonical=true
           sbom: true
           provenance: true
 
@@ -159,14 +150,14 @@ jobs:
         run: |
           for image in orhunp/git-cliff ghcr.io/${{ github.repository_owner }}/git-cliff/git-cliff; do
             docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-              $(printf '${image}@sha256:%s ' *)
+              $(printf "${image}@sha256:%s " *)
           done
 
       - name: Inspect image
         shell: bash
         run: |
           for image in orhunp/git-cliff ghcr.io/${{ github.repository_owner }}/git-cliff/git-cliff; do
-            docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
+            docker buildx imagetools inspect "${image}:${{ steps.meta.outputs.version }}"
           done
 
       - name: Scan the image
