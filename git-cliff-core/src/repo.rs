@@ -137,32 +137,32 @@ impl Repository {
 			(Some(include_pattern), Some(exclude_pattern)) => {
 				// check if the commit has any changed files that match any of the
 				// include patterns and non of the exclude patterns.
-				return changed_files.iter().any(|path| {
+				changed_files.iter().any(|path| {
 					include_pattern
 						.iter()
 						.any(|pattern| pattern.matches_path(path)) &&
 						!exclude_pattern
 							.iter()
 							.any(|pattern| pattern.matches_path(path))
-				});
+				})
 			}
 			(Some(include_pattern), None) => {
 				// check if the commit has any changed files that match the include
 				// patterns.
-				return changed_files.iter().any(|path| {
+				changed_files.iter().any(|path| {
 					include_pattern
 						.iter()
 						.any(|pattern| pattern.matches_path(path))
-				});
+				})
 			}
 			(None, Some(exclude_pattern)) => {
 				// check if the commit has at least one changed file that does not
 				// match all exclude patterns.
-				return changed_files.iter().any(|path| {
+				changed_files.iter().any(|path| {
 					!exclude_pattern
 						.iter()
 						.any(|pattern| pattern.matches_path(path))
-				});
+				})
 			}
 			(None, None) => true,
 		}
