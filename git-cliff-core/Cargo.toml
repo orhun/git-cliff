@@ -1,6 +1,6 @@
 [package]
 name = "git-cliff-core"
-version = "2.6.0" # managed by release.sh
+version = "2.6.1" # managed by release.sh
 description = "Core library of git-cliff"
 authors = ["git-cliff contributors <git-cliff@protonmail.com>"]
 license = "MIT OR Apache-2.0"
