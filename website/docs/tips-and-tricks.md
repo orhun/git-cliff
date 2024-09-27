@@ -91,7 +91,7 @@ commit_parsers = [
 {{ get_env(name="CI_PROJECT_URL") }}/-/tags/{{ version }}
 ```
 
-## Convert the markdown output to pdf
+## Convert markdown output to PDF
 
 ```bash
 pandoc --from=gfm --to=pdf -o CHANGELOG.pdf CHANGELOG.md
