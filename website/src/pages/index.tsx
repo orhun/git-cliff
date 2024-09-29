@@ -4,6 +4,7 @@ import Link from "@docusaurus/Link";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import Layout from "@theme/Layout";
 import HomepageFeatures from "@site/src/components/HomepageFeatures";
+import Testimonials from "@site/src/components/Testimonials";
 import Head from "@docusaurus/Head";
 import styles from "./index.module.css";
 
@@ -70,6 +71,7 @@ export default function Home(): JSX.Element {
       <HomepageHeader />
       <main>
         <HomepageFeatures />
+        <Testimonials />
       </main>
     </Layout>
   );
