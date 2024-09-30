@@ -183,7 +183,7 @@ pub struct Remote {
 	#[serde(skip_deserializing, default = "default_true")]
 	pub is_custom: bool,
 	/// Remote API URL, if configurable
-	pub api_url: Option<String>,
+	pub api_url:   Option<String>,
 }
 
 /// Returns `true` for serde's `default` attribute.
@@ -211,7 +211,7 @@ impl Remote {
 			repo:      repo.into(),
 			token:     None,
 			is_custom: false,
-			api_url: None,
+			api_url:   None,
 		}
 	}
 
