@@ -61,7 +61,7 @@ lazy-regex = "3.3.0"
 next_version = "0.2.19"
 semver = "1.0.23"
 document-features = { version = "0.2.10", optional = true }
-reqwest = { version = "0.12.7", default-features = false, features = [
+reqwest = { version = "0.12.8", default-features = false, features = [
   "rustls-tls",
   "json",
   "zstd",
