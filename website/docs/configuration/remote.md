@@ -51,3 +51,7 @@ git cliff --github-token <TOKEN>
 ```
 
 Same applies for GitLab/Bitbucket with `--gitlab-token`/`--gitea-token`/`--bitbucket-token` and `GITLAB_TOKEN`/`GITEA_TOKEN`/`BITBUCKET_TOKEN` environment variables.
+
+### api_url
+
+Sets the API URL for a particular remote
