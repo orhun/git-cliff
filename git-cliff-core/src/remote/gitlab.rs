@@ -5,7 +5,6 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
-use std::env;
 
 use super::*;
 
@@ -27,7 +26,7 @@ pub(crate) const TEMPLATE_VARIABLES: &[&str] =
 
 /// Representation of a single GitLab Project.
 ///
-/// <https://docs.gitlab.com/ee/api/projects.html#get-single-project>
+/// <http://docs.gitlab.com/ee/api/projects.html#get-single-project>
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitLabProject {
 	/// GitLab id for project
@@ -244,11 +243,8 @@ impl TryFrom<Remote> for GitLabClient {
 }
 
 impl RemoteClient for GitLabClient {
-	fn api_url() -> String {
-		env::var(GITLAB_API_URL_ENV)
-			.ok()
-			.unwrap_or_else(|| GITLAB_API_URL.to_string())
-	}
+	const API_URL: &'static str = GITLAB_API_URL;
+	const API_URL_ENV: &'static str = GITLAB_API_URL_ENV;
 
 	fn remote(&self) -> Remote {
 		self.remote.clone()

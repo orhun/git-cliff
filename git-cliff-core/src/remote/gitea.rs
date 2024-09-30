@@ -5,7 +5,6 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
-use std::env;
 
 use super::*;
 
@@ -145,11 +144,8 @@ impl TryFrom<Remote> for GiteaClient {
 }
 
 impl RemoteClient for GiteaClient {
-	fn api_url() -> String {
-		env::var(GITEA_API_URL_ENV)
-			.ok()
-			.unwrap_or_else(|| GITEA_API_URL.to_string())
-	}
+	const API_URL: &'static str = GITEA_API_URL;
+	const API_URL_ENV: &'static str = GITEA_API_URL_ENV;
 
 	fn remote(&self) -> Remote {
 		self.remote.clone()

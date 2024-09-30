@@ -5,7 +5,6 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
-use std::env;
 
 use super::*;
 
@@ -144,11 +143,8 @@ impl TryFrom<Remote> for GitHubClient {
 }
 
 impl RemoteClient for GitHubClient {
-	fn api_url() -> String {
-		env::var(GITHUB_API_URL_ENV)
-			.ok()
-			.unwrap_or_else(|| GITHUB_API_URL.to_string())
-	}
+	const API_URL: &'static str = GITHUB_API_URL;
+	const API_URL_ENV: &'static str = GITHUB_API_URL_ENV;
 
 	fn remote(&self) -> Remote {
 		self.remote.clone()
