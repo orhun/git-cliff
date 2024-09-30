@@ -1,6 +1,9 @@
 use clap::{
 	builder::{
-		styling::AnsiColor,
+		styling::{
+			Ansi256Color,
+			AnsiColor,
+		},
 		Styles,
 		TypedValueParser,
 		ValueParserFactory,
@@ -40,10 +43,10 @@ pub enum Sort {
 }
 
 const STYLES: Styles = Styles::styled()
-	.header(AnsiColor::Blue.on_default().bold())
-	.usage(AnsiColor::Blue.on_default().bold())
+	.header(Ansi256Color(208).on_default().bold())
+	.usage(Ansi256Color(208).on_default().bold())
 	.literal(AnsiColor::White.on_default())
-	.placeholder(AnsiColor::Green.on_default());
+	.placeholder(Ansi256Color(222).on_default());
 
 /// Command-line arguments to parse.
 #[derive(Debug, Parser)]
