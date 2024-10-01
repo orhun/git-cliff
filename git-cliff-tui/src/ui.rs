@@ -22,6 +22,9 @@ use ratatui::{
 		Block,
 		BorderType,
 		Paragraph,
+		Scrollbar,
+		ScrollbarOrientation,
+		ScrollbarState,
 		Wrap,
 	},
 	Frame,
@@ -151,6 +154,18 @@ fn render_list(state: &mut State, frame: &mut Frame, rect: Rect) {
 				item[1],
 			);
 		}
+		if state.configs.len() * 3 > rect.height as usize - 2 {
+			frame.render_stateful_widget(
+				Scrollbar::new(ScrollbarOrientation::VerticalRight)
+					.begin_symbol(Some("↑"))
+					.end_symbol(Some("↓")),
+				rect.inner(Margin {
+					vertical:   1,
+					horizontal: 0,
+				}),
+				&mut ScrollbarState::new(item_count).position(state.selected_index),
+			);
+		}
 	}
 }
 
@@ -205,7 +220,7 @@ fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
 		rect,
 	);
 	if let Some(component) = &mut state.markdown.component {
-		component.set_scroll(0);
+		component.set_scroll(state.markdown.scroll_index);
 		for child in component.children() {
 			if let Component::TextComponent(c) = child {
 				let mut c = c.clone();
@@ -213,6 +228,17 @@ fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
 				frame.render_widget(c.clone(), state.markdown.area);
 			}
 		}
+		frame.render_stateful_widget(
+			Scrollbar::new(ScrollbarOrientation::VerticalRight)
+				.begin_symbol(Some("↑"))
+				.end_symbol(Some("↓")),
+			rect.inner(Margin {
+				vertical:   1,
+				horizontal: 0,
+			}),
+			&mut ScrollbarState::new(component.height() as usize)
+				.position(state.markdown.scroll_index as usize),
+		);
 	}
 
 	if state.is_generating {

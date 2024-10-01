@@ -29,6 +29,8 @@ pub struct Markdown {
 	pub area:         Rect,
 	/// Selected config index.
 	pub config_index: usize,
+	/// Scroll index.
+	pub scroll_index: u16,
 }
 
 /// Is the application running?

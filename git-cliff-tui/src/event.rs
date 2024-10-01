@@ -146,6 +146,14 @@ pub fn handle_key_events(
 				state.selected_index + 1
 			}
 		}
+		KeyCode::Char('h') | KeyCode::Char('H') | KeyCode::Left => {
+			state.markdown.scroll_index =
+				state.markdown.scroll_index.saturating_sub(1);
+		}
+		KeyCode::Char('l') | KeyCode::Char('L') | KeyCode::Right => {
+			state.markdown.scroll_index =
+				state.markdown.scroll_index.saturating_add(1);
+		}
 		KeyCode::Enter => {
 			state.markdown.config_index = state.selected_index;
 			sender.send(Event::Generate)?
@@ -179,6 +187,14 @@ pub(crate) fn handle_mouse_events(
 				state.selected_index = i;
 				sender.send(Event::Generate)?;
 			}
+		}
+		MouseEventKind::ScrollUp => {
+			state.markdown.scroll_index =
+				state.markdown.scroll_index.saturating_sub(1);
+		}
+		MouseEventKind::ScrollDown => {
+			state.markdown.scroll_index =
+				state.markdown.scroll_index.saturating_add(1);
 		}
 		_ => {}
 	}
