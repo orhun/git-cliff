@@ -30,6 +30,10 @@ use notify::{
 	RecursiveMode,
 	Watcher,
 };
+use ratatui::crossterm::event::{
+	DisableMouseCapture,
+	EnableMouseCapture,
+};
 
 fn main() -> Result<()> {
 	// Parse command-line arguments.
@@ -59,6 +63,7 @@ fn main() -> Result<()> {
 	// Initialize the terminal user interface.
 	let events = EventHandler::new(250);
 	let mut terminal = ratatui::init();
+	ratatui::crossterm::execute!(terminal.backend_mut(), EnableMouseCapture)?;
 
 	// Watch for file changes.
 	let sender = events.sender.clone();
@@ -139,5 +144,6 @@ fn main() -> Result<()> {
 	}
 
 	ratatui::restore();
+	ratatui::crossterm::execute!(terminal.backend_mut(), DisableMouseCapture)?;
 	Ok(())
 }
