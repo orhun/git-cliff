@@ -35,29 +35,29 @@ pub struct Markdown {
 /// Application state.
 pub struct State {
 	/// git-cliff arguments.
-	pub args:            Args,
+	pub args:           Args,
 	/// Is the application running?
-	pub is_running:      bool,
+	pub is_running:     bool,
 	/// Configuration files.
-	pub configs:         Vec<Config>,
+	pub configs:        Vec<Config>,
 	/// Index of the selected configuration.
-	pub selected_config: usize,
+	pub selected_index: usize,
 	/// Changelog contents.
-	pub changelog:       String,
+	pub changelog:      String,
 	/// Error message.
-	pub error:           Option<String>,
+	pub error:          Option<String>,
 	/// Rendered markdown.
-	pub markdown:        Markdown,
+	pub markdown:       Markdown,
 	/// Autoload changes.
-	pub autoload:        bool,
+	pub autoload:       bool,
 	/// Clipboard context.
-	pub clipboard:       Option<ClipboardContext>,
+	pub clipboard:      Option<ClipboardContext>,
 	/// Is the sidebar toggled?
-	pub is_toggled:      bool,
+	pub is_toggled:     bool,
 	/// Throbber state.
-	pub throbber_state:  ThrobberState,
+	pub throbber_state: ThrobberState,
 	/// Is generating?
-	pub is_generating:   bool,
+	pub is_generating:  bool,
 }
 
 impl State {
@@ -76,7 +76,7 @@ impl State {
 			is_toggled: true,
 			is_generating: false,
 			configs,
-			selected_config: 0,
+			selected_index: 0,
 			changelog: String::new(),
 			error: None,
 			markdown: Markdown::default(),

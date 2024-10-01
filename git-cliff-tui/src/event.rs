@@ -132,22 +132,22 @@ pub fn handle_key_events(
 			}
 		}
 		KeyCode::Char('k') | KeyCode::Char('K') | KeyCode::Up => {
-			state.selected_config = if state.selected_config == 0 {
+			state.selected_index = if state.selected_index == 0 {
 				state.configs.len() - 1
 			} else {
-				state.selected_config - 1
+				state.selected_index - 1
 			}
 		}
 		KeyCode::Char('j') | KeyCode::Char('J') | KeyCode::Down => {
-			state.selected_config =
-				if state.selected_config >= state.configs.len() - 1 {
-					0
-				} else {
-					state.selected_config + 1
-				}
+			state.selected_index = if state.selected_index >= state.configs.len() - 1
+			{
+				0
+			} else {
+				state.selected_index + 1
+			}
 		}
 		KeyCode::Enter => {
-			state.markdown.config_index = state.selected_config;
+			state.markdown.config_index = state.selected_index;
 			sender.send(Event::Generate)?
 		}
 		KeyCode::Char('a') | KeyCode::Char('A') => {
@@ -175,7 +175,8 @@ pub(crate) fn handle_mouse_events(
 			})
 		}
 		MouseEventKind::Down(MouseButton::Left) => {
-			if state.configs.iter().any(|p| p.is_hovered) {
+			if let Some(i) = state.configs.iter().position(|p| p.is_hovered) {
+				state.selected_index = i;
 				sender.send(Event::Generate)?;
 			}
 		}

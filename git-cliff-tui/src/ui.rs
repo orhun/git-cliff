@@ -113,7 +113,7 @@ fn render_list(state: &mut State, frame: &mut Frame, rect: Rect) {
 	);
 	if !state.configs.is_empty() {
 		let item_count = ((rect.height - 2) / 3) as usize;
-		let start_offset = (state.selected_config + 1).saturating_sub(item_count);
+		let start_offset = (state.selected_index + 1).saturating_sub(item_count);
 		let rects = Layout::vertical([Constraint::Min(2)].repeat(item_count))
 			.margin(1)
 			.split(rect);
@@ -132,7 +132,7 @@ fn render_list(state: &mut State, frame: &mut Frame, rect: Rect) {
 						let mut style = Style::new().fg(Color::Rgb(100, 100, 100));
 						if config.is_hovered {
 							style = style.yellow()
-						} else if state.selected_config == i + start_offset {
+						} else if state.selected_index == i + start_offset {
 							style = style.yellow();
 						}
 						style
