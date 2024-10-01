@@ -220,12 +220,16 @@ fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
 		rect,
 	);
 	if let Some(component) = &mut state.markdown.component {
-		component.set_scroll(state.markdown.scroll_index);
+		let mut height = 2;
 		for child in component.children() {
 			if let Component::TextComponent(c) = child {
 				let mut c = c.clone();
-				c.set_y_offset(c.y_offset() + 2);
-				frame.render_widget(c.clone(), state.markdown.area);
+				c.set_scroll_offset(state.markdown.scroll_index);
+				c.set_y_offset(height);
+				height += c.height();
+				if c.height() + c.scroll_offset() + 1 < height {
+					frame.render_widget(c.clone(), state.markdown.area);
+				}
 			}
 		}
 		frame.render_stateful_widget(
