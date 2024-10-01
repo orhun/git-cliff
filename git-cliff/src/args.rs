@@ -1,5 +1,10 @@
 use clap::{
 	builder::{
+		styling::{
+			Ansi256Color,
+			AnsiColor,
+		},
+		Styles,
 		TypedValueParser,
 		ValueParserFactory,
 	},
@@ -37,6 +42,12 @@ pub enum Sort {
 	Newest,
 }
 
+const STYLES: Styles = Styles::styled()
+	.header(Ansi256Color(208).on_default().bold())
+	.usage(Ansi256Color(208).on_default().bold())
+	.literal(AnsiColor::White.on_default())
+	.placeholder(AnsiColor::Green.on_default());
+
 /// Command-line arguments to parse.
 #[derive(Debug, Parser)]
 #[command(
@@ -56,6 +67,7 @@ pub enum Sort {
     next_help_heading = Some("OPTIONS"),
 	disable_help_flag = true,
 	disable_version_flag = true,
+    styles(STYLES),
 )]
 pub struct Opt {
 	#[arg(
