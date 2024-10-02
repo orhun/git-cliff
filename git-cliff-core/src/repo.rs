@@ -72,13 +72,21 @@ impl Repository {
 	pub fn commits(
 		&self,
 		range: Option<&str>,
+		include_root: bool,
 		include_path: Option<Vec<Pattern>>,
 		exclude_path: Option<Vec<Pattern>>,
 	) -> Result<Vec<Commit>> {
 		let mut revwalk = self.inner.revwalk()?;
 		revwalk.set_sorting(Sort::TOPOLOGICAL)?;
 		if let Some(range) = range {
-			revwalk.push_range(range)?;
+			// Push only the last range commit if we need to start at root.
+			if include_root {
+				if let Some(dots_index) = range.find("..") {
+					revwalk.push(Oid::from_str(&range[dots_index + 2..])?)?;
+				}
+			} else {
+				revwalk.push_range(range)?;
+			}
 		} else {
 			revwalk.push_head()?;
 		}
@@ -488,7 +496,7 @@ mod test {
 	#[test]
 	fn get_latest_commit() -> Result<()> {
 		let repository = get_repository()?;
-		let commits = repository.commits(None, None, None)?;
+		let commits = repository.commits(None, false, None, None)?;
 		let last_commit =
 			AppCommit::from(&commits.first().expect("no commits found").clone());
 		assert_eq!(get_last_commit_hash()?, last_commit.id);
