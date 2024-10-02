@@ -205,6 +205,22 @@ fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
 						"c".yellow().bold(),
 						"opy".white(),
 						"|".fg(Color::Rgb(100, 100, 100)),
+						" |".fg(Color::Rgb(100, 100, 100)),
+						if state.args.unreleased {
+							"u".green().bold()
+						} else {
+							"u".red().bold()
+						},
+						"nreleased".white(),
+						"|".fg(Color::Rgb(100, 100, 100)),
+						" |".fg(Color::Rgb(100, 100, 100)),
+						if state.args.latest {
+							"l".green().bold()
+						} else {
+							"l".red().bold()
+						},
+						"atest".white(),
+						"|".fg(Color::Rgb(100, 100, 100)),
 					]
 				} else {
 					vec![

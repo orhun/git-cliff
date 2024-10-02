@@ -151,8 +151,13 @@ pub fn handle_key_events(
 				state.markdown.scroll_index.saturating_sub(1);
 		}
 		KeyCode::Char('l') | KeyCode::Char('L') | KeyCode::Right => {
-			state.markdown.scroll_index =
-				state.markdown.scroll_index.saturating_add(1);
+			if key_event.modifiers == KeyModifiers::CONTROL {
+				state.markdown.scroll_index =
+					state.markdown.scroll_index.saturating_add(1);
+			} else {
+				state.args.latest = !state.args.latest;
+				sender.send(Event::Generate)?;
+			}
 		}
 		KeyCode::Enter => {
 			state.markdown.config_index = state.selected_index;
@@ -163,6 +168,10 @@ pub fn handle_key_events(
 		}
 		KeyCode::Char('t') | KeyCode::Char('T') => {
 			state.is_toggled = !state.is_toggled;
+		}
+		KeyCode::Char('u') | KeyCode::Char('U') => {
+			state.args.unreleased = !state.args.unreleased;
+			sender.send(Event::Generate)?;
 		}
 		_ => {}
 	}
