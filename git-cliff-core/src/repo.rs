@@ -472,6 +472,18 @@ mod test {
 		.to_string())
 	}
 
+	fn get_root_commit_hash() -> Result<String> {
+		Ok(str::from_utf8(
+			Command::new("git")
+				.args(["rev-list", "--max-parents=0", "HEAD"])
+				.output()?
+				.stdout
+				.as_ref(),
+		)?
+		.trim_ascii_end()
+		.to_string())
+	}
+
 	fn get_last_tag() -> Result<String> {
 		Ok(str::from_utf8(
 			Command::new("git")
@@ -591,6 +603,16 @@ mod test {
 		let tag = repository.resolve_tag("nonexistent-tag");
 		assert_eq!(tag.name, "nonexistent-tag");
 		assert_eq!(tag.message, None);
+		Ok(())
+	}
+
+	#[test]
+	fn includes_root_commit() -> Result<()> {
+		let repository = get_repository()?;
+		let commits = repository.commits(None, true, None, None)?;
+		let root_commit =
+			AppCommit::from(&commits.last().expect("no commits found").clone());
+		assert_eq!(get_root_commit_hash()?, root_commit.id);
 		Ok(())
 	}
 
