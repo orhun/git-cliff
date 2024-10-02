@@ -4,7 +4,7 @@
 #[derive(Debug)]
 pub struct Tag {
 	/// The name of the tag
-	pub name:    String,
+	pub name: String,
 	/// The message of the tag (only if it was annotated).
 	pub message: Option<String>,
 }
@@ -16,7 +16,7 @@ mod test {
 	#[test]
 	fn create_tag_with_name_and_message() {
 		let tag = Tag {
-			name:    String::from("v1.0"),
+			name: String::from("v1.0"),
 			message: Some(String::from("Initial release")),
 		};
 		assert_eq!(tag.name, "v1.0");
@@ -26,7 +26,7 @@ mod test {
 	#[test]
 	fn create_tag_with_name_and_no_message() {
 		let tag = Tag {
-			name:    String::from("v1.0"),
+			name: String::from("v1.0"),
 			message: None,
 		};
 		assert_eq!(tag.name, "v1.0");
@@ -36,7 +36,7 @@ mod test {
 	#[test]
 	fn debug_print_tag_with_message() {
 		let tag = Tag {
-			name:    String::from("v1.0"),
+			name: String::from("v1.0"),
 			message: Some(String::from("Initial release")),
 		};
 		assert_eq!(

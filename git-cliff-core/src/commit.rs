@@ -1,35 +1,11 @@
-use crate::config::{
-	CommitParser,
-	GitConfig,
-	LinkParser,
-	TextProcessor,
-};
-use crate::error::{
-	Error as AppError,
-	Result,
-};
+use crate::config::{CommitParser, GitConfig, LinkParser, TextProcessor};
+use crate::error::{Error as AppError, Result};
 #[cfg(feature = "repo")]
-use git2::{
-	Commit as GitCommit,
-	Signature as CommitSignature,
-};
-use git_conventional::{
-	Commit as ConventionalCommit,
-	Footer as ConventionalFooter,
-};
-use lazy_regex::{
-	lazy_regex,
-	Lazy,
-	Regex,
-};
-use serde::ser::{
-	SerializeStruct,
-	Serializer,
-};
-use serde::{
-	Deserialize,
-	Serialize,
-};
+use git2::{Commit as GitCommit, Signature as CommitSignature};
+use git_conventional::{Commit as ConventionalCommit, Footer as ConventionalFooter};
+use lazy_regex::{lazy_regex, Lazy, Regex};
+use serde::ser::{SerializeStruct, Serializer};
+use serde::{Deserialize, Serialize};
 use serde_json::value::Value;
 
 /// Regular expression for matching SHA1 and a following commit message
@@ -53,24 +29,24 @@ struct Footer<'a> {
 	///
 	/// This is the part of the footer preceding the separator. For example, for
 	/// the `Signed-off-by: <user.name>` footer, this would be `Signed-off-by`.
-	token:     &'a str,
+	token: &'a str,
 	/// The separator between the footer token and its value.
 	///
 	/// This is typically either `:` or `#`.
 	separator: &'a str,
 	/// The value of the footer.
-	value:     &'a str,
+	value: &'a str,
 	/// A flag to signal that the footer describes a breaking change.
-	breaking:  bool,
+	breaking: bool,
 }
 
 impl<'a> From<&'a ConventionalFooter<'a>> for Footer<'a> {
 	fn from(footer: &'a ConventionalFooter<'a>) -> Self {
 		Self {
-			token:     footer.token().as_str(),
+			token: footer.token().as_str(),
 			separator: footer.separator().as_str(),
-			value:     footer.value(),
-			breaking:  footer.breaking(),
+			value: footer.value(),
+			breaking: footer.breaking(),
 		}
 	}
 }
@@ -79,9 +55,9 @@ impl<'a> From<&'a ConventionalFooter<'a>> for Footer<'a> {
 #[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
 pub struct Signature {
 	/// Name on the signature.
-	pub name:      Option<String>,
+	pub name: Option<String>,
 	/// Email on the signature.
-	pub email:     Option<String>,
+	pub email: Option<String>,
 	/// Time of the signature.
 	pub timestamp: i64,
 }
@@ -90,8 +66,8 @@ pub struct Signature {
 impl<'a> From<CommitSignature<'a>> for Signature {
 	fn from(signature: CommitSignature<'a>) -> Self {
 		Self {
-			name:      signature.name().map(String::from),
-			email:     signature.email().map(String::from),
+			name: signature.name().map(String::from),
+			email: signature.email().map(String::from),
 			timestamp: signature.when().seconds(),
 		}
 	}
@@ -102,47 +78,47 @@ impl<'a> From<CommitSignature<'a>> for Signature {
 #[serde(rename_all(serialize = "camelCase"))]
 pub struct Commit<'a> {
 	/// Commit ID.
-	pub id:            String,
+	pub id: String,
 	/// Commit message including title, description and summary.
-	pub message:       String,
+	pub message: String,
 	/// Conventional commit.
 	#[serde(skip_deserializing)]
-	pub conv:          Option<ConventionalCommit<'a>>,
+	pub conv: Option<ConventionalCommit<'a>>,
 	/// Commit group based on a commit parser or its conventional type.
-	pub group:         Option<String>,
+	pub group: Option<String>,
 	/// Default commit scope based on (inherited from) conventional type or a
 	/// commit parser.
 	pub default_scope: Option<String>,
 	/// Commit scope for overriding the default one.
-	pub scope:         Option<String>,
+	pub scope: Option<String>,
 	/// A list of links found in the commit
-	pub links:         Vec<Link>,
+	pub links: Vec<Link>,
 	/// Commit author.
-	pub author:        Signature,
+	pub author: Signature,
 	/// Committer.
-	pub committer:     Signature,
+	pub committer: Signature,
 	/// Whether if the commit has two or more parents.
-	pub merge_commit:  bool,
+	pub merge_commit: bool,
 	/// Arbitrary data to be used with the `--from-context` CLI option.
-	pub extra:         Option<Value>,
+	pub extra: Option<Value>,
 	/// Remote metadata of the commit.
-	pub remote:        Option<crate::contributor::RemoteContributor>,
+	pub remote: Option<crate::contributor::RemoteContributor>,
 	/// GitHub metadata of the commit.
 	#[cfg(feature = "github")]
 	#[deprecated(note = "Use `remote` field instead")]
-	pub github:        crate::contributor::RemoteContributor,
+	pub github: crate::contributor::RemoteContributor,
 	/// GitLab metadata of the commit.
 	#[cfg(feature = "gitlab")]
 	#[deprecated(note = "Use `remote` field instead")]
-	pub gitlab:        crate::contributor::RemoteContributor,
+	pub gitlab: crate::contributor::RemoteContributor,
 	/// Gitea metadata of the commit.
 	#[cfg(feature = "gitea")]
 	#[deprecated(note = "Use `remote` field instead")]
-	pub gitea:         crate::contributor::RemoteContributor,
+	pub gitea: crate::contributor::RemoteContributor,
 	/// Bitbucket metadata of the commit.
 	#[cfg(feature = "bitbucket")]
 	#[deprecated(note = "Use `remote` field instead")]
-	pub bitbucket:     crate::contributor::RemoteContributor,
+	pub bitbucket: crate::contributor::RemoteContributor,
 }
 
 impl<'a> From<String> for Commit<'a> {
@@ -202,8 +178,8 @@ impl Commit<'_> {
 			commit = commit.preprocess(preprocessors)?;
 		}
 		if config.conventional_commits.unwrap_or(true) {
-			if config.filter_unconventional.unwrap_or(true) &&
-				!config.split_commits.unwrap_or(false)
+			if config.filter_unconventional.unwrap_or(true)
+				&& !config.split_commits.unwrap_or(false)
 			{
 				commit = commit.into_conventional()?;
 			} else if let Ok(conv_commit) = commit.clone().into_conventional() {
@@ -256,9 +232,9 @@ impl Commit<'_> {
 	/// and the commit is breaking, or the parser's `skip` field is None or
 	/// `false`. Returns `true` otherwise.
 	fn skip_commit(&self, parser: &CommitParser, protect_breaking: bool) -> bool {
-		parser.skip.unwrap_or(false) &&
-			!(self.conv.as_ref().map(|c| c.breaking()).unwrap_or(false) &&
-				protect_breaking)
+		parser.skip.unwrap_or(false)
+			&& !(self.conv.as_ref().map(|c| c.breaking()).unwrap_or(false)
+				&& protect_breaking)
 	}
 
 	/// Parses the commit using [`CommitParser`]s.
@@ -318,8 +294,8 @@ impl Commit<'_> {
 					}
 				}
 			}
-			if parser.sha.clone().map(|v| v.to_lowercase()).as_deref() ==
-				Some(&self.id)
+			if parser.sha.clone().map(|v| v.to_lowercase()).as_deref()
+				== Some(&self.id)
 			{
 				if self.skip_commit(parser, protect_breaking) {
 					return Err(AppError::GroupError(String::from(
@@ -499,16 +475,16 @@ mod test {
 		}
 		let commit = test_cases[0].0.clone().parse(
 			&[CommitParser {
-				sha:           None,
-				message:       Regex::new("test*").ok(),
-				body:          None,
-				footer:        None,
-				group:         Some(String::from("test_group")),
+				sha: None,
+				message: Regex::new("test*").ok(),
+				body: None,
+				footer: None,
+				group: Some(String::from("test_group")),
 				default_scope: Some(String::from("test_scope")),
-				scope:         None,
-				skip:          None,
-				field:         None,
-				pattern:       None,
+				scope: None,
+				skip: None,
+				field: None,
+				pattern: None,
 			}],
 			false,
 			false,
@@ -534,10 +510,10 @@ mod test {
 					),
 				),
 				vec![Footer {
-					token:     "Signed-off-by",
+					token: "Signed-off-by",
 					separator: ":",
-					value:     "Test User <test@example.com>",
-					breaking:  false,
+					value: "Test User <test@example.com>",
+					breaking: false,
 				}],
 			),
 			(
@@ -550,16 +526,16 @@ mod test {
 				),
 				vec![
 					Footer {
-						token:     "BREAKING CHANGE",
+						token: "BREAKING CHANGE",
 						separator: ":",
-						value:     "This commit breaks stuff",
-						breaking:  true,
+						value: "This commit breaks stuff",
+						breaking: true,
 					},
 					Footer {
-						token:     "Signed-off-by",
+						token: "Signed-off-by",
 						separator: ":",
-						value:     "Test User <test@example.com>",
-						breaking:  false,
+						value: "Test User <test@example.com>",
+						breaking: false,
 					},
 				],
 			),
@@ -600,13 +576,13 @@ mod test {
 		let commit = commit.parse_links(&[
 			LinkParser {
 				pattern: Regex::new("RFC(\\d+)")?,
-				href:    String::from("rfc://$1"),
-				text:    None,
+				href: String::from("rfc://$1"),
+				text: None,
 			},
 			LinkParser {
 				pattern: Regex::new("#(\\d+)")?,
-				href:    String::from("https://github.com/$1"),
-				text:    None,
+				href: String::from("https://github.com/$1"),
+				text: None,
 			},
 		])?;
 		assert_eq!(
@@ -666,23 +642,23 @@ mod test {
 		);
 
 		commit.author = Signature {
-			name:      Some("John Doe".to_string()),
-			email:     None,
+			name: Some("John Doe".to_string()),
+			email: None,
 			timestamp: 0x0,
 		};
 
 		let parsed_commit = commit.parse(
 			&[CommitParser {
-				sha:           None,
-				message:       None,
-				body:          None,
-				footer:        None,
-				group:         Some(String::from("Test group")),
+				sha: None,
+				message: None,
+				body: None,
+				footer: None,
+				group: Some(String::from("Test group")),
 				default_scope: None,
-				scope:         None,
-				skip:          None,
-				field:         Some(String::from("author.name")),
-				pattern:       Regex::new("John Doe").ok(),
+				scope: None,
+				skip: None,
+				field: Some(String::from("author.name")),
+				pattern: Regex::new("John Doe").ok(),
 			}],
 			false,
 			false,
@@ -700,18 +676,16 @@ mod test {
 		);
 		let parsed_commit = commit.clone().parse(
 			&[CommitParser {
-				sha:           Some(String::from(
-					"8f55e69eba6e6ce811ace32bd84cc82215673cb6",
-				)),
-				message:       None,
-				body:          None,
-				footer:        None,
-				group:         None,
+				sha: Some(String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6")),
+				message: None,
+				body: None,
+				footer: None,
+				group: None,
 				default_scope: None,
-				scope:         None,
-				skip:          Some(true),
-				field:         None,
-				pattern:       None,
+				scope: None,
+				skip: Some(true),
+				field: None,
+				pattern: None,
 			}],
 			false,
 			false,
@@ -720,18 +694,16 @@ mod test {
 
 		let parsed_commit = commit.parse(
 			&[CommitParser {
-				sha:           Some(String::from(
-					"8f55e69eba6e6ce811ace32bd84cc82215673cb6",
-				)),
-				message:       None,
-				body:          None,
-				footer:        None,
-				group:         Some(String::from("Test group")),
+				sha: Some(String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6")),
+				message: None,
+				body: None,
+				footer: None,
+				group: Some(String::from("Test group")),
 				default_scope: None,
-				scope:         None,
-				skip:          None,
-				field:         None,
-				pattern:       None,
+				scope: None,
+				skip: None,
+				field: None,
+				pattern: None,
 			}],
 			false,
 			false,
@@ -746,24 +718,24 @@ mod test {
 		let commit = Commit {
 			message: String::from("feat: do something"),
 			author: Signature {
-				name:      Some("John Doe".to_string()),
-				email:     None,
+				name: Some("John Doe".to_string()),
+				email: None,
 				timestamp: 0x0,
 			},
 			..Default::default()
 		};
 		let parsed_commit = commit.clone().parse(
 			&[CommitParser {
-				sha:           None,
-				message:       None,
-				body:          None,
-				footer:        None,
-				group:         Some(String::from("Test group")),
+				sha: None,
+				message: None,
+				body: None,
+				footer: None,
+				group: Some(String::from("Test group")),
 				default_scope: None,
-				scope:         None,
-				skip:          None,
-				field:         Some(String::from("author.name")),
-				pattern:       Regex::new("Something else").ok(),
+				scope: None,
+				skip: None,
+				field: Some(String::from("author.name")),
+				pattern: Regex::new("Something else").ok(),
 			}],
 			false,
 			true,
@@ -773,16 +745,16 @@ mod test {
 
 		let parsed_commit = commit.parse(
 			&[CommitParser {
-				sha:           None,
-				message:       None,
-				body:          None,
-				footer:        None,
-				group:         Some(String::from("Test group")),
+				sha: None,
+				message: None,
+				body: None,
+				footer: None,
+				group: Some(String::from("Test group")),
 				default_scope: None,
-				scope:         None,
-				skip:          None,
-				field:         Some(String::from("author.name")),
-				pattern:       Regex::new("John Doe").ok(),
+				scope: None,
+				skip: None,
+				field: Some(String::from("author.name")),
+				pattern: Regex::new("John Doe").ok(),
 			}],
 			false,
 			false,

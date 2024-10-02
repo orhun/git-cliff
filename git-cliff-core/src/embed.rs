@@ -1,8 +1,5 @@
 use crate::config::Config;
-use crate::error::{
-	Error,
-	Result,
-};
+use crate::error::{Error, Result};
 use rust_embed::RustEmbed;
 use std::path::Path;
 use std::str;

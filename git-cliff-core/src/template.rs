@@ -1,31 +1,19 @@
 use crate::{
 	config::TextProcessor,
-	error::{
-		Error,
-		Result,
-	},
+	error::{Error, Result},
 };
 use serde::Serialize;
-use std::collections::{
-	HashMap,
-	HashSet,
-};
+use std::collections::{HashMap, HashSet};
 use std::error::Error as ErrorImpl;
-use tera::{
-	ast,
-	Context as TeraContext,
-	Result as TeraResult,
-	Tera,
-	Value,
-};
+use tera::{ast, Context as TeraContext, Result as TeraResult, Tera, Value};
 
 /// Wrapper for [`Tera`].
 #[derive(Debug)]
 pub struct Template {
 	/// Template name.
-	name:          String,
+	name: String,
 	/// Internal Tera instance.
-	tera:          Tera,
+	tera: Tera,
 	/// Template variables.
 	#[cfg_attr(not(feature = "github"), allow(dead_code))]
 	pub variables: Vec<String>,
@@ -191,10 +179,7 @@ impl Template {
 #[cfg(test)]
 mod test {
 	use super::*;
-	use crate::{
-		commit::Commit,
-		release::Release,
-	};
+	use crate::{commit::Commit, release::Release};
 	use regex::Regex;
 
 	fn get_fake_release_data() -> Release<'static> {
@@ -255,9 +240,8 @@ mod test {
 				&release,
 				Option::<HashMap<&str, String>>::None.as_ref(),
 				&[TextProcessor {
-					pattern:         Regex::new("<DATE>")
-						.expect("failed to compile regex"),
-					replace:         Some(String::from("2023")),
+					pattern: Regex::new("<DATE>").expect("failed to compile regex"),
+					replace: Some(String::from("2023")),
 					replace_command: None,
 				}],
 			)?

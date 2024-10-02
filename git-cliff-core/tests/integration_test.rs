@@ -1,13 +1,6 @@
-use git_cliff_core::commit::{
-	Commit,
-	Signature,
-};
+use git_cliff_core::commit::{Commit, Signature};
 use git_cliff_core::config::{
-	ChangelogConfig,
-	CommitParser,
-	GitConfig,
-	LinkParser,
-	TextProcessor,
+	ChangelogConfig, CommitParser, GitConfig, LinkParser, TextProcessor,
 };
 use git_cliff_core::error::Result;
 use git_cliff_core::release::*;
@@ -20,8 +13,8 @@ use std::fmt::Write;
 #[test]
 fn generate_changelog() -> Result<()> {
 	let changelog_config = ChangelogConfig {
-		header:         Some(String::from("this is a changelog")),
-		body:           Some(String::from(
+		header: Some(String::from("this is a changelog")),
+		body: Some(String::from(
 			r#"
 ## Release {{ version }} - <DATE>
 {% for group, commits in commits | group_by(attribute="group") %}
@@ -38,105 +31,105 @@ fn generate_changelog() -> Result<()> {
 {% endfor -%}
 {% endfor %}"#,
 		)),
-		footer:         Some(String::from("eoc - end of changelog")),
-		trim:           None,
-		render_always:  None,
+		footer: Some(String::from("eoc - end of changelog")),
+		trim: None,
+		render_always: None,
 		postprocessors: None,
-		output:         None,
+		output: None,
 	};
 	let git_config = GitConfig {
-		conventional_commits:     Some(true),
-		filter_unconventional:    Some(true),
-		split_commits:            Some(false),
-		commit_preprocessors:     Some(vec![TextProcessor {
-			pattern:         Regex::new(r"\(fixes (#[1-9]+)\)").unwrap(),
-			replace:         Some(String::from("[closes Issue${1}]")),
+		conventional_commits: Some(true),
+		filter_unconventional: Some(true),
+		split_commits: Some(false),
+		commit_preprocessors: Some(vec![TextProcessor {
+			pattern: Regex::new(r"\(fixes (#[1-9]+)\)").unwrap(),
+			replace: Some(String::from("[closes Issue${1}]")),
 			replace_command: None,
 		}]),
-		commit_parsers:           Some(vec![
+		commit_parsers: Some(vec![
 			CommitParser {
-				sha:           Some(String::from("coffee")),
-				message:       None,
-				body:          None,
-				footer:        None,
-				group:         Some(String::from("I love coffee")),
+				sha: Some(String::from("coffee")),
+				message: None,
+				body: None,
+				footer: None,
+				group: Some(String::from("I love coffee")),
 				default_scope: None,
-				scope:         None,
-				skip:          None,
-				field:         None,
-				pattern:       None,
+				scope: None,
+				skip: None,
+				field: None,
+				pattern: None,
 			},
 			CommitParser {
-				sha:           None,
-				message:       Regex::new("^feat").ok(),
-				body:          None,
-				footer:        None,
-				group:         Some(String::from("shiny features")),
+				sha: None,
+				message: Regex::new("^feat").ok(),
+				body: None,
+				footer: None,
+				group: Some(String::from("shiny features")),
 				default_scope: None,
-				scope:         None,
-				skip:          None,
-				field:         None,
-				pattern:       None,
+				scope: None,
+				skip: None,
+				field: None,
+				pattern: None,
 			},
 			CommitParser {
-				sha:           None,
-				message:       Regex::new("^fix").ok(),
-				body:          None,
-				footer:        None,
-				group:         Some(String::from("fix bugs")),
+				sha: None,
+				message: Regex::new("^fix").ok(),
+				body: None,
+				footer: None,
+				group: Some(String::from("fix bugs")),
 				default_scope: None,
-				scope:         None,
-				skip:          None,
-				field:         None,
-				pattern:       None,
+				scope: None,
+				skip: None,
+				field: None,
+				pattern: None,
 			},
 			CommitParser {
-				sha:           None,
-				message:       Regex::new("^test").ok(),
-				body:          None,
-				footer:        None,
-				group:         None,
+				sha: None,
+				message: Regex::new("^test").ok(),
+				body: None,
+				footer: None,
+				group: None,
 				default_scope: None,
-				scope:         Some(String::from("tests")),
-				skip:          None,
-				field:         None,
-				pattern:       None,
+				scope: Some(String::from("tests")),
+				skip: None,
+				field: None,
+				pattern: None,
 			},
 			CommitParser {
-				sha:           None,
-				message:       None,
-				body:          None,
-				footer:        None,
-				group:         Some(String::from("docs")),
+				sha: None,
+				message: None,
+				body: None,
+				footer: None,
+				group: Some(String::from("docs")),
 				default_scope: None,
-				scope:         None,
-				skip:          None,
-				field:         Some(String::from("author.name")),
-				pattern:       Regex::new("John Doe").ok(),
+				scope: None,
+				skip: None,
+				field: Some(String::from("author.name")),
+				pattern: Regex::new("John Doe").ok(),
 			},
 		]),
 		protect_breaking_commits: None,
-		filter_commits:           Some(true),
-		tag_pattern:              None,
-		skip_tags:                None,
-		ignore_tags:              None,
-		count_tags:               None,
-		use_branch_tags:          None,
-		topo_order:               None,
-		sort_commits:             None,
-		link_parsers:             Some(vec![
+		filter_commits: Some(true),
+		tag_pattern: None,
+		skip_tags: None,
+		ignore_tags: None,
+		count_tags: None,
+		use_branch_tags: None,
+		topo_order: None,
+		sort_commits: None,
+		link_parsers: Some(vec![
 			LinkParser {
 				pattern: Regex::new("#(\\d+)").unwrap(),
-				href:    String::from("https://github.com/$1"),
-				text:    None,
+				href: String::from("https://github.com/$1"),
+				text: None,
 			},
 			LinkParser {
 				pattern: Regex::new("https://github.com/(.*)").unwrap(),
-				href:    String::from("https://github.com/$1"),
-				text:    Some(String::from("$1")),
+				href: String::from("https://github.com/$1"),
+				text: Some(String::from("$1")),
 			},
 		]),
-		limit_commits:            None,
+		limit_commits: None,
 	};
 
 	let mut commit_with_author = Commit::new(
@@ -145,8 +138,8 @@ fn generate_changelog() -> Result<()> {
 	);
 
 	commit_with_author.author = Signature {
-		name:      Some("John Doe".to_string()),
-		email:     None,
+		name: Some("John Doe".to_string()),
+		email: None,
 		timestamp: 0x0,
 	};
 
@@ -274,8 +267,8 @@ fn generate_changelog() -> Result<()> {
 				&release,
 				Option::<HashMap<&str, String>>::None.as_ref(),
 				&[TextProcessor {
-					pattern:         Regex::new("<DATE>").unwrap(),
-					replace:         Some(String::from("2023")),
+					pattern: Regex::new("<DATE>").unwrap(),
+					replace: Some(String::from("2023")),
 					replace_command: None,
 				}]
 			)?

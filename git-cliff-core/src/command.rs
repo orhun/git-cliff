@@ -1,18 +1,8 @@
 use crate::error::Result;
-use std::io::{
-	Error as IoError,
-	ErrorKind as IoErrorKind,
-	Write,
-};
-use std::process::{
-	Command,
-	Stdio,
-};
+use std::io::{Error as IoError, ErrorKind as IoErrorKind, Write};
+use std::process::{Command, Stdio};
 use std::thread;
-use std::{
-	env,
-	str,
-};
+use std::{env, str};
 
 /// Runs the given OS command and returns the output as string.
 ///
@@ -76,10 +66,11 @@ mod test {
 	fn run_os_command() -> Result<()> {
 		assert_eq!(
 			"eroc-ffilc-tig",
-			run("echo $APP_NAME | rev", None, vec![(
-				"APP_NAME",
-				env!("CARGO_PKG_NAME")
-			)])?
+			run(
+				"echo $APP_NAME | rev",
+				None,
+				vec![("APP_NAME", env!("CARGO_PKG_NAME"))]
+			)?
 			.trim()
 		);
 		assert_eq!(

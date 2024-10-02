@@ -1,28 +1,14 @@
 use crate::error::Result;
-use crate::{
-	commit::Commit,
-	config::Bump,
-	config::BumpType,
-};
+use crate::{commit::Commit, config::Bump, config::BumpType};
 #[cfg(feature = "remote")]
 use crate::{
 	contributor::RemoteContributor,
-	remote::{
-		RemoteCommit,
-		RemotePullRequest,
-		RemoteReleaseMetadata,
-	},
+	remote::{RemoteCommit, RemotePullRequest, RemoteReleaseMetadata},
 };
 
-use next_version::{
-	NextVersion,
-	VersionUpdater,
-};
+use next_version::{NextVersion, VersionUpdater};
 use semver::Version;
-use serde::{
-	Deserialize,
-	Serialize,
-};
+use serde::{Deserialize, Serialize};
 use serde_json::value::Value;
 
 /// Representation of a release.
@@ -30,34 +16,34 @@ use serde_json::value::Value;
 #[serde(rename_all(serialize = "camelCase"))]
 pub struct Release<'a> {
 	/// Release version, git tag.
-	pub version:    Option<String>,
+	pub version: Option<String>,
 	/// git tag's message.
-	pub message:    Option<String>,
+	pub message: Option<String>,
 	/// Commits made for the release.
-	pub commits:    Vec<Commit<'a>>,
+	pub commits: Vec<Commit<'a>>,
 	/// Commit ID of the tag.
 	#[serde(rename = "commit_id")]
-	pub commit_id:  Option<String>,
+	pub commit_id: Option<String>,
 	/// Timestamp of the release in seconds, from epoch.
-	pub timestamp:  i64,
+	pub timestamp: i64,
 	/// Previous release.
-	pub previous:   Option<Box<Release<'a>>>,
+	pub previous: Option<Box<Release<'a>>>,
 	/// Repository path.
 	pub repository: Option<String>,
 	/// Arbitrary data to be used with the `--from-context` CLI option.
-	pub extra:      Option<Value>,
+	pub extra: Option<Value>,
 	/// Contributors.
 	#[cfg(feature = "github")]
-	pub github:     RemoteReleaseMetadata,
+	pub github: RemoteReleaseMetadata,
 	/// Contributors.
 	#[cfg(feature = "gitlab")]
-	pub gitlab:     RemoteReleaseMetadata,
+	pub gitlab: RemoteReleaseMetadata,
 	/// Contributors.
 	#[cfg(feature = "gitea")]
-	pub gitea:      RemoteReleaseMetadata,
+	pub gitea: RemoteReleaseMetadata,
 	/// Contributors.
 	#[cfg(feature = "bitbucket")]
-	pub bitbucket:  RemoteReleaseMetadata,
+	pub bitbucket: RemoteReleaseMetadata,
 }
 
 #[cfg(feature = "github")]
@@ -225,22 +211,28 @@ mod test {
 			("1.0.0", "2.0.0", vec!["feat!: add xyz", "feat: zzz"]),
 			("1.0.0", "2.0.0", vec!["feat!: add xyz\n", "feat: zzz\n"]),
 			("2.0.0", "2.0.1", vec!["fix: something"]),
-			("foo/1.0.0", "foo/1.1.0", vec![
-				"feat: add xyz",
-				"fix: fix xyz",
-			]),
-			("bar/1.0.0", "bar/2.0.0", vec![
-				"fix: add xyz",
-				"fix!: aaaaaa",
-			]),
-			("zzz-123/test/1.0.0", "zzz-123/test/1.0.1", vec![
-				"fix: aaaaaa",
-			]),
+			(
+				"foo/1.0.0",
+				"foo/1.1.0",
+				vec!["feat: add xyz", "fix: fix xyz"],
+			),
+			(
+				"bar/1.0.0",
+				"bar/2.0.0",
+				vec!["fix: add xyz", "fix!: aaaaaa"],
+			),
+			(
+				"zzz-123/test/1.0.0",
+				"zzz-123/test/1.0.1",
+				vec!["fix: aaaaaa"],
+			),
 			("v100.0.0", "v101.0.0", vec!["feat!: something"]),
 			("v1.0.0-alpha.1", "v1.0.0-alpha.2", vec!["fix: minor"]),
-			("testing/v1.0.0-beta.1", "testing/v1.0.0-beta.2", vec![
-				"feat: nice",
-			]),
+			(
+				"testing/v1.0.0-beta.1",
+				"testing/v1.0.0-beta.2",
+				vec!["feat: nice"],
+			),
 			("tauri-v1.5.4", "tauri-v1.6.0", vec!["feat: something"]),
 			(
 				"rocket/rocket-v4.0.0-rc.1",
@@ -287,12 +279,12 @@ mod test {
 			let release = build_release(version, commits);
 			let next_version =
 				release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor:   Some(false),
-					breaking_always_bump_major:   Some(false),
-					initial_tag:                  None,
+					features_always_bump_minor: Some(false),
+					breaking_always_bump_major: Some(false),
+					initial_tag: None,
 					custom_major_increment_regex: None,
 					custom_minor_increment_regex: None,
-					bump_type:                    None,
+					bump_type: None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -311,12 +303,12 @@ mod test {
 			let release = build_release(version, commits);
 			let next_version =
 				release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor:   Some(true),
-					breaking_always_bump_major:   Some(false),
-					initial_tag:                  None,
+					features_always_bump_minor: Some(true),
+					breaking_always_bump_major: Some(false),
+					initial_tag: None,
 					custom_major_increment_regex: None,
 					custom_minor_increment_regex: None,
-					bump_type:                    None,
+					bump_type: None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -335,12 +327,12 @@ mod test {
 			let release = build_release(version, commits);
 			let next_version =
 				release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor:   Some(false),
-					breaking_always_bump_major:   Some(true),
-					initial_tag:                  None,
+					features_always_bump_minor: Some(false),
+					breaking_always_bump_major: Some(true),
+					initial_tag: None,
 					custom_major_increment_regex: None,
 					custom_minor_increment_regex: None,
-					bump_type:                    None,
+					bump_type: None,
 				})?;
 			assert_eq!(expected_version, &next_version);
 		}
@@ -359,12 +351,12 @@ mod test {
 			assert_eq!(
 				"0.1.0",
 				empty_release.calculate_next_version_with_config(&Bump {
-					features_always_bump_minor:   Some(features_always_bump_minor),
-					breaking_always_bump_major:   Some(breaking_always_bump_major),
-					initial_tag:                  None,
+					features_always_bump_minor: Some(features_always_bump_minor),
+					breaking_always_bump_major: Some(breaking_always_bump_major),
+					initial_tag: None,
 					custom_major_increment_regex: None,
 					custom_minor_increment_regex: None,
-					bump_type:                    None,
+					bump_type: None,
 				})?
 			);
 		}
@@ -375,10 +367,7 @@ mod test {
 	#[test]
 	fn update_github_metadata() -> Result<()> {
 		use crate::remote::github::{
-			GitHubCommit,
-			GitHubCommitAuthor,
-			GitHubPullRequest,
-			PullRequestLabel,
+			GitHubCommit, GitHubCommitAuthor, GitHubPullRequest, PullRequestLabel,
 		};
 
 		let mut release = Release {
@@ -433,53 +422,53 @@ mod test {
 		release.update_github_metadata(
 			vec![
 				GitHubCommit {
-					sha:    String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+					sha: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
 					author: Some(GitHubCommitAuthor {
 						login: Some(String::from("orhun")),
 					}),
 				},
 				GitHubCommit {
-					sha:    String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
+					sha: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
 					author: Some(GitHubCommitAuthor {
 						login: Some(String::from("orhun")),
 					}),
 				},
 				GitHubCommit {
-					sha:    String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
+					sha: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
 					author: Some(GitHubCommitAuthor {
 						login: Some(String::from("nuhro")),
 					}),
 				},
 				GitHubCommit {
-					sha:    String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
+					sha: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
 					author: Some(GitHubCommitAuthor {
 						login: Some(String::from("awesome_contributor")),
 					}),
 				},
 				GitHubCommit {
-					sha:    String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
+					sha: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
 					author: Some(GitHubCommitAuthor {
 						login: Some(String::from("orhun")),
 					}),
 				},
 				GitHubCommit {
-					sha:    String::from("6c34967147560ea09658776d4901709139b4ad66"),
+					sha: String::from("6c34967147560ea09658776d4901709139b4ad66"),
 					author: Some(GitHubCommitAuthor {
 						login: Some(String::from("someone")),
 					}),
 				},
 				GitHubCommit {
-					sha:    String::from("0c34967147560e809658776d4901709139b4ad68"),
+					sha: String::from("0c34967147560e809658776d4901709139b4ad68"),
 					author: Some(GitHubCommitAuthor {
 						login: Some(String::from("idk")),
 					}),
 				},
 				GitHubCommit {
-					sha:    String::from("kk34967147560e809658776d4901709139b4ad68"),
+					sha: String::from("kk34967147560e809658776d4901709139b4ad68"),
 					author: None,
 				},
 				GitHubCommit {
-					sha:    String::new(),
+					sha: String::new(),
 					author: None,
 				},
 			]
@@ -488,52 +477,52 @@ mod test {
 			.collect(),
 			vec![
 				GitHubPullRequest {
-					title:            Some(String::from("1")),
-					number:           42,
+					title: Some(String::from("1")),
+					number: 42,
 					merge_commit_sha: Some(String::from(
 						"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
 					)),
-					labels:           vec![PullRequestLabel {
+					labels: vec![PullRequestLabel {
 						name: String::from("rust"),
 					}],
 				},
 				GitHubPullRequest {
-					title:            Some(String::from("2")),
-					number:           66,
+					title: Some(String::from("2")),
+					number: 66,
 					merge_commit_sha: Some(String::from(
 						"21f6aa587fcb772de13f2fde0e92697c51f84162",
 					)),
-					labels:           vec![PullRequestLabel {
+					labels: vec![PullRequestLabel {
 						name: String::from("rust"),
 					}],
 				},
 				GitHubPullRequest {
-					title:            Some(String::from("3")),
-					number:           53,
+					title: Some(String::from("3")),
+					number: 53,
 					merge_commit_sha: Some(String::from(
 						"35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973",
 					)),
-					labels:           vec![PullRequestLabel {
+					labels: vec![PullRequestLabel {
 						name: String::from("deps"),
 					}],
 				},
 				GitHubPullRequest {
-					title:            Some(String::from("4")),
-					number:           1000,
+					title: Some(String::from("4")),
+					number: 1000,
 					merge_commit_sha: Some(String::from(
 						"4d3ffe4753b923f4d7807c490e650e6624a12074",
 					)),
-					labels:           vec![PullRequestLabel {
+					labels: vec![PullRequestLabel {
 						name: String::from("deps"),
 					}],
 				},
 				GitHubPullRequest {
-					title:            Some(String::from("5")),
-					number:           999999,
+					title: Some(String::from("5")),
+					number: 999999,
 					merge_commit_sha: Some(String::from(
 						"5a55e92e5a62dc5bf9872ffb2566959fad98bd05",
 					)),
-					labels:           vec![PullRequestLabel {
+					labels: vec![PullRequestLabel {
 						name: String::from("github"),
 					}],
 				},
@@ -548,17 +537,17 @@ mod test {
 				id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
 				message: String::from("add github integration"),
 				github: RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("1")),
-					pr_number:     Some(42),
-					pr_labels:     vec![String::from("rust")],
+					username: Some(String::from("orhun")),
+					pr_title: Some(String::from("1")),
+					pr_number: Some(42),
+					pr_labels: vec![String::from("rust")],
 					is_first_time: false,
 				},
 				remote: Some(RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("1")),
-					pr_number:     Some(42),
-					pr_labels:     vec![String::from("rust")],
+					username: Some(String::from("orhun")),
+					pr_title: Some(String::from("1")),
+					pr_number: Some(42),
+					pr_labels: vec![String::from("rust")],
 					is_first_time: false,
 				}),
 				..Default::default()
@@ -567,17 +556,17 @@ mod test {
 				id: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
 				message: String::from("fix github integration"),
 				github: RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("2")),
-					pr_number:     Some(66),
-					pr_labels:     vec![String::from("rust")],
+					username: Some(String::from("orhun")),
+					pr_title: Some(String::from("2")),
+					pr_number: Some(66),
+					pr_labels: vec![String::from("rust")],
 					is_first_time: false,
 				},
 				remote: Some(RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("2")),
-					pr_number:     Some(66),
-					pr_labels:     vec![String::from("rust")],
+					username: Some(String::from("orhun")),
+					pr_title: Some(String::from("2")),
+					pr_number: Some(66),
+					pr_labels: vec![String::from("rust")],
 					is_first_time: false,
 				}),
 				..Default::default()
@@ -586,17 +575,17 @@ mod test {
 				id: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
 				message: String::from("update metadata"),
 				github: RemoteContributor {
-					username:      Some(String::from("nuhro")),
-					pr_title:      Some(String::from("3")),
-					pr_number:     Some(53),
-					pr_labels:     vec![String::from("deps")],
+					username: Some(String::from("nuhro")),
+					pr_title: Some(String::from("3")),
+					pr_number: Some(53),
+					pr_labels: vec![String::from("deps")],
 					is_first_time: false,
 				},
 				remote: Some(RemoteContributor {
-					username:      Some(String::from("nuhro")),
-					pr_title:      Some(String::from("3")),
-					pr_number:     Some(53),
-					pr_labels:     vec![String::from("deps")],
+					username: Some(String::from("nuhro")),
+					pr_title: Some(String::from("3")),
+					pr_number: Some(53),
+					pr_labels: vec![String::from("deps")],
 					is_first_time: false,
 				}),
 				..Default::default()
@@ -605,17 +594,17 @@ mod test {
 				id: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
 				message: String::from("do some stuff"),
 				github: RemoteContributor {
-					username:      Some(String::from("awesome_contributor")),
-					pr_title:      Some(String::from("4")),
-					pr_number:     Some(1000),
-					pr_labels:     vec![String::from("deps")],
+					username: Some(String::from("awesome_contributor")),
+					pr_title: Some(String::from("4")),
+					pr_number: Some(1000),
+					pr_labels: vec![String::from("deps")],
 					is_first_time: false,
 				},
 				remote: Some(RemoteContributor {
-					username:      Some(String::from("awesome_contributor")),
-					pr_title:      Some(String::from("4")),
-					pr_number:     Some(1000),
-					pr_labels:     vec![String::from("deps")],
+					username: Some(String::from("awesome_contributor")),
+					pr_title: Some(String::from("4")),
+					pr_number: Some(1000),
+					pr_labels: vec![String::from("deps")],
 					is_first_time: false,
 				}),
 				..Default::default()
@@ -624,17 +613,17 @@ mod test {
 				id: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
 				message: String::from("alright"),
 				github: RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("5")),
-					pr_number:     Some(999999),
-					pr_labels:     vec![String::from("github")],
+					username: Some(String::from("orhun")),
+					pr_title: Some(String::from("5")),
+					pr_number: Some(999999),
+					pr_labels: vec![String::from("github")],
 					is_first_time: false,
 				},
 				remote: Some(RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("5")),
-					pr_number:     Some(999999),
-					pr_labels:     vec![String::from("github")],
+					username: Some(String::from("orhun")),
+					pr_title: Some(String::from("5")),
+					pr_number: Some(999999),
+					pr_labels: vec![String::from("github")],
 					is_first_time: false,
 				}),
 				..Default::default()
@@ -643,17 +632,17 @@ mod test {
 				id: String::from("6c34967147560ea09658776d4901709139b4ad66"),
 				message: String::from("should be fine"),
 				github: RemoteContributor {
-					username:      Some(String::from("someone")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
+					username: Some(String::from("someone")),
+					pr_title: None,
+					pr_number: None,
+					pr_labels: vec![],
 					is_first_time: false,
 				},
 				remote: Some(RemoteContributor {
-					username:      Some(String::from("someone")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
+					username: Some(String::from("someone")),
+					pr_title: None,
+					pr_number: None,
+					pr_labels: vec![],
 					is_first_time: false,
 				}),
 				..Default::default()
@@ -669,31 +658,31 @@ mod test {
 		let expected_metadata = RemoteReleaseMetadata {
 			contributors: vec![
 				RemoteContributor {
-					username:      Some(String::from("someone")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
+					username: Some(String::from("someone")),
+					pr_title: None,
+					pr_number: None,
+					pr_labels: vec![],
 					is_first_time: true,
 				},
 				RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("1")),
-					pr_number:     Some(42),
-					pr_labels:     vec![String::from("rust")],
+					username: Some(String::from("orhun")),
+					pr_title: Some(String::from("1")),
+					pr_number: Some(42),
+					pr_labels: vec![String::from("rust")],
 					is_first_time: true,
 				},
 				RemoteContributor {
-					username:      Some(String::from("nuhro")),
-					pr_title:      Some(String::from("3")),
-					pr_number:     Some(53),
-					pr_labels:     vec![String::from("deps")],
+					username: Some(String::from("nuhro")),
+					pr_title: Some(String::from("3")),
+					pr_number: Some(53),
+					pr_labels: vec![String::from("deps")],
 					is_first_time: true,
 				},
 				RemoteContributor {
-					username:      Some(String::from("awesome_contributor")),
-					pr_title:      Some(String::from("4")),
-					pr_number:     Some(1000),
-					pr_labels:     vec![String::from("deps")],
+					username: Some(String::from("awesome_contributor")),
+					pr_title: Some(String::from("4")),
+					pr_number: Some(1000),
+					pr_labels: vec![String::from("deps")],
 					is_first_time: true,
 				},
 			],
@@ -706,11 +695,7 @@ mod test {
 	#[cfg(feature = "gitlab")]
 	#[test]
 	fn update_gitlab_metadata() -> Result<()> {
-		use crate::remote::gitlab::{
-			GitLabCommit,
-			GitLabMergeRequest,
-			GitLabUser,
-		};
+		use crate::remote::gitlab::{GitLabCommit, GitLabMergeRequest, GitLabUser};
 
 		let mut release = Release {
 			version: None,
@@ -765,170 +750,152 @@ mod test {
 		release.update_gitlab_metadata(
 			vec![
 				GitLabCommit {
-					id:              String::from(
-						"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
-					),
-					author_name:     String::from("orhun"),
-					short_id:        String::from(""),
-					title:           String::from(""),
-					author_email:    String::from(""),
-					authored_date:   String::from(""),
-					committer_name:  String::from(""),
+					id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+					author_name: String::from("orhun"),
+					short_id: String::from(""),
+					title: String::from(""),
+					author_email: String::from(""),
+					authored_date: String::from(""),
+					committer_name: String::from(""),
 					committer_email: String::from(""),
-					committed_date:  String::from(""),
-					created_at:      String::from(""),
-					message:         String::from(""),
-					parent_ids:      vec![],
-					web_url:         String::from(""),
+					committed_date: String::from(""),
+					created_at: String::from(""),
+					message: String::from(""),
+					parent_ids: vec![],
+					web_url: String::from(""),
 				},
 				GitLabCommit {
-					id:              String::from(
-						"21f6aa587fcb772de13f2fde0e92697c51f84162",
-					),
-					author_name:     String::from("orhun"),
-					short_id:        String::from(""),
-					title:           String::from(""),
-					author_email:    String::from(""),
-					authored_date:   String::from(""),
-					committer_name:  String::from(""),
+					id: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
+					author_name: String::from("orhun"),
+					short_id: String::from(""),
+					title: String::from(""),
+					author_email: String::from(""),
+					authored_date: String::from(""),
+					committer_name: String::from(""),
 					committer_email: String::from(""),
-					committed_date:  String::from(""),
-					created_at:      String::from(""),
-					message:         String::from(""),
-					parent_ids:      vec![],
-					web_url:         String::from(""),
+					committed_date: String::from(""),
+					created_at: String::from(""),
+					message: String::from(""),
+					parent_ids: vec![],
+					web_url: String::from(""),
 				},
 				GitLabCommit {
-					id:              String::from(
-						"35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973",
-					),
-					author_name:     String::from("nuhro"),
-					short_id:        String::from(""),
-					title:           String::from(""),
-					author_email:    String::from(""),
-					authored_date:   String::from(""),
-					committer_name:  String::from(""),
+					id: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
+					author_name: String::from("nuhro"),
+					short_id: String::from(""),
+					title: String::from(""),
+					author_email: String::from(""),
+					authored_date: String::from(""),
+					committer_name: String::from(""),
 					committer_email: String::from(""),
-					committed_date:  String::from(""),
-					created_at:      String::from(""),
-					message:         String::from(""),
-					parent_ids:      vec![],
-					web_url:         String::from(""),
+					committed_date: String::from(""),
+					created_at: String::from(""),
+					message: String::from(""),
+					parent_ids: vec![],
+					web_url: String::from(""),
 				},
 				GitLabCommit {
-					id:              String::from(
-						"4d3ffe4753b923f4d7807c490e650e6624a12074",
-					),
-					author_name:     String::from("awesome_contributor"),
-					short_id:        String::from(""),
-					title:           String::from(""),
-					author_email:    String::from(""),
-					authored_date:   String::from(""),
-					committer_name:  String::from(""),
+					id: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
+					author_name: String::from("awesome_contributor"),
+					short_id: String::from(""),
+					title: String::from(""),
+					author_email: String::from(""),
+					authored_date: String::from(""),
+					committer_name: String::from(""),
 					committer_email: String::from(""),
-					committed_date:  String::from(""),
-					created_at:      String::from(""),
-					message:         String::from(""),
-					parent_ids:      vec![],
-					web_url:         String::from(""),
+					committed_date: String::from(""),
+					created_at: String::from(""),
+					message: String::from(""),
+					parent_ids: vec![],
+					web_url: String::from(""),
 				},
 				GitLabCommit {
-					id:              String::from(
-						"5a55e92e5a62dc5bf9872ffb2566959fad98bd05",
-					),
-					author_name:     String::from("orhun"),
-					short_id:        String::from(""),
-					title:           String::from(""),
-					author_email:    String::from(""),
-					authored_date:   String::from(""),
-					committer_name:  String::from(""),
+					id: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
+					author_name: String::from("orhun"),
+					short_id: String::from(""),
+					title: String::from(""),
+					author_email: String::from(""),
+					authored_date: String::from(""),
+					committer_name: String::from(""),
 					committer_email: String::from(""),
-					committed_date:  String::from(""),
-					created_at:      String::from(""),
-					message:         String::from(""),
-					parent_ids:      vec![],
-					web_url:         String::from(""),
+					committed_date: String::from(""),
+					created_at: String::from(""),
+					message: String::from(""),
+					parent_ids: vec![],
+					web_url: String::from(""),
 				},
 				GitLabCommit {
-					id:              String::from(
-						"6c34967147560ea09658776d4901709139b4ad66",
-					),
-					author_name:     String::from("someone"),
-					short_id:        String::from(""),
-					title:           String::from(""),
-					author_email:    String::from(""),
-					authored_date:   String::from(""),
-					committer_name:  String::from(""),
+					id: String::from("6c34967147560ea09658776d4901709139b4ad66"),
+					author_name: String::from("someone"),
+					short_id: String::from(""),
+					title: String::from(""),
+					author_email: String::from(""),
+					authored_date: String::from(""),
+					committer_name: String::from(""),
 					committer_email: String::from(""),
-					committed_date:  String::from(""),
-					created_at:      String::from(""),
-					message:         String::from(""),
-					parent_ids:      vec![],
-					web_url:         String::from(""),
+					committed_date: String::from(""),
+					created_at: String::from(""),
+					message: String::from(""),
+					parent_ids: vec![],
+					web_url: String::from(""),
 				},
 				GitLabCommit {
-					id:              String::from(
-						"0c34967147560e809658776d4901709139b4ad68",
-					),
-					author_name:     String::from("idk"),
-					short_id:        String::from(""),
-					title:           String::from(""),
-					author_email:    String::from(""),
-					authored_date:   String::from(""),
-					committer_name:  String::from(""),
+					id: String::from("0c34967147560e809658776d4901709139b4ad68"),
+					author_name: String::from("idk"),
+					short_id: String::from(""),
+					title: String::from(""),
+					author_email: String::from(""),
+					authored_date: String::from(""),
+					committer_name: String::from(""),
 					committer_email: String::from(""),
-					committed_date:  String::from(""),
-					created_at:      String::from(""),
-					message:         String::from(""),
-					parent_ids:      vec![],
-					web_url:         String::from(""),
+					committed_date: String::from(""),
+					created_at: String::from(""),
+					message: String::from(""),
+					parent_ids: vec![],
+					web_url: String::from(""),
 				},
 				GitLabCommit {
-					id:              String::from(
-						"kk34967147560e809658776d4901709139b4ad68",
-					),
-					author_name:     String::from("orhun"),
-					short_id:        String::from(""),
-					title:           String::from(""),
-					author_email:    String::from(""),
-					authored_date:   String::from(""),
-					committer_name:  String::from(""),
+					id: String::from("kk34967147560e809658776d4901709139b4ad68"),
+					author_name: String::from("orhun"),
+					short_id: String::from(""),
+					title: String::from(""),
+					author_email: String::from(""),
+					authored_date: String::from(""),
+					committer_name: String::from(""),
 					committer_email: String::from(""),
-					committed_date:  String::from(""),
-					created_at:      String::from(""),
-					message:         String::from(""),
-					parent_ids:      vec![],
-					web_url:         String::from(""),
+					committed_date: String::from(""),
+					created_at: String::from(""),
+					message: String::from(""),
+					parent_ids: vec![],
+					web_url: String::from(""),
 				},
 			]
 			.into_iter()
 			.map(|v| Box::new(v) as Box<dyn RemoteCommit>)
 			.collect(),
 			vec![Box::new(GitLabMergeRequest {
-				title:             String::from("1"),
-				merge_commit_sha:  Some(String::from(
+				title: String::from("1"),
+				merge_commit_sha: Some(String::from(
 					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
 				)),
-				id:                1,
-				iid:               1,
-				project_id:        1,
-				description:       String::from(""),
-				state:             String::from(""),
-				created_at:        String::from(""),
-				author:            GitLabUser {
-					id:         1,
-					name:       String::from("42"),
-					username:   String::from("42"),
-					state:      String::from("42"),
+				id: 1,
+				iid: 1,
+				project_id: 1,
+				description: String::from(""),
+				state: String::from(""),
+				created_at: String::from(""),
+				author: GitLabUser {
+					id: 1,
+					name: String::from("42"),
+					username: String::from("42"),
+					state: String::from("42"),
 					avatar_url: None,
-					web_url:    String::from("42"),
+					web_url: String::from("42"),
 				},
-				sha:               String::from(
-					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
-				),
-				web_url:           String::from(""),
+				sha: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+				web_url: String::from(""),
 				squash_commit_sha: None,
-				labels:            vec![String::from("rust")],
+				labels: vec![String::from("rust")],
 			})],
 		)?;
 		#[allow(deprecated)]
@@ -937,17 +904,17 @@ mod test {
 				id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
 				message: String::from("add github integration"),
 				gitlab: RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("1")),
-					pr_number:     Some(1),
-					pr_labels:     vec![String::from("rust")],
+					username: Some(String::from("orhun")),
+					pr_title: Some(String::from("1")),
+					pr_number: Some(1),
+					pr_labels: vec![String::from("rust")],
 					is_first_time: false,
 				},
 				remote: Some(RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("1")),
-					pr_number:     Some(1),
-					pr_labels:     vec![String::from("rust")],
+					username: Some(String::from("orhun")),
+					pr_title: Some(String::from("1")),
+					pr_number: Some(1),
+					pr_labels: vec![String::from("rust")],
 					is_first_time: false,
 				}),
 				..Default::default()
@@ -956,17 +923,17 @@ mod test {
 				id: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
 				message: String::from("fix github integration"),
 				gitlab: RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
+					username: Some(String::from("orhun")),
+					pr_title: None,
+					pr_number: None,
+					pr_labels: vec![],
 					is_first_time: false,
 				},
 				remote: Some(RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
+					username: Some(String::from("orhun")),
+					pr_title: None,
+					pr_number: None,
+					pr_labels: vec![],
 					is_first_time: false,
 				}),
 				..Default::default()
@@ -975,17 +942,17 @@ mod test {
 				id: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
 				message: String::from("update metadata"),
 				gitlab: RemoteContributor {
-					username:      Some(String::from("nuhro")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
+					username: Some(String::from("nuhro")),
+					pr_title: None,
+					pr_number: None,
+					pr_labels: vec![],
 					is_first_time: false,
 				},
 				remote: Some(RemoteContributor {
-					username:      Some(String::from("nuhro")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
+					username: Some(String::from("nuhro")),
+					pr_title: None,
+					pr_number: None,
+					pr_labels: vec![],
 					is_first_time: false,
 				}),
 				..Default::default()
@@ -994,17 +961,17 @@ mod test {
 				id: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
 				message: String::from("do some stuff"),
 				gitlab: RemoteContributor {
-					username:      Some(String::from("awesome_contributor")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
+					username: Some(String::from("awesome_contributor")),
+					pr_title: None,
+					pr_number: None,
+					pr_labels: vec![],
 					is_first_time: false,
 				},
 				remote: Some(RemoteContributor {
-					username:      Some(String::from("awesome_contributor")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
+					username: Some(String::from("awesome_contributor")),
+					pr_title: None,
+					pr_number: None,
+					pr_labels: vec![],
 					is_first_time: false,
 				}),
 				..Default::default()
@@ -1013,17 +980,17 @@ mod test {
 				id: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
 				message: String::from("alright"),
 				gitlab: RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
+					username: Some(String::from("orhun")),
+					pr_title: None,
+					pr_number: None,
+					pr_labels: vec![],
 					is_first_time: false,
 				},
 				remote: Some(RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
+					username: Some(String::from("orhun")),
+					pr_title: None,
+					pr_number: None,
+					pr_labels: vec![],
 					is_first_time: false,
 				}),
 				..Default::default()
@@ -1032,17 +999,17 @@ mod test {
 				id: String::from("6c34967147560ea09658776d4901709139b4ad66"),
 				message: String::from("should be fine"),
 				gitlab: RemoteContributor {
-					username:      Some(String::from("someone")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
+					username: Some(String::from("someone")),
+					pr_title: None,
+					pr_number: None,
+					pr_labels: vec![],
 					is_first_time: false,
 				},
 				remote: Some(RemoteContributor {
-					username:      Some(String::from("someone")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
+					username: Some(String::from("someone")),
+					pr_title: None,
+					pr_number: None,
+					pr_labels: vec![],
 					is_first_time: false,
 				}),
 				..Default::default()
@@ -1058,31 +1025,31 @@ mod test {
 		let expected_metadata = RemoteReleaseMetadata {
 			contributors: vec![
 				RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("1")),
-					pr_number:     Some(1),
-					pr_labels:     vec![String::from("rust")],
+					username: Some(String::from("orhun")),
+					pr_title: Some(String::from("1")),
+					pr_number: Some(1),
+					pr_labels: vec![String::from("rust")],
 					is_first_time: false,
 				},
 				RemoteContributor {
-					username:      Some(String::from("nuhro")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
+					username: Some(String::from("nuhro")),
+					pr_title: None,
+					pr_number: None,
+					pr_labels: vec![],
 					is_first_time: true,
 				},
 				RemoteContributor {
-					username:      Some(String::from("awesome_contributor")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
+					username: Some(String::from("awesome_contributor")),
+					pr_title: None,
+					pr_number: None,
+					pr_labels: vec![],
 					is_first_time: true,
 				},
 				RemoteContributor {
-					username:      Some(String::from("someone")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
+					username: Some(String::from("someone")),
+					pr_title: None,
+					pr_number: None,
+					pr_labels: vec![],
 					is_first_time: true,
 				},
 			],
@@ -1096,10 +1063,7 @@ mod test {
 	#[test]
 	fn update_gitea_metadata() -> Result<()> {
 		use crate::remote::gitea::{
-			GiteaCommit,
-			GiteaCommitAuthor,
-			GiteaPullRequest,
-			PullRequestLabel,
+			GiteaCommit, GiteaCommitAuthor, GiteaPullRequest, PullRequestLabel,
 		};
 
 		let mut release = Release {
@@ -1155,53 +1119,53 @@ mod test {
 		release.update_gitea_metadata(
 			vec![
 				GiteaCommit {
-					sha:    String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+					sha: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
 					author: Some(GiteaCommitAuthor {
 						login: Some(String::from("orhun")),
 					}),
 				},
 				GiteaCommit {
-					sha:    String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
+					sha: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
 					author: Some(GiteaCommitAuthor {
 						login: Some(String::from("orhun")),
 					}),
 				},
 				GiteaCommit {
-					sha:    String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
+					sha: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
 					author: Some(GiteaCommitAuthor {
 						login: Some(String::from("nuhro")),
 					}),
 				},
 				GiteaCommit {
-					sha:    String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
+					sha: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
 					author: Some(GiteaCommitAuthor {
 						login: Some(String::from("awesome_contributor")),
 					}),
 				},
 				GiteaCommit {
-					sha:    String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
+					sha: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
 					author: Some(GiteaCommitAuthor {
 						login: Some(String::from("orhun")),
 					}),
 				},
 				GiteaCommit {
-					sha:    String::from("6c34967147560ea09658776d4901709139b4ad66"),
+					sha: String::from("6c34967147560ea09658776d4901709139b4ad66"),
 					author: Some(GiteaCommitAuthor {
 						login: Some(String::from("someone")),
 					}),
 				},
 				GiteaCommit {
-					sha:    String::from("0c34967147560e809658776d4901709139b4ad68"),
+					sha: String::from("0c34967147560e809658776d4901709139b4ad68"),
 					author: Some(GiteaCommitAuthor {
 						login: Some(String::from("idk")),
 					}),
 				},
 				GiteaCommit {
-					sha:    String::from("kk34967147560e809658776d4901709139b4ad68"),
+					sha: String::from("kk34967147560e809658776d4901709139b4ad68"),
 					author: None,
 				},
 				GiteaCommit {
-					sha:    String::new(),
+					sha: String::new(),
 					author: None,
 				},
 			]
@@ -1210,52 +1174,52 @@ mod test {
 			.collect(),
 			vec![
 				GiteaPullRequest {
-					title:            Some(String::from("1")),
-					number:           42,
+					title: Some(String::from("1")),
+					number: 42,
 					merge_commit_sha: Some(String::from(
 						"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
 					)),
-					labels:           vec![PullRequestLabel {
+					labels: vec![PullRequestLabel {
 						name: String::from("rust"),
 					}],
 				},
 				GiteaPullRequest {
-					title:            Some(String::from("2")),
-					number:           66,
+					title: Some(String::from("2")),
+					number: 66,
 					merge_commit_sha: Some(String::from(
 						"21f6aa587fcb772de13f2fde0e92697c51f84162",
 					)),
-					labels:           vec![PullRequestLabel {
+					labels: vec![PullRequestLabel {
 						name: String::from("rust"),
 					}],
 				},
 				GiteaPullRequest {
-					title:            Some(String::from("3")),
-					number:           53,
+					title: Some(String::from("3")),
+					number: 53,
 					merge_commit_sha: Some(String::from(
 						"35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973",
 					)),
-					labels:           vec![PullRequestLabel {
+					labels: vec![PullRequestLabel {
 						name: String::from("deps"),
 					}],
 				},
 				GiteaPullRequest {
-					title:            Some(String::from("4")),
-					number:           1000,
+					title: Some(String::from("4")),
+					number: 1000,
 					merge_commit_sha: Some(String::from(
 						"4d3ffe4753b923f4d7807c490e650e6624a12074",
 					)),
-					labels:           vec![PullRequestLabel {
+					labels: vec![PullRequestLabel {
 						name: String::from("deps"),
 					}],
 				},
 				GiteaPullRequest {
-					title:            Some(String::from("5")),
-					number:           999999,
+					title: Some(String::from("5")),
+					number: 999999,
 					merge_commit_sha: Some(String::from(
 						"5a55e92e5a62dc5bf9872ffb2566959fad98bd05",
 					)),
-					labels:           vec![PullRequestLabel {
+					labels: vec![PullRequestLabel {
 						name: String::from("github"),
 					}],
 				},
@@ -1270,17 +1234,17 @@ mod test {
 				id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
 				message: String::from("add github integration"),
 				gitea: RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("1")),
-					pr_number:     Some(42),
-					pr_labels:     vec![String::from("rust")],
+					username: Some(String::from("orhun")),
+					pr_title: Some(String::from("1")),
+					pr_number: Some(42),
+					pr_labels: vec![String::from("rust")],
 					is_first_time: false,
 				},
 				remote: Some(RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("1")),
-					pr_number:     Some(42),
-					pr_labels:     vec![String::from("rust")],
+					username: Some(String::from("orhun")),
+					pr_title: Some(String::from("1")),
+					pr_number: Some(42),
+					pr_labels: vec![String::from("rust")],
 					is_first_time: false,
 				}),
 				..Default::default()
@@ -1289,17 +1253,17 @@ mod test {
 				id: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
 				message: String::from("fix github integration"),
 				gitea: RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("2")),
-					pr_number:     Some(66),
-					pr_labels:     vec![String::from("rust")],
+					username: Some(String::from("orhun")),
+					pr_title: Some(String::from("2")),
+					pr_number: Some(66),
+					pr_labels: vec![String::from("rust")],
 					is_first_time: false,
 				},
 				remote: Some(RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("2")),
-					pr_number:     Some(66),
-					pr_labels:     vec![String::from("rust")],
+					username: Some(String::from("orhun")),
+					pr_title: Some(String::from("2")),
+					pr_number: Some(66),
+					pr_labels: vec![String::from("rust")],
 					is_first_time: false,
 				}),
 				..Default::default()
@@ -1308,17 +1272,17 @@ mod test {
 				id: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
 				message: String::from("update metadata"),
 				gitea: RemoteContributor {
-					username:      Some(String::from("nuhro")),
-					pr_title:      Some(String::from("3")),
-					pr_number:     Some(53),
-					pr_labels:     vec![String::from("deps")],
+					username: Some(String::from("nuhro")),
+					pr_title: Some(String::from("3")),
+					pr_number: Some(53),
+					pr_labels: vec![String::from("deps")],
 					is_first_time: false,
 				},
 				remote: Some(RemoteContributor {
-					username:      Some(String::from("nuhro")),
-					pr_title:      Some(String::from("3")),
-					pr_number:     Some(53),
-					pr_labels:     vec![String::from("deps")],
+					username: Some(String::from("nuhro")),
+					pr_title: Some(String::from("3")),
+					pr_number: Some(53),
+					pr_labels: vec![String::from("deps")],
 					is_first_time: false,
 				}),
 				..Default::default()
@@ -1327,17 +1291,17 @@ mod test {
 				id: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
 				message: String::from("do some stuff"),
 				gitea: RemoteContributor {
-					username:      Some(String::from("awesome_contributor")),
-					pr_title:      Some(String::from("4")),
-					pr_number:     Some(1000),
-					pr_labels:     vec![String::from("deps")],
+					username: Some(String::from("awesome_contributor")),
+					pr_title: Some(String::from("4")),
+					pr_number: Some(1000),
+					pr_labels: vec![String::from("deps")],
 					is_first_time: false,
 				},
 				remote: Some(RemoteContributor {
-					username:      Some(String::from("awesome_contributor")),
-					pr_title:      Some(String::from("4")),
-					pr_number:     Some(1000),
-					pr_labels:     vec![String::from("deps")],
+					username: Some(String::from("awesome_contributor")),
+					pr_title: Some(String::from("4")),
+					pr_number: Some(1000),
+					pr_labels: vec![String::from("deps")],
 					is_first_time: false,
 				}),
 				..Default::default()
@@ -1346,17 +1310,17 @@ mod test {
 				id: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
 				message: String::from("alright"),
 				gitea: RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("5")),
-					pr_number:     Some(999999),
-					pr_labels:     vec![String::from("github")],
+					username: Some(String::from("orhun")),
+					pr_title: Some(String::from("5")),
+					pr_number: Some(999999),
+					pr_labels: vec![String::from("github")],
 					is_first_time: false,
 				},
 				remote: Some(RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("5")),
-					pr_number:     Some(999999),
-					pr_labels:     vec![String::from("github")],
+					username: Some(String::from("orhun")),
+					pr_title: Some(String::from("5")),
+					pr_number: Some(999999),
+					pr_labels: vec![String::from("github")],
 					is_first_time: false,
 				}),
 				..Default::default()
@@ -1365,17 +1329,17 @@ mod test {
 				id: String::from("6c34967147560ea09658776d4901709139b4ad66"),
 				message: String::from("should be fine"),
 				gitea: RemoteContributor {
-					username:      Some(String::from("someone")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
+					username: Some(String::from("someone")),
+					pr_title: None,
+					pr_number: None,
+					pr_labels: vec![],
 					is_first_time: false,
 				},
 				remote: Some(RemoteContributor {
-					username:      Some(String::from("someone")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
+					username: Some(String::from("someone")),
+					pr_title: None,
+					pr_number: None,
+					pr_labels: vec![],
 					is_first_time: false,
 				}),
 				..Default::default()
@@ -1391,31 +1355,31 @@ mod test {
 		let expected_metadata = RemoteReleaseMetadata {
 			contributors: vec![
 				RemoteContributor {
-					username:      Some(String::from("someone")),
-					pr_title:      None,
-					pr_number:     None,
-					pr_labels:     vec![],
+					username: Some(String::from("someone")),
+					pr_title: None,
+					pr_number: None,
+					pr_labels: vec![],
 					is_first_time: true,
 				},
 				RemoteContributor {
-					username:      Some(String::from("orhun")),
-					pr_title:      Some(String::from("1")),
-					pr_number:     Some(42),
-					pr_labels:     vec![String::from("rust")],
+					username: Some(String::from("orhun")),
+					pr_title: Some(String::from("1")),
+					pr_number: Some(42),
+					pr_labels: vec![String::from("rust")],
 					is_first_time: true,
 				},
 				RemoteContributor {
-					username:      Some(String::from("nuhro")),
-					pr_title:      Some(String::from("3")),
-					pr_number:     Some(53),
-					pr_labels:     vec![String::from("deps")],
+					username: Some(String::from("nuhro")),
+					pr_title: Some(String::from("3")),
+					pr_number: Some(53),
+					pr_labels: vec![String::from("deps")],
 					is_first_time: true,
 				},
 				RemoteContributor {
-					username:      Some(String::from("awesome_contributor")),
-					pr_title:      Some(String::from("4")),
-					pr_number:     Some(1000),
-					pr_labels:     vec![String::from("deps")],
+					username: Some(String::from("awesome_contributor")),
+					pr_title: Some(String::from("4")),
+					pr_number: Some(1000),
+					pr_labels: vec![String::from("deps")],
 					is_first_time: true,
 				},
 			],

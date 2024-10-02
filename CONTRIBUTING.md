@@ -45,8 +45,6 @@ env UPDATE_EXPECT=1 cargo test
 
 7. Make sure [rustfmt](https://github.com/rust-lang/rustfmt) and [clippy](https://github.com/rust-lang/rust-clippy) don't complain about your changes.
 
-We use the `nightly` channel for `rustfmt` so please set the appropriate settings for your editor/IDE for that.
-
 ## Create a Pull Request
 
 1. Ensure that you updated the documentation and filled the [Pull Request template](./.github/PULL_REQUEST_TEMPLATE.md) according to the changes you made.

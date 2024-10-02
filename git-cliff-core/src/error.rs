@@ -109,10 +109,7 @@ pub type Result<T> = core::result::Result<T, Error>;
 #[cfg(test)]
 mod test {
 	use super::*;
-	use git_conventional::{
-		Commit,
-		ErrorKind,
-	};
+	use git_conventional::{Commit, ErrorKind};
 	fn mock_function() -> super::Result<Commit<'static>> {
 		Ok(Commit::parse("test")?)
 	}

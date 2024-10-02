@@ -1,14 +1,8 @@
 use crate::command;
 use crate::error::Result;
-use regex::{
-	Regex,
-	RegexBuilder,
-};
+use regex::{Regex, RegexBuilder};
 use secrecy::SecretString;
-use serde::{
-	Deserialize,
-	Serialize,
-};
+use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fs;
 use std::path::Path;
@@ -21,7 +15,7 @@ const DEFAULT_INITIAL_TAG: &str = "0.1.0";
 #[derive(Debug)]
 struct ManifestInfo {
 	/// Path of the manifest.
-	path:  PathBuf,
+	path: PathBuf,
 	/// Regular expression for matching metadata in the manifest.
 	regex: Regex,
 }
@@ -57,76 +51,76 @@ pub struct Config {
 	pub changelog: ChangelogConfig,
 	/// Configuration values about git.
 	#[serde(default)]
-	pub git:       GitConfig,
+	pub git: GitConfig,
 	/// Configuration values about remote.
 	#[serde(default)]
-	pub remote:    RemoteConfig,
+	pub remote: RemoteConfig,
 	/// Configuration values about bump version.
 	#[serde(default)]
-	pub bump:      Bump,
+	pub bump: Bump,
 }
 
 /// Changelog configuration.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ChangelogConfig {
 	/// Changelog header.
-	pub header:         Option<String>,
+	pub header: Option<String>,
 	/// Changelog body, template.
-	pub body:           Option<String>,
+	pub body: Option<String>,
 	/// Changelog footer.
-	pub footer:         Option<String>,
+	pub footer: Option<String>,
 	/// Trim the template.
-	pub trim:           Option<bool>,
+	pub trim: Option<bool>,
 	/// Always render the body template.
-	pub render_always:  Option<bool>,
+	pub render_always: Option<bool>,
 	/// Changelog postprocessors.
 	pub postprocessors: Option<Vec<TextProcessor>>,
 	/// Output file path.
-	pub output:         Option<PathBuf>,
+	pub output: Option<PathBuf>,
 }
 
 /// Git configuration
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct GitConfig {
 	/// Whether to enable parsing conventional commits.
-	pub conventional_commits:  Option<bool>,
+	pub conventional_commits: Option<bool>,
 	/// Whether to filter out unconventional commits.
 	pub filter_unconventional: Option<bool>,
 	/// Whether to split commits by line, processing each line as an individual
 	/// commit.
-	pub split_commits:         Option<bool>,
+	pub split_commits: Option<bool>,
 
 	/// Git commit preprocessors.
-	pub commit_preprocessors:     Option<Vec<TextProcessor>>,
+	pub commit_preprocessors: Option<Vec<TextProcessor>>,
 	/// Git commit parsers.
-	pub commit_parsers:           Option<Vec<CommitParser>>,
+	pub commit_parsers: Option<Vec<CommitParser>>,
 	/// Whether to protect all breaking changes from being skipped by a commit
 	/// parser.
 	pub protect_breaking_commits: Option<bool>,
 	/// Link parsers.
-	pub link_parsers:             Option<Vec<LinkParser>>,
+	pub link_parsers: Option<Vec<LinkParser>>,
 	/// Whether to filter out commits.
-	pub filter_commits:           Option<bool>,
+	pub filter_commits: Option<bool>,
 	/// Blob pattern for git tags.
 	#[serde(with = "serde_regex", default)]
-	pub tag_pattern:              Option<Regex>,
+	pub tag_pattern: Option<Regex>,
 	/// Regex to skip matched tags.
 	#[serde(with = "serde_regex", default)]
-	pub skip_tags:                Option<Regex>,
+	pub skip_tags: Option<Regex>,
 	/// Regex to ignore matched tags.
 	#[serde(with = "serde_regex", default)]
-	pub ignore_tags:              Option<Regex>,
+	pub ignore_tags: Option<Regex>,
 	/// Regex to count matched tags.
 	#[serde(with = "serde_regex", default)]
-	pub count_tags:               Option<Regex>,
+	pub count_tags: Option<Regex>,
 	/// Include only the tags that belong to the current branch.
-	pub use_branch_tags:          Option<bool>,
+	pub use_branch_tags: Option<bool>,
 	/// Whether to sort tags topologically.
-	pub topo_order:               Option<bool>,
+	pub topo_order: Option<bool>,
 	/// Sorting of the commits inside sections.
-	pub sort_commits:             Option<String>,
+	pub sort_commits: Option<String>,
 	/// Limit the number of commits included in the changelog.
-	pub limit_commits:            Option<usize>,
+	pub limit_commits: Option<usize>,
 }
 
 /// Remote configuration.
@@ -134,13 +128,13 @@ pub struct GitConfig {
 pub struct RemoteConfig {
 	/// GitHub remote.
 	#[serde(default)]
-	pub github:    Remote,
+	pub github: Remote,
 	/// GitLab remote.
 	#[serde(default)]
-	pub gitlab:    Remote,
+	pub gitlab: Remote,
 	/// Gitea remote.
 	#[serde(default)]
-	pub gitea:     Remote,
+	pub gitea: Remote,
 	/// Bitbucket remote.
 	#[serde(default)]
 	pub bitbucket: Remote,
@@ -173,12 +167,12 @@ impl RemoteConfig {
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Remote {
 	/// Owner of the remote.
-	pub owner:     String,
+	pub owner: String,
 	/// Repository name.
-	pub repo:      String,
+	pub repo: String,
 	/// Access token.
 	#[serde(skip_serializing)]
-	pub token:     Option<SecretString>,
+	pub token: Option<SecretString>,
 	/// Whether if the remote is set manually.
 	#[serde(skip_deserializing, default = "default_true")]
 	pub is_custom: bool,
@@ -205,9 +199,9 @@ impl Remote {
 	/// Constructs a new instance.
 	pub fn new<S: Into<String>>(owner: S, repo: S) -> Self {
 		Self {
-			owner:     owner.into(),
-			repo:      repo.into(),
-			token:     None,
+			owner: owner.into(),
+			repo: repo.into(),
+			token: None,
 			is_custom: false,
 		}
 	}
@@ -302,29 +296,29 @@ impl Bump {
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct CommitParser {
 	/// SHA1 of the commit.
-	pub sha:           Option<String>,
+	pub sha: Option<String>,
 	/// Regex for matching the commit message.
 	#[serde(with = "serde_regex", default)]
-	pub message:       Option<Regex>,
+	pub message: Option<Regex>,
 	/// Regex for matching the commit body.
 	#[serde(with = "serde_regex", default)]
-	pub body:          Option<Regex>,
+	pub body: Option<Regex>,
 	/// Regex for matching the commit footer.
 	#[serde(with = "serde_regex", default)]
-	pub footer:        Option<Regex>,
+	pub footer: Option<Regex>,
 	/// Group of the commit.
-	pub group:         Option<String>,
+	pub group: Option<String>,
 	/// Default scope of the commit.
 	pub default_scope: Option<String>,
 	/// Commit scope for overriding the default scope.
-	pub scope:         Option<String>,
+	pub scope: Option<String>,
 	/// Whether to skip this commit group.
-	pub skip:          Option<bool>,
+	pub skip: Option<bool>,
 	/// Field name of the commit to match the regex against.
-	pub field:         Option<String>,
+	pub field: Option<String>,
 	/// Regex for matching the field value.
 	#[serde(with = "serde_regex", default)]
-	pub pattern:       Option<Regex>,
+	pub pattern: Option<Regex>,
 }
 
 /// `TextProcessor`, e.g. for modifying commit messages.
@@ -332,9 +326,9 @@ pub struct CommitParser {
 pub struct TextProcessor {
 	/// Regex for matching a text to replace.
 	#[serde(with = "serde_regex")]
-	pub pattern:         Regex,
+	pub pattern: Regex,
 	/// Replacement text.
-	pub replace:         Option<String>,
+	pub replace: Option<String>,
 	/// Command that will be run for replacing the commit message.
 	pub replace_command: Option<String>,
 }
@@ -365,9 +359,9 @@ pub struct LinkParser {
 	#[serde(with = "serde_regex")]
 	pub pattern: Regex,
 	/// The string used to generate the link URL.
-	pub href:    String,
+	pub href: String,
 	/// The string used to generate the link text.
-	pub text:    Option<String>,
+	pub text: Option<String>,
 }
 
 impl Config {

@@ -1,10 +1,7 @@
 use crate::config::Remote;
 use crate::error::*;
 use reqwest_middleware::ClientWithMiddleware;
-use serde::{
-	Deserialize,
-	Serialize,
-};
+use serde::{Deserialize, Serialize};
 use std::env;
 
 use super::*;
@@ -29,7 +26,7 @@ pub(crate) const TEMPLATE_VARIABLES: &[&str] =
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GiteaCommit {
 	/// SHA.
-	pub sha:    String,
+	pub sha: String,
 	/// Author of the commit.
 	pub author: Option<GiteaCommitAuthor>,
 }
@@ -79,13 +76,13 @@ pub struct PullRequestLabel {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GiteaPullRequest {
 	/// Pull request number.
-	pub number:           i64,
+	pub number: i64,
 	/// Pull request title.
-	pub title:            Option<String>,
+	pub title: Option<String>,
 	/// SHA of the merge commit.
 	pub merge_commit_sha: Option<String>,
 	/// Labels of the pull request.
-	pub labels:           Vec<PullRequestLabel>,
+	pub labels: Vec<PullRequestLabel>,
 }
 
 impl RemotePullRequest for GiteaPullRequest {
