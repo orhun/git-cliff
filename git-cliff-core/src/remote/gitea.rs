@@ -8,12 +8,6 @@ use serde::{
 
 use super::*;
 
-/// Gitea API url.
-const GITEA_API_URL: &str = "https://codeberg.org";
-
-/// Environment variable for overriding the Gitea REST API url.
-const GITEA_API_URL_ENV: &str = "GITEA_API_URL";
-
 /// Log message to show while fetching data from Gitea.
 pub const START_FETCHING_MSG: &str = "Retrieving data from Gitea...";
 
@@ -144,8 +138,8 @@ impl TryFrom<Remote> for GiteaClient {
 }
 
 impl RemoteClient for GiteaClient {
-	const API_URL: &'static str = GITEA_API_URL;
-	const API_URL_ENV: &'static str = GITEA_API_URL_ENV;
+	const API_URL: &str = "https://codeberg.org";
+	const API_URL_ENV: &str = "GITEA_API_URL";
 
 	fn remote(&self) -> Remote {
 		self.remote.clone()

@@ -8,12 +8,6 @@ use serde::{
 
 use super::*;
 
-/// GitHub REST API url.
-const GITHUB_API_URL: &str = "https://api.github.com";
-
-/// Environment variable for overriding the GitHub REST API url.
-const GITHUB_API_URL_ENV: &str = "GITHUB_API_URL";
-
 /// Log message to show while fetching data from GitHub.
 pub const START_FETCHING_MSG: &str = "Retrieving data from GitHub...";
 
@@ -143,8 +137,8 @@ impl TryFrom<Remote> for GitHubClient {
 }
 
 impl RemoteClient for GitHubClient {
-	const API_URL: &'static str = GITHUB_API_URL;
-	const API_URL_ENV: &'static str = GITHUB_API_URL_ENV;
+	const API_URL: &str = "https://api.github.com";
+	const API_URL_ENV: &str = "GITHUB_API_URL";
 
 	fn remote(&self) -> Remote {
 		self.remote.clone()

@@ -158,11 +158,13 @@ fn create_remote_client(
 
 /// Trait for handling the API connection and fetching.
 pub trait RemoteClient {
-	/// constant to hardcode the API URL for a particular client
+	/// API URL for a particular client
 	const API_URL: &'static str;
+
 	/// Name of the environment variable used to set the API URL to a
-	/// self-hosted instance, if applicable
+	/// self-hosted instance (if applicable).
 	const API_URL_ENV: &'static str;
+
 	/// Returns the API url.
 	fn api_url() -> String {
 		env::var(Self::API_URL_ENV)

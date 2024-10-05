@@ -8,12 +8,6 @@ use serde::{
 
 use super::*;
 
-/// GitLab REST API url.
-const GITLAB_API_URL: &str = "https://gitlab.com/api/v4";
-
-/// Environment variable for overriding the GitLab REST API url.
-const GITLAB_API_URL_ENV: &str = "GITLAB_API_URL";
-
 /// Log message to show while fetching data from GitLab.
 pub const START_FETCHING_MSG: &str = "Retrieving data from GitLab...";
 
@@ -243,8 +237,8 @@ impl TryFrom<Remote> for GitLabClient {
 }
 
 impl RemoteClient for GitLabClient {
-	const API_URL: &'static str = GITLAB_API_URL;
-	const API_URL_ENV: &'static str = GITLAB_API_URL_ENV;
+	const API_URL: &str = "https://gitlab.com/api/v4";
+	const API_URL_ENV: &str = "GITLAB_API_URL";
 
 	fn remote(&self) -> Remote {
 		self.remote.clone()
