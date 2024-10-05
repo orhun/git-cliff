@@ -81,7 +81,7 @@ impl Repository {
 			if range.contains("..") {
 				revwalk.push_range(range)?;
 			} else {
-				// when we get a single sha as our "range" => start at root.
+				// When a single SHA is provided as the "range", start from the root.
 				revwalk.push(Oid::from_str(range)?)?;
 			}
 		} else {
