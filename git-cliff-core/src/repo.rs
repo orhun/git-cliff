@@ -78,7 +78,12 @@ impl Repository {
 		let mut revwalk = self.inner.revwalk()?;
 		revwalk.set_sorting(Sort::TOPOLOGICAL)?;
 		if let Some(range) = range {
-			revwalk.push_range(range)?;
+			if range.contains("..") {
+				revwalk.push_range(range)?;
+			} else {
+				// When a single SHA is provided as the "range", start from the root.
+				revwalk.push(Oid::from_str(range)?)?;
+			}
 		} else {
 			revwalk.push_head()?;
 		}
@@ -464,6 +469,18 @@ mod test {
 		.to_string())
 	}
 
+	fn get_root_commit_hash() -> Result<String> {
+		Ok(str::from_utf8(
+			Command::new("git")
+				.args(["rev-list", "--max-parents=0", "HEAD"])
+				.output()?
+				.stdout
+				.as_ref(),
+		)?
+		.trim_ascii_end()
+		.to_string())
+	}
+
 	fn get_last_tag() -> Result<String> {
 		Ok(str::from_utf8(
 			Command::new("git")
@@ -583,6 +600,18 @@ mod test {
 		let tag = repository.resolve_tag("nonexistent-tag");
 		assert_eq!(tag.name, "nonexistent-tag");
 		assert_eq!(tag.message, None);
+		Ok(())
+	}
+
+	#[test]
+	fn includes_root_commit() -> Result<()> {
+		let repository = get_repository()?;
+		// a close descendant of the root commit
+		let range = Some("eea3914c7ab07472841aa85c36d11bdb2589a234");
+		let commits = repository.commits(range, None, None)?;
+		let root_commit =
+			AppCommit::from(&commits.last().expect("no commits found").clone());
+		assert_eq!(get_root_commit_hash()?, root_commit.id);
 		Ok(())
 	}
 
