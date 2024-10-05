@@ -160,20 +160,22 @@ fn process_repository<'a>(
 
 	// Parse commits.
 	let mut commit_range = args.range.clone();
-	let mut include_root = false;
 	if args.unreleased {
 		if let Some(last_tag) = tags.last().map(|(k, _)| k) {
 			commit_range = Some(format!("{last_tag}..HEAD"));
 		}
 	} else if args.latest || args.current {
 		if tags.len() < 2 {
-			let commits = repository.commits(None, false, None, None)?;
+			let commits = repository.commits(None, None, None)?;
 			if let (Some(tag1), Some(tag2)) = (
 				commits.last().map(|c| c.id().to_string()),
 				tags.get_index(0).map(|(k, _)| k),
 			) {
-				commit_range = Some(format!("{tag1}..{tag2}"));
-				include_root = true;
+				if tags.len() == 1 {
+					commit_range = Some(tag2.to_owned());
+				} else {
+					commit_range = Some(format!("{tag1}..{tag2}"));
+				}
 			}
 		} else {
 			let mut tag_index = tags.len() - 2;
@@ -210,7 +212,6 @@ fn process_repository<'a>(
 	}
 	let mut commits = repository.commits(
 		commit_range.as_deref(),
-		include_root,
 		args.include_path.clone(),
 		args.exclude_path.clone(),
 	)?;

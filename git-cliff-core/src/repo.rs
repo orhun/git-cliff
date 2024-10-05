@@ -72,20 +72,17 @@ impl Repository {
 	pub fn commits(
 		&self,
 		range: Option<&str>,
-		include_root: bool,
 		include_path: Option<Vec<Pattern>>,
 		exclude_path: Option<Vec<Pattern>>,
 	) -> Result<Vec<Commit>> {
 		let mut revwalk = self.inner.revwalk()?;
 		revwalk.set_sorting(Sort::TOPOLOGICAL)?;
 		if let Some(range) = range {
-			// Push only the last range commit if we need to start at root.
-			if include_root {
-				if let Some(dots_index) = range.find("..") {
-					revwalk.push(Oid::from_str(&range[dots_index + 2..])?)?;
-				}
-			} else {
+			if range.contains("..") {
 				revwalk.push_range(range)?;
+			} else {
+				// when we get a single sha as our "range" => start at root.
+				revwalk.push(Oid::from_str(&range)?)?;
 			}
 		} else {
 			revwalk.push_head()?;
@@ -508,7 +505,7 @@ mod test {
 	#[test]
 	fn get_latest_commit() -> Result<()> {
 		let repository = get_repository()?;
-		let commits = repository.commits(None, false, None, None)?;
+		let commits = repository.commits(None, None, None)?;
 		let last_commit =
 			AppCommit::from(&commits.first().expect("no commits found").clone());
 		assert_eq!(get_last_commit_hash()?, last_commit.id);
@@ -609,7 +606,9 @@ mod test {
 	#[test]
 	fn includes_root_commit() -> Result<()> {
 		let repository = get_repository()?;
-		let commits = repository.commits(None, true, None, None)?;
+		// a close descendant of the root commit
+		let range = Some("eea3914c7ab07472841aa85c36d11bdb2589a234");
+		let commits = repository.commits(range, None, None)?;
 		let root_commit =
 			AppCommit::from(&commits.last().expect("no commits found").clone());
 		assert_eq!(get_root_commit_hash()?, root_commit.id);
