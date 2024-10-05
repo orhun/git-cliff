@@ -26,7 +26,7 @@ pub(crate) const TEMPLATE_VARIABLES: &[&str] =
 
 /// Representation of a single GitLab Project.
 ///
-/// <http://docs.gitlab.com/ee/api/projects.html#get-single-project>
+/// <https://docs.gitlab.com/ee/api/projects.html#get-single-project>
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitLabProject {
 	/// GitLab id for project
