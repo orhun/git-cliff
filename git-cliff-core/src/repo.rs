@@ -82,7 +82,7 @@ impl Repository {
 				revwalk.push_range(range)?;
 			} else {
 				// when we get a single sha as our "range" => start at root.
-				revwalk.push(Oid::from_str(&range)?)?;
+				revwalk.push(Oid::from_str(range)?)?;
 			}
 		} else {
 			revwalk.push_head()?;
