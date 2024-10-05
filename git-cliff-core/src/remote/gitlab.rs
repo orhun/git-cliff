@@ -1,10 +1,7 @@
 use crate::config::Remote;
 use crate::error::*;
 use reqwest_middleware::ClientWithMiddleware;
-use serde::{
-	Deserialize,
-	Serialize,
-};
+use serde::{Deserialize, Serialize};
 use std::env;
 
 use super::*;
@@ -31,19 +28,19 @@ pub(crate) const TEMPLATE_VARIABLES: &[&str] =
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitLabProject {
 	/// GitLab id for project
-	pub id:                  i64,
+	pub id: i64,
 	/// Optional Description of project
-	pub description:         Option<String>,
+	pub description: Option<String>,
 	/// Name of project
-	pub name:                String,
+	pub name: String,
 	/// Name of project with namespace owner / repo
 	pub name_with_namespace: String,
 	/// Name of project with namespace owner/repo
 	pub path_with_namespace: String,
 	/// Project created at
-	pub created_at:          String,
+	pub created_at: String,
 	/// Default branch eg (main/master)
-	pub default_branch:      String,
+	pub default_branch: String,
 }
 
 impl RemoteEntry for GitLabProject {
@@ -71,31 +68,31 @@ impl RemoteEntry for GitLabProject {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitLabCommit {
 	/// Sha
-	pub id:              String,
+	pub id: String,
 	/// Short Sha
-	pub short_id:        String,
+	pub short_id: String,
 	/// Git message
-	pub title:           String,
+	pub title: String,
 	/// Author
-	pub author_name:     String,
+	pub author_name: String,
 	/// Author Email
-	pub author_email:    String,
+	pub author_email: String,
 	/// Authored Date
-	pub authored_date:   String,
+	pub authored_date: String,
 	/// Committer Name
-	pub committer_name:  String,
+	pub committer_name: String,
 	/// Committer Email
 	pub committer_email: String,
 	/// Committed Date
-	pub committed_date:  String,
+	pub committed_date: String,
 	/// Created At
-	pub created_at:      String,
+	pub created_at: String,
 	/// Git Message
-	pub message:         String,
+	pub message: String,
 	/// Parent Ids
-	pub parent_ids:      Vec<String>,
+	pub parent_ids: Vec<String>,
 	/// Web Url
-	pub web_url:         String,
+	pub web_url: String,
 }
 
 impl RemoteCommit for GitLabCommit {
@@ -132,31 +129,31 @@ impl RemoteEntry for GitLabCommit {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitLabMergeRequest {
 	/// Id
-	pub id:                i64,
+	pub id: i64,
 	/// Iid
-	pub iid:               i64,
+	pub iid: i64,
 	/// Project Id
-	pub project_id:        i64,
+	pub project_id: i64,
 	/// Title
-	pub title:             String,
+	pub title: String,
 	/// Description
-	pub description:       String,
+	pub description: String,
 	/// State
-	pub state:             String,
+	pub state: String,
 	/// Created At
-	pub created_at:        String,
+	pub created_at: String,
 	/// Author
-	pub author:            GitLabUser,
+	pub author: GitLabUser,
 	/// Commit Sha
-	pub sha:               String,
+	pub sha: String,
 	/// Merge Commit Sha
-	pub merge_commit_sha:  Option<String>,
+	pub merge_commit_sha: Option<String>,
 	/// Squash Commit Sha
 	pub squash_commit_sha: Option<String>,
 	/// Web Url
-	pub web_url:           String,
+	pub web_url: String,
 	/// Labels
-	pub labels:            Vec<String>,
+	pub labels: Vec<String>,
 }
 
 impl RemotePullRequest for GitLabMergeRequest {
@@ -199,28 +196,28 @@ impl RemoteEntry for GitLabMergeRequest {
 #[derive(Debug, Default, Clone, Hash, Eq, PartialEq, Deserialize, Serialize)]
 pub struct GitLabUser {
 	/// Id
-	pub id:         i64,
+	pub id: i64,
 	/// Name
-	pub name:       String,
+	pub name: String,
 	/// Username
-	pub username:   String,
+	pub username: String,
 	/// State of the User
-	pub state:      String,
+	pub state: String,
 	/// Url for avatar
 	pub avatar_url: Option<String>,
 	/// Web Url
-	pub web_url:    String,
+	pub web_url: String,
 }
 
 /// Representation of a GitLab Reference.
 #[derive(Debug, Default, Clone, Hash, Eq, PartialEq, Deserialize, Serialize)]
 pub struct GitLabReference {
 	/// Short id
-	pub short:    String,
+	pub short: String,
 	/// Relative Link
 	pub relative: String,
 	/// Full Link
-	pub full:     String,
+	pub full: String,
 }
 
 /// HTTP client for handling GitLab REST API requests.

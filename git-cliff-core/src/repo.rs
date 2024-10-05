@@ -1,25 +1,13 @@
 use crate::config::Remote;
-use crate::error::{
-	Error,
-	Result,
-};
+use crate::error::{Error, Result};
 use crate::tag::Tag;
 use git2::{
-	BranchType,
-	Commit,
-	DescribeOptions,
-	Oid,
-	Repository as GitRepository,
-	Sort,
+	BranchType, Commit, DescribeOptions, Oid, Repository as GitRepository, Sort,
 	TreeWalkMode,
 };
 use glob::Pattern;
 use indexmap::IndexMap;
-use lazy_regex::{
-	lazy_regex,
-	Lazy,
-	Regex,
-};
+use lazy_regex::{lazy_regex, Lazy, Regex};
 use std::io;
 use std::path::PathBuf;
 use url::Url;
@@ -37,9 +25,9 @@ const CHANGED_FILES_CACHE: &str = "changed_files_cache";
 ///
 /// [`Repository`]: GitRepository
 pub struct Repository {
-	inner:                    GitRepository,
+	inner: GitRepository,
 	/// Repository path.
-	pub path:                 PathBuf,
+	pub path: PathBuf,
 	/// Cache path for the changed files of the commits.
 	changed_files_cache_path: PathBuf,
 }
@@ -145,8 +133,8 @@ impl Repository {
 				changed_files.iter().any(|path| {
 					include_pattern
 						.iter()
-						.any(|pattern| pattern.matches_path(path)) &&
-						!exclude_pattern
+						.any(|pattern| pattern.matches_path(path))
+						&& !exclude_pattern
 							.iter()
 							.any(|pattern| pattern.matches_path(path))
 				})
@@ -248,8 +236,8 @@ impl Repository {
 			// So get all the files in the tree.
 			if let Ok(tree) = commit.tree() {
 				tree.walk(TreeWalkMode::PreOrder, |dir, entry| {
-					if entry.kind().expect("failed to get entry kind") !=
-						git2::ObjectType::Blob
+					if entry.kind().expect("failed to get entry kind")
+						!= git2::ObjectType::Blob
 					{
 						return 0;
 					}
@@ -293,13 +281,13 @@ impl Repository {
 			.and_then(|r| r.peel_to_tag())
 		{
 			Ok(tag) => Tag {
-				name:    tag.name().unwrap_or_default().to_owned(),
+				name: tag.name().unwrap_or_default().to_owned(),
 				message: tag.message().map(|msg| {
 					TAG_SIGNATURE_REGEX.replace(msg, "").trim().to_owned()
 				}),
 			},
 			_ => Tag {
-				name:    name.to_owned(),
+				name: name.to_owned(),
 				message: None,
 			},
 		}
@@ -328,8 +316,8 @@ impl Repository {
 	) -> Result<bool> {
 		Ok(self
 			.inner
-			.graph_descendant_of(head_commit.id(), tag_commit.id())? ||
-			head_commit.id() == tag_commit.id())
+			.graph_descendant_of(head_commit.id(), tag_commit.id())?
+			|| head_commit.id() == tag_commit.id())
 	}
 
 	/// Parses and returns a commit-tag map.
@@ -354,33 +342,42 @@ impl Repository {
 		{
 			let obj = self.inner.revparse_single(&name)?;
 			if let Ok(commit) = obj.clone().into_commit() {
-				if use_branch_tags &&
-					!self.should_include_tag(&head_commit, &commit)?
+				if use_branch_tags
+					&& !self.should_include_tag(&head_commit, &commit)?
 				{
 					continue;
 				}
 
-				tags.push((commit, Tag {
-					name,
-					message: None,
-				}));
+				tags.push((
+					commit,
+					Tag {
+						name,
+						message: None,
+					},
+				));
 			} else if let Some(tag) = obj.as_tag() {
 				if let Some(commit) = tag
 					.target()
 					.ok()
 					.and_then(|target| target.into_commit().ok())
 				{
-					if use_branch_tags &&
-						!self.should_include_tag(&head_commit, &commit)?
+					if use_branch_tags
+						&& !self.should_include_tag(&head_commit, &commit)?
 					{
 						continue;
 					}
-					tags.push((commit, Tag {
-						name:    tag.name().map(String::from).unwrap_or(name),
-						message: tag.message().map(|msg| {
-							TAG_SIGNATURE_REGEX.replace(msg, "").trim().to_owned()
-						}),
-					}));
+					tags.push((
+						commit,
+						Tag {
+							name: tag.name().map(String::from).unwrap_or(name),
+							message: tag.message().map(|msg| {
+								TAG_SIGNATURE_REGEX
+									.replace(msg, "")
+									.trim()
+									.to_owned()
+							}),
+						},
+					));
 				}
 			}
 		}
@@ -436,9 +433,9 @@ impl Repository {
 					(segments.get(1), segments.first())
 				{
 					return Ok(Remote {
-						owner:     owner.to_string(),
-						repo:      repo.trim_end_matches(".git").to_string(),
-						token:     None,
+						owner: owner.to_string(),
+						repo: repo.trim_end_matches(".git").to_string(),
+						token: None,
 						is_custom: false,
 					});
 				}
@@ -567,9 +564,9 @@ mod test {
 		let remote = repository.upstream_remote()?;
 		assert_eq!(
 			Remote {
-				owner:     remote.owner.clone(),
-				repo:      String::from("git-cliff"),
-				token:     None,
+				owner: remote.owner.clone(),
+				repo: String::from("git-cliff"),
+				token: None,
 				is_custom: false,
 			},
 			remote
@@ -698,10 +695,13 @@ mod test {
 			)
 		};
 
-		let first_commit = create_commit_with_files(&repo, vec![
-			("initial.txt", "initial content"),
-			("dir/initial.txt", "initial content"),
-		]);
+		let first_commit = create_commit_with_files(
+			&repo,
+			vec![
+				("initial.txt", "initial content"),
+				("dir/initial.txt", "initial content"),
+			],
+		);
 
 		{
 			let retain = repo.should_retain_commit(
@@ -712,12 +712,15 @@ mod test {
 			assert!(retain, "include: dir/");
 		}
 
-		let commit = create_commit_with_files(&repo, vec![
-			("file1.txt", "content1"),
-			("file2.txt", "content2"),
-			("dir/file3.txt", "content3"),
-			("dir/subdir/file4.txt", "content4"),
-		]);
+		let commit = create_commit_with_files(
+			&repo,
+			vec![
+				("file1.txt", "content1"),
+				("file2.txt", "content2"),
+				("dir/file3.txt", "content3"),
+				("dir/subdir/file4.txt", "content4"),
+			],
+		);
 
 		{
 			let retain = repo.should_retain_commit(&commit, &None, &None);

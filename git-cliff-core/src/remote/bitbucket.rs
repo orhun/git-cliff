@@ -1,10 +1,7 @@
 use crate::config::Remote;
 use crate::error::*;
 use reqwest_middleware::ClientWithMiddleware;
-use serde::{
-	Deserialize,
-	Serialize,
-};
+use serde::{Deserialize, Serialize};
 use std::env;
 
 use super::*;
@@ -32,7 +29,7 @@ pub(crate) const BITBUCKET_MAX_PAGE_PRS: usize = 50;
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BitbucketCommit {
 	/// SHA.
-	pub hash:   String,
+	pub hash: String,
 	/// Author of the commit.
 	pub author: Option<BitbucketCommitAuthor>,
 }
@@ -72,18 +69,18 @@ impl RemoteEntry for BitbucketPagination<BitbucketCommit> {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BitbucketPagination<T> {
 	/// Total number of objects in the response.
-	pub size:     Option<i64>,
+	pub size: Option<i64>,
 	/// Page number of the current results.
-	pub page:     Option<i64>,
+	pub page: Option<i64>,
 	/// Current number of objects on the existing page.  Globally, the minimum
 	/// length is 10 and the maximum is 100.
-	pub pagelen:  Option<i64>,
+	pub pagelen: Option<i64>,
 	/// Link to the next page if it exists.
-	pub next:     Option<String>,
+	pub next: Option<String>,
 	/// Link to the previous page if it exists.
 	pub previous: Option<String>,
 	/// List of Objects.
-	pub values:   Vec<T>,
+	pub values: Vec<T>,
 }
 
 /// Author of the commit.
@@ -113,13 +110,13 @@ pub struct BitbucketPullRequestMergeCommit {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BitbucketPullRequest {
 	/// Pull request number.
-	pub id:               i64,
+	pub id: i64,
 	/// Pull request title.
-	pub title:            Option<String>,
+	pub title: Option<String>,
 	/// Bitbucket Pull Request Merge Commit
 	pub merge_commit_sha: BitbucketPullRequestMergeCommit,
 	/// Author of Pull Request
-	pub author:           BitbucketCommitAuthor,
+	pub author: BitbucketCommitAuthor,
 }
 
 impl RemotePullRequest for BitbucketPullRequest {

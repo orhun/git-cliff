@@ -1,7 +1,4 @@
-use clap::{
-	CommandFactory,
-	ValueEnum,
-};
+use clap::{CommandFactory, ValueEnum};
 use clap_complete::Shell;
 use git_cliff::args::Opt;
 use std::env;
