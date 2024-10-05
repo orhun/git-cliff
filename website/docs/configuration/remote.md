@@ -54,4 +54,4 @@ Same applies for GitLab/Bitbucket with `--gitlab-token`/`--gitea-token`/`--bitbu
 
 ### api_url
 
-Sets the API URL for a particular remote
+Sets the API URL for a particular remote.
