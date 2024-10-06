@@ -1424,4 +1424,291 @@ mod test {
 
 		Ok(())
 	}
+
+	#[cfg(feature = "bitbucket")]
+	#[test]
+	fn update_bitbucket_metadata() -> Result<()> {
+		use crate::remote::bitbucket::{
+			BitbucketCommit,
+			BitbucketCommitAuthor,
+			BitbucketPullRequest,
+			BitbucketPullRequestMergeCommit,
+		};
+
+		let mut release = Release {
+			version: None,
+			message: None,
+			extra: None,
+			commits: vec![
+				Commit::from(String::from(
+					"1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add bitbucket \
+					 integration",
+				)),
+				Commit::from(String::from(
+					"21f6aa587fcb772de13f2fde0e92697c51f84162 fix bitbucket \
+					 integration",
+				)),
+				Commit::from(String::from(
+					"35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973 update metadata",
+				)),
+				Commit::from(String::from(
+					"4d3ffe4753b923f4d7807c490e650e6624a12074 do some stuff",
+				)),
+				Commit::from(String::from(
+					"5a55e92e5a62dc5bf9872ffb2566959fad98bd05 alright",
+				)),
+				Commit::from(String::from(
+					"6c34967147560ea09658776d4901709139b4ad66 should be fine",
+				)),
+			],
+			commit_id: None,
+			timestamp: 0,
+			previous: Some(Box::new(Release {
+				version: Some(String::from("1.0.0")),
+				..Default::default()
+			})),
+			repository: Some(String::from("/root/repo")),
+			#[cfg(feature = "github")]
+			github: RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "gitlab")]
+			gitlab: RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "gitea")]
+			gitea: RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+			#[cfg(feature = "bitbucket")]
+			bitbucket: RemoteReleaseMetadata {
+				contributors: vec![],
+			},
+		};
+		release.update_bitbucket_metadata(
+			vec![
+				BitbucketCommit {
+					hash:   String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+					author: Some(BitbucketCommitAuthor {
+						login: Some(String::from("orhun")),
+					}),
+				},
+				BitbucketCommit {
+					hash:   String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
+					author: Some(BitbucketCommitAuthor {
+						login: Some(String::from("orhun")),
+					}),
+				},
+				BitbucketCommit {
+					hash:   String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
+					author: Some(BitbucketCommitAuthor {
+						login: Some(String::from("nuhro")),
+					}),
+				},
+				BitbucketCommit {
+					hash:   String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
+					author: Some(BitbucketCommitAuthor {
+						login: Some(String::from("awesome_contributor")),
+					}),
+				},
+				BitbucketCommit {
+					hash:   String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
+					author: Some(BitbucketCommitAuthor {
+						login: Some(String::from("orhun")),
+					}),
+				},
+				BitbucketCommit {
+					hash:   String::from("6c34967147560ea09658776d4901709139b4ad66"),
+					author: Some(BitbucketCommitAuthor {
+						login: Some(String::from("someone")),
+					}),
+				},
+				BitbucketCommit {
+					hash:   String::from("0c34967147560e809658776d4901709139b4ad68"),
+					author: Some(BitbucketCommitAuthor {
+						login: Some(String::from("idk")),
+					}),
+				},
+				BitbucketCommit {
+					hash:   String::from("kk34967147560e809658776d4901709139b4ad68"),
+					author: Some(BitbucketCommitAuthor {
+						login: Some(String::from("orhun")),
+					}),
+				},
+			]
+			.into_iter()
+			.map(|v| Box::new(v) as Box<dyn RemoteCommit>)
+			.collect(),
+			vec![Box::new(BitbucketPullRequest {
+				id:           1,
+				title:        Some(String::from("1")),
+				author:       BitbucketCommitAuthor {
+					login: Some(String::from("42")),
+				},
+				merge_commit: BitbucketPullRequestMergeCommit {
+					// Bitbucket merge commits returned in short format
+					hash: String::from("1d244937ee6c"),
+				},
+			})],
+		)?;
+		#[allow(deprecated)]
+		let expected_commits = vec![
+			Commit {
+				id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+				message: String::from("add bitbucket integration"),
+				bitbucket: RemoteContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      Some(String::from("1")),
+					pr_number:     Some(1),
+					pr_labels:     vec![],
+					is_first_time: false,
+				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      Some(String::from("1")),
+					pr_number:     Some(1),
+					pr_labels:     vec![],
+					is_first_time: false,
+				}),
+				..Default::default()
+			},
+			Commit {
+				id: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
+				message: String::from("fix bitbucket integration"),
+				bitbucket: RemoteContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				}),
+				..Default::default()
+			},
+			Commit {
+				id: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
+				message: String::from("update metadata"),
+				bitbucket: RemoteContributor {
+					username:      Some(String::from("nuhro")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("nuhro")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				}),
+				..Default::default()
+			},
+			Commit {
+				id: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
+				message: String::from("do some stuff"),
+				bitbucket: RemoteContributor {
+					username:      Some(String::from("awesome_contributor")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("awesome_contributor")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				}),
+				..Default::default()
+			},
+			Commit {
+				id: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
+				message: String::from("alright"),
+				bitbucket: RemoteContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				}),
+				..Default::default()
+			},
+			Commit {
+				id: String::from("6c34967147560ea09658776d4901709139b4ad66"),
+				message: String::from("should be fine"),
+				bitbucket: RemoteContributor {
+					username:      Some(String::from("someone")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				},
+				remote: Some(RemoteContributor {
+					username:      Some(String::from("someone")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: false,
+				}),
+				..Default::default()
+			},
+		];
+		assert_eq!(expected_commits, release.commits);
+
+		release
+			.bitbucket
+			.contributors
+			.sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+
+		let expected_metadata = RemoteReleaseMetadata {
+			contributors: vec![
+				RemoteContributor {
+					username:      Some(String::from("nuhro")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: true,
+				},
+				RemoteContributor {
+					username:      Some(String::from("awesome_contributor")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: true,
+				},
+				RemoteContributor {
+					username:      Some(String::from("someone")),
+					pr_title:      None,
+					pr_number:     None,
+					pr_labels:     vec![],
+					is_first_time: true,
+				},
+				RemoteContributor {
+					username:      Some(String::from("orhun")),
+					pr_title:      Some(String::from("1")),
+					pr_number:     Some(1),
+					pr_labels:     vec![],
+					is_first_time: false,
+				},
+			],
+		};
+		assert_eq!(expected_metadata, release.bitbucket);
+
+		Ok(())
+	}
 }
