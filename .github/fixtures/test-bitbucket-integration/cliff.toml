@@ -15,7 +15,9 @@ body = """
 {% for commit in commits %}
   * {{ commit.message | split(pat="\n") | first | trim }}\
     {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif -%}
-    {% if commit.remote.pr_number %} in #{{ commit.remote.pr_number }}{%- endif %}
+    {% if commit.remote.pr_number %} in \
+      [#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull-requests/{{ commit.remote.pr_number }})\
+    {%- endif %}
 {%- endfor -%}
 
 {% if bitbucket.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
