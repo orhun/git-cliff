@@ -1,6 +1,7 @@
 ## What's Changed
 * feat(config): support multiple file formats by @orhun <orhun@archlinux.org>
 * feat(cache): use cache while fetching pages by @orhun <orhun@archlinux.org>
+* feat(ci): add pipeline config by @mcwarman <7236500+mcwarman@users.noreply.github.com> in [#1](https://bitbucket.org/mcwarman-playground/git-cliff-readme-example/pull-requests/1)
 
 ## What's Changed in v1.0.1
 * refactor(parser): expose string functions by @orhun <orhun@archlinux.org>

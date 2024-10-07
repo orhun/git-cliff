@@ -1,17 +1,23 @@
 [remote.bitbucket]
-owner = "orhunp"
+owner = "mcwarman-playground"
 repo = "git-cliff-readme-example"
 
 [changelog]
 # template for the changelog body
 # https://keats.github.io/tera/docs/#introduction
 body = """
+{%- macro remote_url() -%}
+  https://bitbucket.org/{{ remote.bitbucket.owner }}/{{ remote.bitbucket.repo }}
+{%- endmacro -%}
+
 ## What's Changed
 {%- if version %} in {{ version }}{%- endif -%}
 {% for commit in commits %}
   * {{ commit.message | split(pat="\n") | first | trim }}\
     {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif -%}
-    {% if commit.remote.pr_number %} in #{{ commit.remote.pr_number }}{%- endif %}
+    {% if commit.remote.pr_number %} in \
+      [#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull-requests/{{ commit.remote.pr_number }})\
+    {%- endif %}
 {%- endfor -%}
 
 {% if bitbucket.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
@@ -21,7 +27,7 @@ body = """
 {% for contributor in bitbucket.contributors | filter(attribute="is_first_time", value=true) %}
   * @{{ contributor.username }} made their first contribution
     {%- if contributor.pr_number %} in \
-      [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}) \
+      [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull-requests/{{ contributor.pr_number }}) \
     {%- endif %}
 {%- endfor -%}
 {% raw %}\n\n{% endraw -%}

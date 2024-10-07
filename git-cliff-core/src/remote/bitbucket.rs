@@ -113,13 +113,13 @@ pub struct BitbucketPullRequestMergeCommit {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BitbucketPullRequest {
 	/// Pull request number.
-	pub id:               i64,
+	pub id:           i64,
 	/// Pull request title.
-	pub title:            Option<String>,
+	pub title:        Option<String>,
 	/// Bitbucket Pull Request Merge Commit
-	pub merge_commit_sha: BitbucketPullRequestMergeCommit,
+	pub merge_commit: BitbucketPullRequestMergeCommit,
 	/// Author of Pull Request
-	pub author:           BitbucketCommitAuthor,
+	pub author:       BitbucketCommitAuthor,
 }
 
 impl RemotePullRequest for BitbucketPullRequest {
@@ -136,7 +136,7 @@ impl RemotePullRequest for BitbucketPullRequest {
 	}
 
 	fn merge_commit(&self) -> Option<String> {
-		Some(self.merge_commit_sha.hash.clone())
+		Some(self.merge_commit.hash.clone())
 	}
 }
 

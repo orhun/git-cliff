@@ -49,7 +49,6 @@ use serde::{
 	Serialize,
 };
 use std::fmt::Debug;
-use std::hash::Hash;
 use std::time::Duration;
 
 /// User agent for interacting with the GitHub API.
@@ -306,9 +305,12 @@ macro_rules! update_release_metadata {
 					if let Some(commit) =
 						self.commits.iter_mut().find(|commit| commit.id == v.id())
 					{
-						let pull_request = pull_requests
-							.iter()
-							.find(|pr| pr.merge_commit() == Some(v.id().clone()));
+						let sha_short =
+							Some(v.id().clone().chars().take(12).collect());
+						let pull_request = pull_requests.iter().find(|pr| {
+							pr.merge_commit() == Some(v.id().clone()) ||
+								pr.merge_commit() == sha_short
+						});
 						commit.$remote.username = v.username();
 						commit.$remote.pr_number = pull_request.map(|v| v.number());
 						commit.$remote.pr_title =
