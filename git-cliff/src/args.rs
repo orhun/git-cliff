@@ -355,7 +355,7 @@ pub struct Args {
 	)]
 	pub bitbucket_repo:   Option<RemoteValue>,
 	/// Launches the TUI.
-	#[arg(long)]
+	#[arg(long, help_heading = Some("FLAGS"))]
 	pub tui:              bool,
 }
 
