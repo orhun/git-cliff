@@ -354,6 +354,9 @@ pub struct Args {
 		hide = !cfg!(feature = "bitbucket"),
 	)]
 	pub bitbucket_repo:   Option<RemoteValue>,
+	/// Launches the TUI.
+	#[arg(long)]
+	pub tui:              bool,
 }
 
 /// Custom type for the remote value.

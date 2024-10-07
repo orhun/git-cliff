@@ -4,9 +4,16 @@ use git_cliff::logger;
 use git_cliff_core::error::Result;
 use std::env;
 use std::fs::File;
-use std::io;
+use std::io::{
+	self,
+};
+use std::os::unix::process::CommandExt;
 use std::path::Path;
-use std::process;
+use std::process::{
+	self,
+	Command,
+	Stdio,
+};
 
 /// Profiler.
 #[cfg(feature = "profiler")]
@@ -15,6 +22,23 @@ mod profiler;
 fn main() -> Result<()> {
 	// Parse the command line arguments
 	let args = Args::parse();
+
+	// Launch the TUI if the flag is set.
+	if args.tui {
+		let env_args = env::args().collect::<Vec<String>>();
+		let error = Command::new("git-cliff-tui")
+			.stdout(Stdio::inherit())
+			.args(
+				&env_args[1..]
+					.iter()
+					.filter(|arg| *arg != "--tui")
+					.collect::<Vec<&String>>(),
+			)
+			.exec();
+		return Err(error.into());
+	}
+
+	// Enable logging.
 	if args.verbose == 1 {
 		env::set_var("RUST_LOG", "debug");
 	} else if args.verbose > 1 {
