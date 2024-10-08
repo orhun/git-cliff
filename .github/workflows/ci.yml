@@ -141,7 +141,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Check the links
-        uses: lycheeverse/lychee-action@v1
+        uses: lycheeverse/lychee-action@v2
         with:
           args: -v --max-concurrency 1 *.md website/docs/* website/blog/*
           fail: true
