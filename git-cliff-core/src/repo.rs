@@ -513,10 +513,23 @@ mod test {
 	}
 
 	#[test]
+	fn commit_search() -> Result<()> {
+		let repository = get_repository()?;
+		assert!(repository
+			.find_commit("e936ed571533ea6c41a1dd2b1a29d085c8dbada5")
+			.is_some());
+		Ok(())
+	}
+
+	#[test]
 	fn get_latest_tag() -> Result<()> {
 		let repository = get_repository()?;
 		let tags = repository.tags(&None, false, false)?;
-		assert_eq!(get_last_tag()?, tags.last().expect("no tags found").1.name);
+		let latest = tags.last().expect("no tags found").1.name.clone();
+		assert_eq!(get_last_tag()?, latest);
+
+		let current = repository.current_tag().expect("a current tag").name;
+		assert!(current.contains(&latest));
 		Ok(())
 	}
 
