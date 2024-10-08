@@ -1600,18 +1600,10 @@
     tslib "^2.6.0"
     utility-types "^3.10.0"
 
-"@docusaurus/theme-translations@3.5.2":
+"@docusaurus/theme-translations@3.5.2", "@docusaurus/theme-translations@^2 || ^3":
   version "3.5.2"
   resolved "https://registry.yarnpkg.com/@docusaurus/theme-translations/-/theme-translations-3.5.2.tgz#38f9ebf2a5d860397022206a05fef66c08863c89"
   integrity sha512-GPZLcu4aT1EmqSTmbdpVrDENGR2yObFEX8ssEFYTCiAIVc0EihNSdOIBTazUvgNqwvnoU1A8vIs1xyzc3LITTw==
-  dependencies:
-    fs-extra "^11.1.1"
-    tslib "^2.6.0"
-
-"@docusaurus/theme-translations@^2 || ^3":
-  version "3.4.0"
-  resolved "https://registry.npmjs.org/@docusaurus/theme-translations/-/theme-translations-3.4.0.tgz"
-  integrity sha512-zSxCSpmQCCdQU5Q4CnX/ID8CSUUI3fvmq4hU/GNP/XoAWtXo9SAVnM3TzpU8Gb//H3WCsT8mJcTfyOk3d9ftNg==
   dependencies:
     fs-extra "^11.1.1"
     tslib "^2.6.0"
@@ -1706,10 +1698,10 @@
     cssesc "^3.0.0"
     immediate "^3.2.3"
 
-"@easyops-cn/docusaurus-search-local@^0.44.5":
-  version "0.44.5"
-  resolved "https://registry.yarnpkg.com/@easyops-cn/docusaurus-search-local/-/docusaurus-search-local-0.44.5.tgz#13ae433868809a3e5dd92dbf44a2b1e6b2061b91"
-  integrity sha512-jT3wuYVzRoeB1gea+2iDtOMme0fD2h3M8HDVgs3garITO6vRxvEraFRVlYkfjLN9BkmzjMlz9nn7MI4qIx8utw==
+"@easyops-cn/docusaurus-search-local@^0.44.6":
+  version "0.44.6"
+  resolved "https://registry.yarnpkg.com/@easyops-cn/docusaurus-search-local/-/docusaurus-search-local-0.44.6.tgz#d1a64bbf602bc8313ce766e1e79075b1c1bcecc9"
+  integrity sha512-DiCz6Ag7Xbj27NFaKzvJEfMCW5o7/Ad9ZYuJ7TShwk8XmMnyr1nxJYLn1WpmJ2pzvR20Wt0zcn4u5MfpiLuFLw==
   dependencies:
     "@docusaurus/plugin-content-docs" "^2 || ^3"
     "@docusaurus/theme-translations" "^2 || ^3"
@@ -8169,10 +8161,10 @@ typedarray-to-buffer@^3.1.5:
   dependencies:
     is-typedarray "^1.0.0"
 
-typescript@^5.6.2:
-  version "5.6.2"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.6.2.tgz#d1de67b6bef77c41823f822df8f0b3bcff60a5a0"
-  integrity sha512-NW8ByodCSNCwZeghjN3o+JX5OFH0Ojg6sadjEKY4huZ52TqbJTJnDo5+Tw98lSy63NZvi4n+ez5m2u5d4PkZyw==
+typescript@^5.6.3:
+  version "5.6.3"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.6.3.tgz#5f3449e31c9d94febb17de03cc081dd56d81db5b"
+  integrity sha512-hjcS1mhfuyi4WW8IWtjP7brDrG2cuDZukyrYrSauoXGNgx0S7zceP07adYkJycEr56BOUTNPzbInooiN3fn1qw==
 
 undici-types@~5.26.4:
   version "5.26.5"

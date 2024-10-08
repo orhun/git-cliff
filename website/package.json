@@ -18,7 +18,7 @@
   "dependencies": {
     "@docusaurus/core": "^3.5.2",
     "@docusaurus/preset-classic": "^3.5.2",
-    "@easyops-cn/docusaurus-search-local": "^0.44.5",
+    "@easyops-cn/docusaurus-search-local": "^0.44.6",
     "@mdx-js/react": "^3.0.1",
     "clsx": "^2.1.1",
     "prism-react-renderer": "^2.4.0",
@@ -28,7 +28,7 @@
   "devDependencies": {
     "@docusaurus/module-type-aliases": "^3.4.0",
     "@docusaurus/tsconfig": "^3.5.2",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.3"
   },
   "browserslist": {
     "production": [
