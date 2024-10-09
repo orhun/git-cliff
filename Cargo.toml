@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["git-cliff-core", "git-cliff"]
+members = ["git-cliff-core", "git-cliff", "git-cliff-tui"]
 
 [workspace.dependencies]
 regex = "1.10.6"
