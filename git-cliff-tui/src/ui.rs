@@ -47,8 +47,7 @@ pub fn render(state: &mut State, frame: &mut Frame) {
 		frame.area(),
 	);
 
-	let rects = Layout::vertical([Constraint::Percentage(100), Constraint::Min(3)])
-		.margin(1)
+	let rects = Layout::vertical([Constraint::Percentage(100), Constraint::Min(1)])
 		.split(frame.area());
 	render_key_bindings(frame, rects[1]);
 
@@ -93,13 +92,6 @@ fn render_key_bindings(frame: &mut Frame, rect: Rect) {
 						.collect::<Vec<Span>>(),
 				)
 				.alignment(Alignment::Center),
-		)
-		.block(
-			Block::bordered()
-				.title_bottom(Line::from(format!("|{}|", env!("CARGO_PKG_VERSION"))))
-				.title_alignment(Alignment::Right)
-				.border_type(BorderType::Rounded)
-				.border_style(Style::default().fg(Color::Rgb(100, 100, 100))),
 		),
 		rect,
 	);
@@ -115,11 +107,14 @@ fn render_list(state: &mut State, frame: &mut Frame, rect: Rect) {
 		rect,
 	);
 	if !state.configs.is_empty() {
-		let item_count = ((rect.height - 2) / 3) as usize;
+		let rect =
+			Layout::vertical([Constraint::Min(1), Constraint::Percentage(100)])
+				.split(rect)[1];
+		let borders_line = 2;
+		let item_count = (rect.height - borders_line) as usize;
 		let start_offset = (state.selected_index + 1).saturating_sub(item_count);
-		let rects = Layout::vertical([Constraint::Min(2)].repeat(item_count))
-			.margin(1)
-			.split(rect);
+		let rects =
+			Layout::vertical([Constraint::Length(1)].repeat(item_count)).split(rect);
 		for (i, config) in state
 			.configs
 			.iter_mut()
@@ -127,34 +122,24 @@ fn render_list(state: &mut State, frame: &mut Frame, rect: Rect) {
 			.take(item_count)
 			.enumerate()
 		{
-			config.area = rects[i];
-			frame.render_widget(
-				Block::bordered()
-					.border_type(BorderType::Rounded)
-					.border_style({
-						let mut style = Style::new().fg(Color::Rgb(100, 100, 100));
-						if config.is_hovered {
-							style = style.yellow()
-						} else if state.selected_index == i + start_offset {
-							style = style.yellow();
-						}
-						style
-					}),
-				rects[i],
-			);
+			let mut style = Style::new();
+			if config.is_hovered {
+				style = style.yellow()
+			} else if state.selected_index == i + start_offset {
+				style = style.yellow();
+			}
 			let item = Layout::horizontal([
 				Constraint::Min(1),
 				Constraint::Percentage(100),
 			])
-			.margin(1)
 			.split(rects[i]);
-
+			config.area = rects[i];
 			frame.render_widget(
-				Paragraph::new(Line::from(config.file.clone())),
+				Paragraph::new(Line::from(config.file.clone()).style(style)),
 				item[1],
 			);
 		}
-		if state.configs.len() * 3 > rect.height as usize - 2 {
+		if state.configs.len() > rect.height as usize - 2 {
 			frame.render_stateful_widget(
 				Scrollbar::new(ScrollbarOrientation::VerticalRight)
 					.begin_symbol(Some("↑"))
@@ -232,7 +217,11 @@ fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
 				.left_aligned(),
 			)
 			.border_type(BorderType::Rounded)
-			.border_style(Style::default().fg(Color::Rgb(100, 100, 100))),
+			.border_style(Style::default().fg(Color::Rgb(100, 100, 100)))
+			.title_bottom(
+				Line::from(format!("|{}|", env!("CARGO_PKG_VERSION")))
+					.right_aligned(),
+			),
 		rect,
 	);
 	if let Some(component) = &mut state.markdown.component {
