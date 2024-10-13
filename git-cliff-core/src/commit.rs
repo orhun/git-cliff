@@ -145,7 +145,7 @@ pub struct Commit<'a> {
 	pub bitbucket:     crate::contributor::RemoteContributor,
 }
 
-impl<'a> From<String> for Commit<'a> {
+impl From<String> for Commit<'_> {
 	fn from(message: String) -> Self {
 		if let Some(captures) = SHA1_REGEX.captures(&message) {
 			if let (Some(id), Some(message)) = (
