@@ -1,3 +1,4 @@
+use crate::commit::commits_to_conventional_commits;
 use crate::error::Result;
 use crate::{
 	commit::Commit,
@@ -34,6 +35,7 @@ pub struct Release<'a> {
 	/// git tag's message.
 	pub message:    Option<String>,
 	/// Commits made for the release.
+	#[serde(deserialize_with = "commits_to_conventional_commits")]
 	pub commits:    Vec<Commit<'a>>,
 	/// Commit ID of the tag.
 	#[serde(rename = "commit_id")]

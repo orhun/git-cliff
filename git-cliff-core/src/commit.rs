@@ -28,6 +28,7 @@ use serde::ser::{
 };
 use serde::{
 	Deserialize,
+	Deserializer,
 	Serialize,
 };
 use serde_json::value::Value;
@@ -143,6 +144,14 @@ pub struct Commit<'a> {
 	#[cfg(feature = "bitbucket")]
 	#[deprecated(note = "Use `remote` field instead")]
 	pub bitbucket:     crate::contributor::RemoteContributor,
+
+	/// Raw message of the normal commit, works as a placeholder for converting
+	/// normal commit into conventional commit.
+	///
+	/// Despite the name, it is not actually a raw message.
+	/// In fact, it is pre-processed by [`Commit::preprocess`], and only be
+	/// generated when serializing into `context` the first time.
+	pub raw_message: Option<String>,
 }
 
 impl<'a> From<String> for Commit<'a> {
@@ -191,6 +200,11 @@ impl Commit<'_> {
 		}
 	}
 
+	/// Get raw message for converting into conventional commit.
+	pub fn raw_message(&self) -> &str {
+		self.raw_message.as_deref().unwrap_or(&self.message)
+	}
+
 	/// Processes the commit.
 	///
 	/// * converts commit to a conventional commit
@@ -226,7 +240,7 @@ impl Commit<'_> {
 	/// Returns the commit with its conventional type set.
 	pub fn into_conventional(mut self) -> Result<Self> {
 		match ConventionalCommit::parse(Box::leak(
-			self.message.to_string().into_boxed_str(),
+			self.raw_message().to_string().into_boxed_str(),
 		)) {
 			Ok(conv) => {
 				self.conv = Some(conv);
@@ -423,7 +437,7 @@ impl Serialize for Commit<'_> {
 			}
 		}
 
-		let mut commit = serializer.serialize_struct("Commit", 9)?;
+		let mut commit = serializer.serialize_struct("Commit", 20)?;
 		commit.serialize_field("id", &self.id)?;
 		if let Some(conv) = &self.conv {
 			commit.serialize_field("message", conv.description())?;
@@ -472,8 +486,27 @@ impl Serialize for Commit<'_> {
 		if let Some(remote) = &self.remote {
 			commit.serialize_field("remote", remote)?;
 		}
+		commit.serialize_field("raw_message", &self.raw_message())?;
 		commit.end()
 	}
+}
+
+/// Deserialize commits into conventional commits if they are convertible.
+///
+/// Serialized commits cannot be deserialized into commits that have
+/// [`Commit::conv`]. Thus, we need to manually convert them using
+/// [`Commit::into_conventional`].
+///
+/// This function is to be used only in [`crate::release::Release::commits`].
+pub(crate) fn commits_to_conventional_commits<'de, 'a, D: Deserializer<'de>>(
+	deserializer: D,
+) -> std::result::Result<Vec<Commit<'a>>, D::Error> {
+	let commits = Vec::<Commit<'a>>::deserialize(deserializer)?;
+	let commits = commits
+		.into_iter()
+		.map(|commit| commit.clone().into_conventional().unwrap_or(commit))
+		.collect();
+	Ok(commits)
 }
 
 #[cfg(test)]
