@@ -5,3 +5,10 @@
 **/*.rs.bk
 
 *.flamegraph.svg
+
+# direnv
+/.direnv/
+
+# Potential Nix stuff
+/result
+/result-*
