@@ -72,7 +72,7 @@ crate::update_release_metadata!(gitea, update_gitea_metadata);
 #[cfg(feature = "bitbucket")]
 crate::update_release_metadata!(bitbucket, update_bitbucket_metadata);
 
-impl<'a> Release<'a> {
+impl Release<'_> {
 	/// Calculates the next version based on the commits.
 	///
 	/// It uses the default bump version configuration to calculate the next
@@ -171,7 +171,7 @@ pub struct Releases<'a> {
 	pub releases: &'a Vec<Release<'a>>,
 }
 
-impl<'a> Releases<'a> {
+impl Releases<'_> {
 	/// Returns the list of releases as JSON.
 	pub fn as_json(&self) -> Result<String> {
 		Ok(serde_json::to_string(self.releases)?)
