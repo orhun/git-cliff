@@ -99,7 +99,7 @@ features = ["debug-embed", "compression"]
 [dev-dependencies]
 pretty_assertions = "1.4.1"
 expect-test = "1.5.0"
-temp-dir = "0.1.13"
+temp-dir = "0.1.14"
 
 [package.metadata.docs.rs]
 all-features = true
