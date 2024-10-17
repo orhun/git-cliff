@@ -48,7 +48,15 @@ impl Repository {
 	/// Initializes (opens) the repository.
 	pub fn init(path: PathBuf) -> Result<Self> {
 		if path.exists() {
-			let inner = GitRepository::open(&path)?;
+			let inner = GitRepository::open(&path).or_else(|err| {
+				let jujutsu_path =
+					path.join(".jj").join("repo").join("store").join("git");
+				if jujutsu_path.exists() {
+					GitRepository::open_bare(&jujutsu_path)
+				} else {
+					Err(err)
+				}
+			})?;
 			let changed_files_cache_path = inner
 				.path()
 				.join(env!("CARGO_PKG_NAME"))
@@ -503,9 +511,12 @@ fn ssh_path_segments(url: &str) -> Result<Remote> {
 mod test {
 	use super::*;
 	use crate::commit::Commit as AppCommit;
-	use std::env;
 	use std::process::Command;
 	use std::str;
+	use std::{
+		env,
+		fs,
+	};
 	use temp_dir::TempDir;
 
 	fn get_last_commit_hash() -> Result<String> {
@@ -733,6 +744,62 @@ mod test {
 		);
 
 		(repo, temp_dir)
+	}
+
+	#[test]
+	fn open_jujutsu_repo() {
+		let (repo, _temp_dir) = create_temp_repo();
+		// working copy is the directory that contains the .git directory:
+		let working_copy = repo.path;
+
+		// Make the Git repository bare and set HEAD
+		std::process::Command::new("git")
+			.args(["config", "core.bare", "true"])
+			.current_dir(&working_copy)
+			.status()
+			.expect("failed to make git repo non-bare");
+		// Move the Git repo into jj
+		let store = working_copy.join(".jj").join("repo").join("store");
+		fs::create_dir_all(&store).expect("failed to create dir");
+		fs::rename(working_copy.join(".git"), store.join("git"))
+			.expect("failed to move git repo");
+
+		// Open repo from working copy, that contains the .jj directory
+		let repo = Repository::init(working_copy).expect("failed to init repo");
+
+		// macOS canonical path for temp directories is in /private
+		// libgit2 forces the path to be canonical regardless of what we pass in
+		if repo.inner.path().starts_with("/private") {
+			assert_eq!(
+				repo.inner.path().strip_prefix("/private"),
+				store.join("git").strip_prefix("/"),
+				"open git repo in .jj/repo/store/"
+			);
+		} else {
+			assert_eq!(
+				repo.inner.path(),
+				store.join("git"),
+				"open git repo in .jj/repo/store/"
+			);
+		}
+	}
+
+	#[test]
+	fn propagate_error_if_no_repo_found() {
+		let temp_dir =
+			TempDir::with_prefix("git-cliff-").expect("failed to create temp dir");
+
+		let path = temp_dir.path().to_path_buf();
+
+		let result = Repository::init(path.clone());
+
+		assert!(result.is_err());
+		if let Err(error) = result {
+			assert!(format!("{error:?}").contains(
+				format!("could not find repository at '{}'", path.display())
+					.as_str()
+			))
+		}
 	}
 
 	fn create_commit_with_files<'a>(
