@@ -440,6 +440,7 @@ impl Repository {
 						repo:      repo.trim_end_matches(".git").to_string(),
 						token:     None,
 						is_custom: false,
+						api_url:   None,
 					});
 				}
 			}
@@ -584,6 +585,7 @@ mod test {
 				repo:      String::from("git-cliff"),
 				token:     None,
 				is_custom: false,
+				api_url:   remote.api_url.clone(),
 			},
 			remote
 		);
