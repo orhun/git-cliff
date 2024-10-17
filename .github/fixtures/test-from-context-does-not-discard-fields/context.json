@@ -1,0 +1,391 @@
+[
+  {
+    "version": "v0.1.0",
+    "message": null,
+    "commits": [
+      {
+        "id": "ab06a042344dbd1c4af974ef393049b44ad0ae28",
+        "message": "feature 1, breaking change in footer",
+        "body": "Body feature 1",
+        "footers": [
+          {
+            "token": "BREAKING CHANGE",
+            "separator": ":",
+            "value": "breaking change description feature 1",
+            "breaking": true
+          },
+          {
+            "token": "Signed-off-by",
+            "separator": ":",
+            "value": "user1 <user1@example.com>",
+            "breaking": false
+          },
+          {
+            "token": "Reviewed-by",
+            "separator": ":",
+            "value": "user2",
+            "breaking": false
+          }
+        ],
+        "group": "Features",
+        "breaking_description": "breaking change description feature 1",
+        "breaking": true,
+        "scope": "web",
+        "links": [],
+        "author": {
+          "name": "github-actions[bot]",
+          "email": "github-actions[bot]@users.noreply.github.com",
+          "timestamp": 1728938297
+        },
+        "committer": {
+          "name": "github-actions[bot]",
+          "email": "github-actions[bot]@users.noreply.github.com",
+          "timestamp": 1649175909
+        },
+        "conventional": true,
+        "merge_commit": false,
+        "extra": null,
+        "github": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "gitlab": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "gitea": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "bitbucket": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "raw_message": "feat(web): feature 1, breaking change in footer\n\nBody feature 1\n\nBREAKING CHANGE: breaking change description feature 1\nSigned-off-by: user1 <user1@example.com>\nReviewed-by: user2"
+      },
+      {
+        "id": "a87599e6ecaf05e80ac4d87edd9a852fd8cad189",
+        "message": "feature 2, breaking chain in description",
+        "body": "Body feature 2",
+        "footers": [
+          {
+            "token": "Signed-off-by",
+            "separator": ":",
+            "value": "user3 <user3@example.com>",
+            "breaking": false
+          }
+        ],
+        "group": "Features",
+        "breaking_description": "feature 2, breaking chain in description",
+        "breaking": true,
+        "scope": "web",
+        "links": [],
+        "author": {
+          "name": "github-actions[bot]",
+          "email": "github-actions[bot]@users.noreply.github.com",
+          "timestamp": 1728938297
+        },
+        "committer": {
+          "name": "github-actions[bot]",
+          "email": "github-actions[bot]@users.noreply.github.com",
+          "timestamp": 1649175910
+        },
+        "conventional": true,
+        "merge_commit": false,
+        "extra": null,
+        "github": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "gitlab": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "gitea": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "bitbucket": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "raw_message": "feat(web)!: feature 2, breaking chain in description\n\nBody feature 2\n\nSigned-off-by: user3 <user3@example.com>"
+      },
+      {
+        "id": "9d83e631a1c57eec825f724283041662edd9230b",
+        "message": "feature 3, use default scope = app",
+        "body": "Body feature 2",
+        "footers": [
+          {
+            "token": "Signed-off-by",
+            "separator": ":",
+            "value": "user3 <user3@example.com>",
+            "breaking": false
+          }
+        ],
+        "group": "Features",
+        "breaking_description": "feature 3, use default scope = app",
+        "breaking": true,
+        "scope": "app",
+        "links": [],
+        "author": {
+          "name": "github-actions[bot]",
+          "email": "github-actions[bot]@users.noreply.github.com",
+          "timestamp": 1728938297
+        },
+        "committer": {
+          "name": "github-actions[bot]",
+          "email": "github-actions[bot]@users.noreply.github.com",
+          "timestamp": 1649175911
+        },
+        "conventional": true,
+        "merge_commit": false,
+        "extra": null,
+        "github": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "gitlab": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "gitea": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "bitbucket": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "raw_message": "feat!: feature 3, use default scope = app\n\nBody feature 2\n\nSigned-off-by: user3 <user3@example.com>"
+      },
+      {
+        "id": "3bb5b6f741fd40cc71f09d3c6a339e4b5d0843cc",
+        "message": "fix 1, use scope as group",
+        "body": "Body fix 1",
+        "footers": [
+          { "token": "Fix", "separator": ":", "value": "#1", "breaking": false }
+        ],
+        "group": "fix",
+        "breaking_description": null,
+        "breaking": false,
+        "scope": "scope",
+        "links": [],
+        "author": {
+          "name": "github-actions[bot]",
+          "email": "github-actions[bot]@users.noreply.github.com",
+          "timestamp": 1728938297
+        },
+        "committer": {
+          "name": "github-actions[bot]",
+          "email": "github-actions[bot]@users.noreply.github.com",
+          "timestamp": 1649175912
+        },
+        "conventional": true,
+        "merge_commit": false,
+        "extra": null,
+        "github": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "gitlab": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "gitea": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "bitbucket": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "raw_message": "fix(scope): fix 1, use scope as group\n\nBody fix 1\n\nFix: #1"
+      },
+      {
+        "id": "856472f0e5b238278fe331dcc151a96982c5bbad",
+        "message": "fix 2, no footer",
+        "body": "Body fix 2",
+        "footers": [],
+        "group": "fix",
+        "breaking_description": null,
+        "breaking": false,
+        "scope": "front-end",
+        "links": [],
+        "author": {
+          "name": "github-actions[bot]",
+          "email": "github-actions[bot]@users.noreply.github.com",
+          "timestamp": 1728938297
+        },
+        "committer": {
+          "name": "github-actions[bot]",
+          "email": "github-actions[bot]@users.noreply.github.com",
+          "timestamp": 1649175913
+        },
+        "conventional": true,
+        "merge_commit": false,
+        "extra": null,
+        "github": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "gitlab": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "gitea": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "bitbucket": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "raw_message": "fix(front-end): fix 2, no footer\n\nBody fix 2"
+      },
+      {
+        "id": "6e7a2b8e670a348ccfbae696fd850d8769c54360",
+        "message": "fix 3 and 4, no body but footer",
+        "body": null,
+        "footers": [
+          {
+            "token": "Fix",
+            "separator": ":",
+            "value": "#3",
+            "breaking": false
+          },
+          { "token": "Fix", "separator": ":", "value": "#4", "breaking": false }
+        ],
+        "group": "fix",
+        "breaking_description": null,
+        "breaking": false,
+        "scope": "front-end",
+        "links": [],
+        "author": {
+          "name": "github-actions[bot]",
+          "email": "github-actions[bot]@users.noreply.github.com",
+          "timestamp": 1728938297
+        },
+        "committer": {
+          "name": "github-actions[bot]",
+          "email": "github-actions[bot]@users.noreply.github.com",
+          "timestamp": 1649175914
+        },
+        "conventional": true,
+        "merge_commit": false,
+        "extra": null,
+        "github": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "gitlab": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "gitea": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "bitbucket": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "raw_message": "fix(front-end): fix 3 and 4, no body but footer\n\nFix: #3\nFix: #4"
+      }
+    ],
+    "commit_id": "6e7a2b8e670a348ccfbae696fd850d8769c54360",
+    "timestamp": 1649175914,
+    "previous": {
+      "version": null,
+      "message": null,
+      "commits": [],
+      "commit_id": null,
+      "timestamp": 0,
+      "previous": null,
+      "repository": null,
+      "extra": null,
+      "github": { "contributors": [] },
+      "gitlab": { "contributors": [] },
+      "gitea": { "contributors": [] },
+      "bitbucket": { "contributors": [] }
+    },
+    "repository": "/path/to/repository",
+    "extra": null,
+    "github": { "contributors": [] },
+    "gitlab": { "contributors": [] },
+    "gitea": { "contributors": [] },
+    "bitbucket": { "contributors": [] }
+  }
+]
