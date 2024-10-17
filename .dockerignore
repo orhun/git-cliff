@@ -15,3 +15,9 @@ LICENSE
 rustfmt.toml
 _config.yml
 .lycheeignore
+
+# Ignore rust toolchain files as they would needlessly fetch the toolchain.
+# But the image already contains a sufficient toolchain.
+# Ignore both the latest naming and the legacy naming
+rust-toolchain.toml
+rust-toolchain
