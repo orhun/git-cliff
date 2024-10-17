@@ -48,7 +48,15 @@ impl Repository {
 	/// Initializes (opens) the repository.
 	pub fn init(path: PathBuf) -> Result<Self> {
 		if path.exists() {
-			let inner = GitRepository::open(&path)?;
+			let inner = GitRepository::open(&path).or_else(|err| {
+				let jujutsu_path =
+					path.join(".jj").join("repo").join("store").join("git");
+				if jujutsu_path.exists() {
+					GitRepository::open(&jujutsu_path)
+				} else {
+					Err(err)
+				}
+			})?;
 			let changed_files_cache_path = inner
 				.path()
 				.join(env!("CARGO_PKG_NAME"))
