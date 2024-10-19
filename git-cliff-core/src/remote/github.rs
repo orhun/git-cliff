@@ -61,13 +61,11 @@ impl RemoteCommit for GitHubCommit {
 	}
 
 	fn timestamp(&self) -> Option<i64> {
-		Some(
-			DateTime::parse_from_rfc3339(
-				self.commit.as_ref().unwrap().author.date.clone().as_str(),
-			)
-			.unwrap()
-			.timestamp(),
-		)
+		self.commit.clone().map(|f| {
+			DateTime::parse_from_rfc3339(f.author.date.clone().as_str())
+				.expect("unable to parse commit date")
+				.timestamp()
+		})
 	}
 }
 

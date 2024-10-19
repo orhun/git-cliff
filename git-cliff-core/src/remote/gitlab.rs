@@ -111,7 +111,7 @@ impl RemoteCommit for GitLabCommit {
 	fn timestamp(&self) -> Option<i64> {
 		Some(
 			DateTime::parse_from_rfc3339(self.committed_date.clone().as_str())
-				.unwrap()
+				.expect("unable to parse commit date")
 				.timestamp(),
 		)
 	}

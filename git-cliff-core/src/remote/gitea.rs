@@ -49,7 +49,7 @@ impl RemoteCommit for GiteaCommit {
 	fn timestamp(&self) -> Option<i64> {
 		Some(
 			DateTime::parse_from_rfc3339(self.created.clone().as_str())
-				.unwrap()
+				.expect("unable to parse commit date")
 				.timestamp(),
 		)
 	}
