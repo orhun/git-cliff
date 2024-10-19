@@ -1,5 +1,6 @@
 use crate::config::Remote;
 use crate::error::*;
+use chrono::DateTime;
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{
 	Deserialize,
@@ -29,9 +30,11 @@ pub(crate) const TEMPLATE_VARIABLES: &[&str] =
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GiteaCommit {
 	/// SHA.
-	pub sha:    String,
+	pub sha:     String,
 	/// Author of the commit.
-	pub author: Option<GiteaCommitAuthor>,
+	pub author:  Option<GiteaCommitAuthor>,
+	/// Timestamp of the commit.
+	pub created: String,
 }
 
 impl RemoteCommit for GiteaCommit {
@@ -41,6 +44,14 @@ impl RemoteCommit for GiteaCommit {
 
 	fn username(&self) -> Option<String> {
 		self.author.clone().and_then(|v| v.login)
+	}
+
+	fn timestamp(&self) -> Option<i64> {
+		Some(
+			DateTime::parse_from_rfc3339(self.created.clone().as_str())
+				.unwrap()
+				.timestamp(),
+		)
 	}
 }
 

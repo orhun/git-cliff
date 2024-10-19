@@ -1,5 +1,6 @@
 use crate::config::Remote;
 use crate::error::*;
+use chrono::DateTime;
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{
 	Deserialize,
@@ -105,6 +106,14 @@ impl RemoteCommit for GitLabCommit {
 
 	fn username(&self) -> Option<String> {
 		Some(self.author_name.clone())
+	}
+
+	fn timestamp(&self) -> Option<i64> {
+		Some(
+			DateTime::parse_from_rfc3339(self.committed_date.clone().as_str())
+				.unwrap()
+				.timestamp(),
+		)
 	}
 }
 

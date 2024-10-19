@@ -1,5 +1,6 @@
 use crate::config::Remote;
 use crate::error::*;
+use chrono::DateTime;
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{
 	Deserialize,
@@ -32,6 +33,22 @@ pub struct GitHubCommit {
 	pub sha:    String,
 	/// Author of the commit.
 	pub author: Option<GitHubCommitAuthor>,
+	/// Details of the commit
+	pub commit: Option<GitHubCommitDetails>,
+}
+
+/// Representation of subset of commit details
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GitHubCommitDetails {
+	/// Author of the commit
+	pub author: GitHubCommitDetailsAuthor,
+}
+
+/// Representation of subset of commit author details
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GitHubCommitDetailsAuthor {
+	/// Date of the commit
+	pub date: String,
 }
 
 impl RemoteCommit for GitHubCommit {
@@ -41,6 +58,16 @@ impl RemoteCommit for GitHubCommit {
 
 	fn username(&self) -> Option<String> {
 		self.author.clone().and_then(|v| v.login)
+	}
+
+	fn timestamp(&self) -> Option<i64> {
+		Some(
+			DateTime::parse_from_rfc3339(
+				self.commit.as_ref().unwrap().author.date.clone().as_str(),
+			)
+			.unwrap()
+			.timestamp(),
+		)
 	}
 }
 

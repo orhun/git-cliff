@@ -82,6 +82,8 @@ pub trait RemoteCommit: DynClone {
 	fn id(&self) -> String;
 	/// Commit author.
 	fn username(&self) -> Option<String>;
+	/// Timestamp.
+	fn timestamp(&self) -> Option<i64>;
 }
 
 dyn_clone::clone_trait_object!(RemoteCommit);
@@ -299,6 +301,7 @@ macro_rules! update_release_metadata {
 				pull_requests: Vec<Box<dyn RemotePullRequest>>,
 			) -> Result<()> {
 				let mut contributors: Vec<RemoteContributor> = Vec::new();
+				let mut release_commit_timestamp: Option<i64> = None;
 				// retain the commits that are not a part of this release for later
 				// on checking the first contributors.
 				commits.retain(|v| {
@@ -331,6 +334,11 @@ macro_rules! update_release_metadata {
 							});
 						}
 						commit.remote = Some(commit.$remote.clone());
+						// if remote commit is the release commit store timestamp for
+						// use in calculation of first time
+						if Some(v.id().clone()) == self.commit_id {
+							release_commit_timestamp = v.timestamp().clone();
+						}
 						false
 					} else {
 						true
@@ -342,6 +350,13 @@ macro_rules! update_release_metadata {
 					.map(|mut v| {
 						v.is_first_time = !commits
 							.iter()
+							.filter(|commit| {
+								// if current release is unreleased no need to filter
+								// commits or filter commits that are from
+								// newer releases
+								self.timestamp == 0 ||
+									commit.timestamp() < release_commit_timestamp
+							})
 							.map(|v| v.username())
 							.any(|login| login == v.username);
 						v

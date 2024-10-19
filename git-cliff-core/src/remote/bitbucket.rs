@@ -1,5 +1,6 @@
 use crate::config::Remote;
 use crate::error::*;
+use chrono::DateTime;
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{
 	Deserialize,
@@ -33,6 +34,8 @@ pub(crate) const BITBUCKET_MAX_PAGE_PRS: usize = 50;
 pub struct BitbucketCommit {
 	/// SHA.
 	pub hash:   String,
+	/// Date of the commit
+	pub date:   String,
 	/// Author of the commit.
 	pub author: Option<BitbucketCommitAuthor>,
 }
@@ -44,6 +47,14 @@ impl RemoteCommit for BitbucketCommit {
 
 	fn username(&self) -> Option<String> {
 		self.author.clone().and_then(|v| v.login)
+	}
+
+	fn timestamp(&self) -> Option<i64> {
+		Some(
+			DateTime::parse_from_rfc3339(self.date.clone().as_str())
+				.unwrap()
+				.timestamp(),
+		)
 	}
 }
 
