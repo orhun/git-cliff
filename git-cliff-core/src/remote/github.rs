@@ -1,6 +1,5 @@
 use crate::config::Remote;
 use crate::error::*;
-use chrono::DateTime;
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{
 	Deserialize,
@@ -61,11 +60,9 @@ impl RemoteCommit for GitHubCommit {
 	}
 
 	fn timestamp(&self) -> Option<i64> {
-		self.commit.clone().map(|f| {
-			DateTime::parse_from_rfc3339(f.author.date.clone().as_str())
-				.expect("unable to parse commit date")
-				.timestamp()
-		})
+		self.commit
+			.clone()
+			.map(|f| self.convert_to_unix_timestamp(f.author.date.clone().as_str()))
 	}
 }
 
@@ -205,5 +202,29 @@ impl GitHubClient {
 			.into_iter()
 			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
 			.collect())
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use super::*;
+	use crate::remote::RemoteCommit;
+	use pretty_assertions::assert_eq;
+
+	#[test]
+	fn timestamp() {
+		let remote_commit = GitHubCommit {
+			sha:    String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+			author: Some(GitHubCommitAuthor {
+				login: Some(String::from("orhun")),
+			}),
+			commit: Some(GitHubCommitDetails {
+				author: GitHubCommitDetailsAuthor {
+					date: String::from("2021-07-18T15:14:39+03:00"),
+				},
+			}),
+		};
+
+		assert_eq!(Some(1626610479), remote_commit.timestamp());
 	}
 }

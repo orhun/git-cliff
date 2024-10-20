@@ -50,6 +50,10 @@ use serde::{
 };
 use std::fmt::Debug;
 use std::time::Duration;
+use time::{
+	format_description::well_known::Rfc3339,
+	OffsetDateTime,
+};
 
 /// User agent for interacting with the GitHub API.
 ///
@@ -84,6 +88,13 @@ pub trait RemoteCommit: DynClone {
 	fn username(&self) -> Option<String>;
 	/// Timestamp.
 	fn timestamp(&self) -> Option<i64>;
+
+	/// Convert date in RFC3339 format to unix timestamp
+	fn convert_to_unix_timestamp(&self, date: &str) -> i64 {
+		OffsetDateTime::parse(date, &Rfc3339)
+			.expect("Failed to parse date")
+			.unix_timestamp()
+	}
 }
 
 dyn_clone::clone_trait_object!(RemoteCommit);

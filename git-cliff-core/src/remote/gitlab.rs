@@ -1,6 +1,5 @@
 use crate::config::Remote;
 use crate::error::*;
-use chrono::DateTime;
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{
 	Deserialize,
@@ -109,11 +108,7 @@ impl RemoteCommit for GitLabCommit {
 	}
 
 	fn timestamp(&self) -> Option<i64> {
-		Some(
-			DateTime::parse_from_rfc3339(self.committed_date.clone().as_str())
-				.expect("unable to parse commit date")
-				.timestamp(),
-		)
+		Some(self.convert_to_unix_timestamp(self.committed_date.clone().as_str()))
 	}
 }
 
@@ -312,5 +307,28 @@ mod test {
 			"https://gitlab.test.com/api/v4/projects/abc%2Fdef%2Fxyz1",
 			GitLabProject::url(1, "https://gitlab.test.com/api/v4", &remote, 0)
 		);
+	}
+
+	#[test]
+	fn timestamp() {
+		let remote_commit = GitLabCommit {
+			id:              String::from(
+				"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
+			),
+			author_name:     String::from("orhun"),
+			short_id:        String::from(""),
+			title:           String::from(""),
+			author_email:    String::from(""),
+			authored_date:   String::from(""),
+			committer_name:  String::from(""),
+			committer_email: String::from(""),
+			committed_date:  String::from("2021-07-18T15:14:39+03:00"),
+			created_at:      String::from(""),
+			message:         String::from(""),
+			parent_ids:      vec![],
+			web_url:         String::from(""),
+		};
+
+		assert_eq!(Some(1626610479), remote_commit.timestamp());
 	}
 }

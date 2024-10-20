@@ -1,6 +1,5 @@
 use crate::config::Remote;
 use crate::error::*;
-use chrono::DateTime;
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{
 	Deserialize,
@@ -50,11 +49,7 @@ impl RemoteCommit for BitbucketCommit {
 	}
 
 	fn timestamp(&self) -> Option<i64> {
-		Some(
-			DateTime::parse_from_rfc3339(self.date.clone().as_str())
-				.expect("unable to parse commit date")
-				.timestamp(),
-		)
+		Some(self.convert_to_unix_timestamp(self.date.clone().as_str()))
 	}
 }
 
@@ -230,5 +225,25 @@ impl BitbucketClient {
 			.flat_map(|v| v.values)
 			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
 			.collect())
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use super::*;
+	use crate::remote::RemoteCommit;
+	use pretty_assertions::assert_eq;
+
+	#[test]
+	fn timestamp() {
+		let remote_commit = BitbucketCommit {
+			hash:   String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+			author: Some(BitbucketCommitAuthor {
+				login: Some(String::from("orhun")),
+			}),
+			date:   String::from("2021-07-18T15:14:39+03:00"),
+		};
+
+		assert_eq!(Some(1626610479), remote_commit.timestamp());
 	}
 }
