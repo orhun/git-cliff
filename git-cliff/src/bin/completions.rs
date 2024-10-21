@@ -3,7 +3,7 @@ use clap::{
 	ValueEnum,
 };
 use clap_complete::Shell;
-use git_cliff::args::Opt;
+use git_cliff::args::Args;
 use std::env;
 use std::io::Result;
 
@@ -13,7 +13,7 @@ use std::io::Result;
 /// See <https://doc.rust-lang.org/cargo/reference/environment-variables.html>
 fn main() -> Result<()> {
 	let out_dir = env::var("OUT_DIR").expect("OUT_DIR is not set");
-	let mut app = Opt::command();
+	let mut app = Args::command();
 	for &shell in Shell::value_variants() {
 		clap_complete::generate_to(
 			shell,

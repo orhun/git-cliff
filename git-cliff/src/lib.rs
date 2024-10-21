@@ -3,6 +3,7 @@
 	html_logo_url = "https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff.png",
 	html_favicon_url = "https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/favicon/favicon.ico"
 )]
+#![warn(missing_docs)]
 
 /// Command-line argument parser.
 pub mod args;
@@ -10,12 +11,15 @@ pub mod args;
 /// Custom logger implementation.
 pub mod logger;
 
+/// Re-export core library.
+pub use git_cliff_core as core;
+
 #[macro_use]
 extern crate log;
 
 use args::{
+	Args,
 	BumpOption,
-	Opt,
 	Sort,
 	Strip,
 };
@@ -81,7 +85,7 @@ fn check_new_version() {
 fn process_repository<'a>(
 	repository: &'static Repository,
 	config: &mut Config,
-	args: &Opt,
+	args: &Args,
 ) -> Result<Vec<Release<'a>>> {
 	let mut tags = repository.tags(
 		&config.git.tag_pattern,
@@ -346,34 +350,12 @@ fn process_repository<'a>(
 	Ok(releases)
 }
 
-/// Runs `git-cliff`.
-pub fn run(mut args: Opt) -> Result<()> {
-	// Check if there is a new version available.
-	#[cfg(feature = "update-informer")]
-	check_new_version();
-
-	// Create the configuration file if init flag is given.
-	if let Some(init_config) = args.init {
-		let contents = match init_config {
-			Some(ref name) => BuiltinConfig::get_config(name.to_string())?,
-			None => EmbeddedConfig::get_config()?,
-		};
-		info!(
-			"Saving the configuration file{} to {:?}",
-			init_config.map(|v| format!(" ({v})")).unwrap_or_default(),
-			DEFAULT_CONFIG
-		);
-		fs::write(DEFAULT_CONFIG, contents)?;
-		return Ok(());
-	}
-
-	// Retrieve the built-in configuration.
+/// Returns the parsed configuration file.
+fn parse_config(args: &mut Args) -> Result<Config> {
 	let builtin_config =
 		BuiltinConfig::parse(args.config.to_string_lossy().to_string());
-
-	// Set the working directory.
 	if let Some(ref workdir) = args.workdir {
-		args.config = workdir.join(args.config);
+		args.config = workdir.join(&args.config);
 		match args.repository.as_mut() {
 			Some(repository) => {
 				repository
@@ -382,12 +364,10 @@ pub fn run(mut args: Opt) -> Result<()> {
 			}
 			None => args.repository = Some(vec![workdir.clone()]),
 		}
-		if let Some(changelog) = args.prepend {
+		if let Some(changelog) = &args.prepend {
 			args.prepend = Some(workdir.join(changelog));
 		}
 	}
-
-	// Parse the configuration file.
 	let mut path = args.config.clone();
 	if !path.exists() {
 		if let Some(config_path) = dirs::config_dir()
@@ -396,8 +376,6 @@ pub fn run(mut args: Opt) -> Result<()> {
 			path = config_path;
 		}
 	}
-
-	// Load the default configuration if necessary.
 	let mut config = if let Ok((config, name)) = builtin_config {
 		info!("Using built-in configuration file: {name}");
 		config
@@ -418,6 +396,31 @@ pub fn run(mut args: Opt) -> Result<()> {
 		warn!("Changelog body is not specified, using the default template.");
 		config.changelog.body = EmbeddedConfig::parse()?.changelog.body;
 	}
+	Ok(config)
+}
+
+/// Runs `git-cliff`.
+pub fn run<W: io::Write>(mut args: Args, mut out: W) -> Result<()> {
+	// Check if there is a new version available.
+	#[cfg(feature = "update-informer")]
+	check_new_version();
+
+	// Creates the configuration file.
+	if let Some(init_config) = args.init {
+		let contents = match init_config {
+			Some(ref name) => BuiltinConfig::get_config(name.to_string())?,
+			None => EmbeddedConfig::get_config()?,
+		};
+		info!(
+			"Saving the configuration file{} to {:?}",
+			init_config.map(|v| format!(" ({v})")).unwrap_or_default(),
+			DEFAULT_CONFIG
+		);
+		fs::write(DEFAULT_CONFIG, contents)?;
+		return Ok(());
+	}
+
+	let mut config = parse_config(&mut args)?;
 
 	// Update the configuration based on command line arguments and vice versa.
 	let output = args.output.clone().or(config.changelog.output.clone());
@@ -592,15 +595,6 @@ pub fn run(mut args: Opt) -> Result<()> {
 	};
 
 	// Print the result.
-	let mut out: Box<dyn io::Write> = if let Some(path) = &output {
-		if path == Path::new("-") {
-			Box::new(io::stdout())
-		} else {
-			Box::new(io::BufWriter::new(File::create(path)?))
-		}
-	} else {
-		Box::new(io::stdout())
-	};
 	if args.bump.is_some() || args.bumped_version {
 		let next_version = if let Some(next_version) = changelog.bump_version()? {
 			next_version
