@@ -106,6 +106,10 @@ impl RemoteCommit for GitLabCommit {
 	fn username(&self) -> Option<String> {
 		Some(self.author_name.clone())
 	}
+
+	fn timestamp(&self) -> Option<i64> {
+		Some(self.convert_to_unix_timestamp(self.committed_date.clone().as_str()))
+	}
 }
 
 impl RemoteEntry for GitLabCommit {
@@ -303,5 +307,17 @@ mod test {
 			"https://gitlab.test.com/api/v4/projects/abc%2Fdef%2Fxyz1",
 			GitLabProject::url(1, "https://gitlab.test.com/api/v4", &remote, 0)
 		);
+	}
+
+	#[test]
+	fn timestamp() {
+		let remote_commit = GitLabCommit {
+			id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+			author_name: String::from("orhun"),
+			committed_date: String::from("2021-07-18T15:14:39+03:00"),
+			..Default::default()
+		};
+
+		assert_eq!(Some(1626610479), remote_commit.timestamp());
 	}
 }
