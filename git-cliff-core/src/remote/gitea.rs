@@ -82,6 +82,8 @@ pub struct PullRequestLabel {
 }
 
 /// Representation of a single pull request.
+///
+/// <https://docs.gitea.com/api/1.22/#tag/repository/operation/repoListPullRequests>
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GiteaPullRequest {
 	/// Pull request number.
@@ -92,6 +94,8 @@ pub struct GiteaPullRequest {
 	pub merge_commit_sha: Option<String>,
 	/// Labels of the pull request.
 	pub labels:           Vec<PullRequestLabel>,
+	/// Author of the pull request
+	pub user:             GiteaCommitAuthor,
 }
 
 impl RemotePullRequest for GiteaPullRequest {
@@ -109,6 +113,10 @@ impl RemotePullRequest for GiteaPullRequest {
 
 	fn merge_commit(&self) -> Option<String> {
 		self.merge_commit_sha.clone()
+	}
+
+	fn try_get_author(&self) -> Option<String> {
+		self.user.login.clone()
 	}
 }
 
