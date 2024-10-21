@@ -474,15 +474,7 @@ fn url_path_segments(url: &str) -> Result<Remote> {
 ///
 /// This function expects the URL to be in the following format:
 ///
-/// git@hostname:owner/repo.git
-///
-/// The key parts are the colon (:) and the path separator (/).
-///
-/// The returned `Remote` will contain the `owner` and `repo` parts from the
-/// URL.
-///
-/// This function will return an `Error::RepoError` if the colon or separator
-/// are not found.
+/// > git@hostname:owner/repo.git
 fn ssh_path_segments(url: &str) -> Result<Remote> {
 	let [_, owner_repo, ..] = url
 		.strip_suffix(".git")
