@@ -88,11 +88,10 @@ pub trait RemoteCommit: DynClone {
 	fn username(&self) -> Option<String>;
 	/// Timestamp.
 	fn timestamp(&self) -> Option<i64>;
-
 	/// Convert date in RFC3339 format to unix timestamp
 	fn convert_to_unix_timestamp(&self, date: &str) -> i64 {
 		OffsetDateTime::parse(date, &Rfc3339)
-			.expect("Failed to parse date")
+			.expect("failed to parse date")
 			.unix_timestamp()
 	}
 }
