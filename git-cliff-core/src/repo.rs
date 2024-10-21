@@ -449,18 +449,7 @@ fn find_remote(url: &str) -> Result<Remote> {
 ///
 /// This function expects the URL to be in the following format:
 ///
-/// https://hostname/query/path.git
-///
-/// The key part is the query path, where only the last two path segments are
-/// used as the owner and repo in that order.
-///
-/// The returned `Remote` will contain `owner` and `repo` taken from the query
-/// path.
-///
-/// This function will return an `Error::UrlParseError` if the URL is malformed.
-///
-/// This function will return an `Error::RepoError` if the query path has less
-/// than two path segments.
+/// > https://hostname/query/path.git
 fn url_path_segments(url: &str) -> Result<Remote> {
 	let parsed_url = Url::parse(url.strip_suffix(".git").unwrap_or(url))?;
 	let segments: Vec<&str> = parsed_url
