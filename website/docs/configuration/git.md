@@ -103,6 +103,10 @@ a commit being treated as a changelog entry.
 
 An array of commit preprocessors for manipulating the commit messages before parsing/grouping them. These regex-based preprocessors can be used for removing or selecting certain parts of the commit message/body to be used in the following processes.
 
+:::note 
+The `replace` or `replace_command` will take into account of the entire log of commit messages where the specified `pattern` is matched.
+:::
+
 Examples:
 
 - `{ pattern = "foo", replace = "bar"}`
@@ -138,7 +142,7 @@ A more fun example would be reversing each commit message:
 
 ### commit_parsers
 
-An array of commit parsers for determining the commit groups by using regex.
+An array of commit parsers for determining the commit groups by using regex. The entire commit messages are affected wherever the regex is matched.
 
 Examples:
 
