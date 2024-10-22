@@ -379,6 +379,8 @@ mod test {
 		use crate::remote::github::{
 			GitHubCommit,
 			GitHubCommitAuthor,
+			GitHubCommitDetails,
+			GitHubCommitDetailsAuthor,
 			GitHubPullRequest,
 			PullRequestLabel,
 		};
@@ -439,11 +441,21 @@ mod test {
 					author: Some(GitHubCommitAuthor {
 						login: Some(String::from("orhun")),
 					}),
+					commit: Some(GitHubCommitDetails {
+						author: GitHubCommitDetailsAuthor {
+							date: String::from("2021-07-18T15:14:39+03:00"),
+						},
+					}),
 				},
 				GitHubCommit {
 					sha:    String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
 					author: Some(GitHubCommitAuthor {
 						login: Some(String::from("orhun")),
+					}),
+					commit: Some(GitHubCommitDetails {
+						author: GitHubCommitDetailsAuthor {
+							date: String::from("2021-07-18T15:12:19+03:00"),
+						},
 					}),
 				},
 				GitHubCommit {
@@ -451,11 +463,21 @@ mod test {
 					author: Some(GitHubCommitAuthor {
 						login: Some(String::from("nuhro")),
 					}),
+					commit: Some(GitHubCommitDetails {
+						author: GitHubCommitDetailsAuthor {
+							date: String::from("2021-07-18T15:07:23+03:00"),
+						},
+					}),
 				},
 				GitHubCommit {
 					sha:    String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
 					author: Some(GitHubCommitAuthor {
 						login: Some(String::from("awesome_contributor")),
+					}),
+					commit: Some(GitHubCommitDetails {
+						author: GitHubCommitDetailsAuthor {
+							date: String::from("2021-07-18T15:05:10+03:00"),
+						},
 					}),
 				},
 				GitHubCommit {
@@ -463,11 +485,21 @@ mod test {
 					author: Some(GitHubCommitAuthor {
 						login: Some(String::from("orhun")),
 					}),
+					commit: Some(GitHubCommitDetails {
+						author: GitHubCommitDetailsAuthor {
+							date: String::from("2021-07-18T15:03:30+03:00"),
+						},
+					}),
 				},
 				GitHubCommit {
 					sha:    String::from("6c34967147560ea09658776d4901709139b4ad66"),
 					author: Some(GitHubCommitAuthor {
 						login: Some(String::from("someone")),
+					}),
+					commit: Some(GitHubCommitDetails {
+						author: GitHubCommitDetailsAuthor {
+							date: String::from("2021-07-18T15:00:38+03:00"),
+						},
 					}),
 				},
 				GitHubCommit {
@@ -475,14 +507,21 @@ mod test {
 					author: Some(GitHubCommitAuthor {
 						login: Some(String::from("idk")),
 					}),
+					commit: Some(GitHubCommitDetails {
+						author: GitHubCommitDetailsAuthor {
+							date: String::from("2021-07-18T15:00:38+03:00"),
+						},
+					}),
 				},
 				GitHubCommit {
 					sha:    String::from("kk34967147560e809658776d4901709139b4ad68"),
 					author: None,
+					commit: None,
 				},
 				GitHubCommit {
 					sha:    String::new(),
 					author: None,
+					commit: None,
 				},
 			]
 			.into_iter()
@@ -1157,54 +1196,79 @@ mod test {
 		release.update_gitea_metadata(
 			vec![
 				GiteaCommit {
-					sha:    String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
-					author: Some(GiteaCommitAuthor {
+					sha:     String::from(
+						"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
+					),
+					author:  Some(GiteaCommitAuthor {
 						login: Some(String::from("orhun")),
 					}),
+					created: String::from("2021-07-18T15:14:39+03:00"),
 				},
 				GiteaCommit {
-					sha:    String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
-					author: Some(GiteaCommitAuthor {
+					sha:     String::from(
+						"21f6aa587fcb772de13f2fde0e92697c51f84162",
+					),
+					author:  Some(GiteaCommitAuthor {
 						login: Some(String::from("orhun")),
 					}),
+					created: String::from("2021-07-18T15:12:19+03:00"),
 				},
 				GiteaCommit {
-					sha:    String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
-					author: Some(GiteaCommitAuthor {
+					sha:     String::from(
+						"35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973",
+					),
+					author:  Some(GiteaCommitAuthor {
 						login: Some(String::from("nuhro")),
 					}),
+					created: String::from("2021-07-18T15:07:23+03:00"),
 				},
 				GiteaCommit {
-					sha:    String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
-					author: Some(GiteaCommitAuthor {
+					sha:     String::from(
+						"4d3ffe4753b923f4d7807c490e650e6624a12074",
+					),
+					author:  Some(GiteaCommitAuthor {
 						login: Some(String::from("awesome_contributor")),
 					}),
+					created: String::from("2021-07-18T15:05:10+03:00"),
 				},
 				GiteaCommit {
-					sha:    String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
-					author: Some(GiteaCommitAuthor {
+					sha:     String::from(
+						"5a55e92e5a62dc5bf9872ffb2566959fad98bd05",
+					),
+					author:  Some(GiteaCommitAuthor {
 						login: Some(String::from("orhun")),
 					}),
+					created: String::from("2021-07-18T15:03:30+03:00"),
 				},
 				GiteaCommit {
-					sha:    String::from("6c34967147560ea09658776d4901709139b4ad66"),
-					author: Some(GiteaCommitAuthor {
+					sha:     String::from(
+						"6c34967147560ea09658776d4901709139b4ad66",
+					),
+					author:  Some(GiteaCommitAuthor {
 						login: Some(String::from("someone")),
 					}),
+					created: String::from("2021-07-18T15:00:38+03:00"),
 				},
 				GiteaCommit {
-					sha:    String::from("0c34967147560e809658776d4901709139b4ad68"),
-					author: Some(GiteaCommitAuthor {
+					sha:     String::from(
+						"0c34967147560e809658776d4901709139b4ad68",
+					),
+					author:  Some(GiteaCommitAuthor {
 						login: Some(String::from("idk")),
 					}),
+					created: String::from("2021-07-18T15:00:38+03:00"),
 				},
 				GiteaCommit {
-					sha:    String::from("kk34967147560e809658776d4901709139b4ad68"),
-					author: None,
+					sha:     String::from(
+						"kk34967147560e809658776d4901709139b4ad68",
+					),
+					author:  None,
+					created: String::new(),
 				},
 				GiteaCommit {
-					sha:    String::new(),
-					author: None,
+					sha:     String::new(),
+					author:  None,
+					created: String::new(),
 				},
 			]
 			.into_iter()
@@ -1494,48 +1558,56 @@ mod test {
 					author: Some(BitbucketCommitAuthor {
 						login: Some(String::from("orhun")),
 					}),
+					date:   String::from("2021-07-18T15:14:39+03:00"),
 				},
 				BitbucketCommit {
 					hash:   String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
 					author: Some(BitbucketCommitAuthor {
 						login: Some(String::from("orhun")),
 					}),
+					date:   String::from("2021-07-18T15:12:19+03:00"),
 				},
 				BitbucketCommit {
 					hash:   String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
 					author: Some(BitbucketCommitAuthor {
 						login: Some(String::from("nuhro")),
 					}),
+					date:   String::from("2021-07-18T15:07:23+03:00"),
 				},
 				BitbucketCommit {
 					hash:   String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
 					author: Some(BitbucketCommitAuthor {
 						login: Some(String::from("awesome_contributor")),
 					}),
+					date:   String::from("2021-07-18T15:05:10+03:00"),
 				},
 				BitbucketCommit {
 					hash:   String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
 					author: Some(BitbucketCommitAuthor {
 						login: Some(String::from("orhun")),
 					}),
+					date:   String::from("2021-07-18T15:03:30+03:00"),
 				},
 				BitbucketCommit {
 					hash:   String::from("6c34967147560ea09658776d4901709139b4ad66"),
 					author: Some(BitbucketCommitAuthor {
 						login: Some(String::from("someone")),
 					}),
+					date:   String::from("2021-07-18T15:00:38+03:00"),
 				},
 				BitbucketCommit {
 					hash:   String::from("0c34967147560e809658776d4901709139b4ad68"),
 					author: Some(BitbucketCommitAuthor {
 						login: Some(String::from("idk")),
 					}),
+					date:   String::from("2021-07-18T15:00:01+03:00"),
 				},
 				BitbucketCommit {
 					hash:   String::from("kk34967147560e809658776d4901709139b4ad68"),
 					author: Some(BitbucketCommitAuthor {
 						login: Some(String::from("orhun")),
 					}),
+					date:   String::from("2021-07-14T21:25:24+03:00"),
 				},
 			]
 			.into_iter()

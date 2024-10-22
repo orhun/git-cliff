@@ -399,6 +399,8 @@ impl Repository {
 	///
 	/// Find the branch that HEAD points to, and read the remote configured for
 	/// that branch returns the remote and the name of the local branch.
+	///
+	/// Note: HEAD must not be detached.
 	pub fn upstream_remote(&self) -> Result<Remote> {
 		for branch in self.inner.branches(Some(BranchType::Local))? {
 			let branch = branch?.0;
@@ -424,28 +426,77 @@ impl Repository {
 					})?
 					.to_string();
 				trace!("Upstream URL: {url}");
-				let url = Url::parse(&url)?;
-				let segments: Vec<&str> = url
-					.path_segments()
-					.ok_or_else(|| {
-						Error::RepoError(String::from("failed to get URL segments"))
-					})?
-					.rev()
-					.collect();
-				if let (Some(owner), Some(repo)) =
-					(segments.get(1), segments.first())
-				{
-					return Ok(Remote {
-						owner:     owner.to_string(),
-						repo:      repo.trim_end_matches(".git").to_string(),
-						token:     None,
-						is_custom: false,
-					});
-				}
+				return find_remote(&url);
 			}
 		}
-		Err(Error::RepoError(String::from("no remotes configured")))
+		Err(Error::RepoError(String::from(
+			"no remotes configured or HEAD is detached",
+		)))
 	}
+}
+
+fn find_remote(url: &str) -> Result<Remote> {
+	url_path_segments(url).or_else(|err| {
+		if url.contains("@") && url.contains(":") && url.contains("/") {
+			ssh_path_segments(url)
+		} else {
+			Err(err)
+		}
+	})
+}
+
+/// Returns the Remote from parsing the HTTPS format URL.
+///
+/// This function expects the URL to be in the following format:
+///
+/// > https://hostname/query/path.git
+fn url_path_segments(url: &str) -> Result<Remote> {
+	let parsed_url = Url::parse(url.strip_suffix(".git").unwrap_or(url))?;
+	let segments: Vec<&str> = parsed_url
+		.path_segments()
+		.ok_or_else(|| Error::RepoError(String::from("failed to get URL segments")))?
+		.rev()
+		.collect();
+	let [repo, owner, ..] = &segments[..] else {
+		return Err(Error::RepoError(String::from(
+			"failed to get the owner and repo",
+		)));
+	};
+	Ok(Remote {
+		owner:     owner.to_string(),
+		repo:      repo.to_string(),
+		token:     None,
+		is_custom: false,
+	})
+}
+
+/// Returns the Remote from parsing the SSH format URL.
+///
+/// This function expects the URL to be in the following format:
+///
+/// > git@hostname:owner/repo.git
+fn ssh_path_segments(url: &str) -> Result<Remote> {
+	let [_, owner_repo, ..] = url
+		.strip_suffix(".git")
+		.unwrap_or(url)
+		.split(":")
+		.collect::<Vec<_>>()[..]
+	else {
+		return Err(Error::RepoError(String::from(
+			"failed to get the owner and repo from ssh remote (:)",
+		)));
+	};
+	let [owner, repo] = owner_repo.split("/").collect::<Vec<_>>()[..] else {
+		return Err(Error::RepoError(String::from(
+			"failed to get the owner and repo from ssh remote (/)",
+		)));
+	};
+	Ok(Remote {
+		owner:     owner.to_string(),
+		repo:      repo.to_string(),
+		token:     None,
+		is_custom: false,
+	})
 }
 
 #[cfg(test)]
@@ -500,6 +551,24 @@ mod test {
 				.expect("parent directory not found")
 				.to_path_buf(),
 		)
+	}
+
+	#[test]
+	fn http_url_repo_owner() -> Result<()> {
+		let url = "https://hostname.com/bob/magic.git";
+		let remote = find_remote(url)?;
+		assert_eq!(remote.owner, "bob", "match owner");
+		assert_eq!(remote.repo, "magic", "match repo");
+		Ok(())
+	}
+
+	#[test]
+	fn ssh_url_repo_owner() -> Result<()> {
+		let url = "git@hostname.com:bob/magic.git";
+		let remote = find_remote(url)?;
+		assert_eq!(remote.owner, "bob", "match owner");
+		assert_eq!(remote.repo, "magic", "match repo");
+		Ok(())
 	}
 
 	#[test]

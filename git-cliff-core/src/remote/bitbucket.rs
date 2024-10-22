@@ -33,6 +33,8 @@ pub(crate) const BITBUCKET_MAX_PAGE_PRS: usize = 50;
 pub struct BitbucketCommit {
 	/// SHA.
 	pub hash:   String,
+	/// Date of the commit
+	pub date:   String,
 	/// Author of the commit.
 	pub author: Option<BitbucketCommitAuthor>,
 }
@@ -44,6 +46,10 @@ impl RemoteCommit for BitbucketCommit {
 
 	fn username(&self) -> Option<String> {
 		self.author.clone().and_then(|v| v.login)
+	}
+
+	fn timestamp(&self) -> Option<i64> {
+		Some(self.convert_to_unix_timestamp(self.date.clone().as_str()))
 	}
 }
 
@@ -219,5 +225,25 @@ impl BitbucketClient {
 			.flat_map(|v| v.values)
 			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
 			.collect())
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use super::*;
+	use crate::remote::RemoteCommit;
+	use pretty_assertions::assert_eq;
+
+	#[test]
+	fn timestamp() {
+		let remote_commit = BitbucketCommit {
+			hash:   String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+			author: Some(BitbucketCommitAuthor {
+				login: Some(String::from("orhun")),
+			}),
+			date:   String::from("2021-07-18T15:14:39+03:00"),
+		};
+
+		assert_eq!(Some(1626610479), remote_commit.timestamp());
 	}
 }
