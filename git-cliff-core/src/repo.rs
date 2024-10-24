@@ -743,6 +743,18 @@ mod test {
 		(repo, temp_dir)
 	}
 
+	/// Creates a Git repo and moves the `.git` directory to
+	/// `.jj/repo/store/git`.
+	///
+	/// Returns the directory of the working copy, i.e. the directory that
+	/// contains the `.jj` directory.
+	fn create_temp_jujutsu_repo() -> (PathBuf, TempDir) {
+		let (repo, temp_dir) = create_temp_repo();
+		// let working_copy = repo.
+
+		(working_copy, temp_dir)
+	}
+
 	fn create_commit_with_files<'a>(
 		repo: &'a Repository,
 		files: Vec<(&'a str, &'a str)>,
