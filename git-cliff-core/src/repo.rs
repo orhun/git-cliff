@@ -48,7 +48,15 @@ impl Repository {
 	/// Initializes (opens) the repository.
 	pub fn init(path: PathBuf) -> Result<Self> {
 		if path.exists() {
-			let inner = GitRepository::open(&path)?;
+			let inner = GitRepository::open(&path).or_else(|err| {
+				let jujutsu_path =
+					path.join(".jj").join("repo").join("store").join("git");
+				if jujutsu_path.exists() {
+					GitRepository::open(&jujutsu_path)
+				} else {
+					Err(err)
+				}
+			})?;
 			let changed_files_cache_path = inner
 				.path()
 				.join(env!("CARGO_PKG_NAME"))
@@ -733,6 +741,18 @@ mod test {
 		);
 
 		(repo, temp_dir)
+	}
+
+	/// Creates a Git repo and moves the `.git` directory to
+	/// `.jj/repo/store/git`.
+	///
+	/// Returns the directory of the working copy, i.e. the directory that
+	/// contains the `.jj` directory.
+	fn create_temp_jujutsu_repo() -> (PathBuf, TempDir) {
+		let (repo, temp_dir) = create_temp_repo();
+		// let working_copy = repo.
+
+		(working_copy, temp_dir)
 	}
 
 	fn create_commit_with_files<'a>(
