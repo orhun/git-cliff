@@ -905,7 +905,7 @@ dependencies = [
  "next_version",
  "pretty_assertions",
  "regex",
- "reqwest 0.12.7",
+ "reqwest 0.12.9",
  "reqwest-middleware",
  "rust-embed",
  "secrecy",
@@ -1114,7 +1114,7 @@ dependencies = [
  "http 1.1.0",
  "http-cache",
  "http-cache-semantics",
- "reqwest 0.12.7",
+ "reqwest 0.12.9",
  "reqwest-middleware",
  "serde",
  "url",
@@ -2155,9 +2155,9 @@ dependencies = [
 
 [[package]]
 name = "reqwest"
-version = "0.12.7"
+version = "0.12.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8f4955649ef5c38cc7f9e8aa41761d48fb9677197daea9984dc54f56aad5e63"
+checksum = "a77c62af46e79de0a562e1a9849205ffcb7fc1238876e9bd743357570e04046f"
 dependencies = [
  "async-compression",
  "base64 0.22.1",
@@ -2206,7 +2206,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "http 1.1.0",
- "reqwest 0.12.7",
+ "reqwest 0.12.9",
  "serde",
  "thiserror",
  "tower-service",
