@@ -174,6 +174,7 @@ fn process_repository<'a>(
 				tags.get_index(0).map(|tag| &tag.name),
 			) {
 				if tags.len() == 1 {
+					let tag2 = tags.get_commit(tag2).unwrap();
 					commit_range = Some(tag2.to_owned());
 				} else {
 					commit_range = Some(format!("{tag1}..{tag2}"));
