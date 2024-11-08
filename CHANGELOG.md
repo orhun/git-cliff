@@ -1,5 +1,27 @@
 [![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)
 
+## [2.6.1](https://github.com/orhun/git-cliff/compare/v2.6.0..v2.6.1) - 2024-09-27
+
+### 🐛 Bug Fixes
+
+- *(npm)* Add missing `--use-branch-tags` flag to TS options ([#874](https://github.com/orhun/git-cliff/issues/874)) - ([e21fb1d](https://github.com/orhun/git-cliff/commit/e21fb1d3895d893fd6a371ecd48aa4632cf4231d))
+- *(remote)* Avoid setting multiple remotes ([#885](https://github.com/orhun/git-cliff/issues/885)) - ([a344c68](https://github.com/orhun/git-cliff/commit/a344c68238cf3bb87d4f7eb9be46e97cc964eed9))
+
+### 📚 Documentation
+
+- *(website)* Add conversion to pdf to tips-and-tricks ([#889](https://github.com/orhun/git-cliff/issues/889)) - ([58dc108](https://github.com/orhun/git-cliff/commit/58dc1087ed86794c2f678707f2fbb8199167b0c3))
+- *(website)* Add get_env filter example for GitLab CI - ([dfe4459](https://github.com/orhun/git-cliff/commit/dfe4459c5cadd465dec4ea860580ecf82b2b8860))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(ci)* Update pedantic lint command ([#890](https://github.com/orhun/git-cliff/issues/890)) - ([8d10edb](https://github.com/orhun/git-cliff/commit/8d10edb7450aaf189fbce5f78a72274739f73ba9))
+- *(docker)* Disable building arm64 docker images temporarily ([#879](https://github.com/orhun/git-cliff/issues/879)) - ([cde2a8e](https://github.com/orhun/git-cliff/commit/cde2a8e3222f5e8f8bdd9ae841fd0e5c42f68846))
+- *(fixtures)* Build binaries using dev profile ([#886](https://github.com/orhun/git-cliff/issues/886)) - ([a394f88](https://github.com/orhun/git-cliff/commit/a394f88f1d1742dfa3d30887bcb387361de306bc))
+
+## New Contributors ❤️
+
+* @Krensi made their first contribution in [#889](https://github.com/orhun/git-cliff/pull/889)
+
 ## [2.6.0](https://github.com/orhun/git-cliff/compare/v2.5.0..v2.6.0) - 2024-09-22
 
 ### ⛰️  Features
@@ -99,12 +121,14 @@
 
 ## New Contributors ❤️
 
+* @weichweich made their first contribution in [#807](https://github.com/orhun/git-cliff/pull/807)
 * @janbuchar made their first contribution in [#784](https://github.com/orhun/git-cliff/pull/784)
 * @oberrich made their first contribution in [#809](https://github.com/orhun/git-cliff/pull/809)
 * @tisonkun made their first contribution in [#599](https://github.com/orhun/git-cliff/pull/599)
 * @DerTiedemann made their first contribution in [#758](https://github.com/orhun/git-cliff/pull/758)
 * @DaniPopes made their first contribution in [#709](https://github.com/orhun/git-cliff/pull/709)
 * @artrz made their first contribution in [#779](https://github.com/orhun/git-cliff/pull/779)
+* @braineo made their first contribution in [#744](https://github.com/orhun/git-cliff/pull/744)
 * @myl7 made their first contribution in [#776](https://github.com/orhun/git-cliff/pull/776)
 * @pawamoy made their first contribution in [#774](https://github.com/orhun/git-cliff/pull/774)
 * @tonybutt made their first contribution in [#742](https://github.com/orhun/git-cliff/pull/742)
@@ -185,6 +209,7 @@
 
 ## New Contributors ❤️
 
+* @R11baka made their first contribution in [#672](https://github.com/orhun/git-cliff/pull/672)
 * @0x61nas made their first contribution in [#669](https://github.com/orhun/git-cliff/pull/669)
 * @dark0dave made their first contribution in [#663](https://github.com/orhun/git-cliff/pull/663)
 * @antonengelhardt made their first contribution in [#653](https://github.com/orhun/git-cliff/pull/653)
@@ -279,6 +304,7 @@
 
 ## New Contributors ❤️
 
+* @aminya made their first contribution in [#567](https://github.com/orhun/git-cliff/pull/567)
 * @jsurkont made their first contribution in [#530](https://github.com/orhun/git-cliff/pull/530)
 * @dupuy made their first contribution in [#535](https://github.com/orhun/git-cliff/pull/535)
 * @daniel-carr-3000 made their first contribution in [#532](https://github.com/orhun/git-cliff/pull/532)
@@ -606,8 +632,10 @@
 ## New Contributors ❤️
 
 * @alexfertel made their first contribution in [#253](https://github.com/orhun/git-cliff/pull/253)
+* @tvcsantos made their first contribution
 * @beeb made their first contribution in [#167](https://github.com/orhun/git-cliff/pull/167)
 * @PSeitz made their first contribution in [#155](https://github.com/orhun/git-cliff/pull/155)
+* @alerque made their first contribution in [#142](https://github.com/orhun/git-cliff/pull/142)
 
 ## [1.2.0](https://github.com/orhun/git-cliff/compare/v1.1.2..v1.2.0) - 2023-04-28
 
@@ -696,8 +724,11 @@
 
 ## New Contributors ❤️
 
+* @bors[bot] made their first contribution in [#161](https://github.com/orhun/git-cliff/pull/161)
+* @dependabot[bot] made their first contribution
 * @mackness made their first contribution in [#157](https://github.com/orhun/git-cliff/pull/157)
 * @jackton1 made their first contribution in [#152](https://github.com/orhun/git-cliff/pull/152)
+* @radusuciu made their first contribution in [#147](https://github.com/orhun/git-cliff/pull/147)
 * @lbowenwest made their first contribution in [#137](https://github.com/orhun/git-cliff/pull/137)
 * @jankatins made their first contribution in [#141](https://github.com/orhun/git-cliff/pull/141)
 * @saidsay-so made their first contribution in [#140](https://github.com/orhun/git-cliff/pull/140)
@@ -973,6 +1004,7 @@
 
 ## New Contributors ❤️
 
+* @favna made their first contribution in [#83](https://github.com/orhun/git-cliff/pull/83)
 * @kaushalmodi made their first contribution in [#80](https://github.com/orhun/git-cliff/pull/80)
 * @uyha made their first contribution in [#76](https://github.com/orhun/git-cliff/pull/76)
 * @mgrachev made their first contribution in [#73](https://github.com/orhun/git-cliff/pull/73)
@@ -991,6 +1023,9 @@
 - *(core)* Document timestamp format of `Release` struct ([#67](https://github.com/orhun/git-cliff/issues/67)) - ([d68eb12](https://github.com/orhun/git-cliff/commit/d68eb120c0a0a98bc1e7264a3aede17b5f5c54be))
 - *(readme)* Add another option of GitHub Actions ([#64](https://github.com/orhun/git-cliff/issues/64)) - ([db7edf5](https://github.com/orhun/git-cliff/commit/db7edf5707f2bfdf49c749026969fd1833530ed7))
 
+## New Contributors ❤️
+
+* @MarcoIeni made their first contribution in [#67](https://github.com/orhun/git-cliff/pull/67)
 
 ## [0.6.0](https://github.com/orhun/git-cliff/compare/v0.5.0..v0.6.0) - 2022-02-12
 
@@ -1039,6 +1074,7 @@
 
 ## New Contributors ❤️
 
+* @tranzystorekk made their first contribution in [#57](https://github.com/orhun/git-cliff/pull/57)
 * @bachp made their first contribution in [#42](https://github.com/orhun/git-cliff/pull/42)
 
 ## [0.5.0](https://github.com/orhun/git-cliff/compare/v0.4.2..v0.5.0) - 2021-12-15
@@ -1084,6 +1120,9 @@
 - *(fixtures)* Run test fixtures on ubuntu-latest - ([dea65f2](https://github.com/orhun/git-cliff/commit/dea65f235e2091001d8de41794bf3c98a7223917))
 - *(fixtures)* Improve the workflow for test fixtures - ([92a54d6](https://github.com/orhun/git-cliff/commit/92a54d67b825b53b6993a769ea9d5cf37ea2e43e))
 
+## New Contributors ❤️
+
+* @kenji-miyake made their first contribution in [#40](https://github.com/orhun/git-cliff/pull/40)
 
 ## [0.4.2](https://github.com/orhun/git-cliff/compare/v0.4.1..v0.4.2) - 2021-10-22
 

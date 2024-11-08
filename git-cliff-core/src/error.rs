@@ -71,7 +71,7 @@ pub enum Error {
 	/// value matchers.
 	#[error("Field error: `{0}`")]
 	FieldError(String),
-	/// Error that may occur while parsing a SemVer version or version
+	/// Error that may occur while parsing a `SemVer` version or version
 	/// requirement.
 	#[error("Semver error: `{0}`")]
 	SemverError(#[from] semver::Error),
@@ -84,7 +84,7 @@ pub enum Error {
 	#[error("HTTP client with middleware error: `{0}`")]
 	#[cfg(feature = "remote")]
 	HttpClientMiddlewareError(#[from] reqwest_middleware::Error),
-	/// A possible error when converting a HeaderValue from a string or byte
+	/// A possible error when converting a `HeaderValue` from a string or byte
 	/// slice.
 	#[error("HTTP header error: `{0}`")]
 	#[cfg(feature = "remote")]

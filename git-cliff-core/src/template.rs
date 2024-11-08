@@ -171,7 +171,7 @@ impl Template {
 				Ok(v)
 			}
 			Err(e) => {
-				return if let Some(source1) = e.source() {
+				if let Some(source1) = e.source() {
 					if let Some(source2) = source1.source() {
 						Err(Error::TemplateRenderDetailedError(
 							source1.to_string(),
@@ -182,7 +182,7 @@ impl Template {
 					}
 				} else {
 					Err(Error::TemplateError(e))
-				};
+				}
 			}
 		}
 	}

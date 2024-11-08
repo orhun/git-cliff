@@ -98,7 +98,25 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --tests --verbose -- -W clippy::pedantic
+          args: >
+              --all-targets --verbose -- -W clippy::pedantic 
+              -A clippy::needless_raw_string_hashes 
+              -A clippy::unreadable_literal 
+              -A clippy::redundant_else 
+              -A clippy::items_after_statements 
+              -A clippy::missing_errors_doc 
+              -A clippy::module_name_repetitions 
+              -A clippy::uninlined_format_args 
+              -A clippy::manual_string_new 
+              -A clippy::must_use_candidate 
+              -A clippy::too_many_lines 
+              -A clippy::wildcard_imports 
+              -A clippy::missing_panics_doc 
+              -A clippy::inefficient_to_string 
+              -A clippy::redundant_closure_for_method_calls 
+              -A clippy::map_unwrap_or 
+              -A clippy::struct_excessive_bools 
+              -A clippy::unnecessary_wraps
 
   rustfmt:
     name: Formatting
@@ -206,3 +224,24 @@ jobs:
         with:
           name: git-cliff.${{ github.run_id }}-profiler-report
           path: git-cliff.**.flamegraph.svg
+
+  nix-flake:
+    name: Build Nix flake
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: nixbuild/nix-quick-install-action@v27
+
+      - name: Restore and cache Nix store
+        uses: nix-community/cache-nix-action@v5
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          gc-max-store-size-linux: 1073741824
+          purge: false
+
+      - name: Check Nix flake
+        run: nix flake check --all-systems -Lv --show-trace

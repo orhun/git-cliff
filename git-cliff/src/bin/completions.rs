@@ -9,7 +9,7 @@ use std::io::Result;
 
 /// Shell completions can be created with:
 /// `cargo run --bin git-cliff-completions`
-/// in a directory specified by the environment variable OUT_DIR.
+/// in a directory specified by the environment variable `OUT_DIR`.
 /// See <https://doc.rust-lang.org/cargo/reference/environment-variables.html>
 fn main() -> Result<()> {
 	let out_dir = env::var("OUT_DIR").expect("OUT_DIR is not set");

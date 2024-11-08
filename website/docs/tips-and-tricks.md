@@ -84,3 +84,21 @@ commit_parsers = [
   { field = "github.pr_labels", pattern = ".*", group = "<!-- 6 --> 🌀 Miscellaneous" },
 ]
 ```
+
+## Use GitLab CI variables
+
+```jinja2
+{{ get_env(name="CI_PROJECT_URL") }}/-/tags/{{ version }}
+```
+
+## Convert markdown output to PDF
+
+```bash
+pandoc --from=gfm --to=pdf -o CHANGELOG.pdf CHANGELOG.md
+```
+
+To support unicode characters, use `xelatex` as PDF engine and a font family which includes the needed unicode characters:
+
+```bash
+pandoc --from=gfm --to=pdf --pdf-engine=xelatex -o CHANGELOG.pdf CHANGELOG.md --variable mainfont="Segoe UI Emoji"
+```

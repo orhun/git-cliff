@@ -34,7 +34,7 @@ fn main() -> Result<()> {
 
 	// Run git-cliff
 	let exit_code = match git_cliff::run(args) {
-		Ok(_) => 0,
+		Ok(()) => 0,
 		Err(e) => {
 			log::error!("{}", e);
 			1

@@ -168,10 +168,16 @@ fn process_repository<'a>(
 		}
 	} else if args.latest || args.current {
 		if tags.len() < 2 {
-			if let (Some((tag1, _)), Some(tag2)) =
-				(tags.commits.last(), tags.get_index(0))
-			{
-				commit_range = Some(format!("{tag1}..{tag2}", tag2 = tag2.name));
+			let commits = repository.commits(None, None, None)?;
+			if let (Some(tag1), Some(tag2)) = (
+				commits.last().map(|c| c.id().to_string()),
+				tags.get_index(0).map(|tag| &tag.name),
+			) {
+				if tags.len() == 1 {
+					commit_range = Some(tag2.to_owned());
+				} else {
+					commit_range = Some(format!("{tag1}..{tag2}"));
+				}
 			}
 		} else {
 			let mut tag_index = tags.len() - 2;
