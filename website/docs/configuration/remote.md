@@ -55,3 +55,15 @@ Same applies for GitLab/Bitbucket with `--gitlab-token`/`--gitea-token`/`--bitbu
 ### api_url
 
 Sets the API URL for a particular remote.
+
+---
+
+Here is a complete example for a project hosted on GitLab:
+
+```toml
+[remote.gitlab]
+owner = "archlinux"
+repo = "arch-repro-status"
+api_url = "https://gitlab.archlinux.org/api/v4"
+token = "deadbeef"
+```
