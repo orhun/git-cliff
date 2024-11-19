@@ -182,7 +182,7 @@ pub struct Remote {
 	/// Whether if the remote is set manually.
 	#[serde(skip_deserializing, default = "default_true")]
 	pub is_custom: bool,
-	/// Remote API URL, if configurable
+	/// Remote API URL.
 	pub api_url:   Option<String>,
 }
 

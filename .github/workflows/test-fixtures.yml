@@ -102,6 +102,8 @@ jobs:
             command: --unreleased --tag v0.2.0
           - fixtures-name: test-unchanged-tag-date
             command: --tag v0.2.0
+          - fixtures-name: test-custom-remote-api-url
+            command: --latest
 
     steps:
       - name: Checkout
