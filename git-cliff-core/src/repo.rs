@@ -475,6 +475,7 @@ fn url_path_segments(url: &str) -> Result<Remote> {
 		repo:      repo.to_string(),
 		token:     None,
 		is_custom: false,
+		api_url:   None,
 	})
 }
 
@@ -504,6 +505,7 @@ fn ssh_path_segments(url: &str) -> Result<Remote> {
 		repo:      repo.to_string(),
 		token:     None,
 		is_custom: false,
+		api_url:   None,
 	})
 }
 
@@ -664,6 +666,7 @@ mod test {
 				repo:      String::from("git-cliff"),
 				token:     None,
 				is_custom: false,
+				api_url:   remote.api_url.clone(),
 			},
 			remote
 		);

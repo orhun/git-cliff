@@ -5,15 +5,8 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
-use std::env;
 
 use super::*;
-
-/// GitLab REST API url.
-const GITLAB_API_URL: &str = "https://gitlab.com/api/v4";
-
-/// Environment variable for overriding the GitLab REST API url.
-const GITLAB_API_URL_ENV: &str = "GITLAB_API_URL";
 
 /// Log message to show while fetching data from GitLab.
 pub const START_FETCHING_MSG: &str = "Retrieving data from GitLab...";
@@ -248,11 +241,8 @@ impl TryFrom<Remote> for GitLabClient {
 }
 
 impl RemoteClient for GitLabClient {
-	fn api_url() -> String {
-		env::var(GITLAB_API_URL_ENV)
-			.ok()
-			.unwrap_or_else(|| GITLAB_API_URL.to_string())
-	}
+	const API_URL: &str = "https://gitlab.com/api/v4";
+	const API_URL_ENV: &str = "GITLAB_API_URL";
 
 	fn remote(&self) -> Remote {
 		self.remote.clone()

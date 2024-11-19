@@ -5,15 +5,8 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
-use std::env;
 
 use super::*;
-
-/// GitHub REST API url.
-const GITHUB_API_URL: &str = "https://api.github.com";
-
-/// Environment variable for overriding the GitHub REST API url.
-const GITHUB_API_URL_ENV: &str = "GITHUB_API_URL";
 
 /// Log message to show while fetching data from GitHub.
 pub const START_FETCHING_MSG: &str = "Retrieving data from GitHub...";
@@ -166,11 +159,8 @@ impl TryFrom<Remote> for GitHubClient {
 }
 
 impl RemoteClient for GitHubClient {
-	fn api_url() -> String {
-		env::var(GITHUB_API_URL_ENV)
-			.ok()
-			.unwrap_or_else(|| GITHUB_API_URL.to_string())
-	}
+	const API_URL: &str = "https://api.github.com";
+	const API_URL_ENV: &str = "GITHUB_API_URL";
 
 	fn remote(&self) -> Remote {
 		self.remote.clone()
