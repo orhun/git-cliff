@@ -4,12 +4,6 @@ sidebar_position: 1
 
 # GitHub Integration 🐙
 
-:::warning
-
-This is still an experimental feature, please [report bugs](https://github.com/orhun/git-cliff/issues/new/choose).
-
-:::
-
 :::note
 
 If you have built from source, enable the `github` feature flag for the integration to work.
