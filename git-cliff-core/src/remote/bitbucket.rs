@@ -180,8 +180,8 @@ impl TryFrom<Remote> for BitbucketClient {
 }
 
 impl RemoteClient for BitbucketClient {
-	const API_URL: &str = "https://api.bitbucket.org/2.0/repositories";
-	const API_URL_ENV: &str = "BITBUCKET_API_URL";
+	const API_URL: &'static str = "https://api.bitbucket.org/2.0/repositories";
+	const API_URL_ENV: &'static str = "BITBUCKET_API_URL";
 
 	fn remote(&self) -> Remote {
 		self.remote.clone()

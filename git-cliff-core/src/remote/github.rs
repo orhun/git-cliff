@@ -159,8 +159,8 @@ impl TryFrom<Remote> for GitHubClient {
 }
 
 impl RemoteClient for GitHubClient {
-	const API_URL: &str = "https://api.github.com";
-	const API_URL_ENV: &str = "GITHUB_API_URL";
+	const API_URL: &'static str = "https://api.github.com";
+	const API_URL_ENV: &'static str = "GITHUB_API_URL";
 
 	fn remote(&self) -> Remote {
 		self.remote.clone()

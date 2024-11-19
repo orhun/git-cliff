@@ -144,8 +144,8 @@ impl TryFrom<Remote> for GiteaClient {
 }
 
 impl RemoteClient for GiteaClient {
-	const API_URL: &str = "https://codeberg.org";
-	const API_URL_ENV: &str = "GITEA_API_URL";
+	const API_URL: &'static str = "https://codeberg.org";
+	const API_URL_ENV: &'static str = "GITEA_API_URL";
 
 	fn remote(&self) -> Remote {
 		self.remote.clone()

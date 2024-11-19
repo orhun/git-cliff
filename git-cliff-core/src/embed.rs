@@ -47,7 +47,7 @@ impl BuiltinConfig {
 	pub fn get_config(mut name: String) -> Result<String> {
 		if !Path::new(&name)
 			.extension()
-			.map_or(false, |ext| ext.eq_ignore_ascii_case("toml"))
+			.is_some_and(|ext| ext.eq_ignore_ascii_case("toml"))
 		{
 			name = format!("{name}.toml");
 		}
