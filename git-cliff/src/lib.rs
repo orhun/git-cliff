@@ -171,7 +171,11 @@ fn process_repository<'a>(
 				commits.last().map(|c| c.id().to_string()),
 				tags.get_index(0).map(|(k, _)| k),
 			) {
-				commit_range = Some(format!("{tag1}..{tag2}"));
+				if tags.len() == 1 {
+					commit_range = Some(tag2.to_owned());
+				} else {
+					commit_range = Some(format!("{tag1}..{tag2}"));
+				}
 			}
 		} else {
 			let mut tag_index = tags.len() - 2;

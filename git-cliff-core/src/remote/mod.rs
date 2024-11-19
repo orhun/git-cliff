@@ -50,8 +50,11 @@ use serde::{
 };
 use std::env;
 use std::fmt::Debug;
-use std::hash::Hash;
 use std::time::Duration;
+use time::{
+	format_description::well_known::Rfc3339,
+	OffsetDateTime,
+};
 
 /// User agent for interacting with the GitHub API.
 ///
@@ -84,6 +87,14 @@ pub trait RemoteCommit: DynClone {
 	fn id(&self) -> String;
 	/// Commit author.
 	fn username(&self) -> Option<String>;
+	/// Timestamp.
+	fn timestamp(&self) -> Option<i64>;
+	/// Convert date in RFC3339 format to unix timestamp
+	fn convert_to_unix_timestamp(&self, date: &str) -> i64 {
+		OffsetDateTime::parse(date, &Rfc3339)
+			.expect("failed to parse date")
+			.unix_timestamp()
+	}
 }
 
 dyn_clone::clone_trait_object!(RemoteCommit);
@@ -312,15 +323,19 @@ macro_rules! update_release_metadata {
 				pull_requests: Vec<Box<dyn RemotePullRequest>>,
 			) -> Result<()> {
 				let mut contributors: Vec<RemoteContributor> = Vec::new();
+				let mut release_commit_timestamp: Option<i64> = None;
 				// retain the commits that are not a part of this release for later
 				// on checking the first contributors.
 				commits.retain(|v| {
 					if let Some(commit) =
 						self.commits.iter_mut().find(|commit| commit.id == v.id())
 					{
-						let pull_request = pull_requests
-							.iter()
-							.find(|pr| pr.merge_commit() == Some(v.id().clone()));
+						let sha_short =
+							Some(v.id().clone().chars().take(12).collect());
+						let pull_request = pull_requests.iter().find(|pr| {
+							pr.merge_commit() == Some(v.id().clone()) ||
+								pr.merge_commit() == sha_short
+						});
 						commit.$remote.username = v.username();
 						commit.$remote.pr_number = pull_request.map(|v| v.number());
 						commit.$remote.pr_title =
@@ -341,6 +356,11 @@ macro_rules! update_release_metadata {
 							});
 						}
 						commit.remote = Some(commit.$remote.clone());
+						// if remote commit is the release commit store timestamp for
+						// use in calculation of first time
+						if Some(v.id().clone()) == self.commit_id {
+							release_commit_timestamp = v.timestamp().clone();
+						}
 						false
 					} else {
 						true
@@ -352,6 +372,13 @@ macro_rules! update_release_metadata {
 					.map(|mut v| {
 						v.is_first_time = !commits
 							.iter()
+							.filter(|commit| {
+								// if current release is unreleased no need to filter
+								// commits or filter commits that are from
+								// newer releases
+								self.timestamp == 0 ||
+									commit.timestamp() < release_commit_timestamp
+							})
 							.map(|v| v.username())
 							.any(|login| login == v.username);
 						v

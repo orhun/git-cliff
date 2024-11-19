@@ -47,7 +47,7 @@ log.workspace = true
 secrecy.workspace = true
 lazy_static.workspace = true
 dirs.workspace = true
-clap = { version = "4.5.18", features = ["derive", "env", "wrap_help", "cargo"] }
+clap = { version = "4.5.19", features = ["derive", "env", "wrap_help", "cargo"] }
 clap_complete = "4.5.29"
 clap_mangen = "0.2.23"
 shellexpand = "3.1.0"

@@ -48,7 +48,15 @@ impl Repository {
 	/// Initializes (opens) the repository.
 	pub fn init(path: PathBuf) -> Result<Self> {
 		if path.exists() {
-			let inner = GitRepository::open(&path)?;
+			let inner = GitRepository::open(&path).or_else(|err| {
+				let jujutsu_path =
+					path.join(".jj").join("repo").join("store").join("git");
+				if jujutsu_path.exists() {
+					GitRepository::open_bare(&jujutsu_path)
+				} else {
+					Err(err)
+				}
+			})?;
 			let changed_files_cache_path = inner
 				.path()
 				.join(env!("CARGO_PKG_NAME"))
@@ -78,7 +86,12 @@ impl Repository {
 		let mut revwalk = self.inner.revwalk()?;
 		revwalk.set_sorting(Sort::TOPOLOGICAL)?;
 		if let Some(range) = range {
-			revwalk.push_range(range)?;
+			if range.contains("..") {
+				revwalk.push_range(range)?;
+			} else {
+				// When a single SHA is provided as the "range", start from the root.
+				revwalk.push(Oid::from_str(range)?)?;
+			}
 		} else {
 			revwalk.push_head()?;
 		}
@@ -394,6 +407,8 @@ impl Repository {
 	///
 	/// Find the branch that HEAD points to, and read the remote configured for
 	/// that branch returns the remote and the name of the local branch.
+	///
+	/// Note: HEAD must not be detached.
 	pub fn upstream_remote(&self) -> Result<Remote> {
 		for branch in self.inner.branches(Some(BranchType::Local))? {
 			let branch = branch?.0;
@@ -419,38 +434,91 @@ impl Repository {
 					})?
 					.to_string();
 				trace!("Upstream URL: {url}");
-				let url = Url::parse(&url)?;
-				let segments: Vec<&str> = url
-					.path_segments()
-					.ok_or_else(|| {
-						Error::RepoError(String::from("failed to get URL segments"))
-					})?
-					.rev()
-					.collect();
-				if let (Some(owner), Some(repo)) =
-					(segments.get(1), segments.first())
-				{
-					return Ok(Remote {
-						owner:     owner.to_string(),
-						repo:      repo.trim_end_matches(".git").to_string(),
-						token:     None,
-						is_custom: false,
-						api_url:   None,
-					});
-				}
+				return find_remote(&url);
 			}
 		}
-		Err(Error::RepoError(String::from("no remotes configured")))
+		Err(Error::RepoError(String::from(
+			"no remotes configured or HEAD is detached",
+		)))
 	}
+}
+
+fn find_remote(url: &str) -> Result<Remote> {
+	url_path_segments(url).or_else(|err| {
+		if url.contains("@") && url.contains(":") && url.contains("/") {
+			ssh_path_segments(url)
+		} else {
+			Err(err)
+		}
+	})
+}
+
+/// Returns the Remote from parsing the HTTPS format URL.
+///
+/// This function expects the URL to be in the following format:
+///
+/// > https://hostname/query/path.git
+fn url_path_segments(url: &str) -> Result<Remote> {
+	let parsed_url = Url::parse(url.strip_suffix(".git").unwrap_or(url))?;
+	let segments: Vec<&str> = parsed_url
+		.path_segments()
+		.ok_or_else(|| Error::RepoError(String::from("failed to get URL segments")))?
+		.rev()
+		.collect();
+	let [repo, owner, ..] = &segments[..] else {
+		return Err(Error::RepoError(String::from(
+			"failed to get the owner and repo",
+		)));
+	};
+	Ok(Remote {
+		owner:     owner.to_string(),
+		repo:      repo.to_string(),
+		token:     None,
+		is_custom: false,
+		api_url:   None,
+	})
+}
+
+/// Returns the Remote from parsing the SSH format URL.
+///
+/// This function expects the URL to be in the following format:
+///
+/// > git@hostname:owner/repo.git
+fn ssh_path_segments(url: &str) -> Result<Remote> {
+	let [_, owner_repo, ..] = url
+		.strip_suffix(".git")
+		.unwrap_or(url)
+		.split(":")
+		.collect::<Vec<_>>()[..]
+	else {
+		return Err(Error::RepoError(String::from(
+			"failed to get the owner and repo from ssh remote (:)",
+		)));
+	};
+	let [owner, repo] = owner_repo.split("/").collect::<Vec<_>>()[..] else {
+		return Err(Error::RepoError(String::from(
+			"failed to get the owner and repo from ssh remote (/)",
+		)));
+	};
+	Ok(Remote {
+		owner:     owner.to_string(),
+		repo:      repo.to_string(),
+		token:     None,
+		is_custom: false,
+		api_url:   None,
+	})
 }
 
 #[cfg(test)]
 mod test {
 	use super::*;
 	use crate::commit::Commit as AppCommit;
-	use std::env;
 	use std::process::Command;
 	use std::str;
+	use std::{
+		env,
+		fs,
+	};
 	use temp_dir::TempDir;
 
 	fn get_last_commit_hash() -> Result<String> {
@@ -462,6 +530,18 @@ mod test {
 				.as_ref(),
 		)?
 		.trim_matches('\'')
+		.to_string())
+	}
+
+	fn get_root_commit_hash() -> Result<String> {
+		Ok(str::from_utf8(
+			Command::new("git")
+				.args(["rev-list", "--max-parents=0", "HEAD"])
+				.output()?
+				.stdout
+				.as_ref(),
+		)?
+		.trim_ascii_end()
 		.to_string())
 	}
 
@@ -487,6 +567,24 @@ mod test {
 	}
 
 	#[test]
+	fn http_url_repo_owner() -> Result<()> {
+		let url = "https://hostname.com/bob/magic.git";
+		let remote = find_remote(url)?;
+		assert_eq!(remote.owner, "bob", "match owner");
+		assert_eq!(remote.repo, "magic", "match repo");
+		Ok(())
+	}
+
+	#[test]
+	fn ssh_url_repo_owner() -> Result<()> {
+		let url = "git@hostname.com:bob/magic.git";
+		let remote = find_remote(url)?;
+		assert_eq!(remote.owner, "bob", "match owner");
+		assert_eq!(remote.repo, "magic", "match repo");
+		Ok(())
+	}
+
+	#[test]
 	fn get_latest_commit() -> Result<()> {
 		let repository = get_repository()?;
 		let commits = repository.commits(None, None, None)?;
@@ -497,10 +595,23 @@ mod test {
 	}
 
 	#[test]
+	fn commit_search() -> Result<()> {
+		let repository = get_repository()?;
+		assert!(repository
+			.find_commit("e936ed571533ea6c41a1dd2b1a29d085c8dbada5")
+			.is_some());
+		Ok(())
+	}
+
+	#[test]
 	fn get_latest_tag() -> Result<()> {
 		let repository = get_repository()?;
 		let tags = repository.tags(&None, false, false)?;
-		assert_eq!(get_last_tag()?, tags.last().expect("no tags found").1.name);
+		let latest = tags.last().expect("no tags found").1.name.clone();
+		assert_eq!(get_last_tag()?, latest);
+
+		let current = repository.current_tag().expect("a current tag").name;
+		assert!(current.contains(&latest));
 		Ok(())
 	}
 
@@ -588,6 +699,18 @@ mod test {
 		Ok(())
 	}
 
+	#[test]
+	fn includes_root_commit() -> Result<()> {
+		let repository = get_repository()?;
+		// a close descendant of the root commit
+		let range = Some("eea3914c7ab07472841aa85c36d11bdb2589a234");
+		let commits = repository.commits(range, None, None)?;
+		let root_commit =
+			AppCommit::from(&commits.last().expect("no commits found").clone());
+		assert_eq!(get_root_commit_hash()?, root_commit.id);
+		Ok(())
+	}
+
 	fn create_temp_repo() -> (Repository, TempDir) {
 		let temp_dir =
 			TempDir::with_prefix("git-cliff-").expect("failed to create temp dir");
@@ -624,6 +747,62 @@ mod test {
 		);
 
 		(repo, temp_dir)
+	}
+
+	#[test]
+	fn open_jujutsu_repo() {
+		let (repo, _temp_dir) = create_temp_repo();
+		// working copy is the directory that contains the .git directory:
+		let working_copy = repo.path;
+
+		// Make the Git repository bare and set HEAD
+		std::process::Command::new("git")
+			.args(["config", "core.bare", "true"])
+			.current_dir(&working_copy)
+			.status()
+			.expect("failed to make git repo non-bare");
+		// Move the Git repo into jj
+		let store = working_copy.join(".jj").join("repo").join("store");
+		fs::create_dir_all(&store).expect("failed to create dir");
+		fs::rename(working_copy.join(".git"), store.join("git"))
+			.expect("failed to move git repo");
+
+		// Open repo from working copy, that contains the .jj directory
+		let repo = Repository::init(working_copy).expect("failed to init repo");
+
+		// macOS canonical path for temp directories is in /private
+		// libgit2 forces the path to be canonical regardless of what we pass in
+		if repo.inner.path().starts_with("/private") {
+			assert_eq!(
+				repo.inner.path().strip_prefix("/private"),
+				store.join("git").strip_prefix("/"),
+				"open git repo in .jj/repo/store/"
+			);
+		} else {
+			assert_eq!(
+				repo.inner.path(),
+				store.join("git"),
+				"open git repo in .jj/repo/store/"
+			);
+		}
+	}
+
+	#[test]
+	fn propagate_error_if_no_repo_found() {
+		let temp_dir =
+			TempDir::with_prefix("git-cliff-").expect("failed to create temp dir");
+
+		let path = temp_dir.path().to_path_buf();
+
+		let result = Repository::init(path.clone());
+
+		assert!(result.is_err());
+		if let Err(error) = result {
+			assert!(format!("{error:?}").contains(
+				format!("could not find repository at '{}'", path.display())
+					.as_str()
+			))
+		}
 	}
 
 	fn create_commit_with_files<'a>(
