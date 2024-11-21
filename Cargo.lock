@@ -1828,9 +1828,9 @@ dependencies = [
 
 [[package]]
 name = "next_version"
-version = "0.2.19"
+version = "0.2.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "54d3c80a6b8295afdfca9e26fb8be25a5a258e593f9efe52aa7f2c7a508b797a"
+checksum = "4ab8c501e9a8cdb6914dc41a6d9b3b85f625ff82be06b012f868a783309819a8"
 dependencies = [
  "conventional_commit_parser",
  "regex",
