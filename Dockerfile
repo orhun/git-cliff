@@ -25,7 +25,7 @@ RUN echo '[safe]\n\tdirectory = *' > /etc/gitconfig
 COPY --from=builder /app/target/release/git-cliff /usr/local/bin
 WORKDIR app
 
-# Even if the repository as marked as safe, GitHub Actions and some other
+# Even if the repository is marked as safe, GitHub Actions and some other
 # environments insist on running the entrypoint as root inside the container
 # even when being run by a non privileged user on their own files. Here we
 # check the ownership of the workdir (which may or may not be /app) and change
