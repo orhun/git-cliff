@@ -82,7 +82,7 @@ pub trait RemoteEntry {
 }
 
 /// Trait for handling remote commits.
-pub trait RemoteCommit: DynClone {
+pub trait RemoteCommit: DynClone + Debug {
 	/// Commit SHA.
 	fn id(&self) -> String;
 	/// Commit author.
@@ -100,7 +100,7 @@ pub trait RemoteCommit: DynClone {
 dyn_clone::clone_trait_object!(RemoteCommit);
 
 /// Trait for handling remote pull requests.
-pub trait RemotePullRequest: DynClone {
+pub trait RemotePullRequest: DynClone + Debug {
 	/// Number.
 	fn number(&self) -> i64;
 	/// Title.
@@ -109,6 +109,8 @@ pub trait RemotePullRequest: DynClone {
 	fn labels(&self) -> Vec<String>;
 	/// Merge commit SHA.
 	fn merge_commit(&self) -> Option<String>;
+	/// Try to get author from pull request
+	fn try_get_author(&self) -> Option<String>;
 }
 
 dyn_clone::clone_trait_object!(RemotePullRequest);
