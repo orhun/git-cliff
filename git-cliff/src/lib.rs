@@ -3,6 +3,7 @@
 	html_logo_url = "https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff.png",
 	html_favicon_url = "https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/favicon/favicon.ico"
 )]
+#![warn(missing_docs)]
 
 /// Command-line argument parser.
 pub mod args;
@@ -10,12 +11,15 @@ pub mod args;
 /// Custom logger implementation.
 pub mod logger;
 
+/// Re-export core library.
+pub use git_cliff_core as core;
+
 #[macro_use]
 extern crate log;
 
 use args::{
+	Args,
 	BumpOption,
-	Opt,
 	Sort,
 	Strip,
 };
@@ -54,7 +58,7 @@ use std::time::{
 
 /// Checks for a new version on crates.io
 #[cfg(feature = "update-informer")]
-fn check_new_version() {
+pub fn check_new_version() {
 	use update_informer::Check;
 	let pkg_name = env!("CARGO_PKG_NAME");
 	let pkg_version = env!("CARGO_PKG_VERSION");
@@ -73,6 +77,21 @@ fn check_new_version() {
 	}
 }
 
+/// Initializes the configuration file.
+pub fn init_config(name: Option<String>) -> Result<()> {
+	let contents = match name {
+		Some(ref name) => BuiltinConfig::get_config(name.to_string())?,
+		None => EmbeddedConfig::get_config()?,
+	};
+	info!(
+		"Saving the configuration file{} to {:?}",
+		name.map(|v| format!(" ({v})")).unwrap_or_default(),
+		DEFAULT_CONFIG
+	);
+	fs::write(DEFAULT_CONFIG, contents)?;
+	return Ok(());
+}
+
 /// Processes the tags and commits for creating release entries for the
 /// changelog.
 ///
@@ -81,7 +100,7 @@ fn check_new_version() {
 fn process_repository<'a>(
 	repository: &'static Repository,
 	config: &mut Config,
-	args: &Opt,
+	args: &Args,
 ) -> Result<Vec<Release<'a>>> {
 	let mut tags = repository.tags(
 		&config.git.tag_pattern,
@@ -346,34 +365,15 @@ fn process_repository<'a>(
 	Ok(releases)
 }
 
-/// Runs `git-cliff`.
-pub fn run(mut args: Opt) -> Result<()> {
-	// Check if there is a new version available.
-	#[cfg(feature = "update-informer")]
-	check_new_version();
-
-	// Create the configuration file if init flag is given.
-	if let Some(init_config) = args.init {
-		let contents = match init_config {
-			Some(ref name) => BuiltinConfig::get_config(name.to_string())?,
-			None => EmbeddedConfig::get_config()?,
-		};
-		info!(
-			"Saving the configuration file{} to {:?}",
-			init_config.map(|v| format!(" ({v})")).unwrap_or_default(),
-			DEFAULT_CONFIG
-		);
-		fs::write(DEFAULT_CONFIG, contents)?;
-		return Ok(());
-	}
-
+/// Processes the command-line arguments and generates the changelog.
+pub fn generate_changelog(args: &mut Args) -> Result<Changelog<'static>> {
 	// Retrieve the built-in configuration.
 	let builtin_config =
 		BuiltinConfig::parse(args.config.to_string_lossy().to_string());
 
 	// Set the working directory.
 	if let Some(ref workdir) = args.workdir {
-		args.config = workdir.join(args.config);
+		args.config = workdir.join(&args.config);
 		match args.repository.as_mut() {
 			Some(repository) => {
 				repository
@@ -382,7 +382,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 			}
 			None => args.repository = Some(vec![workdir.clone()]),
 		}
-		if let Some(changelog) = args.prepend {
+		if let Some(changelog) = &args.prepend {
 			args.prepend = Some(workdir.join(changelog));
 		}
 	}
@@ -420,7 +420,6 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 
 	// Update the configuration based on command line arguments and vice versa.
-	let output = args.output.clone().or(config.changelog.output.clone());
 	match args.strip {
 		Some(Strip::Header) => {
 			config.changelog.header = None;
@@ -442,6 +441,8 @@ pub fn run(mut args: Opt) -> Result<()> {
 			)));
 		}
 	}
+
+	let output = args.output.clone().or(config.changelog.output.clone());
 	if output.is_some() &&
 		args.prepend.is_some() &&
 		output.as_ref() == args.prepend.as_ref()
@@ -540,13 +541,13 @@ pub fn run(mut args: Opt) -> Result<()> {
 	}
 
 	// Generate changelog from context.
-	let mut changelog: Changelog = if let Some(context_path) = args.from_context {
+	let changelog: Changelog = if let Some(context_path) = &args.from_context {
 		let mut input: Box<dyn io::Read> = if context_path == Path::new("-") {
 			Box::new(io::stdin())
 		} else {
 			Box::new(File::open(context_path)?)
 		};
-		let mut changelog = Changelog::from_context(&mut input, &config)?;
+		let mut changelog = Changelog::from_context(&mut input, config)?;
 		changelog.add_remote_context()?;
 		changelog
 	} else {
@@ -588,19 +589,22 @@ pub fn run(mut args: Opt) -> Result<()> {
 				&args,
 			)?);
 		}
-		Changelog::new(releases, &config)?
+		Changelog::new(releases, config.clone(), true)?
 	};
 
-	// Print the result.
-	let mut out: Box<dyn io::Write> = if let Some(path) = &output {
-		if path == Path::new("-") {
-			Box::new(io::stdout())
-		} else {
-			Box::new(io::BufWriter::new(File::create(path)?))
-		}
-	} else {
-		Box::new(io::stdout())
-	};
+	Ok(changelog)
+}
+
+/// Writes the changelog to a file.
+pub fn write_changelog<W: io::Write>(
+	args: Args,
+	mut changelog: Changelog<'_>,
+	mut out: W,
+) -> Result<()> {
+	let output = args
+		.output
+		.clone()
+		.or(changelog.config.changelog.output.clone());
 	if args.bump.is_some() || args.bumped_version {
 		let next_version = if let Some(next_version) = changelog.bump_version()? {
 			next_version
@@ -610,7 +614,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 			warn!("There is nothing to bump.");
 			last_version
 		} else if changelog.releases.is_empty() {
-			config.bump.get_initial_tag()
+			changelog.config.bump.get_initial_tag()
 		} else {
 			return Ok(());
 		};
@@ -628,9 +632,8 @@ pub fn run(mut args: Opt) -> Result<()> {
 		let mut out = io::BufWriter::new(File::create(path)?);
 		changelog.prepend(changelog_before, &mut out)?;
 	}
-	if output.is_some() || args.prepend.is_none() {
-		changelog.generate(&mut out)?;
-	}
 
-	Ok(())
+	Ok(if output.is_some() || args.prepend.is_none() {
+		changelog.generate(&mut out)?;
+	})
 }

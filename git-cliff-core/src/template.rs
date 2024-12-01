@@ -20,7 +20,7 @@ use tera::{
 };
 
 /// Wrapper for [`Tera`].
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Template {
 	/// Template name.
 	name:          String,
