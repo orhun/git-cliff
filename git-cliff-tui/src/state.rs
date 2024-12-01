@@ -3,6 +3,7 @@ use git_cliff::args::Args;
 use git_cliff::core::embed::BuiltinConfig;
 use md_tui::nodes::root::ComponentRoot;
 use ratatui::layout::Rect;
+use ratatui::widgets::ListState;
 use std::error;
 use throbber_widgets_tui::ThrobberState;
 
@@ -13,11 +14,7 @@ pub type Result<T> = std::result::Result<T, Box<dyn error::Error>>;
 #[derive(Debug, Default)]
 pub struct Config {
 	/// Name/path of the configuration.
-	pub file:       String,
-	/// Widget area.
-	pub area:       Rect,
-	/// Is the widget hovered?
-	pub is_hovered: bool,
+	pub file: String,
 }
 
 /// Markdown content.
@@ -42,8 +39,8 @@ pub struct State {
 	pub is_running:     bool,
 	/// Configuration files.
 	pub configs:        Vec<Config>,
-	/// Index of the selected configuration.
-	pub selected_index: usize,
+	/// The state of the list.
+	pub list_state:     ListState,
 	/// Changelog contents.
 	pub changelog:      String,
 	/// Error message.
@@ -67,9 +64,7 @@ impl State {
 	pub fn new(args: Args) -> Result<Self> {
 		let configs = BuiltinConfig::iter()
 			.map(|file| Config {
-				file:       file.to_string(),
-				area:       Rect::default(),
-				is_hovered: false,
+				file: file.to_string(),
 			})
 			.collect();
 		Ok(Self {
@@ -78,7 +73,11 @@ impl State {
 			is_toggled: true,
 			is_generating: false,
 			configs,
-			selected_index: 0,
+			list_state: {
+				let mut list_state = ListState::default();
+				list_state.select_first();
+				list_state
+			},
 			changelog: String::new(),
 			error: None,
 			markdown: Markdown::default(),

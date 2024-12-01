@@ -10,11 +10,8 @@ use ratatui::crossterm::event::{
 	KeyEvent,
 	KeyEventKind,
 	KeyModifiers,
-	MouseButton,
 	MouseEvent,
-	MouseEventKind,
 };
-use ratatui::layout::Position;
 use std::sync::mpsc;
 use std::thread;
 use std::time::{
@@ -132,19 +129,10 @@ pub fn handle_key_events(
 			}
 		}
 		KeyCode::Char('k') | KeyCode::Char('K') | KeyCode::Up => {
-			state.selected_index = if state.selected_index == 0 {
-				state.configs.len() - 1
-			} else {
-				state.selected_index - 1
-			}
+			state.list_state.select_previous();
 		}
 		KeyCode::Char('j') | KeyCode::Char('J') | KeyCode::Down => {
-			state.selected_index = if state.selected_index >= state.configs.len() - 1
-			{
-				0
-			} else {
-				state.selected_index + 1
-			}
+			state.list_state.select_next();
 		}
 		KeyCode::Char('h') | KeyCode::Char('H') | KeyCode::Left => {
 			state.markdown.scroll_index =
@@ -159,10 +147,7 @@ pub fn handle_key_events(
 				sender.send(Event::Generate)?;
 			}
 		}
-		KeyCode::Enter => {
-			state.markdown.config_index = state.selected_index;
-			sender.send(Event::Generate)?
-		}
+		KeyCode::Enter => sender.send(Event::Generate)?,
 		KeyCode::Char('a') | KeyCode::Char('A') => {
 			state.autoload = !state.autoload;
 		}
@@ -172,38 +157,6 @@ pub fn handle_key_events(
 		KeyCode::Char('u') | KeyCode::Char('U') => {
 			state.args.unreleased = !state.args.unreleased;
 			sender.send(Event::Generate)?;
-		}
-		_ => {}
-	}
-	Ok(())
-}
-
-/// Handles the mouse events and updates the state.
-pub(crate) fn handle_mouse_events(
-	mouse_event: MouseEvent,
-	sender: mpsc::Sender<Event>,
-	state: &mut State,
-) -> Result<()> {
-	match mouse_event.kind {
-		MouseEventKind::Moved => {
-			let position = Position::new(mouse_event.column, mouse_event.row);
-			state.configs.iter_mut().for_each(|config| {
-				config.is_hovered = config.area.contains(position);
-			})
-		}
-		MouseEventKind::Down(MouseButton::Left) => {
-			if let Some(i) = state.configs.iter().position(|p| p.is_hovered) {
-				state.selected_index = i;
-				sender.send(Event::Generate)?;
-			}
-		}
-		MouseEventKind::ScrollUp => {
-			state.markdown.scroll_index =
-				state.markdown.scroll_index.saturating_sub(1);
-		}
-		MouseEventKind::ScrollDown => {
-			state.markdown.scroll_index =
-				state.markdown.scroll_index.saturating_add(1);
 		}
 		_ => {}
 	}

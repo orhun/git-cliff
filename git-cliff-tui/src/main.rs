@@ -101,11 +101,7 @@ fn main() -> Result<()> {
 				events.sender.clone(),
 				&mut state,
 			)?,
-			Event::Mouse(mouse_event) => event::handle_mouse_events(
-				mouse_event,
-				events.sender.clone(),
-				&mut state,
-			)?,
+			Event::Mouse(_) => {}
 			Event::Resize(_, _) => {}
 			Event::Generate | Event::AutoGenerate => {
 				if event == Event::AutoGenerate && !state.autoload {
@@ -114,8 +110,11 @@ fn main() -> Result<()> {
 				let sender = events.sender.clone();
 				let args = state.args.clone();
 				state.is_generating = true;
-				state.args.config =
-					PathBuf::from(state.configs[state.selected_index].file.clone());
+				state.args.config = PathBuf::from(
+					state.configs[state.list_state.selected().unwrap_or_default()]
+						.file
+						.clone(),
+				);
 				thread::spawn(move || {
 					let mut output = Vec::new();
 					sender

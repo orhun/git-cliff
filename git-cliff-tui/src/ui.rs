@@ -21,6 +21,8 @@ use ratatui::{
 	widgets::{
 		Block,
 		BorderType,
+		List,
+		ListItem,
 		Paragraph,
 		Scrollbar,
 		ScrollbarOrientation,
@@ -73,7 +75,7 @@ pub fn render(state: &mut State, frame: &mut Frame) {
 	}
 }
 
-fn render_key_bindings(frame: &mut Frame, rect: Rect) {
+fn render_key_bindings(frame: &mut Frame, area: Rect) {
 	frame.render_widget(
 		Paragraph::new(
 			Line::default()
@@ -93,69 +95,44 @@ fn render_key_bindings(frame: &mut Frame, rect: Rect) {
 				)
 				.alignment(Alignment::Center),
 		),
-		rect,
+		area,
 	);
 }
 
-fn render_list(state: &mut State, frame: &mut Frame, rect: Rect) {
-	frame.render_widget(
-		Block::bordered()
-			.title_top("|Config|".yellow())
-			.title_alignment(Alignment::Center)
-			.border_type(BorderType::Rounded)
-			.border_style(Style::default().fg(Color::Rgb(100, 100, 100))),
-		rect,
-	);
+fn render_list(state: &mut State, frame: &mut Frame, area: Rect) {
 	if !state.configs.is_empty() {
-		let rect =
-			Layout::vertical([Constraint::Min(1), Constraint::Percentage(100)])
-				.split(rect)[1];
-		let borders_line = 2;
-		let item_count = (rect.height - borders_line) as usize;
-		let start_offset = (state.selected_index + 1).saturating_sub(item_count);
-		let rects =
-			Layout::vertical([Constraint::Length(1)].repeat(item_count)).split(rect);
-		for (i, config) in state
+		let items = state
 			.configs
-			.iter_mut()
-			.skip(start_offset)
-			.take(item_count)
-			.enumerate()
-		{
-			let mut style = Style::new();
-			if config.is_hovered {
-				style = style.yellow()
-			} else if state.selected_index == i + start_offset {
-				style = style.yellow();
-			}
-			let item = Layout::horizontal([
-				Constraint::Min(1),
-				Constraint::Percentage(100),
-			])
-			.split(rects[i]);
-			config.area = rects[i];
-			frame.render_widget(
-				Paragraph::new(Line::from(config.file.clone()).style(style)),
-				item[1],
-			);
-		}
-		if state.configs.len() > rect.height as usize - 2 {
-			frame.render_stateful_widget(
-				Scrollbar::new(ScrollbarOrientation::VerticalRight)
-					.begin_symbol(Some("↑"))
-					.end_symbol(Some("↓")),
-				rect.inner(Margin {
-					vertical:   1,
-					horizontal: 0,
-				}),
-				&mut ScrollbarState::new(item_count).position(state.selected_index),
-			);
-		}
+			.iter()
+			.map(|c| ListItem::new(c.file.to_string()))
+			.collect::<Vec<ListItem>>();
+		let list = List::new(items)
+			.block(
+				Block::bordered()
+					.title_top("|Config|".yellow())
+					.title_alignment(Alignment::Center)
+					.border_type(BorderType::Rounded)
+					.border_style(Style::default().fg(Color::Rgb(100, 100, 100))),
+			)
+			.style(Style::new().white())
+			.highlight_style(Style::new().reversed());
+		frame.render_stateful_widget(list, area, &mut state.list_state);
+		frame.render_stateful_widget(
+			Scrollbar::new(ScrollbarOrientation::VerticalRight)
+				.begin_symbol(Some("↑"))
+				.end_symbol(Some("↓")),
+			area.inner(Margin {
+				vertical:   1,
+				horizontal: 0,
+			}),
+			&mut ScrollbarState::new(state.configs.len())
+				.position(state.list_state.selected().unwrap_or_default()),
+		);
 	}
 }
 
-fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
-	state.markdown.area = rect.inner(Margin {
+fn render_changelog(state: &mut State, frame: &mut Frame, area: Rect) {
+	state.markdown.area = area.inner(Margin {
 		horizontal: 1,
 		vertical:   1,
 	});
@@ -222,7 +199,7 @@ fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
 				Line::from(format!("|{}|", env!("CARGO_PKG_VERSION")))
 					.right_aligned(),
 			),
-		rect,
+		area,
 	);
 	if let Some(component) = &mut state.markdown.component {
 		let mut height = 2;
@@ -241,7 +218,7 @@ fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
 			Scrollbar::new(ScrollbarOrientation::VerticalRight)
 				.begin_symbol(Some("↑"))
 				.end_symbol(Some("↓")),
-			rect.inner(Margin {
+			area.inner(Margin {
 				vertical:   1,
 				horizontal: 0,
 			}),
@@ -252,8 +229,8 @@ fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
 
 	if state.is_generating {
 		let throbber_area = Rect::new(
-			rect.left().saturating_add(2),
-			rect.bottom().saturating_sub(1),
+			area.left().saturating_add(2),
+			area.bottom().saturating_sub(1),
 			1,
 			1,
 		);
@@ -273,20 +250,20 @@ fn render_changelog(state: &mut State, frame: &mut Frame, rect: Rect) {
 	}
 }
 
-fn render_error(state: &mut State, frame: &mut Frame, rect: Rect) {
+fn render_error(state: &mut State, frame: &mut Frame, area: Rect) {
 	if let Some(error) = &state.error {
 		frame.render_widget(
 			Block::bordered()
 				.title_top("|Error|".red().into_centered_line())
 				.border_type(BorderType::Rounded)
 				.border_style(Style::default().fg(Color::Rgb(100, 100, 100))),
-			rect,
+			area,
 		);
 		frame.render_widget(
 			Paragraph::new(Line::from(error.clone()))
 				.alignment(Alignment::Center)
 				.wrap(Wrap { trim: false }),
-			rect.inner(Margin {
+			area.inner(Margin {
 				horizontal: 1,
 				vertical:   1,
 			}),
