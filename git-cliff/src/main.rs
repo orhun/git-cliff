@@ -1,6 +1,10 @@
 use clap::Parser;
 use git_cliff::args::Args;
-use git_cliff::logger;
+use git_cliff::{
+	check_new_version,
+	init_config,
+	logger,
+};
 use git_cliff_core::error::Result;
 use std::env;
 use std::fs::File;
@@ -21,7 +25,7 @@ mod profiler;
 
 fn main() -> Result<()> {
 	// Parse the command line arguments
-	let args = Args::parse();
+	let mut args = Args::parse();
 
 	// Launch the TUI if the flag is set.
 	if args.tui {
@@ -59,7 +63,19 @@ fn main() -> Result<()> {
 		_profiler_guard = Some(());
 	}
 
-	// Run git-cliff
+	// Check if there is a new version available.
+	#[cfg(feature = "update-informer")]
+	check_new_version();
+
+	// Create the configuration file if init flag is given.
+	if let Some(path) = &args.init {
+		init_config(path.clone())?;
+	}
+
+	// Generate a changelog.
+	let changelog = git_cliff::generate_changelog(&mut args)?;
+
+	// Get output file.
 	let out: Box<dyn io::Write> = if let Some(path) = &args.output {
 		if path == Path::new("-") {
 			Box::new(io::stdout())
@@ -69,7 +85,9 @@ fn main() -> Result<()> {
 	} else {
 		Box::new(io::stdout())
 	};
-	let exit_code = match git_cliff::run(args, out) {
+
+	// Write the changelog.
+	let exit_code = match git_cliff::write_changelog(args, changelog, out) {
 		Ok(_) => 0,
 		Err(e) => {
 			log::error!("{}", e);

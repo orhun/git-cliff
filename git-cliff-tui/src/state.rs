@@ -1,5 +1,6 @@
 use copypasta::ClipboardContext;
 use git_cliff::args::Args;
+use git_cliff::core::changelog::Changelog;
 use git_cliff::core::embed::BuiltinConfig;
 use md_tui::nodes::root::ComponentRoot;
 use ratatui::layout::Rect;
@@ -32,7 +33,7 @@ pub struct Markdown {
 
 /// Is the application running?
 /// Application state.
-pub struct State {
+pub struct State<'a> {
 	/// git-cliff arguments.
 	pub args:           Args,
 	/// Is the application running?
@@ -41,8 +42,8 @@ pub struct State {
 	pub configs:        Vec<Config>,
 	/// The state of the list.
 	pub list_state:     ListState,
-	/// Changelog contents.
-	pub changelog:      String,
+	/// Changelog.
+	pub changelog:      Option<Changelog<'a>>,
 	/// Error message.
 	pub error:          Option<String>,
 	/// Rendered markdown.
@@ -59,7 +60,7 @@ pub struct State {
 	pub is_generating:  bool,
 }
 
-impl State {
+impl<'a> State<'a> {
 	/// Constructs a new instance.
 	pub fn new(args: Args) -> Result<Self> {
 		let configs = BuiltinConfig::iter()
@@ -78,7 +79,7 @@ impl State {
 				list_state.select_first();
 				list_state
 			},
-			changelog: String::new(),
+			changelog: None,
 			error: None,
 			markdown: Markdown::default(),
 			autoload: true,
@@ -91,6 +92,49 @@ impl State {
 				}
 			},
 		})
+	}
+
+	/// Generates the changelog.
+	pub fn generate_changelog(&mut self) -> Result<()> {
+		self.changelog = Some(git_cliff::generate_changelog(&mut self.args)?);
+		Ok(())
+	}
+
+	/// Returns the changelog contents.
+	pub fn get_changelog_contents(&mut self) -> Result<Option<String>> {
+		if let Some(changelog) = &self.changelog {
+			let config = git_cliff::core::embed::BuiltinConfig::parse(
+				self.configs[self.list_state.selected().unwrap_or_default()]
+					.file
+					.clone(),
+			)?
+			.0;
+			let changelog =
+				Changelog::new(changelog.releases.clone(), config.clone(), false)?;
+			let mut output = Vec::new();
+			git_cliff::write_changelog(
+				self.args.clone(),
+				changelog.clone(),
+				&mut output,
+			)?;
+			let contents = String::from_utf8(output)?;
+			self.changelog = Some(changelog);
+			Ok(Some(contents))
+		} else {
+			Ok(None)
+		}
+	}
+
+	/// Processes the changelog contents.
+	pub fn process_changelog(&mut self) -> Result<()> {
+		if let Some(contents) = &self.get_changelog_contents()? {
+			self.markdown.component = Some(md_tui::parser::parse_markdown(
+				None,
+				&contents,
+				self.markdown.area.width,
+			));
+		}
+		Ok(())
 	}
 
 	/// Handles the tick event of the terminal.

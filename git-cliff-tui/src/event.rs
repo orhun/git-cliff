@@ -122,17 +122,21 @@ pub fn handle_key_events(
 		KeyCode::Char('c') | KeyCode::Char('C') => {
 			if key_event.modifiers == KeyModifiers::CONTROL {
 				state.quit();
-			} else if let Some(clipboard) = &mut state.clipboard {
-				if let Err(e) = clipboard.set_contents(state.changelog.clone()) {
-					eprintln!("Failed to set clipboard contents: {e}");
+			} else if let Some(contents) = state.get_changelog_contents()? {
+				if let Some(clipboard) = &mut state.clipboard {
+					if let Err(e) = clipboard.set_contents(contents) {
+						eprintln!("Failed to set clipboard contents: {e}");
+					}
 				}
 			}
 		}
 		KeyCode::Char('k') | KeyCode::Char('K') | KeyCode::Up => {
 			state.list_state.select_previous();
+			state.process_changelog()?;
 		}
 		KeyCode::Char('j') | KeyCode::Char('J') | KeyCode::Down => {
 			state.list_state.select_next();
+			state.process_changelog()?;
 		}
 		KeyCode::Char('h') | KeyCode::Char('H') | KeyCode::Left => {
 			state.markdown.scroll_index =

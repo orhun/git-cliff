@@ -28,31 +28,30 @@ use std::time::{
 };
 
 /// Changelog generator.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Changelog<'a> {
 	/// Releases that the changelog will contain.
 	pub releases:       Vec<Release<'a>>,
+	/// Configuration.
+	pub config:         Config,
 	header_template:    Option<Template>,
 	body_template:      Template,
 	footer_template:    Option<Template>,
-	config:             &'a Config,
 	additional_context: HashMap<String, serde_json::Value>,
 }
 
 impl<'a> Changelog<'a> {
 	/// Constructs a new instance.
-	pub fn new(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
-		let mut changelog = Changelog::build(releases, config)?;
-		changelog.add_remote_data()?;
-		changelog.process_commits();
-		changelog.process_releases();
-		Ok(changelog)
-	}
-
-	/// Builds a changelog from releases and config.
-	fn build(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
+	///
+	/// Processes the commits/releases and fetches the remote data
+	/// if `process_data` is set to `true`.
+	pub fn new(
+		releases: Vec<Release<'a>>,
+		config: Config,
+		process_data: bool,
+	) -> Result<Self> {
 		let trim = config.changelog.trim.unwrap_or(true);
-		Ok(Self {
+		let mut changelog = Self {
 			releases,
 			header_template: match &config.changelog.header {
 				Some(header) => {
@@ -60,7 +59,7 @@ impl<'a> Changelog<'a> {
 				}
 				None => None,
 			},
-			body_template: get_body_template(config, trim)?,
+			body_template: get_body_template(&config, trim)?,
 			footer_template: match &config.changelog.footer {
 				Some(footer) => {
 					Some(Template::new("footer", footer.to_string(), trim)?)
@@ -69,12 +68,18 @@ impl<'a> Changelog<'a> {
 			},
 			config,
 			additional_context: HashMap::new(),
-		})
+		};
+		if process_data {
+			changelog.add_remote_data()?;
+			changelog.process_commits();
+			changelog.process_releases();
+		}
+		Ok(changelog)
 	}
 
 	/// Constructs an instance from a serialized context object.
-	pub fn from_context<R: Read>(input: &mut R, config: &'a Config) -> Result<Self> {
-		Changelog::build(serde_json::from_reader(input)?, config)
+	pub fn from_context<R: Read>(input: &mut R, config: Config) -> Result<Self> {
+		Changelog::new(serde_json::from_reader(input)?, config, false)
 	}
 
 	/// Adds a key value pair to the template context.
@@ -431,6 +436,7 @@ impl<'a> Changelog<'a> {
 
 	/// Adds information about the remote to the template context.
 	pub fn add_remote_context(&mut self) -> Result<()> {
+		debug!("Adding remote context...");
 		self.additional_context.insert(
 			"remote".to_string(),
 			serde_json::to_value(self.config.remote.clone())?,
@@ -1024,7 +1030,7 @@ mod test {
 	#[test]
 	fn changelog_generator() -> Result<()> {
 		let (config, releases) = get_test_data();
-		let mut changelog = Changelog::new(releases, &config)?;
+		let mut changelog = Changelog::new(releases, config, true)?;
 		changelog.bump_version()?;
 		changelog.releases[0].timestamp = 0;
 		let mut out = Vec::new();
@@ -1143,7 +1149,7 @@ chore(deps): fix broken deps
 ",
 			),
 		));
-		let changelog = Changelog::new(releases, &config)?;
+		let changelog = Changelog::new(releases, config, true)?;
 		let mut out = Vec::new();
 		changelog.generate(&mut out)?;
 		assert_eq!(
@@ -1247,7 +1253,7 @@ chore(deps): fix broken deps
 				{% endfor %}{% endfor %}"#
 				.to_string(),
 		);
-		let mut changelog = Changelog::new(releases, &config)?;
+		let mut changelog = Changelog::new(releases, config, true)?;
 		changelog.add_context("custom_field", "Hello")?;
 		let mut out = Vec::new();
 		changelog.generate(&mut out)?;

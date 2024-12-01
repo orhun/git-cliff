@@ -1,9 +1,6 @@
-use std::{
-	path::{
-		Path,
-		PathBuf,
-	},
-	thread,
+use std::path::{
+	Path,
+	PathBuf,
 };
 
 use crate::{
@@ -60,6 +57,9 @@ fn main() -> Result<()> {
 		}
 	}
 
+	// Generate the changelog.
+	state.generate_changelog()?;
+
 	// Initialize the terminal user interface.
 	let events = EventHandler::new(250);
 	let mut terminal = ratatui::init();
@@ -104,37 +104,37 @@ fn main() -> Result<()> {
 			Event::Mouse(_) => {}
 			Event::Resize(_, _) => {}
 			Event::Generate | Event::AutoGenerate => {
-				if event == Event::AutoGenerate && !state.autoload {
-					continue;
-				}
-				let sender = events.sender.clone();
-				let args = state.args.clone();
-				state.is_generating = true;
-				state.args.config = PathBuf::from(
-					state.configs[state.list_state.selected().unwrap_or_default()]
-						.file
-						.clone(),
-				);
-				thread::spawn(move || {
-					let mut output = Vec::new();
-					sender
-						.send(match git_cliff::run(args, &mut output) {
-							Ok(()) => Event::RenderMarkdown(
-								String::from_utf8_lossy(&output).to_string(),
-							),
-							Err(e) => Event::Error(e.to_string()),
-						})
-						.expect("failed to send event");
-				});
+				// if event == Event::AutoGenerate && !state.autoload {
+				// 	continue;
+				// }
+				// let sender = events.sender.clone();
+				// let args = state.args.clone();
+				// state.is_generating = true;
+				// state.args.config = PathBuf::from(
+				// 	state.configs[state.list_state.selected().
+				// unwrap_or_default()] 		.file
+				// 		.clone(),
+				// );
+				// thread::spawn(move || {
+				// 	let mut output = Vec::new();
+				// 	sender
+				// 		.send(match git_cliff::run(args, &mut output) {
+				// 			Ok(()) => Event::RenderMarkdown(
+				// 				String::from_utf8_lossy(&output).to_string(),
+				// 			),
+				// 			Err(e) => Event::Error(e.to_string()),
+				// 		})
+				// 		.expect("failed to send event");
+				// });
 			}
-			Event::RenderMarkdown(changelog) => {
-				state.is_generating = false;
-				state.changelog = changelog;
-				state.markdown.component = Some(md_tui::parser::parse_markdown(
-					None,
-					&state.changelog,
-					state.markdown.area.width,
-				));
+			Event::RenderMarkdown(_) => {
+				// state.is_generating = false;
+				// state.changelog = changelog;
+				// state.markdown.component =
+				// Some(md_tui::parser::parse_markdown( 	None,
+				// 	&state.changelog,
+				// 	state.markdown.area.width,
+				// ));
 			}
 			Event::Error(e) => {
 				state.error = Some(e);
