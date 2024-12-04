@@ -546,7 +546,6 @@ impl<'a> Changelog<'a> {
 				}
 			}
 		}
-
 		for release in &self.releases {
 			let write_result = write!(
 				out,

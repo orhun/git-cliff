@@ -9,6 +9,14 @@ pub struct Tag {
 	pub message: Option<String>,
 }
 
+impl PartialEq for Tag {
+	fn eq(&self, other: &Self) -> bool {
+		self.name == other.name
+	}
+}
+
+impl Eq for Tag {}
+
 #[cfg(test)]
 mod test {
 	use super::*;
