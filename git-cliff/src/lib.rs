@@ -405,7 +405,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 	}
 
-	// Parse the configuration file.
+	// Set path for the configuration file.
 	let mut path = args.config.clone();
 	if !path.exists() {
 		if let Some(config_path) = dirs::config_dir()
@@ -415,6 +415,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 	}
 
+	// Parse the configuration file.
 	// Load the default configuration if necessary.
 	let mut config = if let Ok((config, name)) = builtin_config {
 		info!("Using built-in configuration file: {name}");
@@ -423,6 +424,20 @@ pub fn run(mut args: Opt) -> Result<()> {
 		Config::parse(&path)?
 	} else if let Some(contents) = Config::read_from_manifest()? {
 		Config::parse_from_str(&contents)?
+	} else if let Some(discovered_path) =
+		env::current_dir()?.ancestors().find_map(|dir| {
+			let path = dir.join(DEFAULT_CONFIG);
+			if path.is_file() {
+				Some(path)
+			} else {
+				None
+			}
+		}) {
+		info!(
+			"Using configuration from parent directory: {}",
+			discovered_path.display()
+		);
+		Config::parse(&discovered_path)?
 	} else {
 		if !args.context {
 			warn!(
