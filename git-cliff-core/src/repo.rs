@@ -48,7 +48,7 @@ impl Repository {
 	/// Initializes (opens) the repository.
 	pub fn init(path: PathBuf) -> Result<Self> {
 		if path.exists() {
-			let inner = GitRepository::open(&path).or_else(|err| {
+			let inner = GitRepository::discover(&path).or_else(|err| {
 				let jujutsu_path =
 					path.join(".jj").join("repo").join("store").join("git");
 				if jujutsu_path.exists() {
