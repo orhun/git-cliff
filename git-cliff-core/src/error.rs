@@ -101,6 +101,9 @@ pub enum Error {
 	/// Error that may occur while handling location of directories.
 	#[error("Directory error: `{0}`")]
 	DirsError(String),
+	/// Error that may occur while constructing patterns.
+	#[error("Pattern error: `{0}`")]
+	PatternError(#[from] glob::PatternError),
 }
 
 /// Result type of the core library.
