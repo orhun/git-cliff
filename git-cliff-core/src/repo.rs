@@ -356,7 +356,7 @@ impl Repository {
 			.iter()
 			.flatten()
 			.filter(|tag_name| {
-				pattern.as_ref().map_or(true, |pat| pat.is_match(tag_name))
+				pattern.as_ref().is_none_or(|pat| pat.is_match(tag_name))
 			})
 			.map(String::from)
 		{
