@@ -1,6 +1,6 @@
 use clap::CommandFactory;
 use clap_mangen::Man;
-use git_cliff::args::Opt;
+use git_cliff::args::Args;
 use std::env;
 use std::fs;
 use std::io::Result;
@@ -14,7 +14,7 @@ fn main() -> Result<()> {
 	let out_dir = env::var("OUT_DIR").expect("OUT_DIR is not set");
 	let out_path =
 		PathBuf::from(out_dir).join(format!("{}.1", env!("CARGO_PKG_NAME")));
-	let app = Opt::command();
+	let app = Args::command();
 	let man = Man::new(app);
 	let mut buffer = Vec::<u8>::new();
 	man.render(&mut buffer)?;

@@ -1,0 +1,18 @@
+[package]
+name = "git-cliff-tui"
+version = "2.5.0" # managed by release.sh
+authors = ["Orhun Parmaksız <orhunparmaksiz@gmail.com>"]
+license = "MIT"
+edition = "2021"
+
+[dependencies]
+ratatui = "0.29.0"
+copypasta = "0.10.1"
+throbber-widgets-tui = "0.8.0"
+tui-markdown = "0.3.0"
+
+[dependencies.git-cliff]
+version = "2.5.0" # managed by release.sh
+path = "../git-cliff"
+default-features = false
+features = ["github", "gitlab", "gitea", "bitbucket"]
