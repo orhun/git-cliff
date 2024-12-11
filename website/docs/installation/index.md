@@ -3,6 +3,11 @@ sidebar_position: 2
 ---
 # Installation
 
+```bash
+# install using pip
+pip install git-cliff
+```
+
 <details>
   <summary>Packaging status</summary>
 
