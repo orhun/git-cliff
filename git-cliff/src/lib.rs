@@ -365,7 +365,14 @@ fn process_repository<'a>(
 }
 
 /// Runs `git-cliff`.
-pub fn run(mut args: Opt) -> Result<()> {
+pub fn run(args: Opt) -> Result<()> {
+	run_with_changelog_modifier(args, |_| Ok(()))
+}
+
+pub fn run_with_changelog_modifier(
+	mut args: Opt,
+	changelog_modifier: impl FnOnce(&mut Changelog) -> Result<()>,
+) -> Result<()> {
 	// Check if there is a new version available.
 	#[cfg(feature = "update-informer")]
 	check_new_version();
@@ -623,6 +630,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 		Changelog::new(releases, &config)?
 	};
+	changelog_modifier(&mut changelog)?;
 
 	// Print the result.
 	let mut out: Box<dyn io::Write> = if let Some(path) = &output {
