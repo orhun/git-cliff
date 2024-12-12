@@ -62,6 +62,17 @@ impl BuiltinConfig {
 	///
 	/// [`Config`]: Config
 	pub fn parse(name: String) -> Result<(Config, String)> {
-		Ok((toml::from_str(&Self::get_config(name.to_string())?)?, name))
+		let raw_config = Self::get_config(name.to_string())?;
+		let parsed = config::Config::builder()
+			.add_source(config::File::from_str(
+				&raw_config,
+				config::FileFormat::Toml,
+			))
+			.add_source(
+				config::Environment::with_prefix("GIT_CLIFF").separator("__"),
+			)
+			.build()?
+			.try_deserialize()?;
+		Ok((parsed, name))
 	}
 }
