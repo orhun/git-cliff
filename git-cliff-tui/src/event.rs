@@ -31,9 +31,9 @@ pub enum Event {
 	/// Terminal resize.
 	Resize(u16, u16),
 	/// Generate changelog.
-	Generate,
-	/// Generate changelog when the file changes.
-	AutoGenerate,
+	Generate(bool),
+	/// Quit the application.
+	Quit,
 }
 
 /// Terminal event handler.
@@ -41,11 +41,11 @@ pub enum Event {
 #[derive(Debug)]
 pub struct EventHandler {
 	/// Event sender channel.
-	pub sender: mpsc::Sender<Event>,
+	pub sender:   mpsc::Sender<Event>,
 	/// Event receiver channel.
-	receiver:   mpsc::Receiver<Event>,
+	pub receiver: mpsc::Receiver<Event>,
 	/// Event handler thread.
-	handler:    thread::JoinHandle<()>,
+	handler:      thread::JoinHandle<()>,
 }
 
 impl EventHandler {
@@ -95,14 +95,6 @@ impl EventHandler {
 			handler,
 		}
 	}
-
-	/// Receive the next event from the handler thread.
-	///
-	/// This function will always block the current thread if
-	/// there is no data available and it's possible for more data to be sent.
-	pub fn next(&self) -> Result<Event> {
-		Ok(self.receiver.recv()?)
-	}
 }
 
 /// Handles the key events and updates the state of [`State`].
@@ -113,26 +105,29 @@ pub fn handle_key_events(
 ) -> Result<()> {
 	match key_event.code {
 		KeyCode::Esc | KeyCode::Char('q') => {
-			state.quit();
+			sender.send(Event::Quit)?;
 		}
 		KeyCode::Char('c') | KeyCode::Char('C') => {
 			if key_event.modifiers == KeyModifiers::CONTROL {
-				state.quit();
-			} else if let Some(contents) = state.generate_changelog()? {
+				sender.send(Event::Quit)?;
+			} else {
 				if let Some(clipboard) = &mut state.clipboard {
-					if let Err(e) = clipboard.set_contents(contents) {
-						eprintln!("Failed to set clipboard contents: {e}");
+					if let Err(e) = clipboard.set_contents(state.contents.clone()) {
+						return Err(format!(
+							"Failed to set clipboard contents: {e}"
+						)
+						.into());
 					}
 				}
 			}
 		}
 		KeyCode::Char('k') | KeyCode::Char('K') | KeyCode::Up => {
 			state.list_state.select_previous();
-			sender.send(Event::Generate)?;
+			sender.send(Event::Generate(false))?;
 		}
 		KeyCode::Char('j') | KeyCode::Char('J') | KeyCode::Down => {
 			state.list_state.select_next();
-			sender.send(Event::Generate)?;
+			sender.send(Event::Generate(false))?;
 		}
 		KeyCode::Char('h') | KeyCode::Char('H') | KeyCode::Left => {
 			state.scroll_index = state.scroll_index.saturating_sub(1);
@@ -140,21 +135,13 @@ pub fn handle_key_events(
 		KeyCode::Char('l') | KeyCode::Char('L') | KeyCode::Right => {
 			state.scroll_index = state.scroll_index.saturating_add(1);
 
-			// TODO: Tweak latest flag
-			//
-			// state.args.latest = !state.args.latest;
-			// sender.send(Event::Generate)?;
+			state.args.latest = !state.args.latest;
+			sender.send(Event::Generate(true))?;
 		}
-		KeyCode::Enter => sender.send(Event::Generate)?,
-		KeyCode::Char('a') | KeyCode::Char('A') => {
-			state.autoload = !state.autoload;
-		}
-		KeyCode::Char('t') | KeyCode::Char('T') => {
-			state.is_toggled = !state.is_toggled;
-		}
+		KeyCode::Enter => sender.send(Event::Generate(false))?,
 		KeyCode::Char('u') | KeyCode::Char('U') => {
 			state.args.unreleased = !state.args.unreleased;
-			sender.send(Event::Generate)?;
+			sender.send(Event::Generate(true))?;
 		}
 		_ => {}
 	}

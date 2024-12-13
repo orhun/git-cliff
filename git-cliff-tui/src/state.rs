@@ -18,7 +18,7 @@ pub struct State<'a> {
 	/// The state of the list.
 	pub list_state:      ListState,
 	/// Changelog object.
-	pub changelog:       Option<Changelog<'a>>,
+	changelog:           Changelog<'a>,
 	/// Changelog contents.
 	pub contents:        String,
 	/// Scroll index.
@@ -29,12 +29,6 @@ pub struct State<'a> {
 	pub throbber_state:  ThrobberState,
 	/// Is generating?
 	pub is_generating:   bool,
-	/// Is the sidebar toggled?
-	pub is_toggled:      bool,
-	/// Autoload changes.
-	pub autoload:        bool,
-	/// Is the application running?
-	pub is_running:      bool,
 }
 
 impl State<'_> {
@@ -42,14 +36,13 @@ impl State<'_> {
 	pub fn new(args: Args) -> Result<Self> {
 		let configs = BuiltinConfig::iter().map(|file| file.to_string()).collect();
 		Ok(Self {
-			args,
 			builtin_configs: configs,
 			list_state: {
 				let mut list_state = ListState::default();
 				list_state.select_first();
 				list_state
 			},
-			changelog: None,
+			changelog: git_cliff::generate_changelog(&mut args.clone())?,
 			contents: String::new(),
 			scroll_index: 0,
 			throbber_state: ThrobberState::default(),
@@ -61,52 +54,35 @@ impl State<'_> {
 				}
 			},
 			is_generating: false,
-			is_toggled: true,
-			autoload: true,
-			is_running: true,
+			args,
 		})
 	}
 
-	/// Generates the changelog.
-	///
-	/// This runs once the application starts for fetching the remote data if
-	/// necessary.
-	pub fn get_changelog_data(&mut self) -> Result<()> {
-		self.changelog = Some(git_cliff::generate_changelog(&mut self.args)?);
-		Ok(())
-	}
-
 	/// Returns the changelog contents.
-	pub fn generate_changelog(&mut self) -> Result<Option<String>> {
-		if let Some(changelog) = &self.changelog {
-			let config = BuiltinConfig::parse(
-				self.builtin_configs[self.list_state.selected().unwrap_or_default()]
-					.clone(),
-			)?
-			.0;
-			let mut changelog =
-				Changelog::new(changelog.releases.clone(), config.clone())?;
-			changelog.add_remote_context()?;
-			let mut output = Vec::new();
-			git_cliff::write_changelog(
-				self.args.clone(),
-				changelog.clone(),
-				&mut output,
-			)?;
-			let contents = String::from_utf8(output)?;
-			self.changelog = Some(changelog);
-			Ok(Some(contents))
-		} else {
-			Ok(None)
-		}
-	}
+	pub fn generate_changelog(&mut self, update_data: bool) -> Result<String> {
+		let config = BuiltinConfig::parse(
+			self.builtin_configs[self.list_state.selected().unwrap_or_default()]
+				.clone(),
+		)?
+		.0;
 
-	/// Processes the changelog contents.
-	pub fn process_changelog(&mut self) -> Result<()> {
-		if let Some(contents) = &self.generate_changelog()? {
-			self.contents = contents.clone();
+		if update_data {
+			self.changelog = git_cliff::generate_changelog(&mut self.args.clone())?;
 		}
-		Ok(())
+		let mut changelog =
+			Changelog::new(self.changelog.releases.clone(), config.clone())?;
+		changelog.add_remote_context()?;
+		let mut output = Vec::new();
+		git_cliff::write_changelog(
+			self.args.clone(),
+			changelog.clone(),
+			&mut output,
+		)?;
+		let contents = String::from_utf8(output)?;
+
+		self.changelog = changelog;
+		self.contents = contents.clone();
+		Ok(contents)
 	}
 
 	/// Handles the tick event of the terminal.
@@ -114,10 +90,5 @@ impl State<'_> {
 		if self.is_generating {
 			self.throbber_state.calc_next();
 		}
-	}
-
-	/// Set running to false to quit the application.
-	pub fn quit(&mut self) {
-		self.is_running = false;
 	}
 }
