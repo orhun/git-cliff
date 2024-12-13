@@ -39,7 +39,7 @@ const CHANGED_FILES_CACHE: &str = "changed_files_cache";
 pub struct Repository {
 	inner:                    GitRepository,
 	/// Repository path.
-	pub path:                 PathBuf,
+	path:                     PathBuf,
 	/// Cache path for the changed files of the commits.
 	changed_files_cache_path: PathBuf,
 }
@@ -72,6 +72,15 @@ impl Repository {
 				"repository path not found",
 			)))
 		}
+	}
+
+	/// Returns the path of the repository.
+	pub fn path(&self) -> PathBuf {
+		let mut path = self.inner.path().to_path_buf();
+		if path.ends_with(".git") {
+			path.pop();
+		}
+		path
 	}
 
 	/// Parses and returns the commits.

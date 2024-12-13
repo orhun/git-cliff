@@ -44,6 +44,7 @@ use git_cliff_core::{
 	DEFAULT_CONFIG,
 	IGNORE_FILE,
 };
+use glob::Pattern;
 use std::env;
 use std::fs::{
 	self,
@@ -229,9 +230,26 @@ fn process_repository<'a>(
 			}
 		}
 	}
+
+	// Include only the current directory if not running from the root repository
+	let mut include_path = args.include_path.clone();
+	if let Some(mut path_diff) =
+		pathdiff::diff_paths(env::current_dir()?, repository.path())
+	{
+		if include_path.is_none() && path_diff != Path::new("") {
+			info!(
+				"Including changes from the current directory: {:?}",
+				path_diff.display()
+			);
+			path_diff.extend(["**", "*"]);
+			include_path =
+				Some(vec![Pattern::new(path_diff.to_string_lossy().as_ref())?]);
+		}
+	}
+
 	let mut commits = repository.commits(
 		commit_range.as_deref(),
-		args.include_path.clone(),
+		include_path,
 		args.exclude_path.clone(),
 	)?;
 	if let Some(commit_limit_value) = config.git.limit_commits {
@@ -269,7 +287,7 @@ fn process_repository<'a>(
 		let commit = Commit::from(git_commit);
 		let commit_id = commit.id.to_string();
 		release.commits.push(commit);
-		release.repository = Some(repository.path.to_string_lossy().into_owned());
+		release.repository = Some(repository.path().to_string_lossy().into_owned());
 		if let Some(tag) = tags.get(&commit_id) {
 			release.version = Some(tag.name.to_string());
 			release.message.clone_from(&tag.message);
@@ -387,7 +405,7 @@ pub fn generate_changelog(args: &mut Args) -> Result<Changelog<'static>> {
 		}
 	}
 
-	// Parse the configuration file.
+	// Set path for the configuration file.
 	let mut path = args.config.clone();
 	if !path.exists() {
 		if let Some(config_path) = dirs::config_dir()
@@ -397,6 +415,7 @@ pub fn generate_changelog(args: &mut Args) -> Result<Changelog<'static>> {
 		}
 	}
 
+	// Parse the configuration file.
 	// Load the default configuration if necessary.
 	let mut config = if let Ok((config, name)) = builtin_config {
 		info!("Using built-in configuration file: {name}");
@@ -405,6 +424,20 @@ pub fn generate_changelog(args: &mut Args) -> Result<Changelog<'static>> {
 		Config::parse(&path)?
 	} else if let Some(contents) = Config::read_from_manifest()? {
 		Config::parse_from_str(&contents)?
+	} else if let Some(discovered_path) =
+		env::current_dir()?.ancestors().find_map(|dir| {
+			let path = dir.join(DEFAULT_CONFIG);
+			if path.is_file() {
+				Some(path)
+			} else {
+				None
+			}
+		}) {
+		info!(
+			"Using configuration from parent directory: {}",
+			discovered_path.display()
+		);
+		Config::parse(&discovered_path)?
 	} else {
 		if !args.context {
 			warn!(

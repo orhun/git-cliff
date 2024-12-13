@@ -57,6 +57,7 @@ env_logger = "=0.10.2"
 pprof = { version = "0.14", optional = true }
 rand = { version = "0.8.4", optional = true }
 url.workspace = true
+pathdiff = "0.2.3"
 
 [dependencies.git-cliff-core]
 version = "2.7.0" # managed by release.sh
