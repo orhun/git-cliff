@@ -77,7 +77,7 @@ impl EventHandler {
 							}
 							CrosstermEvent::FocusGained => Ok(()),
 							CrosstermEvent::FocusLost => Ok(()),
-							CrosstermEvent::Paste(_) => unimplemented!(),
+							CrosstermEvent::Paste(_) => Ok(()),
 						}
 						.expect("failed to send terminal event")
 					}
@@ -134,9 +134,8 @@ pub fn handle_key_events(
 		}
 		KeyCode::Char('l') | KeyCode::Char('L') | KeyCode::Right => {
 			state.scroll_index = state.scroll_index.saturating_add(1);
-
-			state.args.latest = !state.args.latest;
-			sender.send(Event::Generate(true))?;
+			// state.args.latest = !state.args.latest;
+			// sender.send(Event::Generate(true))?;
 		}
 		KeyCode::Enter => sender.send(Event::Generate(false))?,
 		KeyCode::Char('u') | KeyCode::Char('U') => {

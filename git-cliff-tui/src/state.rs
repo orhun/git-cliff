@@ -35,7 +35,7 @@ impl State<'_> {
 	/// Constructs a new instance.
 	pub fn new(args: Args) -> Result<Self> {
 		let configs = BuiltinConfig::iter().map(|file| file.to_string()).collect();
-		Ok(Self {
+		let mut state = Self {
 			builtin_configs: configs,
 			list_state: {
 				let mut list_state = ListState::default();
@@ -55,7 +55,9 @@ impl State<'_> {
 			},
 			is_generating: false,
 			args,
-		})
+		};
+		state.generate_changelog(false)?;
+		Ok(state)
 	}
 
 	/// Returns the changelog contents.
