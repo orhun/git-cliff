@@ -29,6 +29,11 @@ use ratatui::{
 /// Renders the user interface widgets.
 pub fn render(state: &mut State, frame: &mut Frame) {
 	frame.render_widget(
+		Block::new().style(Style::default().bg(Color::Rgb(27, 27, 27))),
+		frame.area(),
+	);
+
+	frame.render_widget(
 		Block::new()
 			.title_top(format!("{} ⛰️", env!("CARGO_PKG_NAME")).bold())
 			.title_alignment(Alignment::Center),
@@ -50,6 +55,20 @@ pub fn render(state: &mut State, frame: &mut Frame) {
 	.split(frame.area());
 	render_list(state, frame, rects[0]);
 	render_changelog(state, frame, rects[1]);
+
+	if !state.logo.is_rendered {
+		render_logo(state, frame);
+	}
+}
+
+fn render_logo(state: &mut State, frame: &mut Frame) {
+	let logo_area = Rect::new(
+		frame.area().width / 2 - state.logo.width / 2,
+		frame.area().height / 2 - state.logo.height / 2,
+		state.logo.width,
+		state.logo.height,
+	);
+	frame.render_widget(&mut state.logo, logo_area);
 }
 
 fn render_list(state: &mut State, frame: &mut Frame, area: Rect) {

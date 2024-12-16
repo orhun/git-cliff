@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::{
 	event::{
 		Event,
@@ -10,6 +12,7 @@ use crate::{
 };
 
 pub mod event;
+pub mod logo;
 pub mod state;
 pub mod ui;
 
@@ -32,6 +35,12 @@ fn main() -> Result<()> {
 	// Start the main loop.
 	loop {
 		terminal.draw(|frame| ui::render(&mut state, frame))?;
+
+		if !state.logo.is_rendered {
+			std::thread::sleep(Duration::from_millis(16));
+			continue;
+		}
+
 		let event = events.receiver.recv()?;
 		match event {
 			Event::Tick => state.tick(),

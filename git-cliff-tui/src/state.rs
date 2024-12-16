@@ -6,6 +6,8 @@ use ratatui::widgets::ListState;
 use std::error;
 use throbber_widgets_tui::ThrobberState;
 
+use crate::logo::Logo;
+
 /// Application result type.
 pub type Result<T> = std::result::Result<T, Box<dyn error::Error>>;
 
@@ -29,6 +31,8 @@ pub struct State<'a> {
 	pub throbber_state:  ThrobberState,
 	/// Is generating?
 	pub is_generating:   bool,
+	/// Logo widget.
+	pub logo:            Logo,
 }
 
 impl State<'_> {
@@ -54,6 +58,7 @@ impl State<'_> {
 				}
 			},
 			is_generating: false,
+			logo: Logo::default(),
 			args,
 		};
 		state.generate_changelog(false)?;
