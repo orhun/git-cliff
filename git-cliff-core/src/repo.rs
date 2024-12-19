@@ -22,6 +22,7 @@ use lazy_regex::{
 };
 use std::io;
 use std::path::PathBuf;
+use std::result::Result as StdResult;
 use url::Url;
 
 /// Regex for replacing the signature part of a tag message.
@@ -83,6 +84,26 @@ impl Repository {
 		path
 	}
 
+	/// Sets the range for the commit search.
+	///
+	/// When a single SHA is provided as the range, start from the
+	/// root.
+	fn set_commit_range(
+		revwalk: &mut git2::Revwalk<'_>,
+		range: Option<&str>,
+	) -> StdResult<(), git2::Error> {
+		if let Some(range) = range {
+			if range.contains("..") {
+				revwalk.push_range(range)?;
+			} else {
+				revwalk.push(Oid::from_str(range)?)?;
+			}
+		} else {
+			revwalk.push_head()?;
+		}
+		Ok(())
+	}
+
 	/// Parses and returns the commits.
 	///
 	/// Sorts the commits by their time.
@@ -94,16 +115,12 @@ impl Repository {
 	) -> Result<Vec<Commit>> {
 		let mut revwalk = self.inner.revwalk()?;
 		revwalk.set_sorting(Sort::TOPOLOGICAL)?;
-		if let Some(range) = range {
-			if range.contains("..") {
-				revwalk.push_range(range)?;
-			} else {
-				// When a single SHA is provided as the "range", start from the root.
-				revwalk.push(Oid::from_str(range)?)?;
-			}
-		} else {
-			revwalk.push_head()?;
-		}
+		Self::set_commit_range(&mut revwalk, range).map_err(|e| {
+			Error::SetCommitRangeError(
+				range.map(String::from).unwrap_or_else(|| "?".to_string()),
+				e,
+			)
+		})?;
 		let mut commits: Vec<Commit> = revwalk
 			.filter_map(|id| id.ok())
 			.filter_map(|id| self.inner.find_commit(id).ok())
