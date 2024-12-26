@@ -380,7 +380,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 			None => EmbeddedConfig::get_config()?,
 		};
 
-		let output_path = if args.config == PathBuf::from(DEFAULT_CONFIG) {
+		let config_path = if args.config == PathBuf::from(DEFAULT_CONFIG) {
 			PathBuf::from(DEFAULT_CONFIG)
 		} else {
 			args.config.clone()
@@ -389,9 +389,9 @@ pub fn run(mut args: Opt) -> Result<()> {
 		info!(
 			"Saving the configuration file{} to {:?}",
 			init_config.map(|v| format!(" ({v})")).unwrap_or_default(),
-			output_path
+			config_path
 		);
-		fs::write(output_path, contents)?;
+		fs::write(config_path, contents)?;
 		return Ok(());
 	}
 
