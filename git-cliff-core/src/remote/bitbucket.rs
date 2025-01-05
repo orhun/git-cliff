@@ -5,15 +5,8 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
-use std::env;
 
 use super::*;
-
-/// Bitbucket REST API url.
-const BITBUCKET_API_URL: &str = "https://api.bitbucket.org/2.0/repositories";
-
-/// Environment variable for overriding the Bitbucket REST API url.
-const BITBUCKET_API_URL_ENV: &str = "BITBUCKET_API_URL";
 
 /// Log message to show while fetching data from Bitbucket.
 pub const START_FETCHING_MSG: &str = "Retrieving data from Bitbucket...";
@@ -187,11 +180,8 @@ impl TryFrom<Remote> for BitbucketClient {
 }
 
 impl RemoteClient for BitbucketClient {
-	fn api_url() -> String {
-		env::var(BITBUCKET_API_URL_ENV)
-			.ok()
-			.unwrap_or_else(|| BITBUCKET_API_URL.to_string())
-	}
+	const API_URL: &'static str = "https://api.bitbucket.org/2.0/repositories";
+	const API_URL_ENV: &'static str = "BITBUCKET_API_URL";
 
 	fn remote(&self) -> Remote {
 		self.remote.clone()

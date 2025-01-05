@@ -48,6 +48,7 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
+use std::env;
 use std::fmt::Debug;
 use std::time::Duration;
 use time::{
@@ -168,8 +169,20 @@ fn create_remote_client(
 
 /// Trait for handling the API connection and fetching.
 pub trait RemoteClient {
+	/// API URL for a particular client
+	const API_URL: &'static str;
+
+	/// Name of the environment variable used to set the API URL to a
+	/// self-hosted instance (if applicable).
+	const API_URL_ENV: &'static str;
+
 	/// Returns the API url.
-	fn api_url() -> String;
+	fn api_url(&self) -> String {
+		env::var(Self::API_URL_ENV)
+			.ok()
+			.or(self.remote().api_url)
+			.unwrap_or_else(|| Self::API_URL.to_string())
+	}
 
 	/// Returns the remote repository information.
 	fn remote(&self) -> Remote;
@@ -188,7 +201,7 @@ pub trait RemoteClient {
 		project_id: i64,
 		page: i32,
 	) -> Result<T> {
-		let url = T::url(project_id, &Self::api_url(), &self.remote(), page);
+		let url = T::url(project_id, &self.api_url(), &self.remote(), page);
 		debug!("Sending request to: {url}");
 		let response = self.client().get(&url).send().await?;
 		let response_text = if response.status().is_success() {
@@ -209,7 +222,7 @@ pub trait RemoteClient {
 		project_id: i64,
 		page: i32,
 	) -> Result<Vec<T>> {
-		let url = T::url(project_id, &Self::api_url(), &self.remote(), page);
+		let url = T::url(project_id, &self.api_url(), &self.remote(), page);
 		debug!("Sending request to: {url}");
 		let response = self.client().get(&url).send().await?;
 		let response_text = if response.status().is_success() {

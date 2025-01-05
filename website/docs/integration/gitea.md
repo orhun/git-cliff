@@ -4,12 +4,6 @@ sidebar_position: 3
 
 # Gitea Integration 🍵
 
-:::warning
-
-This is still an experimental feature, please [report bugs](https://github.com/orhun/git-cliff/issues/new/choose).
-
-:::
-
 :::note
 
 If you have built from source, enable the `gitea` feature flag for the integration to work.
@@ -47,7 +41,7 @@ token = "***"
 
 [Gitea REST API](https://gitea.com/api/swagger) is being used to retrieve data from Gitea.
 It does not require authentication for public repositories. If your project uses a private
-repository, you need to create an access token under *Settings* > *Applications* > *Access tokens*.
+repository, you need to create an access token under _Settings_ > _Applications_ > _Access tokens_.
 
 :::
 

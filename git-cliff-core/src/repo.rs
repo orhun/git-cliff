@@ -40,7 +40,7 @@ const CHANGED_FILES_CACHE: &str = "changed_files_cache";
 pub struct Repository {
 	inner:                    GitRepository,
 	/// Repository path.
-	pub path:                 PathBuf,
+	path:                     PathBuf,
 	/// Cache path for the changed files of the commits.
 	changed_files_cache_path: PathBuf,
 }
@@ -49,7 +49,7 @@ impl Repository {
 	/// Initializes (opens) the repository.
 	pub fn init(path: PathBuf) -> Result<Self> {
 		if path.exists() {
-			let inner = GitRepository::open(&path).or_else(|err| {
+			let inner = GitRepository::discover(&path).or_else(|err| {
 				let jujutsu_path =
 					path.join(".jj").join("repo").join("store").join("git");
 				if jujutsu_path.exists() {
@@ -73,6 +73,15 @@ impl Repository {
 				"repository path not found",
 			)))
 		}
+	}
+
+	/// Returns the path of the repository.
+	pub fn path(&self) -> PathBuf {
+		let mut path = self.inner.path().to_path_buf();
+		if path.ends_with(".git") {
+			path.pop();
+		}
+		path
 	}
 
 	/// Parses and returns the commits.
@@ -357,8 +366,7 @@ impl Repository {
 			.iter()
 			.flatten()
 			.filter(|tag_name| {
-				pattern.is_none() ||
-					pattern.is_some_and(|pat| pat.is_match(tag_name))
+				pattern.as_ref().is_none_or(|pat| pat.is_match(tag_name))
 			})
 			.map(String::from)
 		{
@@ -615,6 +623,7 @@ fn url_path_segments(url: &str) -> Result<Remote> {
 		repo:      repo.to_string(),
 		token:     None,
 		is_custom: false,
+		api_url:   None,
 	})
 }
 
@@ -644,6 +653,7 @@ fn ssh_path_segments(url: &str) -> Result<Remote> {
 		repo:      repo.to_string(),
 		token:     None,
 		is_custom: false,
+		api_url:   None,
 	})
 }
 
@@ -803,6 +813,7 @@ mod test {
 				repo:      String::from("git-cliff"),
 				token:     None,
 				is_custom: false,
+				api_url:   remote.api_url.clone(),
 			},
 			remote
 		);
