@@ -100,15 +100,3 @@ Skip running the commands defined in [pre](/docs/configuration/git#commit_prepro
 # No external command execution
 git cliff --no-exec
 ```
-
-Write default config to cliff.toml:
-
-```bash
-git-cliff --init
-```
-
-Write default config to custom path:
-
-```bash
-git-cliff --config custom.toml --init
-```
