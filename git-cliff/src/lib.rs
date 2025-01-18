@@ -47,7 +47,10 @@ use std::fs::{
 	File,
 };
 use std::io;
-use std::path::Path;
+use std::path::{
+	Path,
+	PathBuf,
+};
 use std::time::{
 	SystemTime,
 	UNIX_EPOCH,
@@ -376,12 +379,19 @@ pub fn run(mut args: Opt) -> Result<()> {
 			Some(ref name) => BuiltinConfig::get_config(name.to_string())?,
 			None => EmbeddedConfig::get_config()?,
 		};
+
+		let config_path = if args.config == PathBuf::from(DEFAULT_CONFIG) {
+			PathBuf::from(DEFAULT_CONFIG)
+		} else {
+			args.config.clone()
+		};
+
 		info!(
 			"Saving the configuration file{} to {:?}",
 			init_config.map(|v| format!(" ({v})")).unwrap_or_default(),
-			DEFAULT_CONFIG
+			config_path
 		);
-		fs::write(DEFAULT_CONFIG, contents)?;
+		fs::write(config_path, contents)?;
 		return Ok(());
 	}
 
