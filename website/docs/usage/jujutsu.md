@@ -4,7 +4,7 @@ sidebar_position: 12
 
 # Jujutsu
 
-You can use with a repository that has been cloned using [jujutsu](https://martinvonz.github.io/jj/latest/).
+You can use with a repository that has been cloned using [jujutsu](https://jj-vcs.github.io/jj/latest/).
 
 ## Colocated
 
@@ -14,7 +14,7 @@ If you don't, then you will likely see an error about an unborn branch.
 
 ## Non-colocated
 
-If the repository was cloned by `jujutsu` but *not* using the `--colocate` option,
+If the repository was cloned by `jujutsu` but _not_ using the `--colocate` option,
 then the Git repository, normally the `.git` directory, is located in `.jj/repo/store/git`
 
 Create a file in the root of your repository that tells Git, and `git-cliff` where the Git repository is
@@ -30,4 +30,3 @@ echo "ref: refs/remotes/origin/master" > .jj/repo/store/git/HEAD
 ```
 
 N.B.: Replace `master` in the last command with the name of your main remote branch. e.g. `main`, `trunk`, etc.
-
