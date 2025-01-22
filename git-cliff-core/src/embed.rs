@@ -62,6 +62,8 @@ impl BuiltinConfig {
 	///
 	/// [`Config`]: Config
 	pub fn parse(name: String) -> Result<(Config, String)> {
-		Ok((toml::from_str(&Self::get_config(name.to_string())?)?, name))
+		let raw_config = Self::get_config(name.to_string())?;
+		let parsed = Config::parse_from_str(&raw_config)?;
+		Ok((parsed, name))
 	}
 }
