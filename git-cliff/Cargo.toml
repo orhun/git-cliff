@@ -53,7 +53,7 @@ clap_mangen = "0.2.26"
 shellexpand = "3.1.0"
 update-informer = { version = "1.2.0", optional = true }
 indicatif = { version = "0.17.9", optional = true }
-env_logger = "=0.10.2"
+env_logger = "=0.11.6"
 pprof = { version = "0.14", optional = true }
 rand = { version = "0.8.4", optional = true }
 url.workspace = true
