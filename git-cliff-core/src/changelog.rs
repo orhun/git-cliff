@@ -226,7 +226,7 @@ impl<'a> Changelog<'a> {
 				.map(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
 				.unwrap_or(false)
 		{
-			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
+			debug!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
 			let github_client =
 				GitHubClient::try_from(self.config.remote.github.clone())?;
 			info!(
@@ -282,7 +282,7 @@ impl<'a> Changelog<'a> {
 				.map(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
 				.unwrap_or(false)
 		{
-			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
+			debug!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
 			let gitlab_client =
 				GitLabClient::try_from(self.config.remote.gitlab.clone())?;
 			info!(
@@ -346,7 +346,7 @@ impl<'a> Changelog<'a> {
 				.map(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
 				.unwrap_or(false)
 		{
-			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
+			debug!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
 			let gitea_client =
 				GiteaClient::try_from(self.config.remote.gitea.clone())?;
 			info!(
@@ -399,7 +399,7 @@ impl<'a> Changelog<'a> {
 				.map(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
 				.unwrap_or(false)
 		{
-			warn!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
+			debug!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
 			let bitbucket_client =
 				BitbucketClient::try_from(self.config.remote.bitbucket.clone())?;
 			info!(
@@ -842,24 +842,28 @@ mod test {
 					repo:      String::from("awesome"),
 					token:     None,
 					is_custom: false,
+					api_url:   None,
 				},
 				gitlab:    Remote {
 					owner:     String::from("coolguy"),
 					repo:      String::from("awesome"),
 					token:     None,
 					is_custom: false,
+					api_url:   None,
 				},
 				gitea:     Remote {
 					owner:     String::from("coolguy"),
 					repo:      String::from("awesome"),
 					token:     None,
 					is_custom: false,
+					api_url:   None,
 				},
 				bitbucket: Remote {
 					owner:     String::from("coolguy"),
 					repo:      String::from("awesome"),
 					token:     None,
 					is_custom: false,
+					api_url:   None,
 				},
 			},
 			bump:      Bump::default(),

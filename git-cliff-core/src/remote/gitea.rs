@@ -5,15 +5,8 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
-use std::env;
 
 use super::*;
-
-/// Gitea API url.
-const GITEA_API_URL: &str = "https://codeberg.org";
-
-/// Environment variable for overriding the Gitea REST API url.
-const GITEA_API_URL_ENV: &str = "GITEA_API_URL";
 
 /// Log message to show while fetching data from Gitea.
 pub const START_FETCHING_MSG: &str = "Retrieving data from Gitea...";
@@ -151,11 +144,8 @@ impl TryFrom<Remote> for GiteaClient {
 }
 
 impl RemoteClient for GiteaClient {
-	fn api_url() -> String {
-		env::var(GITEA_API_URL_ENV)
-			.ok()
-			.unwrap_or_else(|| GITEA_API_URL.to_string())
-	}
+	const API_URL: &'static str = "https://codeberg.org";
+	const API_URL_ENV: &'static str = "GITEA_API_URL";
 
 	fn remote(&self) -> Remote {
 		self.remote.clone()

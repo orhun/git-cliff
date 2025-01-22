@@ -9,6 +9,9 @@ The default [configuration file](/docs/configuration) (`cliff.toml`) can be gene
 ```bash
 # create cliff.toml
 git cliff --init
+
+# create a config file with a custom name
+git-cliff --init --config custom.toml
 ```
 
 There are also other templates under the [examples](https://github.com/orhun/git-cliff/blob/main/examples) directory. See the [template examples](/docs/templating/examples) for previewing the templates.

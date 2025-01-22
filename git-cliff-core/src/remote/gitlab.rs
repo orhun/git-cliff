@@ -5,15 +5,8 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
-use std::env;
 
 use super::*;
-
-/// GitLab REST API url.
-const GITLAB_API_URL: &str = "https://gitlab.com/api/v4";
-
-/// Environment variable for overriding the GitLab REST API url.
-const GITLAB_API_URL_ENV: &str = "GITLAB_API_URL";
 
 /// Log message to show while fetching data from GitLab.
 pub const START_FETCHING_MSG: &str = "Retrieving data from GitLab...";
@@ -177,7 +170,7 @@ impl RemotePullRequest for GitLabMergeRequest {
 	}
 
 	fn merge_commit(&self) -> Option<String> {
-		self.merge_commit_sha.clone()
+		self.merge_commit_sha.clone().or(Some(self.sha.clone()))
 	}
 }
 
@@ -248,11 +241,8 @@ impl TryFrom<Remote> for GitLabClient {
 }
 
 impl RemoteClient for GitLabClient {
-	fn api_url() -> String {
-		env::var(GITLAB_API_URL_ENV)
-			.ok()
-			.unwrap_or_else(|| GITLAB_API_URL.to_string())
-	}
+	const API_URL: &'static str = "https://gitlab.com/api/v4";
+	const API_URL_ENV: &'static str = "GITLAB_API_URL";
 
 	fn remote(&self) -> Remote {
 		self.remote.clone()
@@ -319,5 +309,14 @@ mod test {
 		};
 
 		assert_eq!(Some(1626610479), remote_commit.timestamp());
+	}
+
+	#[test]
+	fn merge_request_no_merge_commit() {
+		let mr = GitLabMergeRequest {
+			sha: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+			..Default::default()
+		};
+		assert!(mr.merge_commit().is_some());
 	}
 }

@@ -1,6 +1,6 @@
 [package]
 name = "git-cliff"
-version = "2.6.1" # managed by release.sh
+version = "2.7.0" # managed by release.sh
 description = "A highly customizable changelog generator ⛰️"
 authors = ["git-cliff contributors <git-cliff@protonmail.com>"]
 license = "MIT OR Apache-2.0"
@@ -11,7 +11,7 @@ keywords = ["changelog", "generator", "conventional", "commit"]
 categories = ["command-line-utilities"]
 default-run = "git-cliff"
 edition = "2021"
-rust-version = "1.75.0"
+rust-version = "1.83.0"
 
 [[bin]]
 name = "git-cliff-completions"
@@ -47,19 +47,20 @@ log.workspace = true
 secrecy.workspace = true
 lazy_static.workspace = true
 dirs.workspace = true
-clap = { version = "4.5.19", features = ["derive", "env", "wrap_help", "cargo"] }
-clap_complete = "4.5.29"
-clap_mangen = "0.2.23"
+clap = { version = "4.5.27", features = ["derive", "env", "wrap_help", "cargo"] }
+clap_complete = "4.5.42"
+clap_mangen = "0.2.26"
 shellexpand = "3.1.0"
-update-informer = { version = "1.1.0", optional = true }
-indicatif = { version = "0.17.8", optional = true }
+update-informer = { version = "1.2.0", optional = true }
+indicatif = { version = "0.17.9", optional = true }
 env_logger = "=0.10.2"
-pprof = { version = "0.13", optional = true }
+pprof = { version = "0.14", optional = true }
 rand = { version = "0.8.4", optional = true }
 url.workspace = true
+pathdiff = "0.2.3"
 
 [dependencies.git-cliff-core]
-version = "2.6.1" # managed by release.sh
+version = "2.7.0" # managed by release.sh
 path = "../git-cliff-core"
 
 [dev-dependencies]

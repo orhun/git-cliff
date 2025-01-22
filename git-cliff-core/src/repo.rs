@@ -22,6 +22,7 @@ use lazy_regex::{
 };
 use std::io;
 use std::path::PathBuf;
+use std::result::Result as StdResult;
 use url::Url;
 
 /// Regex for replacing the signature part of a tag message.
@@ -39,7 +40,7 @@ const CHANGED_FILES_CACHE: &str = "changed_files_cache";
 pub struct Repository {
 	inner:                    GitRepository,
 	/// Repository path.
-	pub path:                 PathBuf,
+	path:                     PathBuf,
 	/// Cache path for the changed files of the commits.
 	changed_files_cache_path: PathBuf,
 }
@@ -48,7 +49,7 @@ impl Repository {
 	/// Initializes (opens) the repository.
 	pub fn init(path: PathBuf) -> Result<Self> {
 		if path.exists() {
-			let inner = GitRepository::open(&path).or_else(|err| {
+			let inner = GitRepository::discover(&path).or_else(|err| {
 				let jujutsu_path =
 					path.join(".jj").join("repo").join("store").join("git");
 				if jujutsu_path.exists() {
@@ -74,6 +75,35 @@ impl Repository {
 		}
 	}
 
+	/// Returns the path of the repository.
+	pub fn path(&self) -> PathBuf {
+		let mut path = self.inner.path().to_path_buf();
+		if path.ends_with(".git") {
+			path.pop();
+		}
+		path
+	}
+
+	/// Sets the range for the commit search.
+	///
+	/// When a single SHA is provided as the range, start from the
+	/// root.
+	fn set_commit_range(
+		revwalk: &mut git2::Revwalk<'_>,
+		range: Option<&str>,
+	) -> StdResult<(), git2::Error> {
+		if let Some(range) = range {
+			if range.contains("..") {
+				revwalk.push_range(range)?;
+			} else {
+				revwalk.push(Oid::from_str(range)?)?;
+			}
+		} else {
+			revwalk.push_head()?;
+		}
+		Ok(())
+	}
+
 	/// Parses and returns the commits.
 	///
 	/// Sorts the commits by their time.
@@ -85,16 +115,12 @@ impl Repository {
 	) -> Result<Vec<Commit>> {
 		let mut revwalk = self.inner.revwalk()?;
 		revwalk.set_sorting(Sort::TOPOLOGICAL)?;
-		if let Some(range) = range {
-			if range.contains("..") {
-				revwalk.push_range(range)?;
-			} else {
-				// When a single SHA is provided as the "range", start from the root.
-				revwalk.push(Oid::from_str(range)?)?;
-			}
-		} else {
-			revwalk.push_head()?;
-		}
+		Self::set_commit_range(&mut revwalk, range).map_err(|e| {
+			Error::SetCommitRangeError(
+				range.map(String::from).unwrap_or_else(|| "?".to_string()),
+				e,
+			)
+		})?;
 		let mut commits: Vec<Commit> = revwalk
 			.filter_map(|id| id.ok())
 			.filter_map(|id| self.inner.find_commit(id).ok())
@@ -356,7 +382,7 @@ impl Repository {
 			.iter()
 			.flatten()
 			.filter(|tag_name| {
-				pattern.as_ref().map_or(true, |pat| pat.is_match(tag_name))
+				pattern.as_ref().is_none_or(|pat| pat.is_match(tag_name))
 			})
 			.map(String::from)
 		{
@@ -475,6 +501,7 @@ fn url_path_segments(url: &str) -> Result<Remote> {
 		repo:      repo.to_string(),
 		token:     None,
 		is_custom: false,
+		api_url:   None,
 	})
 }
 
@@ -504,6 +531,7 @@ fn ssh_path_segments(url: &str) -> Result<Remote> {
 		repo:      repo.to_string(),
 		token:     None,
 		is_custom: false,
+		api_url:   None,
 	})
 }
 
@@ -664,6 +692,7 @@ mod test {
 				repo:      String::from("git-cliff"),
 				token:     None,
 				is_custom: false,
+				api_url:   remote.api_url.clone(),
 			},
 			remote
 		);
