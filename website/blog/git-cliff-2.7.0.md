@@ -29,7 +29,7 @@ The full changelog can be found [here](https://github.com/orhun/git-cliff/blob/m
 
 ### 🥋 Jujutsu Support
 
-`git-cliff` now supports opening a repository that has been cloned using [Jujutsu](https://martinvonz.github.io/jj/latest/)!
+`git-cliff` now supports opening a repository that has been cloned using [Jujutsu](https://jj-vcs.github.io/jj/latest/)!
 
 For example:
 
@@ -140,9 +140,9 @@ See the related discussion [here](https://github.com/orhun/git-cliff/issues/879)
 
 ### ❄️ Nix environment
 
-We now have a basic and reproducible dev environment using Nix along with CI checks for it.
+We now have a basic and reproducible dev environment using Nix along with CI checks for it!
 
-Here is the Nix flake and you can use it by running `nix build` and `nix run` commands.
+[Here](https://github.com/orhun/git-cliff/blob/main/flake.nix) is the Nix flake and you can use it by running `nix build` and `nix run` commands.
 
 ---
 

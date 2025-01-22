@@ -4,16 +4,18 @@ sidebar_position: 5
 
 # Monorepos
 
-You can generate a changelog scoped to a specific directory via `--include-path` and `--exclude-path`.
-
-This requires changing the current working directory to the target folder. The included/excluded paths must be relative to the repository's root.
+You can generate a changelog scoped to a specific directory by just switching to that directory:
 
 ```bash
 cd packages/some_library
-git cliff --include-path "packages/some_library/**/*" --repository "../../"
+git cliff
 ```
+
+To include/exclude specific paths, use the `--include-path` and `--exclude-path` arguments:
 
 ```bash
 cd packages/some_library
-git cliff --include-path "packages/some_library/**/*" --repository "../../" --exclude-path ".github/*"
+git cliff --include-path "packages/some_library/**/*" --exclude-path ".github/*"
 ```
+
+These paths must be relative to the repository's root and should be a valid glob pattern.
