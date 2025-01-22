@@ -4,7 +4,7 @@ members = ["git-cliff-core", "git-cliff"]
 
 [workspace.dependencies]
 regex = "1.11.1"
-glob = "0.3.1"
+glob = "0.3.2"
 log = "0.4.21"
 secrecy = { version = "0.8.0", features = ["serde"] }
 lazy_static = "1.5.0"
