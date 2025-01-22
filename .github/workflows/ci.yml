@@ -93,7 +93,10 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --tests --verbose -- -D warnings
+          args: >
+            --tests --verbose --
+              -D warnings
+              -A clippy::literal_string_with_formatting_args
       - name: Check the pedantic lints
         uses: actions-rs/cargo@v1
         with:
