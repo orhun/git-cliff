@@ -5,15 +5,8 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
-use std::env;
 
 use super::*;
-
-/// Gitea API url.
-const GITEA_API_URL: &str = "https://codeberg.org";
-
-/// Environment variable for overriding the Gitea REST API url.
-const GITEA_API_URL_ENV: &str = "GITEA_API_URL";
 
 /// Log message to show while fetching data from Gitea.
 pub const START_FETCHING_MSG: &str = "Retrieving data from Gitea...";
@@ -29,9 +22,11 @@ pub(crate) const TEMPLATE_VARIABLES: &[&str] =
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GiteaCommit {
 	/// SHA.
-	pub sha:    String,
+	pub sha:     String,
 	/// Author of the commit.
-	pub author: Option<GiteaCommitAuthor>,
+	pub author:  Option<GiteaCommitAuthor>,
+	/// Timestamp of the commit.
+	pub created: String,
 }
 
 impl RemoteCommit for GiteaCommit {
@@ -41,6 +36,10 @@ impl RemoteCommit for GiteaCommit {
 
 	fn username(&self) -> Option<String> {
 		self.author.clone().and_then(|v| v.login)
+	}
+
+	fn timestamp(&self) -> Option<i64> {
+		Some(self.convert_to_unix_timestamp(self.created.clone().as_str()))
 	}
 }
 
@@ -145,11 +144,8 @@ impl TryFrom<Remote> for GiteaClient {
 }
 
 impl RemoteClient for GiteaClient {
-	fn api_url() -> String {
-		env::var(GITEA_API_URL_ENV)
-			.ok()
-			.unwrap_or_else(|| GITEA_API_URL.to_string())
-	}
+	const API_URL: &'static str = "https://codeberg.org";
+	const API_URL_ENV: &'static str = "GITEA_API_URL";
 
 	fn remote(&self) -> Remote {
 		self.remote.clone()
@@ -181,5 +177,25 @@ impl GiteaClient {
 			.into_iter()
 			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
 			.collect())
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use super::*;
+	use crate::remote::RemoteCommit;
+	use pretty_assertions::assert_eq;
+
+	#[test]
+	fn timestamp() {
+		let remote_commit = GiteaCommit {
+			sha:     String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+			author:  Some(GiteaCommitAuthor {
+				login: Some(String::from("orhun")),
+			}),
+			created: String::from("2021-07-18T15:14:39+03:00"),
+		};
+
+		assert_eq!(Some(1626610479), remote_commit.timestamp());
 	}
 }

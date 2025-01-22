@@ -33,6 +33,7 @@ jobs:
             command: --latest
           - fixtures-name: test-commit-footers
           - fixtures-name: test-commit-preprocessors
+          - fixtures-name: test-conventional-commit
           - fixtures-name: test-custom-scope
           - fixtures-name: test-limit-commits
           - fixtures-name: test-skip-breaking-changes
@@ -93,12 +94,18 @@ jobs:
             command: --bump --unreleased --with-tag-message "Some text"
           - fixtures-name: test-from-context
             command: --from-context context.json
+          - fixtures-name: test-from-context-does-not-discard-fields
+            command: --from-context context.json
           - fixtures-name: test-always-render-unreleased
             command: --unreleased
           - fixtures-name: test-always-render
             command: --unreleased --tag v0.2.0
           - fixtures-name: test-unchanged-tag-date
             command: --tag v0.2.0
+          - fixtures-name: test-custom-remote-api-url
+            command: v1.4.0..v1.4.1
+          - fixtures-name: test-monorepo-include-path
+            command: v2.6.1..v2.7.0 --include-path .github/fixtures/
 
     steps:
       - name: Checkout

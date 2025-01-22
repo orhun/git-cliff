@@ -57,7 +57,8 @@ following context is generated to use for templating:
         "name": "User Name",
         "email": "user.email@example.com",
         "timestamp": 1660330071
-      }
+      },
+      "raw_message": "<type>[scope]: <description>\n[body]\n[footer(s)]"
     }
   ],
   "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210 (release commit)",
@@ -152,7 +153,8 @@ If [`conventional_commits`](/docs/configuration/git#conventional_commits) is set
         "name": "User Name",
         "email": "user.email@example.com",
         "timestamp": 1660330071
-      }
+      },
+      "raw_message": "(full commit message including description, footers, etc.)"
     }
   ],
   "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210 (release commit)",

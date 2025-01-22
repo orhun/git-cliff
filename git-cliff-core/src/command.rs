@@ -23,6 +23,7 @@ pub fn run(
 	input: Option<String>,
 	envs: Vec<(&str, &str)>,
 ) -> Result<String> {
+	log::trace!("Running command: {:?}", command);
 	let mut child = if cfg!(target_os = "windows") {
 		Command::new("cmd")
 			.envs(envs)
@@ -71,6 +72,7 @@ pub fn run(
 #[cfg(test)]
 mod test {
 	use super::*;
+
 	#[test]
 	#[cfg(target_family = "unix")]
 	fn run_os_command() -> Result<()> {

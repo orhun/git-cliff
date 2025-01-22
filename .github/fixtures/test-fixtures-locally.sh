@@ -12,7 +12,7 @@ export FIXTURES_DIR="$SCRIPT_DIR/$1"
 
 # Set up a temporary repository
 cd "$(mktemp -d)"
-git init
+git init >&2
 
 # Commit
 "$FIXTURES_DIR/commit.sh"
@@ -31,5 +31,5 @@ if [ -n "$MSYSTEM" ] && [ "$MSYSTEM" = "MINGW64" ]; then
 fi
 
 # Show results
-echo -e "\n---Run git-cliff---"
+echo -e "\n---Run git-cliff---" >&2
 cargo run --manifest-path "$SCRIPT_DIR/../../Cargo.toml" -- -vv --config "$FIXTURES_DIR/cliff.toml" "${@:2}"

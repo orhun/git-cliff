@@ -21,6 +21,7 @@ function HomepageHeader() {
               Get Started
             </Link>
           </div>
+          <Testimonials />
         </div>
       </div>
     </header>
@@ -71,7 +72,6 @@ export default function Home(): JSX.Element {
       <HomepageHeader />
       <main>
         <HomepageFeatures />
-        <Testimonials />
       </main>
     </Layout>
   );

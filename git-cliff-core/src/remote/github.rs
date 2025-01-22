@@ -5,15 +5,8 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
-use std::env;
 
 use super::*;
-
-/// GitHub REST API url.
-const GITHUB_API_URL: &str = "https://api.github.com";
-
-/// Environment variable for overriding the GitHub REST API url.
-const GITHUB_API_URL_ENV: &str = "GITHUB_API_URL";
 
 /// Log message to show while fetching data from GitHub.
 pub const START_FETCHING_MSG: &str = "Retrieving data from GitHub...";
@@ -32,6 +25,22 @@ pub struct GitHubCommit {
 	pub sha:    String,
 	/// Author of the commit.
 	pub author: Option<GitHubCommitAuthor>,
+	/// Details of the commit
+	pub commit: Option<GitHubCommitDetails>,
+}
+
+/// Representation of subset of commit details
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GitHubCommitDetails {
+	/// Author of the commit
+	pub author: GitHubCommitDetailsAuthor,
+}
+
+/// Representation of subset of commit author details
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GitHubCommitDetailsAuthor {
+	/// Date of the commit
+	pub date: String,
 }
 
 impl RemoteCommit for GitHubCommit {
@@ -41,6 +50,12 @@ impl RemoteCommit for GitHubCommit {
 
 	fn username(&self) -> Option<String> {
 		self.author.clone().and_then(|v| v.login)
+	}
+
+	fn timestamp(&self) -> Option<i64> {
+		self.commit
+			.clone()
+			.map(|f| self.convert_to_unix_timestamp(f.author.date.clone().as_str()))
 	}
 }
 
@@ -144,11 +159,8 @@ impl TryFrom<Remote> for GitHubClient {
 }
 
 impl RemoteClient for GitHubClient {
-	fn api_url() -> String {
-		env::var(GITHUB_API_URL_ENV)
-			.ok()
-			.unwrap_or_else(|| GITHUB_API_URL.to_string())
-	}
+	const API_URL: &'static str = "https://api.github.com";
+	const API_URL_ENV: &'static str = "GITHUB_API_URL";
 
 	fn remote(&self) -> Remote {
 		self.remote.clone()
@@ -180,5 +192,29 @@ impl GitHubClient {
 			.into_iter()
 			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
 			.collect())
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use super::*;
+	use crate::remote::RemoteCommit;
+	use pretty_assertions::assert_eq;
+
+	#[test]
+	fn timestamp() {
+		let remote_commit = GitHubCommit {
+			sha:    String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+			author: Some(GitHubCommitAuthor {
+				login: Some(String::from("orhun")),
+			}),
+			commit: Some(GitHubCommitDetails {
+				author: GitHubCommitDetailsAuthor {
+					date: String::from("2021-07-18T15:14:39+03:00"),
+				},
+			}),
+		};
+
+		assert_eq!(Some(1626610479), remote_commit.timestamp());
 	}
 }

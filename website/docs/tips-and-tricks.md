@@ -40,7 +40,7 @@ Then strip the tags in the template with the series of filters:
 ## Filter merge commits
 
 ```jinja2
-{% for group, commits in commits | filter(attribute="merge_commit", value=false) %}
+{% for group, commits in commits | filter(attribute="merge_commit", value=false) | group_by(attribute="group") %}
 ```
 
 ## Remove gitmoji
