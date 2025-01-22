@@ -1,8 +1,8 @@
-//! A highly customizable changelog generator ⛰️
 #![doc(
 	html_logo_url = "https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff.png",
 	html_favicon_url = "https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/favicon/favicon.ico"
 )]
+//! A highly customizable changelog generator ⛰️
 
 /// Command-line argument parser.
 pub mod args;
@@ -358,7 +358,7 @@ fn process_repository<'a>(
 		if let Some(latest_release) = releases
 			.iter_mut()
 			.filter(|release| !release.commits.is_empty())
-			.last()
+			.next_back()
 		{
 			latest_release.message = Some(message.to_owned());
 		}
