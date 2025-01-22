@@ -2,6 +2,7 @@
 	html_logo_url = "https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff.png",
 	html_favicon_url = "https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/favicon/favicon.ico"
 )]
+#![allow(clippy::literal_string_with_formatting_args)]
 //! A highly customizable changelog generator ⛰️
 
 /// Command-line argument parser.
