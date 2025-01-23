@@ -234,7 +234,7 @@ impl TryFrom<Remote> for GitLabClient {
 	type Error = Error;
 	fn try_from(remote: Remote) -> Result<Self> {
 		Ok(Self {
-			client: create_remote_client(&remote, "application/json")?,
+			client: remote.create_client("application/json")?,
 			remote,
 		})
 	}

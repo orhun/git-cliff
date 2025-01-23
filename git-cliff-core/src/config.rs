@@ -167,23 +167,45 @@ impl RemoteConfig {
 		}
 		false
 	}
+
+	/// Enables the native TLS for all remotes.
+	pub fn enable_native_tls(&mut self) {
+		#[cfg(feature = "github")]
+		{
+			self.github.native_tls = Some(true);
+		}
+		#[cfg(feature = "gitlab")]
+		{
+			self.gitlab.native_tls = Some(true);
+		}
+		#[cfg(feature = "gitea")]
+		{
+			self.gitea.native_tls = Some(true);
+		}
+		#[cfg(feature = "bitbucket")]
+		{
+			self.bitbucket.native_tls = Some(true);
+		}
+	}
 }
 
 /// A single remote.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Remote {
 	/// Owner of the remote.
-	pub owner:     String,
+	pub owner:      String,
 	/// Repository name.
-	pub repo:      String,
+	pub repo:       String,
 	/// Access token.
 	#[serde(skip_serializing)]
-	pub token:     Option<SecretString>,
+	pub token:      Option<SecretString>,
 	/// Whether if the remote is set manually.
 	#[serde(skip_deserializing, default = "default_true")]
-	pub is_custom: bool,
+	pub is_custom:  bool,
 	/// Remote API URL.
-	pub api_url:   Option<String>,
+	pub api_url:    Option<String>,
+	/// Whether to use native TLS.
+	pub native_tls: Option<bool>,
 }
 
 /// Returns `true` for serde's `default` attribute.
@@ -207,11 +229,12 @@ impl Remote {
 	/// Constructs a new instance.
 	pub fn new<S: Into<String>>(owner: S, repo: S) -> Self {
 		Self {
-			owner:     owner.into(),
-			repo:      repo.into(),
-			token:     None,
-			is_custom: false,
-			api_url:   None,
+			owner:      owner.into(),
+			repo:       repo.into(),
+			token:      None,
+			is_custom:  false,
+			api_url:    None,
+			native_tls: None,
 		}
 	}
 

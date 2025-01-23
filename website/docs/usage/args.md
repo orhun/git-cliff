@@ -22,6 +22,7 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
     --use-branch-tags  Include only the tags that belong to the current branch
     --no-exec          Disables the external command execution
 -x, --context          Prints changelog context as JSON
+    --use-native-tls   Load TLS certificates from the native certificate store
 ```
 
 ## Options
