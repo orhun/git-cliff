@@ -97,6 +97,7 @@ jobs:
             --tests --verbose --
               -D warnings
               -A clippy::literal_string_with_formatting_args
+              -A clippy::tabs_in_doc_comments
       - name: Check the pedantic lints
         uses: actions-rs/cargo@v1
         with:
