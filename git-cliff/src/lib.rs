@@ -157,6 +157,9 @@ fn process_repository<'a>(
 			}
 		}
 	}
+	if args.use_native_tls {
+		config.remote.enable_native_tls();
+	}
 
 	// Print debug information about configuration and arguments.
 	log::trace!("Arguments: {:#?}", args);

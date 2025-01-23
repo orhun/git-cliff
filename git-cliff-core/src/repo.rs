@@ -497,11 +497,12 @@ fn url_path_segments(url: &str) -> Result<Remote> {
 		)));
 	};
 	Ok(Remote {
-		owner:     owner.to_string(),
-		repo:      repo.to_string(),
-		token:     None,
-		is_custom: false,
-		api_url:   None,
+		owner:      owner.to_string(),
+		repo:       repo.to_string(),
+		token:      None,
+		is_custom:  false,
+		api_url:    None,
+		native_tls: None,
 	})
 }
 
@@ -527,11 +528,12 @@ fn ssh_path_segments(url: &str) -> Result<Remote> {
 		)));
 	};
 	Ok(Remote {
-		owner:     owner.to_string(),
-		repo:      repo.to_string(),
-		token:     None,
-		is_custom: false,
-		api_url:   None,
+		owner:      owner.to_string(),
+		repo:       repo.to_string(),
+		token:      None,
+		is_custom:  false,
+		api_url:    None,
+		native_tls: None,
 	})
 }
 
@@ -688,11 +690,12 @@ mod test {
 		let remote = repository.upstream_remote()?;
 		assert_eq!(
 			Remote {
-				owner:     remote.owner.clone(),
-				repo:      String::from("git-cliff"),
-				token:     None,
-				is_custom: false,
-				api_url:   remote.api_url.clone(),
+				owner:      remote.owner.clone(),
+				repo:       String::from("git-cliff"),
+				token:      None,
+				is_custom:  false,
+				api_url:    remote.api_url.clone(),
+				native_tls: None,
 			},
 			remote
 		);

@@ -343,6 +343,9 @@ pub struct Opt {
 		hide = !cfg!(feature = "bitbucket"),
 	)]
 	pub bitbucket_repo:   Option<RemoteValue>,
+	/// Load TLS certificates from the native certificate store.
+	#[arg(long, help_heading = Some("FLAGS"), hide = !cfg!(feature = "remote"))]
+	pub use_native_tls:   bool,
 }
 
 /// Custom type for the remote value.

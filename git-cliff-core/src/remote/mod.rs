@@ -124,47 +124,52 @@ pub struct RemoteReleaseMetadata {
 	pub contributors: Vec<RemoteContributor>,
 }
 
-/// Creates a HTTP client for the remote.
-fn create_remote_client(
-	remote: &Remote,
-	accept_header: &str,
-) -> Result<ClientWithMiddleware> {
-	if !remote.is_set() {
-		return Err(Error::RemoteNotSetError);
-	}
-	let mut headers = HeaderMap::new();
-	headers.insert(
-		reqwest::header::ACCEPT,
-		HeaderValue::from_str(accept_header)?,
-	);
-	if let Some(token) = &remote.token {
+impl Remote {
+	/// Creates a HTTP client for the remote.
+	fn create_client(&self, accept_header: &str) -> Result<ClientWithMiddleware> {
+		if !self.is_set() {
+			return Err(Error::RemoteNotSetError);
+		}
+		let mut headers = HeaderMap::new();
 		headers.insert(
-			reqwest::header::AUTHORIZATION,
-			format!("Bearer {}", token.expose_secret()).parse()?,
+			reqwest::header::ACCEPT,
+			HeaderValue::from_str(accept_header)?,
 		);
+		if let Some(token) = &self.token {
+			headers.insert(
+				reqwest::header::AUTHORIZATION,
+				format!("Bearer {}", token.expose_secret()).parse()?,
+			);
+		}
+		headers.insert(reqwest::header::USER_AGENT, USER_AGENT.parse()?);
+		let client_builder = Client::builder()
+			.timeout(Duration::from_secs(REQUEST_TIMEOUT))
+			.tcp_keepalive(Duration::from_secs(REQUEST_KEEP_ALIVE))
+			.default_headers(headers)
+			.tls_built_in_root_certs(false);
+		let client_builder = if self.native_tls.unwrap_or(false) {
+			client_builder.tls_built_in_native_certs(true)
+		} else {
+			client_builder.tls_built_in_webpki_certs(true)
+		};
+		let client = client_builder.build()?;
+		let client = ClientBuilder::new(client)
+			.with(Cache(HttpCache {
+				mode:    CacheMode::Default,
+				manager: CACacheManager {
+					path: dirs::cache_dir()
+						.ok_or_else(|| {
+							Error::DirsError(String::from(
+								"failed to find the user's cache directory",
+							))
+						})?
+						.join(env!("CARGO_PKG_NAME")),
+				},
+				options: HttpCacheOptions::default(),
+			}))
+			.build();
+		Ok(client)
 	}
-	headers.insert(reqwest::header::USER_AGENT, USER_AGENT.parse()?);
-	let client = Client::builder()
-		.timeout(Duration::from_secs(REQUEST_TIMEOUT))
-		.tcp_keepalive(Duration::from_secs(REQUEST_KEEP_ALIVE))
-		.default_headers(headers)
-		.build()?;
-	let client = ClientBuilder::new(client)
-		.with(Cache(HttpCache {
-			mode:    CacheMode::Default,
-			manager: CACacheManager {
-				path: dirs::cache_dir()
-					.ok_or_else(|| {
-						Error::DirsError(String::from(
-							"failed to find the user's cache directory",
-						))
-					})?
-					.join(env!("CARGO_PKG_NAME")),
-			},
-			options: HttpCacheOptions::default(),
-		}))
-		.build();
-	Ok(client)
 }
 
 /// Trait for handling the API connection and fetching.

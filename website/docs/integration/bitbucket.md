@@ -59,6 +59,14 @@ You can use the `BITBUCKET_API_URL` environment variable want to override the AP
 
 :::
 
+:::tip
+
+If you are using a certificate that is not included in the default trust store, you can use the `--use-native-tls` flag to load certificates from the platform's native certificate store.
+
+It is also possible to configure this in the configuration file, see the [remote configuration](/docs/configuration/remote#native_tls) for more information.
+
+:::
+
 ## Templating
 
 :::tip

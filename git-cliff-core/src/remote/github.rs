@@ -152,7 +152,7 @@ impl TryFrom<Remote> for GitHubClient {
 	type Error = Error;
 	fn try_from(remote: Remote) -> Result<Self> {
 		Ok(Self {
-			client: create_remote_client(&remote, "application/vnd.github+json")?,
+			client: remote.create_client("application/vnd.github+json")?,
 			remote,
 		})
 	}
