@@ -97,6 +97,7 @@ jobs:
             --tests --verbose --
               -D warnings
               -A clippy::literal_string_with_formatting_args
+              -A clippy::tabs_in_doc_comments
       - name: Check the pedantic lints
         uses: actions-rs/cargo@v1
         with:
@@ -136,6 +137,22 @@ jobs:
         with:
           command: fmt
           args: --all -- --check --verbose
+
+  doctest:
+    name: Doctests
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Check the formatting
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --doc
 
   lychee:
     name: Links

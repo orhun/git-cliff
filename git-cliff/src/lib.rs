@@ -368,7 +368,51 @@ fn process_repository<'a>(
 }
 
 /// Runs `git-cliff`.
-pub fn run(mut args: Opt) -> Result<()> {
+///
+/// # Example
+///
+/// ```no_run
+/// use clap::Parser;
+/// use git_cliff::args::Opt;
+/// use git_cliff_core::error::Result;
+///
+/// fn main() -> Result<()> {
+/// 	let args = Opt::parse();
+/// 	git_cliff::run(args)?;
+/// 	Ok(())
+/// }
+/// ```
+pub fn run(args: Opt) -> Result<()> {
+	run_with_changelog_modifier(args, |_| Ok(()))
+}
+
+/// Runs `git-cliff` with a changelog modifier.
+///
+/// This is useful if you want to modify the [`Changelog`] before
+/// it's written or the context is printed (depending how git-cliff is started).
+///
+/// # Example
+///
+/// ```no_run
+/// use clap::Parser;
+/// use git_cliff::args::Opt;
+/// use git_cliff_core::error::Result;
+///
+/// fn main() -> Result<()> {
+/// 	let args = Opt::parse();
+///
+/// 	git_cliff::run_with_changelog_modifier(args, |changelog| {
+/// 		println!("Releases: {:?}", changelog.releases);
+/// 		Ok(())
+/// 	})?;
+///
+/// 	Ok(())
+/// }
+/// ```
+pub fn run_with_changelog_modifier(
+	mut args: Opt,
+	changelog_modifier: impl FnOnce(&mut Changelog) -> Result<()>,
+) -> Result<()> {
 	// Check if there is a new version available.
 	#[cfg(feature = "update-informer")]
 	check_new_version();
@@ -633,6 +677,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 		Changelog::new(releases, &config)?
 	};
+	changelog_modifier(&mut changelog)?;
 
 	// Print the result.
 	let mut out: Box<dyn io::Write> = if let Some(path) = &output {
