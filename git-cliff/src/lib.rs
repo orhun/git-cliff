@@ -220,7 +220,10 @@ fn process_repository<'a>(
 	if let Some(mut path_diff) =
 		pathdiff::diff_paths(env::current_dir()?, repository.path())
 	{
-		if include_path.is_none() && path_diff != Path::new("") {
+		if args.workdir.is_none() &&
+			include_path.is_none() &&
+			path_diff != Path::new("")
+		{
 			info!(
 				"Including changes from the current directory: {:?}",
 				path_diff.display()
