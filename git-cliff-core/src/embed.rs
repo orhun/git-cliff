@@ -47,7 +47,7 @@ impl BuiltinConfig {
 	pub fn get_config(mut name: String) -> Result<String> {
 		if !Path::new(&name)
 			.extension()
-			.map_or(false, |ext| ext.eq_ignore_ascii_case("toml"))
+			.is_some_and(|ext| ext.eq_ignore_ascii_case("toml"))
 		{
 			name = format!("{name}.toml");
 		}
@@ -62,6 +62,8 @@ impl BuiltinConfig {
 	///
 	/// [`Config`]: Config
 	pub fn parse(name: String) -> Result<(Config, String)> {
-		Ok((toml::from_str(&Self::get_config(name.to_string())?)?, name))
+		let raw_config = Self::get_config(name.to_string())?;
+		let parsed = Config::parse_from_str(&raw_config)?;
+		Ok((parsed, name))
 	}
 }

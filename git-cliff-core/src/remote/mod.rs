@@ -48,8 +48,13 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
+use std::env;
 use std::fmt::Debug;
 use std::time::Duration;
+use time::{
+	format_description::well_known::Rfc3339,
+	OffsetDateTime,
+};
 
 /// User agent for interacting with the GitHub API.
 ///
@@ -82,6 +87,14 @@ pub trait RemoteCommit: DynClone {
 	fn id(&self) -> String;
 	/// Commit author.
 	fn username(&self) -> Option<String>;
+	/// Timestamp.
+	fn timestamp(&self) -> Option<i64>;
+	/// Convert date in RFC3339 format to unix timestamp
+	fn convert_to_unix_timestamp(&self, date: &str) -> i64 {
+		OffsetDateTime::parse(date, &Rfc3339)
+			.expect("failed to parse date")
+			.unix_timestamp()
+	}
 }
 
 dyn_clone::clone_trait_object!(RemoteCommit);
@@ -156,8 +169,20 @@ fn create_remote_client(
 
 /// Trait for handling the API connection and fetching.
 pub trait RemoteClient {
+	/// API URL for a particular client
+	const API_URL: &'static str;
+
+	/// Name of the environment variable used to set the API URL to a
+	/// self-hosted instance (if applicable).
+	const API_URL_ENV: &'static str;
+
 	/// Returns the API url.
-	fn api_url() -> String;
+	fn api_url(&self) -> String {
+		env::var(Self::API_URL_ENV)
+			.ok()
+			.or(self.remote().api_url)
+			.unwrap_or_else(|| Self::API_URL.to_string())
+	}
 
 	/// Returns the remote repository information.
 	fn remote(&self) -> Remote;
@@ -176,7 +201,7 @@ pub trait RemoteClient {
 		project_id: i64,
 		page: i32,
 	) -> Result<T> {
-		let url = T::url(project_id, &Self::api_url(), &self.remote(), page);
+		let url = T::url(project_id, &self.api_url(), &self.remote(), page);
 		debug!("Sending request to: {url}");
 		let response = self.client().get(&url).send().await?;
 		let response_text = if response.status().is_success() {
@@ -197,7 +222,7 @@ pub trait RemoteClient {
 		project_id: i64,
 		page: i32,
 	) -> Result<Vec<T>> {
-		let url = T::url(project_id, &Self::api_url(), &self.remote(), page);
+		let url = T::url(project_id, &self.api_url(), &self.remote(), page);
 		debug!("Sending request to: {url}");
 		let response = self.client().get(&url).send().await?;
 		let response_text = if response.status().is_success() {
@@ -299,6 +324,7 @@ macro_rules! update_release_metadata {
 				pull_requests: Vec<Box<dyn RemotePullRequest>>,
 			) -> Result<()> {
 				let mut contributors: Vec<RemoteContributor> = Vec::new();
+				let mut release_commit_timestamp: Option<i64> = None;
 				// retain the commits that are not a part of this release for later
 				// on checking the first contributors.
 				commits.retain(|v| {
@@ -331,6 +357,11 @@ macro_rules! update_release_metadata {
 							});
 						}
 						commit.remote = Some(commit.$remote.clone());
+						// if remote commit is the release commit store timestamp for
+						// use in calculation of first time
+						if Some(v.id().clone()) == self.commit_id {
+							release_commit_timestamp = v.timestamp().clone();
+						}
 						false
 					} else {
 						true
@@ -342,6 +373,13 @@ macro_rules! update_release_metadata {
 					.map(|mut v| {
 						v.is_first_time = !commits
 							.iter()
+							.filter(|commit| {
+								// if current release is unreleased no need to filter
+								// commits or filter commits that are from
+								// newer releases
+								self.timestamp == 0 ||
+									commit.timestamp() < release_commit_timestamp
+							})
 							.map(|v| v.username())
 							.any(|login| login == v.username);
 						v

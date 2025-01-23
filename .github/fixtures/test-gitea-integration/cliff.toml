@@ -16,7 +16,7 @@ body = """
 
 {% if gitea.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
   {% raw %}\n{% endraw -%}
-  ## New Contributors
+  ### New Contributors
 {%- endif %}\
 {% for contributor in gitea.contributors | filter(attribute="is_first_time", value=true) %}
   * @{{ contributor.username }} made their first contribution

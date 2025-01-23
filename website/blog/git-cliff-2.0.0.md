@@ -64,12 +64,6 @@ For detailed documentation and usage examples, check out the [GitHub integration
 
 :::
 
-:::warning
-
-This is an experimental feature so please [report bugs](https://github.com/orhun/git-cliff/issues/new/choose) to help us improve!
-
-:::
-
 ---
 
 ### 🦀 RustLab 2023

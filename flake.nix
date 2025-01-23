@@ -15,7 +15,31 @@
           inherit system;
           overlays = [ inputs.rust-overlay.overlays.rust-overlay ];
         };
-      in {
+        base-git-cliff = { buildType }: pkgs.rustPlatform.buildRustPackage {
+          name = "git-cliff";
+          src = ./.;
+          cargoLock = {
+            lockFile = ./Cargo.lock;
+          };
+          checkType = "debug";
+          inherit buildType;
+          checkFlags = [
+            "--skip=command"
+            "--skip=repo"
+          ];
+          meta = with pkgs.lib; {
+            description = "A highly customizable Changelog Generator that follows Conventional Commit specifications";
+            homepage = "https://git-cliff.org/";
+            license = [ licenses.mit licenses.asl20 ];
+          };
+        };
+      in rec {
+        packages = rec {
+          git-cliff = base-git-cliff { buildType = "release"; };
+          git-cliff-debug = base-git-cliff { buildType = "debug"; };
+          default = git-cliff;
+        };
+
         devShell = pkgs.mkShell {
           CARGO_INSTALL_ROOT = "${toString ./.}/.cargo";
 
@@ -32,5 +56,7 @@
             })
           ];
         };
+
+        checks.check = packages.git-cliff-debug;
       });
 }

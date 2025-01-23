@@ -266,6 +266,11 @@ fn generate_changelog() -> Result<()> {
 	let template = Template::new("test", changelog_config.body.unwrap(), false)?;
 
 	writeln!(out, "{}", changelog_config.header.unwrap()).unwrap();
+	let text_processors = [TextProcessor {
+		pattern:         Regex::new("<DATE>").unwrap(),
+		replace:         Some(String::from("2023")),
+		replace_command: None,
+	}];
 	for release in releases {
 		write!(
 			out,
@@ -273,11 +278,7 @@ fn generate_changelog() -> Result<()> {
 			template.render(
 				&release,
 				Option::<HashMap<&str, String>>::None.as_ref(),
-				&[TextProcessor {
-					pattern:         Regex::new("<DATE>").unwrap(),
-					replace:         Some(String::from("2023")),
-					replace_command: None,
-				}]
+				&text_processors
 			)?
 		)
 		.unwrap();

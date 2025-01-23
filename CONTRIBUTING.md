@@ -15,6 +15,8 @@ Note that we have a [Code of Conduct](./CODE_OF_CONDUCT.md), please follow it in
 
 ```sh
 git clone https://github.com/{username}/git-cliff && cd git-cliff
+# OR
+git clone git@github.com:{username}/git-cliff && cd git-cliff
 ```
 
 To ensure the successful execution of the tests, it is essential to fetch the tags as follows:

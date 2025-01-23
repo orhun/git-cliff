@@ -70,7 +70,7 @@ jobs:
           cargo tarpaulin --out xml --verbose --all-features \
             -- --skip "repo::test::git_upstream_remote"
       - name: Upload reports to codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           name: code-coverage-report
           file: cobertura.xml
@@ -93,7 +93,10 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --tests --verbose -- -D warnings
+          args: >
+            --tests --verbose --
+              -D warnings
+              -A clippy::literal_string_with_formatting_args
       - name: Check the pedantic lints
         uses: actions-rs/cargo@v1
         with:
@@ -157,7 +160,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Check the links
-        uses: lycheeverse/lychee-action@v1
+        uses: lycheeverse/lychee-action@v2
         with:
           args: -v --max-concurrency 1 *.md website/docs/* website/blog/*
           fail: true
@@ -240,3 +243,24 @@ jobs:
         with:
           name: git-cliff.${{ github.run_id }}-profiler-report
           path: git-cliff.**.flamegraph.svg
+
+  nix-flake:
+    name: Build Nix flake
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: nixbuild/nix-quick-install-action@v29
+
+      - name: Restore and cache Nix store
+        uses: nix-community/cache-nix-action@v5
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          gc-max-store-size-linux: 1073741824
+          purge: false
+
+      - name: Check Nix flake
+        run: nix flake check --all-systems -Lv --show-trace
