@@ -66,6 +66,9 @@ path = "../git-cliff-core"
 [dev-dependencies]
 pretty_assertions = "1.4.1"
 
+[lints]
+workspace = true
+
 # metadata for cargo-binstall to get the right artifacts
 [package.metadata.binstall]
 pkg-url = "{ repo }/releases/download/v{ version }/{ name }-{ version }-{ target }{ archive-suffix }"
