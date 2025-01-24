@@ -92,4 +92,4 @@ Licensed under either of [Apache License Version 2.0](./LICENSE-APACHE) or [The 
 
 ## Copyright
 
-Copyright © 2021-2024, [git-cliff contributors](mailto:git-cliff@protonmail.com)
+Copyright © 2021-2025, [git-cliff contributors](mailto:git-cliff@protonmail.com)
