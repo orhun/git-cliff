@@ -1,5 +1,60 @@
 [![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)
 
+## [2.8.0](https://github.com/orhun/git-cliff/compare/v2.7.0..v2.8.0) - 2025-01-24
+
+### ⛰️  Features
+
+- *(cli)* Support initializing config with a custom filename ([#992](https://github.com/orhun/git-cliff/issues/992)) - ([76bf9cf](https://github.com/orhun/git-cliff/commit/76bf9cf7aa26b58f2ae68edd007c9885b02af616))
+- *(config)* Discover the configuration file when run in a sub directory - ([a23eeb4](https://github.com/orhun/git-cliff/commit/a23eeb480961cd2b252acb7e1e6dc38807458e57))
+- *(git)* Improve the set commit range error ([#990](https://github.com/orhun/git-cliff/issues/990)) - ([f29e815](https://github.com/orhun/git-cliff/commit/f29e8150a8166d7364ed71b24675136d2e9bd382))
+- *(monorepo)* Automatically set include-path for current directory - ([ceda1f7](https://github.com/orhun/git-cliff/commit/ceda1f753adc3459b88417ae363410d2586a33af))
+- *(remote)* Support enabling native TLS ([#1021](https://github.com/orhun/git-cliff/issues/1021)) - ([fe7c464](https://github.com/orhun/git-cliff/commit/fe7c464c3bdbfd4e49f596615d6736ea441a4d16))
+- *(repo)* Allow running from sub directories ([#975](https://github.com/orhun/git-cliff/issues/975)) - ([98453b3](https://github.com/orhun/git-cliff/commit/98453b3eee754e1ffe08b685d84c039b17ac8e5e))
+
+### 🐛 Bug Fixes
+
+- *(config)* Allow environment overwrites when using builtin config ([#961](https://github.com/orhun/git-cliff/issues/961)) - ([7ba3b55](https://github.com/orhun/git-cliff/commit/7ba3b55448bdbf7a4a475df2081b6d7c2e2ceb34))
+- *(docker)* Use the correct Debian runner - ([36ad993](https://github.com/orhun/git-cliff/commit/36ad993d5956270c0df8c12d201068c1b4d7c580))
+- *(fixtures)* Update the arguments for custom GitLab API fixture test - ([e522f8d](https://github.com/orhun/git-cliff/commit/e522f8d9f1efddc43a15120e52a2f1b426468b56))
+- *(monorepo)* Do not set include-path if workdir is set ([#1022](https://github.com/orhun/git-cliff/issues/1022)) - ([20483be](https://github.com/orhun/git-cliff/commit/20483be93fbcd33eae3b7b54f625e53796281aff))
+- *(remote)* Fix detection of GitLab merge request sha ([#968](https://github.com/orhun/git-cliff/issues/968)) - ([1297655](https://github.com/orhun/git-cliff/commit/12976550d35bad8d535518010046bd136875736b))
+
+### 🚜 Refactor
+
+- *(lib)* Add changelog modifier callback to run function ([#922](https://github.com/orhun/git-cliff/issues/922)) - ([2321882](https://github.com/orhun/git-cliff/commit/2321882b12cc6aae03fbd4f7ea3e131fc8763631))
+- *(lint)* Use a shared lint config for the workspace - ([bfc1d4f](https://github.com/orhun/git-cliff/commit/bfc1d4fb8f8bd8faa350ec217f4d09d57c20b12d))
+- *(lint)* Apply clippy suggestions - ([299a1c7](https://github.com/orhun/git-cliff/commit/299a1c74b28ac41015bc436de6d37b5ef5d59b04))
+
+### 📚 Documentation
+
+- *(docker)* Fix typo in comment ([#959](https://github.com/orhun/git-cliff/issues/959)) - ([dbda091](https://github.com/orhun/git-cliff/commit/dbda091aa15806523c2be371ec8a31fbba4ccdc7))
+- *(highlights)* Add link to the Nix flake - ([c449229](https://github.com/orhun/git-cliff/commit/c449229513da7444ea02fe275f410e4b2048c9ff))
+- *(jujutsu)* Update links to the upstream documentation - ([ed6b646](https://github.com/orhun/git-cliff/commit/ed6b64628f4bfd21b32021b3decf842ae14c9f51))
+- *(lib)* Allow doc lint - ([62a6d3e](https://github.com/orhun/git-cliff/commit/62a6d3e20cf72c8e2dcc7938894c5c65278e6c4e))
+- *(license)* Update copyright years - ([8178c9b](https://github.com/orhun/git-cliff/commit/8178c9b2ca41fb0b974d3387e07b3067256bdb0b))
+- *(tips)* Extend the merge commit filter example ([#963](https://github.com/orhun/git-cliff/issues/963)) - ([09c0f90](https://github.com/orhun/git-cliff/commit/09c0f905d8b20b585b0bc8183f14250d1a381ca0))
+- *(website)* Add highlights for 2.8.0 ([#1023](https://github.com/orhun/git-cliff/issues/1023)) - ([32dc15e](https://github.com/orhun/git-cliff/commit/32dc15efe5ea8be8f1691fbc16d9e5aaa1c5ebdc))
+
+### 🧪 Testing
+
+- *(fixture)* Add fixture for include-path - ([e85888f](https://github.com/orhun/git-cliff/commit/e85888f5d8dbd4db0674613c4c354416a9be84d1))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(build)* Bump MSRV to 1.83.0 - ([37598c2](https://github.com/orhun/git-cliff/commit/37598c2d417a1646ec90590ab2a1f6d9da66296c))
+- *(docker)* Bump the Rust version in Docker image - ([729f433](https://github.com/orhun/git-cliff/commit/729f4336d169e9fc5cdefdb201208638eee17995))
+- *(funding)* Add wellKnown directory - ([8704518](https://github.com/orhun/git-cliff/commit/8704518fb71b88fa8985c660e67f77d9a33431c8))
+- *(lint)* Allow false positive lint - ([1b779a6](https://github.com/orhun/git-cliff/commit/1b779a698f845cb449da0640aeac45d53c6c43b9))
+- *(nix)* Update flakes - ([22fbe9d](https://github.com/orhun/git-cliff/commit/22fbe9dafbbeaa4bd68082787ea8231dbe12c9ae))
+
+## New Contributors ❤️
+
+* @xsadia made their first contribution in [#992](https://github.com/orhun/git-cliff/pull/992)
+* @chenrui333 made their first contribution in [#1002](https://github.com/orhun/git-cliff/pull/1002)
+* @hackenbergstefan made their first contribution in [#968](https://github.com/orhun/git-cliff/pull/968)
+* @paul-uz made their first contribution in [#963](https://github.com/orhun/git-cliff/pull/963)
+* @jmartens made their first contribution in [#959](https://github.com/orhun/git-cliff/pull/959)
+
 ## [2.7.0](https://github.com/orhun/git-cliff/compare/v2.6.1..v2.7.0) - 2024-11-20
 
 ### ⛰️  Features
@@ -598,7 +653,7 @@
 * @woshilapin made their first contribution in [#318](https://github.com/orhun/git-cliff/pull/318)
 * @debghs made their first contribution in [#329](https://github.com/orhun/git-cliff/pull/329)
 * @dpecos made their first contribution in [#312](https://github.com/orhun/git-cliff/pull/312)
-* @liuyinz made their first contribution in [#307](https://github.com/orhun/git-cliff/pull/307)
+* @eki3z made their first contribution in [#307](https://github.com/orhun/git-cliff/pull/307)
 
 ## [1.3.1](https://github.com/orhun/git-cliff/compare/v1.3.0..v1.3.1) - 2023-09-30
 
@@ -1088,7 +1143,7 @@
 
 ## New Contributors ❤️
 
-* @MarcoIeni made their first contribution in [#67](https://github.com/orhun/git-cliff/pull/67)
+* @marcoieni made their first contribution in [#67](https://github.com/orhun/git-cliff/pull/67)
 
 ## [0.6.0](https://github.com/orhun/git-cliff/compare/v0.5.0..v0.6.0) - 2022-02-12
 
