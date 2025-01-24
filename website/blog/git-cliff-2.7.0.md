@@ -1,6 +1,6 @@
 ---
 slug: 2.7.0
-title: "What's new in 2.7.0? \U0001F195"
+title: "What's new in 2.7.0?"
 date: 2024-11-20T00:00:00.000Z
 authors: orhun
 tags:
