@@ -91,7 +91,7 @@ default-features = false
 features = ["toml", "yaml"]
 
 [dependencies.git-conventional]
-version = "0.12.7"
+version = "0.12.9"
 features = ["serde"]
 
 [dependencies.rust-embed]
