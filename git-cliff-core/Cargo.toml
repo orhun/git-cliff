@@ -43,7 +43,7 @@ bitbucket = ["remote"]
 gitea = ["remote"]
 
 [dependencies]
-glob = { workspace = true }
+glob.workspace = true
 regex.workspace = true
 log.workspace = true
 secrecy.workspace = true
