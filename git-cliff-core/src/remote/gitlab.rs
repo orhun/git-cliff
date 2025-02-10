@@ -170,7 +170,10 @@ impl RemotePullRequest for GitLabMergeRequest {
 	}
 
 	fn merge_commit(&self) -> Option<String> {
-		self.merge_commit_sha.clone().or(Some(self.sha.clone()))
+		self.merge_commit_sha
+			.clone()
+			.or(self.squash_commit_sha.clone())
+			.or(Some(self.sha.clone()))
 	}
 }
 
@@ -315,6 +318,17 @@ mod test {
 	fn merge_request_no_merge_commit() {
 		let mr = GitLabMergeRequest {
 			sha: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+			..Default::default()
+		};
+		assert!(mr.merge_commit().is_some());
+	}
+
+	#[test]
+	fn merge_request_squash_commit() {
+		let mr = GitLabMergeRequest {
+			squash_commit_sha: Some(String::from(
+				"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
+			)),
 			..Default::default()
 		};
 		assert!(mr.merge_commit().is_some());
