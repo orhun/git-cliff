@@ -86,7 +86,7 @@ default-features = false
 optional = true
 
 [dependencies.config]
-version = "0.15.6"
+version = "0.15.8"
 default-features = false
 features = ["toml", "yaml"]
 
