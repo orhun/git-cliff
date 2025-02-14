@@ -1,9 +1,22 @@
 use clap::Parser;
-use git_cliff::args::Opt;
-use git_cliff::logger;
+use git_cliff::args::Args;
+use git_cliff::{
+	init_config,
+	logger,
+};
 use git_cliff_core::error::Result;
 use std::env;
-use std::process;
+use std::fs::File;
+use std::io::{
+	self,
+};
+use std::os::unix::process::CommandExt;
+use std::path::Path;
+use std::process::{
+	self,
+	Command,
+	Stdio,
+};
 
 /// Profiler.
 #[cfg(feature = "profiler")]
@@ -11,7 +24,24 @@ mod profiler;
 
 fn main() -> Result<()> {
 	// Parse the command line arguments
-	let args = Opt::parse();
+	let args = Args::parse();
+
+	// Launch the TUI if the flag is set.
+	if args.tui {
+		let env_args = env::args().collect::<Vec<String>>();
+		let error = Command::new("git-cliff-tui")
+			.stdout(Stdio::inherit())
+			.args(
+				env_args[1..]
+					.iter()
+					.filter(|arg| *arg != "--tui")
+					.collect::<Vec<&String>>(),
+			)
+			.exec();
+		return Err(error.into());
+	}
+
+	// Enable logging.
 	if args.verbose == 1 {
 		env::set_var("RUST_LOG", "debug");
 	} else if args.verbose > 1 {
@@ -32,9 +62,32 @@ fn main() -> Result<()> {
 		_profiler_guard = Some(());
 	}
 
-	// Run git-cliff
-	let exit_code = match git_cliff::run(args) {
-		Ok(()) => 0,
+	// Check if there is a new version available.
+	#[cfg(feature = "update-informer")]
+	git_cliff::check_new_version();
+
+	// Create the configuration file if init flag is given.
+	if let Some(path) = &args.init {
+		init_config(path.clone())?;
+	}
+
+	// Generate a changelog.
+	let changelog = git_cliff::run(args.clone())?;
+
+	// Get output file.
+	let out: Box<dyn io::Write> = if let Some(path) = &args.output {
+		if path == Path::new("-") {
+			Box::new(io::stdout())
+		} else {
+			Box::new(io::BufWriter::new(File::create(path)?))
+		}
+	} else {
+		Box::new(io::stdout())
+	};
+
+	// Write the changelog.
+	let exit_code = match git_cliff::write_changelog(args, changelog, out) {
+		Ok(_) => 0,
 		Err(e) => {
 			log::error!("{}", e);
 			1

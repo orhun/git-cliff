@@ -1,0 +1,21 @@
+[package]
+name = "git-cliff-tui"
+version = "2.5.0" # managed by release.sh
+authors = ["Orhun Parmaksız <orhunparmaksiz@gmail.com>"]
+license = "MIT"
+edition = "2021"
+
+[dependencies]
+ratatui = { version = "0.29.0", features = ["unstable-widget-ref"] }
+copypasta = "0.10.1"
+tui-markdown = "0.3.0"
+ansi-to-tui = "7.0.0"
+unicode-width = "0.2.0"
+tachyonfx = "0.10.1"
+lazy_static.workspace = true
+
+[dependencies.git-cliff]
+version = "2.5.0" # managed by release.sh
+path = "../git-cliff"
+default-features = false
+features = ["github", "gitlab", "gitea", "bitbucket"]
