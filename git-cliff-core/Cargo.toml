@@ -60,7 +60,7 @@ toml = "0.8.19"
 lazy-regex = "3.4.1"
 next_version = "0.2.21"
 semver = "1.0.25"
-document-features = { version = "0.2.10", optional = true }
+document-features = { version = "0.2.11", optional = true }
 reqwest = { version = "0.12.12", default-features = false, features = [
   "rustls-tls",
   "rustls-tls-native-roots",
