@@ -50,7 +50,7 @@ To set an access token, you can use the [configuration file](/docs/configuration
 For example:
 
 ```bash
-GITLAB_TOKEN="***" git cliff --gitlab-repo "orhun/git-cliff"
+GITLAB_TOKEN="***" git-cliff --gitlab-repo "orhun/git-cliff"
 ```
 
 :::tip
