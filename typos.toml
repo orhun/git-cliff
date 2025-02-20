@@ -9,3 +9,4 @@ extend-ignore-re = [
 
 [default.extend-words]
 upport = "upport"
+ratatui = "ratatui"
