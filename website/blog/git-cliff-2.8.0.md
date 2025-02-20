@@ -44,7 +44,7 @@ As a result, the following command:
 ```bash
 $ cd packages/some_library
 
-$ git cliff --include-path "packages/some_library/**/*" --repository "../../"
+$ git-cliff --include-path "packages/some_library/**/*" --repository "../../"
 ```
 
 becomes:
@@ -52,7 +52,7 @@ becomes:
 ```bash
 $ cd packages/some_library
 
-$ git cliff # just works!
+$ git-cliff # just works!
 ```
 
 ---
@@ -64,7 +64,7 @@ $ git cliff # just works!
 To enable it:
 
 ```bash
-$ git cliff --use-native-tls
+$ git-cliff --use-native-tls
 ```
 
 Or configure it in your `cliff.toml`:
@@ -94,14 +94,14 @@ $ git-cliff --init --config custom.toml
 Before:
 
 ```
-$ git cliff test
+$ git-cliff test
  ERROR git_cliff > Git error: `unable to parse OID - contains invalid characters; class=Invalid (3)`
 ```
 
 After:
 
 ```
-$ git cliff test
+$ git-cliff test
  ERROR git_cliff > Failed to set the commit range: unable to parse OID - contains invalid characters; class=Invalid (3)
 "test" is not a valid commit range. Did you provide the correct arguments?
 ```

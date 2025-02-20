@@ -7,7 +7,7 @@ sidebar_position: 8
 In some cases, you might want to include commit messages in the changelog that yet don't exist. One example would be having "the commit message that updates the changelog" in the changelog. (🤔)
 
 ```bash
-git cliff -o CHANGELOG.md
+git-cliff -o CHANGELOG.md
 git add CHANGELOG.md
 git commit -m "chore(release): update CHANGELOG.md for 1.0.0"
 ```
@@ -19,7 +19,7 @@ In the example above, `CHANGELOG.md` will not have the latest commit message sin
 commit_msg="chore(release): update CHANGELOG.md for 1.0.0"
 
 # generate changelog and pretend a commit exists as "$commit_msg"
-git cliff --with-commit "$commit_msg" -o CHANGELOG.md
+git-cliff --with-commit "$commit_msg" -o CHANGELOG.md
 
 # create the actual commit
 git add CHANGELOG.md

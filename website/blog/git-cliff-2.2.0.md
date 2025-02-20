@@ -82,13 +82,13 @@ something happened!
 
 ### 🤖 Auto Detecting Config
 
-If you configured `git-cliff` from `Cargo.toml` via metadata table (`[workspace.metadata.git-cliff.changelog]`), running `git cliff` is now simply enough!
+If you configured `git-cliff` from `Cargo.toml` via metadata table (`[workspace.metadata.git-cliff.changelog]`), running `git-cliff` is now simply enough!
 
 ```sh
-$ git cliff
+$ git-cliff
 
 # is same as
-$ git cliff --config Cargo.toml
+$ git-cliff --config Cargo.toml
 ```
 
 We also updated the config detection mechanism to support the following cases:

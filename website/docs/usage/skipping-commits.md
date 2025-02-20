@@ -7,7 +7,7 @@ sidebar_position: 7
 You can use `--skip-commit` argument to skip specific commits by their SHA1 value:
 
 ```bash
-git cliff --skip-commit a78bc368e9ee382a3016c0c4bab41f7de4503bcd
+git-cliff --skip-commit a78bc368e9ee382a3016c0c4bab41f7de4503bcd
 ```
 
 If you have multiple commits to skip, you can either use this argument multiple times or create `.cliffignore` at the root of your repository.

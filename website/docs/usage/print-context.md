@@ -8,8 +8,8 @@ To print the changelog [context](/docs/templating/context) as JSON:
 
 ```bash
 # print context to stdout
-git cliff --context
+git-cliff --context
 
 # save context to a file
-git cliff --context --output context.json
+git-cliff --context --output context.json
 ```

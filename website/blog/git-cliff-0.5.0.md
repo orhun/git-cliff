@@ -43,7 +43,7 @@ In this scenario, we can pretend that after your fifth commit on `master` you ha
 Now let's say you decided to generate a changelog for the unreleased commits. Since previous versions of `git-cliff` sort the tags chronologically as default, you would get something like this:
 
 ```bash
-$ git cliff --unreleased
+$ git-cliff --unreleased
 
 # Changelog
 ## [unreleased]
@@ -61,7 +61,7 @@ $ git cliff --unreleased
 This is because `--unreleased` flag implicitly uses a commit range such as `0000025..HEAD`, since it sorts the tags chronologically, as previously stated. This situation can now be prevented by using the `--topo-order` flag, which disables the automatic sorting and processes the tags as they appear in the git history:
 
 ```bash
-$ git cliff --topo-order --unreleased
+$ git-cliff --topo-order --unreleased
 
 # Changelog
 ## [unreleased]
@@ -94,10 +94,10 @@ In the previous versions of `git-cliff`, it was possible to only include commits
 
 ```bash
 # include commits related to any TOML file and also application directory
-$ git cliff --include-path "**/*.toml" --include-path "apps/*"
+$ git-cliff --include-path "**/*.toml" --include-path "apps/*"
 
 # exclude commits that are related to miscellaneous files
-$ git cliff --exclude-path "other/*"
+$ git-cliff --exclude-path "other/*"
 ```
 
 With this change, `--commit-path` argument is <s>removed</s> replaced with `--include-path` which supports glob patterns.
@@ -120,10 +120,10 @@ The problem <s>is</s> was, when you check out to a tag and try to generate a cha
 $ git checkout v0.11.0
 
 # changelog is generated for v0.11.0
-$ git cliff --current
+$ git-cliff --current
 
 # changelog is generated for v0.10.1
-$ git cliff --latest
+$ git-cliff --latest
 ```
 
 `--current` flag behaves the same as running the following git command:
@@ -239,7 +239,7 @@ There is also a new field called `conventional` added to the [template context](
 In some cases, you might want to include commit messages in the changelog that yet don't exist. One example would be having "the commit message that updates the changelog" in the changelog. (🤔)
 
 ```bash
-git cliff -o CHANGELOG.md
+git-cliff -o CHANGELOG.md
 git add CHANGELOG.md
 git commit -m "chore(release): update CHANGELOG.md for 1.0.0"
 ```
@@ -251,7 +251,7 @@ In the example above, CHANGELOG.md will not have the latest commit message since
 commit_msg="chore(release): update CHANGELOG.md for 1.0.0"
 
 # generate changelog and pretend a commit exists as "$commit_msg"
-git cliff --with-commit "$commit_msg" -o CHANGELOG.md
+git-cliff --with-commit "$commit_msg" -o CHANGELOG.md
 
 # create the actual commit
 git add CHANGELOG.md
@@ -263,7 +263,7 @@ git commit -m "$commit_msg"
 `git-cliff` now outputs more explanatory error messages about templates, instead of just saying "Failed to parse template":
 
 ```bash
-$ git cliff
+$ git-cliff
 
  ERROR git_cliff > Template parse error:
  --> 3:12

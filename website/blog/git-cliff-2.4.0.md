@@ -221,7 +221,7 @@ The message is available in the context of the template as the `{{ message }}` v
 You can also override the tag message for the unreleased changes via `--with-tag-message` argument as follows:
 
 ```sh
-$ git cliff --bump --unreleased --with-tag-message "This is the release-tag message"
+$ git-cliff --bump --unreleased --with-tag-message "This is the release-tag message"
 ```
 
 The recommended way of setting tag messages is to use annotated tags in your project:
@@ -251,7 +251,7 @@ We updated the changelog processing order to make remote data (e.g. GitHub commi
 For example:
 
 ```sh
-$ git cliff --github-repo orhun/git-cliff -c examples/github.toml --no-exec -u -x
+$ git-cliff --github-repo orhun/git-cliff -c examples/github.toml --no-exec -u -x
 ```
 
 This command will now contain the GitHub data such as:
