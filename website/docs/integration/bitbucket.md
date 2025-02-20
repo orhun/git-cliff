@@ -50,7 +50,7 @@ To set an access token, you can use the [configuration file](/docs/configuration
 For example:
 
 ```bash
-BITBUCKET_TOKEN="***" git cliff --bitbucket-repo "orhun/git-cliff"
+BITBUCKET_TOKEN="***" git-cliff --bitbucket-repo "orhun/git-cliff"
 ```
 
 :::tip
