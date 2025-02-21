@@ -14,13 +14,13 @@ To load a context from a file and output the generated changelog:
 
 ```bash
 # create a context
-git cliff --context -o context.json
+git-cliff --context -o context.json
 
 # process context and generate a changelog
-git cliff --from-context context.json
+git-cliff --from-context context.json
 
 # process context loaded from stdin
-git cliff --from-context -
+git-cliff --from-context -
 ```
 
 Free-form metadata can be added to release objects and commit objects in the context using the `extra` field:

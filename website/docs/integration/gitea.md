@@ -50,7 +50,7 @@ To set an access token, you can use the [configuration file](/docs/configuration
 For example:
 
 ```bash
-GITEA_TOKEN="***" git cliff --gitea-repo "orhun/git-cliff"
+GITEA_TOKEN="***" git-cliff --gitea-repo "orhun/git-cliff"
 ```
 
 :::tip
