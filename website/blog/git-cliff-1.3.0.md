@@ -136,7 +136,7 @@ With the newly added [`cocogitto.toml`](https://github.com/orhun/git-cliff/blob/
 For example:
 
 ```sh
-git-cliff -c examples/cocogitto.toml
+git cliff -c examples/cocogitto.toml
 ```
 
 Results in:

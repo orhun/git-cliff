@@ -33,10 +33,10 @@ Meet our powerful new command-line argument: `--from-context`.
 
 ```bash
 # create a context
-$ git-cliff --context -o context.json
+$ git cliff --context -o context.json
 
 # generate changelog from context
-$ git-cliff --from-context context.json
+$ git cliff --from-context context.json
 ```
 
 This new extension point allows transformations on the context and can be especially useful when preprocessor/postprocessor/linkprocessor capabilities are limited.
@@ -89,7 +89,7 @@ See the [`commit_parsers`](https://git-cliff.org/docs/configuration/git#commit_p
 Now you can specify the semver type while using `--bump`:
 
 ```bash
-$ git-cliff --bump [major|minor|patch]
+$ git cliff --bump [major|minor|patch]
 ```
 
 See the [`bump`](https://git-cliff.org/docs/usage/bump-version) documentation for more information.
@@ -139,7 +139,7 @@ Now we’ve added support for enabling the remote integration in the following c
 So, the following output will contain GitHub variables even with the default template (since the remote is set):
 
 ```sh
-$ git-cliff --context --github-repo orhun/git-cliff
+$ git cliff --context --github-repo orhun/git-cliff
 ```
 
 Additionally, we fixed [a bug](https://github.com/orhun/git-cliff/issues/812) where some of the GitHub-related variables were not recognized in the template.

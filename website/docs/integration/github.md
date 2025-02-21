@@ -54,7 +54,7 @@ To set the access token, you can use the [configuration file](/docs/configuratio
 For example:
 
 ```bash
-GITHUB_TOKEN="***" git-cliff --github-repo "orhun/git-cliff"
+GITHUB_TOKEN="***" git cliff --github-repo "orhun/git-cliff"
 ```
 
 :::tip
@@ -191,7 +191,7 @@ If you would like to create a changelog similar to the GitHub's default format, 
 Since it is already embedded into the binary, you can simply run:
 
 ```bash
-git-cliff -c github
+git cliff -c github
 ```
 
 This will generate a changelog such as:

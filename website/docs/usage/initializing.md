@@ -8,7 +8,7 @@ The default [configuration file](/docs/configuration) (`cliff.toml`) can be gene
 
 ```bash
 # create cliff.toml
-git-cliff --init
+git cliff --init
 
 # create a config file with a custom name
 git-cliff --init --config custom.toml
@@ -20,14 +20,14 @@ To initialize `git-cliff` with one of those templates, simply use the name of th
 
 ```bash
 # create cliff.toml with Keep a Changelog format
-git-cliff --init keepachangelog
+git cliff --init keepachangelog
 ```
 
 Also, you can use a template without creating the configuration file. Just give the name of the template to the `--config` option as follows:
 
 ```bash
 # generate a changelog with using the built-in "detailed" template
-git-cliff --config detailed
+git cliff --config detailed
 ```
 
 Here are the list of available templates:

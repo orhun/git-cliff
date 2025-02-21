@@ -20,7 +20,7 @@ environment:
 tasks:
   - git-cliff: |
       cd $dir
-      git-cliff -o CHANGELOG.md
+      git cliff -o CHANGELOG.md
       ssh-keyscan -t rsa git.sr.ht >> ~/.ssh/known_hosts
       git remote set-url origin $source
       git checkout main

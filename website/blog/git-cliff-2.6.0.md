@@ -47,7 +47,7 @@ You can now use the `commit.remote` field instead. For example:
 If you have diverged branches for your project and want to changelog for each branch, you can now use the `--use-branch-tags` option.
 
 ```bash
-$ git-cliff --use-branch-tags
+$ git cliff --use-branch-tags
 ```
 
 The generated changelog above will only include the tags from the current branch.

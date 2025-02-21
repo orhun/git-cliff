@@ -39,10 +39,10 @@ To quickly set things up for your project, you can use the built-in GitHub templ
 
 ```sh
 # creates cliff.toml
-$ git-cliff --init github
+$ git cliff --init github
 ```
 
-And simply run `git-cliff` to generate a changelog like the following:
+And simply run `git cliff` to generate a changelog like the following:
 
 ```md
 ## What's Changed
@@ -80,12 +80,12 @@ As briefly mentioned, the example templates are now embedded into the binary whi
 
 ```sh
 # creates cliff.toml with keepachangelog template
-$ git-cliff --init keepachangelog
+$ git cliff --init keepachangelog
 ```
 
 ```sh
 # generates a changelog in keepachangelog format
-$ git-cliff --config keepachangelog
+$ git cliff --config keepachangelog
 ```
 
 Here is the full list of supported templates as of now:
@@ -176,7 +176,7 @@ You can now add a `.cliffignore` file at the root of your repository for listing
 You can skip commits by using this argument as follows:
 
 ```sh
-$ git-cliff --skip-commit 10c3194381f2cc4f93eb97404369568882ed8677 \
+$ git cliff --skip-commit 10c3194381f2cc4f93eb97404369568882ed8677 \
             --skip-commit 4f88dda8c746173ea59f920b7579b7f6c74bd6c8
 ```
 
@@ -188,7 +188,7 @@ If you want to use the `--bump` option but are only interested in the bumped ver
 
 ```sh
 # print the next semantic version
-$ git-cliff --bumped-version
+$ git cliff --bumped-version
 
 v2.0.0
 ```
@@ -200,7 +200,7 @@ v2.0.0
 If you are using external commands (e.g. via `replace_command`) in your configuration, you can now entirely skip executing those commands with `--no-exec` flag.
 
 ```sh
-$ git-cliff --no-exec
+$ git cliff --no-exec
 ```
 
 For example, this is useful in the cases where the execution takes time.
@@ -275,7 +275,7 @@ In this example, `[codebase]: rewrite everything in Rust` will appear in the cha
 There was some love towards `--bump` flag to improve its behavior:
 
 - Tag prefixes are now supported!
-  - This means that for example if you have `testing/v1.0.0-beta.1` as the current version and if you run `git-cliff --bump`, you will see `testing/v1.0.0-beta.2` in your changelog.
+  - This means that for example if you have `testing/v1.0.0-beta.1` as the current version and if you run `git cliff --bump`, you will see `testing/v1.0.0-beta.2` in your changelog.
 - If no tags exist, `--bump` will yield `0.1.0` as default.
 - Other behavioral fixes!
 

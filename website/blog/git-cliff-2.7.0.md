@@ -38,7 +38,7 @@ $ jj git clone --colocate https://github.com/orhun/git-cliff
 
 $ cd git-cliff
 
-$ git-cliff # works!
+$ git cliff # works!
 ```
 
 :::caution
@@ -63,7 +63,7 @@ This means that the following command now yields an identical result with `git-c
 
 ```bash
 # hey look, a snake eating its own tail! 🐍
-git-cliff --context | git-cliff --from-context
+git cliff --context | git cliff --from-context
 ```
 
 - [`--context`](https://git-cliff.org/docs/usage/print-context): prints the changelog context as JSON
@@ -118,7 +118,7 @@ See the [`remote` configuration](https://git-cliff.org/docs/configuration/remote
 
 There was a bug causing the first time contributors to be removed from the changelog when there was a new release. This has been fixed and now the first time contributors are preserved in the changelog.
 
-So if you run `git-cliff` now, you might get new names in the changelog! Don't be surprised.
+So if you run `git cliff` now, you might get new names in the changelog! Don't be surprised.
 
 See this [pull request](https://github.com/orhun/git-cliff/pull/925) for more details.
 
@@ -148,7 +148,7 @@ We now have a basic and reproducible dev environment using Nix along with CI che
 
 ### 🎨 Colored help
 
-A small cosmetic change, but the output of `git-cliff --help` is now colorful!
+A small cosmetic change, but the output of `git cliff --help` is now colorful!
 
 Try it for yourself :)
 

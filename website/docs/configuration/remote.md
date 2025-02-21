@@ -35,7 +35,7 @@ If you are using GitHub, you can use the `--github-repo` argument or `GITHUB_REP
 e.g.
 
 ```bash
-git-cliff --github-repo orhun/git-cliff
+git cliff --github-repo orhun/git-cliff
 ```
 
 Same applies for GitLab/Bitbucket with `--gitlab-repo`/`--gitea-repo`/`--bitbucket-repo` and `GITLAB_REPO`/`GITEA_REPO`/`BITBUCKET_REPO` environment variables.
@@ -47,7 +47,7 @@ Sets the access token for the remote.
 If you are using GitHub, then you can also pass this value via `--github-token` argument or `GITHUB_TOKEN` environment variable as follows:
 
 ```bash
-git-cliff --github-token <TOKEN>
+git cliff --github-token <TOKEN>
 ```
 
 Same applies for GitLab/Bitbucket with `--gitlab-token`/`--gitea-token`/`--bitbucket-token` and `GITLAB_TOKEN`/`GITEA_TOKEN`/`BITBUCKET_TOKEN` environment variables.
