@@ -12,6 +12,7 @@ use git2::{
 	Repository as GitRepository,
 	Sort,
 	TreeWalkMode,
+	Worktree,
 };
 use glob::Pattern;
 use indexmap::IndexMap;
@@ -76,12 +77,17 @@ impl Repository {
 	}
 
 	/// Returns the path of the repository.
-	pub fn path(&self) -> PathBuf {
-		let mut path = self.inner.path().to_path_buf();
+	pub fn path(&self) -> Result<PathBuf> {
+		let mut path = if self.inner.is_worktree() {
+			let worktree = Worktree::open_from_repository(&self.inner)?;
+			worktree.path().to_path_buf()
+		} else {
+			self.inner.path().to_path_buf()
+		};
 		if path.ends_with(".git") {
 			path.pop();
 		}
-		path
+		Ok(path)
 	}
 
 	/// Sets the range for the commit search.

@@ -221,7 +221,7 @@ fn process_repository<'a>(
 	// Include only the current directory if not running from the root repository
 	let mut include_path = args.include_path.clone();
 	if let Some(mut path_diff) =
-		pathdiff::diff_paths(env::current_dir()?, repository.path())
+		pathdiff::diff_paths(env::current_dir()?, repository.path()?)
 	{
 		if args.workdir.is_none() &&
 			include_path.is_none() &&
@@ -272,12 +272,13 @@ fn process_repository<'a>(
 	// Process releases.
 	let mut previous_release = Release::default();
 	let mut first_processed_tag = None;
+	let repository_path = repository.path()?.to_string_lossy().into_owned();
 	for git_commit in commits.iter().rev() {
 		let release = releases.last_mut().unwrap();
 		let commit = Commit::from(git_commit);
 		let commit_id = commit.id.to_string();
 		release.commits.push(commit);
-		release.repository = Some(repository.path().to_string_lossy().into_owned());
+		release.repository = Some(repository_path.clone());
 		if let Some(tag) = tags.get(&commit_id) {
 			release.version = Some(tag.name.to_string());
 			release.message.clone_from(&tag.message);
