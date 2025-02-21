@@ -35,7 +35,7 @@ git-cliff -o CHANGELOG.md
 See the [command-line usage examples](usage/examples).
 
 :::note
-The `git cliff` command can also be used interchangably in most environments.
+The `git cliff` command can also be used interchangeably in most environments.
 :::
 
 ## Contribute
