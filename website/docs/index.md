@@ -35,7 +35,7 @@ git-cliff -o CHANGELOG.md
 See the [command-line usage examples](usage/examples).
 
 :::note
-The `git cliff` command can also be used interchangeably in most environments.
+The `git cliff` command can also be used interchangeably with `git-cliff` (with a `-`) in most environments (when `git` is installed). However, when using the [NPM](/docs/installation/npm) installation method is used, the `git-cliff` command should be used.
 :::
 
 ## Contribute
