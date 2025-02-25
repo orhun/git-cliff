@@ -88,32 +88,35 @@ pub struct ChangelogConfig {
 /// Git configuration
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct GitConfig {
-	/// Whether to enable parsing conventional commits.
+	/// Parse commits according to the conventional commits specification.
 	pub conventional_commits:  Option<bool>,
-	/// Whether to filter out unconventional commits.
+	/// Exclude commits that do not match the conventional commits specification
+	/// from the changelog.
 	pub filter_unconventional: Option<bool>,
-	/// Whether to split commits by line, processing each line as an individual
-	/// commit.
+	/// Split commits on newlines, treating each line as an individual commit.
 	pub split_commits:         Option<bool>,
 
-	/// Git commit preprocessors.
+	/// An array of regex based parsers to modify commit messages prior to
+	/// further processing.
 	pub commit_preprocessors:     Option<Vec<TextProcessor>>,
-	/// Git commit parsers.
+	/// An array of regex based parsers for extracting data from the commit
+	/// message.
 	pub commit_parsers:           Option<Vec<CommitParser>>,
-	/// Whether to protect all breaking changes from being skipped by a commit
-	/// parser.
+	/// Prevent commits having the `BREAKING CHANGE:` footer from being excluded
+	/// by commit parsers.
 	pub protect_breaking_commits: Option<bool>,
-	/// Link parsers.
+	/// An array of regex based parsers to extract links from the commit message
+	/// and add them to the commit's context.
 	pub link_parsers:             Option<Vec<LinkParser>>,
-	/// Whether to filter out commits.
+	/// Exclude commits that are not matched by any commit parser.
 	pub filter_commits:           Option<bool>,
-	/// Blob pattern for git tags.
+	/// Regex to select git tags that represent releases.
 	#[serde(with = "serde_regex", default)]
 	pub tag_pattern:              Option<Regex>,
-	/// Regex to skip matched tags.
+	/// Regex to select git tags that do not represent proper releases.
 	#[serde(with = "serde_regex", default)]
 	pub skip_tags:                Option<Regex>,
-	/// Regex to ignore matched tags.
+	/// Regex to exclude git tags after applying the tag_pattern.
 	#[serde(with = "serde_regex", default)]
 	pub ignore_tags:              Option<Regex>,
 	/// Regex to count matched tags.
@@ -121,11 +124,11 @@ pub struct GitConfig {
 	pub count_tags:               Option<Regex>,
 	/// Include only the tags that belong to the current branch.
 	pub use_branch_tags:          Option<bool>,
-	/// Whether to sort tags topologically.
+	/// Order releases topologically instead of chronologically.
 	pub topo_order:               Option<bool>,
-	/// Sorting of the commits inside sections.
+	/// How to order commits in each group/release within the changelog.
 	pub sort_commits:             Option<String>,
-	/// Limit the number of commits included in the changelog.
+	/// Limit the total number of commits included in the changelog.
 	pub limit_commits:            Option<usize>,
 }
 
