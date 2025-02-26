@@ -924,6 +924,7 @@ dependencies = [
  "env_logger",
  "git-cliff-core",
  "glob",
+ "indexmap",
  "indicatif",
  "lazy_static",
  "log",

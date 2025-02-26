@@ -8,6 +8,8 @@ use crate::error::{
 	Error as AppError,
 	Result,
 };
+use crate::repo::Repository;
+use git2::Submodule;
 #[cfg(feature = "repo")]
 use git2::{
 	Commit as GitCommit,
@@ -248,6 +250,29 @@ impl Commit<'_> {
 			}
 			Err(e) => Err(AppError::ParseError(e)),
 		}
+	}
+
+	/// Returns wether the commit changes the SHA of a submodule
+	pub fn contains_submodule_update<'a>(
+		&self,
+		repo: &'a Repository,
+	) -> Option<Submodule<'a>> {
+		let commits = match repo.commits(Some(&self.id.to_string()), None, None) {
+			Ok(it) => it,
+			Err(_) => return None,
+		};
+		let output = repo.commit_changed_files_no_cache(&commits[0]);
+		for o in &output {
+			for r in match repo.submodules() {
+				Ok(it) => it,
+				Err(_) => return None,
+			} {
+				if r.path().to_path_buf() == *o {
+					return Some(r);
+				}
+			}
+		}
+		None
 	}
 
 	/// Preprocesses the commit using [`TextProcessor`]s.

@@ -690,6 +690,7 @@ mod test {
 					)),
 					replace_command: None,
 				}]),
+				recurse_submodules:       Some(false),
 				commit_parsers:           Some(vec![
 					CommitParser {
 						sha:           Some(String::from("tea")),
