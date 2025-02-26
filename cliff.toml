@@ -124,3 +124,5 @@ ignore_tags = "rc|v2.1.0|v2.1.1"
 topo_order = false
 # sort the commits inside sections by oldest/newest order
 sort_commits = "newest"
+
+recurse_submodules = true

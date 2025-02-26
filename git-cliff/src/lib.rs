@@ -35,12 +35,18 @@ use git_cliff_core::error::{
 	Result,
 };
 use git_cliff_core::release::Release;
-use git_cliff_core::repo::Repository;
+use git_cliff_core::repo::{
+	GitSubmodule,
+	Repository,
+};
+use git_cliff_core::tag::Tag;
 use git_cliff_core::{
 	DEFAULT_CONFIG,
 	IGNORE_FILE,
 };
 use glob::Pattern;
+use indexmap::IndexMap;
+use std::collections::HashMap;
 use std::env;
 use std::fs::{
 	self,
@@ -95,6 +101,8 @@ fn process_repository<'a>(
 	let skip_regex = config.git.skip_tags.as_ref();
 	let ignore_regex = config.git.ignore_tags.as_ref();
 	let count_tags = config.git.count_tags.as_ref();
+	let recurse_submodules =
+		*config.git.recurse_submodules.as_ref().unwrap_or(&false);
 	tags.retain(|_, tag| {
 		let name = &tag.name;
 
@@ -167,56 +175,7 @@ fn process_repository<'a>(
 
 	// Parse commits.
 	let mut commit_range = args.range.clone();
-	if args.unreleased {
-		if let Some(last_tag) = tags.last().map(|(k, _)| k) {
-			commit_range = Some(format!("{last_tag}..HEAD"));
-		}
-	} else if args.latest || args.current {
-		if tags.len() < 2 {
-			let commits = repository.commits(None, None, None)?;
-			if let (Some(tag1), Some(tag2)) = (
-				commits.last().map(|c| c.id().to_string()),
-				tags.get_index(0).map(|(k, _)| k),
-			) {
-				if tags.len() == 1 {
-					commit_range = Some(tag2.to_owned());
-				} else {
-					commit_range = Some(format!("{tag1}..{tag2}"));
-				}
-			}
-		} else {
-			let mut tag_index = tags.len() - 2;
-			if args.current {
-				if let Some(current_tag_index) =
-					repository.current_tag().as_ref().and_then(|tag| {
-						tags.iter()
-							.enumerate()
-							.find(|(_, (_, v))| v.name == tag.name)
-							.map(|(i, _)| i)
-					}) {
-					match current_tag_index.checked_sub(1) {
-						Some(i) => tag_index = i,
-						None => {
-							return Err(Error::ChangelogError(String::from(
-								"No suitable tags found. Maybe run with \
-								 '--topo-order'?",
-							)));
-						}
-					}
-				} else {
-					return Err(Error::ChangelogError(String::from(
-						"No tag exists for the current commit",
-					)));
-				}
-			}
-			if let (Some(tag1), Some(tag2)) = (
-				tags.get_index(tag_index).map(|(k, _)| k),
-				tags.get_index(tag_index + 1).map(|(k, _)| k),
-			) {
-				commit_range = Some(format!("{tag1}..{tag2}"));
-			}
-		}
-	}
+	parse_commits(args, &tags, &mut commit_range, repository)?;
 
 	// Include only the current directory if not running from the root repository
 	let mut include_path = args.include_path.clone();
@@ -273,10 +232,27 @@ fn process_repository<'a>(
 	let mut previous_release = Release::default();
 	let mut first_processed_tag = None;
 	let repository_path = repository.path()?.to_string_lossy().into_owned();
+	let mut submodule_commits: HashMap<String, (GitSubmodule, Vec<Commit>)> =
+		HashMap::new();
+	for s in repository.submodules()? {
+		submodule_commits.insert(s.path().to_str().unwrap().to_owned(), (s, vec![]));
+	}
 	for git_commit in commits.iter().rev() {
 		let release = releases.last_mut().unwrap();
 		let commit = Commit::from(git_commit);
 		let commit_id = commit.id.to_string();
+		if recurse_submodules {
+			if let Some(submodule) = commit.contains_submodule_update(repository) {
+				let _k = submodule.path().to_str().unwrap().to_owned();
+				let _submodule_commit_id = commit.clone();
+				if let Some(entry) = submodule_commits.get_mut(&_k) {
+					entry.1.push(_submodule_commit_id);
+				} else {
+					submodule_commits
+						.insert(_k, (submodule, vec![_submodule_commit_id]));
+				}
+			}
+		}
 		release.commits.push(commit);
 		release.repository = Some(repository_path.clone());
 		if let Some(tag) = tags.get(&commit_id) {
@@ -301,6 +277,36 @@ fn process_repository<'a>(
 			release.previous = Some(Box::new(previous_release));
 			previous_release = release.clone();
 			releases.push(Release::default());
+		}
+	}
+	if recurse_submodules {
+		for (_submodule, _commits) in submodule_commits.values() {
+			log::trace!("Recursing {:?}.", _submodule.path().to_str());
+			let _range = format!(
+				"{}..{}",
+				_commits.first().unwrap().id,
+				_commits.last().unwrap().id
+			);
+			let _repo_path = _submodule.path().to_path_buf();
+			let _repo = Repository::init(_repo_path.clone())?;
+			let mut _internal_commits =
+				_repo.commits(commit_range.as_deref(), None, None)?;
+			if let Some(commit_limit_value) = config.git.limit_commits {
+				_internal_commits.truncate(commit_limit_value);
+			}
+			for _commit in _internal_commits.iter() {
+				let release = releases.last_mut().unwrap();
+				let commit = Commit::from(_commit);
+				let commit_id = commit.id.to_string();
+				release.commits.push(commit);
+				release.repository =
+					Some(_repo_path.clone().to_str().unwrap().to_owned());
+				release.commit_id = Some(commit_id);
+				previous_release.previous = None;
+				release.previous = Some(Box::new(previous_release));
+				previous_release = release.clone();
+				releases.push(Release::default());
+			}
 		}
 	}
 
@@ -372,6 +378,65 @@ fn process_repository<'a>(
 	}
 
 	Ok(releases)
+}
+
+fn parse_commits(
+	args: &Opt,
+	tags: &IndexMap<String, Tag>,
+	commit_range: &mut Option<String>,
+	repository: &Repository,
+) -> Result<()> {
+	if args.unreleased {
+		if let Some(last_tag) = tags.last().map(|(k, _)| k) {
+			*commit_range = Some(format!("{last_tag}..HEAD"));
+		}
+	} else if args.latest || args.current {
+		if tags.len() < 2 {
+			let commits = repository.commits(None, None, None)?;
+			if let (Some(tag1), Some(tag2)) = (
+				commits.last().map(|c| c.id().to_string()),
+				tags.get_index(0).map(|(k, _)| k),
+			) {
+				if tags.len() == 1 {
+					*commit_range = Some(tag2.to_owned());
+				} else {
+					*commit_range = Some(format!("{tag1}..{tag2}"));
+				}
+			}
+		} else {
+			let mut tag_index = tags.len() - 2;
+			if args.current {
+				if let Some(current_tag_index) =
+					repository.current_tag().as_ref().and_then(|tag| {
+						tags.iter()
+							.enumerate()
+							.find(|(_, (_, v))| v.name == tag.name)
+							.map(|(i, _)| i)
+					}) {
+					match current_tag_index.checked_sub(1) {
+						Some(i) => tag_index = i,
+						None => {
+							return Err(Error::ChangelogError(String::from(
+								"No suitable tags found. Maybe run with \
+								 '--topo-order'?",
+							)));
+						}
+					}
+				} else {
+					return Err(Error::ChangelogError(String::from(
+						"No tag exists for the current commit",
+					)));
+				}
+			}
+			if let (Some(tag1), Some(tag2)) = (
+				tags.get_index(tag_index).map(|(k, _)| k),
+				tags.get_index(tag_index + 1).map(|(k, _)| k),
+			) {
+				*commit_range = Some(format!("{tag1}..{tag2}"));
+			}
+		}
+	};
+	Ok(())
 }
 
 /// Runs `git-cliff`.
