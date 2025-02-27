@@ -95,7 +95,7 @@ version = "0.12.7"
 features = ["serde"]
 
 [dependencies.rust-embed]
-version = "8.5.0"
+version = "8.6.0"
 features = ["debug-embed", "compression"]
 
 [dev-dependencies]
