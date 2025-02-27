@@ -90,6 +90,9 @@ pub struct ChangelogConfig {
 pub struct GitConfig {
 	/// Parse commits according to the conventional commits specification.
 	pub conventional_commits:  Option<bool>,
+	/// Require all commits to be conventional.
+	/// Takes precedence over filter_unconventional.
+	pub require_conventional:  Option<bool>,
 	/// Exclude commits that do not match the conventional commits specification
 	/// from the changelog.
 	pub filter_unconventional: Option<bool>,
