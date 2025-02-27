@@ -39,7 +39,12 @@ runs:
 
     - name: Generate a changelog
       working-directory: ${{ inputs.fixtures-dir }}
-      run: git cliff --config cliff.toml ${{ inputs.command }} > output.md
+      run: |
+        git cliff --config cliff.toml ${{ inputs.command }} > output.md || true
+        echo "$?" > output.rc
+        if [ -f output.md ]; then
+          cat output.md
+        fi
       shell: bash
 
     - name: Compare the output with the expected output
@@ -47,8 +52,21 @@ runs:
       env:
         IN_DATE_FORMAT: ${{ inputs.date-format }}
       run: |
-        cat output.md
-        current_date=$(date +"$IN_DATE_FORMAT")
-        sed -i "s/<<DATE>>/$current_date/g" expected.md
-        diff --strip-trailing-cr output.md expected.md
+        if [ -f expected.md ]; then
+          current_date=$(date +"$IN_DATE_FORMAT")
+          sed -i "s/<<DATE>>/$current_date/g" expected.md
+          if [ ! diff --strip-trailing-cr output.md expected.md ]; then
+            echo "The generated changelog does not match the expected changelog."
+            exit 1
+          fi
+        fi
+      shell: bash
+
+    - name: Compare the return code with the expected return code
+      working-directory: ${{ inputs.fixtures-dir }}
+      run: |
+        if [ -f expected.rc ] && [ ! diff --skip-trailing-cr output.rc expected.rc ]; then
+          echo "The return code does not match the expected return code."
+          exit 1
+        fi
       shell: bash

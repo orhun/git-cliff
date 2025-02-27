@@ -111,6 +111,13 @@ pub enum Error {
 	/// Error that may occur while constructing patterns.
 	#[error("Pattern error: `{0}`")]
 	PatternError(#[from] glob::PatternError),
+	/// Error that may occur when unconventional commits are found.
+	/// See `require_conventional` option for more information.
+	#[error(
+		"Requiring all commits be conventional but found {0} unconventional \
+		 commits."
+	)]
+	UnconventionalCommitsError(i32),
 }
 
 /// Result type of the core library.
