@@ -144,6 +144,27 @@ impl<'a> Changelog<'a> {
 				})
 				.collect::<Vec<Commit>>();
 		});
+
+		if self.config.git.require_conventional.unwrap_or(false) {
+			debug!("Verifying that all commits are conventional.");
+			let mut unconventional_ids = Vec::new();
+
+			self.releases.iter().for_each(|release| {
+				release.commits.iter().for_each(|commit| {
+					println!("{:?}", commit.conv);
+					if commit.conv.is_none() {
+						unconventional_ids.push(commit.id.clone());
+					}
+				});
+			});
+
+			if !unconventional_ids.is_empty() {
+				error!(
+					"The following commits are not conventional: {:?}",
+					unconventional_ids
+				)
+			}
+		}
 	}
 
 	/// Processes the releases and filters them out based on the configuration.
@@ -680,6 +701,7 @@ mod test {
 			},
 			git:       GitConfig {
 				conventional_commits:     Some(true),
+				require_conventional:     Some(false),
 				filter_unconventional:    Some(false),
 				split_commits:            Some(false),
 				commit_preprocessors:     Some(vec![TextProcessor {

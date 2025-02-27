@@ -46,6 +46,7 @@ fn generate_changelog() -> Result<()> {
 	};
 	let git_config = GitConfig {
 		conventional_commits:     Some(true),
+		require_conventional:     Some(false),
 		filter_unconventional:    Some(true),
 		split_commits:            Some(false),
 		commit_preprocessors:     Some(vec![TextProcessor {
