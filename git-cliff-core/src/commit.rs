@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+use std::path::PathBuf;
+
 use crate::config::{
 	CommitParser,
 	GitConfig,
@@ -108,6 +111,8 @@ pub struct Commit<'a> {
 	pub id:            String,
 	/// Commit message including title, description and summary.
 	pub message:       String,
+	/// Parent commit ID
+	pub parent:        String,
 	/// Conventional commit.
 	#[serde(skip_deserializing)]
 	pub conv:          Option<ConventionalCommit<'a>>,
@@ -181,12 +186,17 @@ impl From<String> for Commit<'_> {
 #[cfg(feature = "repo")]
 impl<'a> From<&GitCommit<'a>> for Commit<'a> {
 	fn from(commit: &GitCommit<'a>) -> Self {
+		let parent = match commit.parent_id(0) {
+			Ok(id) => id.to_string(),
+			Err(_) => String::new(),
+		};
 		Commit {
 			id: commit.id().to_string(),
 			message: commit.message().unwrap_or_default().trim_end().to_string(),
 			author: commit.author().into(),
 			committer: commit.committer().into(),
 			merge_commit: commit.parent_count() > 1,
+			parent,
 			..Default::default()
 		}
 	}
@@ -252,27 +262,54 @@ impl Commit<'_> {
 		}
 	}
 
-	/// Returns wether the commit changes the SHA of a submodule
-	pub fn contains_submodule_update<'a>(
+	/// Returns whether the commit changes the SHA of a submodule
+	pub fn get_submodule_updates<'a>(
 		&self,
 		repo: &'a Repository,
-	) -> Option<Submodule<'a>> {
-		let commits = match repo.commits(Some(&self.id.to_string()), None, None) {
+	) -> Option<HashMap<PathBuf, (&mut &Submodule<'a>, git2::Oid, git2::Oid)>> {
+		let parent = match repo.commits(Some(&self.parent), None, None) {
 			Ok(it) => it,
-			Err(_) => return None,
+			Err(_) => {
+				return None;
+			}
 		};
-		let output = repo.commit_changed_files_no_cache(&commits[0]);
-		for o in &output {
-			for r in match repo.submodules() {
-				Ok(it) => it,
-				Err(_) => return None,
-			} {
-				if r.path().to_path_buf() == *o {
-					return Some(r);
+		let commit = match repo.commits(Some(&self.id), None, None) {
+			Ok(it) => it,
+			Err(_) => {
+				return None;
+			}
+		};
+		// let mut output: HashMap<Submodule, (GitCommit, GitCommit)> =
+		// HashMap::new();
+		let mut output = HashMap::new();
+		// get all submodule changes in repo
+		let binding = Box::leak(Box::new(repo.submodules().unwrap_or_default()));
+		let submodules: HashMap<PathBuf, &Submodule> = binding
+			.iter()
+			.map(|s| (s.path().to_path_buf(), s))
+			.collect();
+		if let Ok(diff) = repo.inner.diff_tree_to_tree(
+			Some(&parent[0].tree().expect("Parent commit has no tree.")),
+			Some(&commit[0].tree().expect("Commit has no tree.")),
+			None,
+		) {
+			for d in diff.deltas() {
+				if let Some(p) = d.old_file().path() {
+					if let Some(s) = submodules.get(&p.to_path_buf()) {
+						// if the path change matches the submodule path, add it
+						output.insert(
+							p.to_path_buf(),
+							(
+								Box::leak(Box::new(*s)),
+								d.old_file().id(),
+								d.new_file().id(),
+							),
+						);
+					}
 				}
 			}
 		}
-		None
+		Some(output)
 	}
 
 	/// Preprocesses the commit using [`TextProcessor`]s.

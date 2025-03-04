@@ -40,7 +40,7 @@ const CHANGED_FILES_CACHE: &str = "changed_files_cache";
 ///
 /// [`Repository`]: GitRepository
 pub struct Repository {
-	inner:                    GitRepository,
+	pub inner:                GitRepository,
 	/// Repository path.
 	path:                     PathBuf,
 	/// Cache path for the changed files of the commits.
@@ -278,6 +278,9 @@ impl Repository {
 				prev_commit.tree().ok().as_ref(),
 				None,
 			) {
+				for d in diff.deltas() {
+					println!("{:?}", d);
+				}
 				changed_files.extend(
 					diff.deltas().filter_map(|delta| {
 						delta.new_file().path().map(PathBuf::from)
