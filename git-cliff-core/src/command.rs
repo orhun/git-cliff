@@ -1,7 +1,6 @@
 use crate::error::Result;
 use std::io::{
 	Error as IoError,
-	ErrorKind as IoErrorKind,
 	Write,
 };
 use std::process::{
@@ -42,9 +41,10 @@ pub fn run(
 			.spawn()
 	}?;
 	if let Some(input) = input {
-		let mut stdin = child.stdin.take().ok_or_else(|| {
-			IoError::new(IoErrorKind::Other, "stdin is not captured")
-		})?;
+		let mut stdin = child
+			.stdin
+			.take()
+			.ok_or_else(|| IoError::other("stdin is not captured"))?;
 		thread::spawn(move || {
 			stdin
 				.write_all(input.as_bytes())
@@ -61,11 +61,10 @@ pub fn run(
 				log::error!("{}", output);
 			}
 		}
-		Err(IoError::new(
-			IoErrorKind::Other,
-			format!("command exited with {:?}", output.status),
+		Err(
+			IoError::other(format!("command exited with {:?}", output.status))
+				.into(),
 		)
-		.into())
 	}
 }
 
