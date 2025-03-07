@@ -134,7 +134,7 @@ pub struct GitConfig {
 	/// Limit the total number of commits included in the changelog.
 	pub limit_commits:            Option<usize>,
 	/// Read submodule commits.
-	pub recurse_submodules:   Option<bool>,
+	pub recurse_submodules:       Option<bool>,
 }
 
 /// Remote configuration.

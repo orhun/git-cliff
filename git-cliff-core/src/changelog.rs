@@ -877,7 +877,7 @@ mod test {
 				sort_commits:             Some(String::from("oldest")),
 				link_parsers:             None,
 				limit_commits:            None,
-				recurse_submodules:   None,
+				recurse_submodules:       None,
 			},
 			remote:    RemoteConfig {
 				github:    Remote {
