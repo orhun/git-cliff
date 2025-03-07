@@ -93,7 +93,11 @@ impl Repository {
 		Ok(path)
 	}
 
-	pub fn relative_path(&self) -> &PathBuf {
+	/// Returns the initial path of the repository.
+	///
+	/// In case of a submodule this is the relative path to the toplevel
+	/// repository.
+	pub fn initial_path(&self) -> &PathBuf {
 		&self.path
 	}
 

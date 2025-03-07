@@ -686,6 +686,7 @@ mod test {
 		RemoteConfig,
 		TextProcessor,
 	};
+	use indexmap::indexmap;
 	use pretty_assertions::assert_eq;
 	use regex::Regex;
 	use std::str;
@@ -876,6 +877,7 @@ mod test {
 				sort_commits:             Some(String::from("oldest")),
 				link_parsers:             None,
 				limit_commits:            None,
+				read_submodule_commits:   None,
 			},
 			remote:    RemoteConfig {
 				github:    Remote {
@@ -983,6 +985,26 @@ mod test {
 			timestamp: 50000000,
 			previous: None,
 			repository: Some(String::from("/root/repo")),
+			submodule_commits: Some(indexmap! {
+				String::from("submodule_one") => vec![
+					Commit::new(
+						String::from("sub0jkl12"),
+						String::from("chore(app): submodule_one do nothing"),
+					),
+					Commit::new(
+						String::from("subqwerty"),
+						String::from("chore: submodule_one <preprocess>"),
+					),
+					Commit::new(
+						String::from("subqwertz"),
+						String::from("feat!: submodule_one support breaking commits"),
+					),
+					Commit::new(
+						String::from("subqwert0"),
+						String::from("match(group): submodule_one support regex-replace for groups"),
+					),
+				]
+			}),
 			#[cfg(feature = "github")]
 			github: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],
@@ -1045,6 +1067,15 @@ mod test {
 				timestamp: 1000,
 				previous: Some(Box::new(test_release)),
 				repository: Some(String::from("/root/repo")),
+				submodule_commits: Some(indexmap![
+					String::from("submodule_one") => vec![
+						Commit::new(String::from("def349"), String::from("sub_one merge #4")),
+						Commit::new(String::from("da8912"), String::from("sub_one merge #5")),
+					],
+					String::from("submodule_two") => vec![
+						Commit::new(String::from("ab76ef"), String::from("sub_two bump")),
+					]
+				]),
 				#[cfg(feature = "github")]
 				github: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],

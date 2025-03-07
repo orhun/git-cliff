@@ -138,6 +138,7 @@ fn generate_changelog() -> Result<()> {
 			},
 		]),
 		limit_commits:            None,
+		read_submodule_commits:   None,
 	};
 
 	let mut commit_with_author = Commit::new(
@@ -201,6 +202,7 @@ fn generate_changelog() -> Result<()> {
 			timestamp: 0,
 			previous:  None,
 			repository: Some(String::from("/root/repo")),
+			submodule_commits: None,
 			#[cfg(feature = "github")]
 			github: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],
@@ -244,6 +246,7 @@ fn generate_changelog() -> Result<()> {
 			timestamp: 0,
 			previous:  None,
 			repository: Some(String::from("/root/repo")),
+			submodule_commits: None,
 			#[cfg(feature = "github")]
 			github: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],

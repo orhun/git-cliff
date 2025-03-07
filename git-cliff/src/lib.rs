@@ -41,7 +41,7 @@ use git_cliff_core::{
 	IGNORE_FILE,
 };
 use glob::Pattern;
-use std::collections::HashMap;
+use indexmap::IndexMap;
 use std::env;
 use std::fs::{
 	self,
@@ -94,7 +94,7 @@ fn extend_release_with_submodules(
 		.and_then(|commit_id| repository.find_commit(commit_id));
 	let commit_range = first_commit.zip(last_commit);
 
-	let mut submodule_map: HashMap<String, Vec<Commit>> = HashMap::new();
+	let mut submodule_map: IndexMap<String, Vec<Commit>> = IndexMap::new();
 
 	if let Some(commit_range) = &commit_range {
 		let submodule_ranges = repository.submodules_range(commit_range)?;
@@ -106,7 +106,7 @@ fn extend_release_with_submodules(
 					.map(|commits| commits.iter().map(Commit::from).collect());
 
 				let submodule_path =
-					sub_repo.relative_path().to_string_lossy().into_owned();
+					sub_repo.initial_path().to_string_lossy().into_owned();
 				Some(submodule_path).zip(commits)
 			});
 		submodule_commits.for_each(|(submodule_path, commits)| {
