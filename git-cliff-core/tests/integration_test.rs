@@ -138,7 +138,7 @@ fn generate_changelog() -> Result<()> {
 			},
 		]),
 		limit_commits:            None,
-		read_submodule_commits:   None,
+		recurse_submodules:   None,
 	};
 
 	let mut commit_with_author = Commit::new(
