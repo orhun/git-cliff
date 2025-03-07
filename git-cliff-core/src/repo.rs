@@ -161,9 +161,9 @@ impl Repository {
 	/// to query the submodule's commits by using [`Repository::commits`].
 	pub fn submodules_range(
 		&self,
-		first_commit: &Commit,
-		last_commit: &Commit,
+		commit_range: &(Commit, Commit),
 	) -> Result<Vec<(Repository, String)>> {
+		let (first_commit, last_commit) = commit_range;
 		let diff = self.inner.diff_tree_to_tree(
 			first_commit.tree().ok().as_ref(),
 			last_commit.tree().ok().as_ref(),
@@ -180,11 +180,7 @@ impl Repository {
 			{
 				None
 			} else {
-				let range = format!(
-					"{}..{}",
-					old_file_id.to_string(),
-					new_file_id.to_string()
-				);
+				let range = format!("{}..{}", old_file_id, new_file_id);
 				delta
 					.new_file()
 					.path()
