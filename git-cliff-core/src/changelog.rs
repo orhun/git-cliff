@@ -3,7 +3,10 @@ use crate::config::{
 	Config,
 	GitConfig,
 };
-use crate::error::Result;
+use crate::error::{
+	Error,
+	Result,
+};
 use crate::release::{
 	Release,
 	Releases,
@@ -44,7 +47,7 @@ impl<'a> Changelog<'a> {
 	pub fn new(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
 		let mut changelog = Changelog::build(releases, config)?;
 		changelog.add_remote_data()?;
-		changelog.process_commits();
+		changelog.process_commits()?;
 		changelog.process_releases();
 		Ok(changelog)
 	}
@@ -104,7 +107,7 @@ impl<'a> Changelog<'a> {
 			Err(e) => {
 				trace!(
 					"{} - {} ({})",
-					commit.id[..7].to_string(),
+					commit.id.chars().take(7).collect::<String>(),
 					e,
 					commit.message.lines().next().unwrap_or_default().trim()
 				);
@@ -115,7 +118,7 @@ impl<'a> Changelog<'a> {
 
 	/// Processes the commits and omits the ones that doesn't match the
 	/// criteria set by configuration file.
-	fn process_commits(&mut self) {
+	fn process_commits(&mut self) -> Result<()> {
 		debug!("Processing the commits...");
 		self.releases.iter_mut().for_each(|release| {
 			release.commits = release
@@ -144,6 +147,43 @@ impl<'a> Changelog<'a> {
 				})
 				.collect::<Vec<Commit>>();
 		});
+
+		if self.config.git.require_conventional.unwrap_or(false) {
+			self.check_conventional_commits()?;
+		}
+
+		Ok(())
+	}
+
+	/// Checks the commits and returns an error if any unconventional commits
+	/// are found.
+	fn check_conventional_commits(&mut self) -> Result<()> {
+		debug!("Verifying that all commits are conventional.");
+		let mut unconventional_count = 0;
+
+		self.releases.iter().for_each(|release| {
+			release.commits.iter().for_each(|commit| {
+				if commit.conv.is_none() {
+					error!(
+						"Commit {id} is not conventional:\n{message}",
+						id = &commit.id[..7],
+						message = commit
+							.message
+							.lines()
+							.map(|line| { format!("    | {}", line.trim()) })
+							.collect::<Vec<String>>()
+							.join("\n")
+					);
+					unconventional_count += 1;
+				}
+			});
+		});
+
+		if unconventional_count > 0 {
+			return Err(Error::UnconventionalCommitsError(unconventional_count));
+		}
+
+		Ok(())
 	}
 
 	/// Processes the releases and filters them out based on the configuration.
@@ -680,6 +720,7 @@ mod test {
 			},
 			git:       GitConfig {
 				conventional_commits:     Some(true),
+				require_conventional:     Some(false),
 				filter_unconventional:    Some(false),
 				split_commits:            Some(false),
 				commit_preprocessors:     Some(vec![TextProcessor {
