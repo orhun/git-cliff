@@ -216,7 +216,8 @@ impl Commit<'_> {
 			commit = commit.preprocess(preprocessors)?;
 		}
 		if config.conventional_commits.unwrap_or(true) {
-			if config.filter_unconventional.unwrap_or(true) &&
+			if !config.require_conventional.unwrap_or(false) &&
+				config.filter_unconventional.unwrap_or(true) &&
 				!config.split_commits.unwrap_or(false)
 			{
 				commit = commit.into_conventional()?;
