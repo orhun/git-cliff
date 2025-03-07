@@ -924,6 +924,7 @@ dependencies = [
  "env_logger",
  "git-cliff-core",
  "glob",
+ "indexmap",
  "indicatif",
  "lazy_static",
  "log",
@@ -1468,6 +1469,7 @@ checksum = "8c9c992b02b5b4c94ea26e32fe5bccb7aa7d9f390ab5c1221ff895bc7ea8b652"
 dependencies = [
  "equivalent",
  "hashbrown 0.15.1",
+ "serde",
 ]
 
 [[package]]
