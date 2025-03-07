@@ -78,7 +78,8 @@ fn check_new_version() {
 	}
 }
 
-fn extend_release_with_submodules(
+/// Process submodules and add commits to release.
+fn process_submodules(
 	repository: &'static Repository,
 	release: &mut Release,
 ) -> Result<()> {
@@ -135,6 +136,7 @@ fn process_repository<'a>(
 	let skip_regex = config.git.skip_tags.as_ref();
 	let ignore_regex = config.git.ignore_tags.as_ref();
 	let count_tags = config.git.count_tags.as_ref();
+	let recurse_submodules = config.git.recurse_submodules.unwrap_or(false);
 	tags.retain(|_, tag| {
 		let name = &tag.name;
 
@@ -320,9 +322,9 @@ fn process_repository<'a>(
 		release.commits.push(commit);
 		release.repository = Some(repository_path.clone());
 		if let Some(tag) = tags.get(&commit_id) {
-			// TODO add config option
-
-			extend_release_with_submodules(repository, release)?;
+			if recurse_submodules {
+				process_submodules(repository, release)?;
+			}
 
 			release.version = Some(tag.name.to_string());
 			release.message.clone_from(&tag.message);
