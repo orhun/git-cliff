@@ -105,11 +105,9 @@ fn extend_release_with_submodules(
 					.ok()
 					.map(|commits| commits.iter().map(Commit::from).collect());
 
-				let submodule_path = sub_repo
-					.path()
-					.ok()
-					.map(|pathbuf| pathbuf.to_string_lossy().into_owned());
-				submodule_path.zip(commits)
+				let submodule_path =
+					sub_repo.relative_path().to_string_lossy().into_owned();
+				Some(submodule_path).zip(commits)
 			});
 		submodule_commits.for_each(|(submodule_path, commits)| {
 			submodule_map.insert(submodule_path, commits);
