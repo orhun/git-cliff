@@ -41,6 +41,7 @@ use git_cliff_core::{
 	IGNORE_FILE,
 };
 use glob::Pattern;
+use indexmap::IndexMap;
 use std::env;
 use std::fs::{
 	self,
@@ -77,6 +78,46 @@ fn check_new_version() {
 	}
 }
 
+/// Process submodules and add commits to release.
+fn process_submodules(
+	repository: &'static Repository,
+	release: &mut Release,
+) -> Result<()> {
+	let first_commit = release
+		.commits
+		.first()
+		.map(|commit| &commit.id)
+		.and_then(|commit_id| repository.find_commit(commit_id));
+	let last_commit = release
+		.commits
+		.last()
+		.map(|commit| &commit.id)
+		.and_then(|commit_id| repository.find_commit(commit_id));
+	let commit_range = first_commit.zip(last_commit);
+
+	let mut submodule_map: IndexMap<String, Vec<Commit>> = IndexMap::new();
+
+	if let Some(commit_range) = &commit_range {
+		let submodule_ranges = repository.submodules_range(commit_range)?;
+		let submodule_commits =
+			submodule_ranges.iter().filter_map(|(sub_repo, range_str)| {
+				let commits = sub_repo
+					.commits(Some(range_str), None, None)
+					.ok()
+					.map(|commits| commits.iter().map(Commit::from).collect());
+
+				let submodule_path =
+					sub_repo.initial_path().to_string_lossy().into_owned();
+				Some(submodule_path).zip(commits)
+			});
+		submodule_commits.for_each(|(submodule_path, commits)| {
+			submodule_map.insert(submodule_path, commits);
+		});
+	}
+	release.submodule_commits = Some(submodule_map);
+	Ok(())
+}
+
 /// Processes the tags and commits for creating release entries for the
 /// changelog.
 ///
@@ -95,6 +136,7 @@ fn process_repository<'a>(
 	let skip_regex = config.git.skip_tags.as_ref();
 	let ignore_regex = config.git.ignore_tags.as_ref();
 	let count_tags = config.git.count_tags.as_ref();
+	let recurse_submodules = config.git.recurse_submodules.unwrap_or(false);
 	tags.retain(|_, tag| {
 		let name = &tag.name;
 
@@ -280,6 +322,10 @@ fn process_repository<'a>(
 		release.commits.push(commit);
 		release.repository = Some(repository_path.clone());
 		if let Some(tag) = tags.get(&commit_id) {
+			if recurse_submodules {
+				process_submodules(repository, release)?;
+			}
+
 			release.version = Some(tag.name.to_string());
 			release.message.clone_from(&tag.message);
 			release.commit_id = Some(commit_id);

@@ -22,7 +22,10 @@ use lazy_regex::{
 	Regex,
 };
 use std::io;
-use std::path::PathBuf;
+use std::path::{
+	Path,
+	PathBuf,
+};
 use std::result::Result as StdResult;
 use url::Url;
 
@@ -90,6 +93,14 @@ impl Repository {
 		Ok(path)
 	}
 
+	/// Returns the initial path of the repository.
+	///
+	/// In case of a submodule this is the relative path to the toplevel
+	/// repository.
+	pub fn initial_path(&self) -> &PathBuf {
+		&self.path
+	}
+
 	/// Sets the range for the commit search.
 	///
 	/// When a single SHA is provided as the range, start from the
@@ -147,6 +158,53 @@ impl Repository {
 			});
 		}
 		Ok(commits)
+	}
+
+	/// Returns submodule repositories for a given commit range.
+	///
+	/// For a two given commits in this repository, a list of changed submodules
+	/// is calculated. For each submodule a [`Repository`] object is created
+	/// along with a commit range string
+	/// "first_submodule_commit..last_submodule_commit". This can then be used
+	/// to query the submodule's commits by using [`Repository::commits`].
+	pub fn submodules_range(
+		&self,
+		commit_range: &(Commit, Commit),
+	) -> Result<Vec<(Repository, String)>> {
+		let (first_commit, last_commit) = commit_range;
+		let diff = self.inner.diff_tree_to_tree(
+			first_commit.tree().ok().as_ref(),
+			last_commit.tree().ok().as_ref(),
+			None,
+		)?;
+		// (path, commit_range)
+		let before_and_after_deltas = diff.deltas().filter_map(|delta| {
+			let old_file_id = delta.old_file().id();
+			let new_file_id = delta.new_file().id();
+			// no changes or element added/removed
+			if old_file_id == new_file_id ||
+				new_file_id.is_zero() ||
+				old_file_id.is_zero()
+			{
+				None
+			} else {
+				let range = format!("{}..{}", old_file_id, new_file_id);
+				delta
+					.new_file()
+					.path()
+					.and_then(Path::to_str)
+					.zip(Some(range))
+			}
+		});
+		// (repository, commit_range)
+		let submodule_range = before_and_after_deltas.filter_map(|(path, range)| {
+			self.inner
+				.find_submodule(path)
+				.ok()
+				.and_then(|submodule| Self::init(submodule.path().into()).ok())
+				.zip(Some(range))
+		});
+		Ok(submodule_range.collect())
 	}
 
 	/// Normalizes the glob pattern to match the git diff paths.
