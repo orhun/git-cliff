@@ -93,6 +93,10 @@ impl Repository {
 		Ok(path)
 	}
 
+	pub fn relative_path(&self) -> &PathBuf {
+		&self.path
+	}
+
 	/// Sets the range for the commit search.
 	///
 	/// When a single SHA is provided as the range, start from the
