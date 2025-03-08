@@ -4,6 +4,7 @@ use crate::error::{
 	Result,
 };
 use crate::tag::Tag;
+pub use git2::Submodule as GitSubmodule;
 use git2::{
 	BranchType,
 	Commit,
@@ -39,7 +40,7 @@ const CHANGED_FILES_CACHE: &str = "changed_files_cache";
 ///
 /// [`Repository`]: GitRepository
 pub struct Repository {
-	inner:                    GitRepository,
+	pub inner:                GitRepository,
 	/// Repository path.
 	path:                     PathBuf,
 	/// Cache path for the changed files of the commits.
@@ -265,7 +266,7 @@ impl Repository {
 	/// Calculate the changed files of the commit.
 	///
 	/// This function does not use the cache (directly calls git2).
-	fn commit_changed_files_no_cache(&self, commit: &Commit) -> Vec<PathBuf> {
+	pub fn commit_changed_files_no_cache(&self, commit: &Commit) -> Vec<PathBuf> {
 		let mut changed_files = Vec::new();
 		if let Ok(prev_commit) = commit.parent(0) {
 			// Compare the current commit with the previous commit to get the
@@ -277,6 +278,9 @@ impl Repository {
 				prev_commit.tree().ok().as_ref(),
 				None,
 			) {
+				for d in diff.deltas() {
+					println!("{:?}", d);
+				}
 				changed_files.extend(
 					diff.deltas().filter_map(|delta| {
 						delta.new_file().path().map(PathBuf::from)
@@ -472,6 +476,13 @@ impl Repository {
 		Err(Error::RepoError(String::from(
 			"no remotes configured or HEAD is detached",
 		)))
+	}
+
+	/// Load all submodules for this repository and return them.
+	pub fn submodules(&self) -> Result<Vec<GitSubmodule<'_>>> {
+		self.inner
+			.submodules()
+			.map_err(|e| Error::RepoError(String::from(e.message())))
 	}
 }
 
