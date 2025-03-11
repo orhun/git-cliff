@@ -145,6 +145,7 @@ impl<'a> Changelog<'a> {
 						vec![commit]
 					}
 				})
+				.filter(|commit| !commit.is_skipped)
 				.collect::<Vec<Commit>>();
 		});
 
