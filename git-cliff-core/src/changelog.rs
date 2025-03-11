@@ -44,9 +44,13 @@ pub struct Changelog<'a> {
 
 impl<'a> Changelog<'a> {
 	/// Constructs a new instance.
-	pub fn new(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
+	pub fn new(
+		releases: Vec<Release<'a>>,
+		config: &'a Config,
+		range: Option<&str>,
+	) -> Result<Self> {
 		let mut changelog = Changelog::build(releases, config)?;
-		changelog.add_remote_data()?;
+		changelog.add_remote_data(range)?;
 		changelog.process_commits()?;
 		changelog.process_releases();
 		Ok(changelog)
@@ -256,7 +260,10 @@ impl<'a> Changelog<'a> {
 	/// If no GitHub related variable is used in the template then this function
 	/// returns empty vectors.
 	#[cfg(feature = "github")]
-	fn get_github_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
+	fn get_github_metadata(
+		&self,
+		head: Option<&str>,
+	) -> Result<crate::remote::RemoteMetadata> {
 		use crate::remote::github;
 		if self.config.remote.github.is_custom ||
 			self.body_template
@@ -279,8 +286,8 @@ impl<'a> Changelog<'a> {
 				.build()?
 				.block_on(async {
 					let (commits, pull_requests) = tokio::try_join!(
-						github_client.get_commits(),
-						github_client.get_pull_requests(),
+						github_client.get_commits(head),
+						github_client.get_pull_requests(head),
 					)?;
 					debug!("Number of GitHub commits: {}", commits.len());
 					debug!(
@@ -312,7 +319,10 @@ impl<'a> Changelog<'a> {
 	/// If no GitLab related variable is used in the template then this function
 	/// returns empty vectors.
 	#[cfg(feature = "gitlab")]
-	fn get_gitlab_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
+	fn get_gitlab_metadata(
+		&self,
+		head: Option<&str>,
+	) -> Result<crate::remote::RemoteMetadata> {
 		use crate::remote::gitlab;
 		if self.config.remote.gitlab.is_custom ||
 			self.body_template
@@ -335,18 +345,18 @@ impl<'a> Changelog<'a> {
 				.build()?
 				.block_on(async {
 					// Map repo/owner to gitlab id
-					let project_id = match tokio::join!(gitlab_client.get_project())
-					{
-						(Ok(project),) => project.id,
-						(Err(err),) => {
-							error!("Failed to lookup project! {}", err);
-							return Err(err);
-						}
-					};
+					let project_id =
+						match tokio::join!(gitlab_client.get_project(head)) {
+							(Ok(project),) => project.id,
+							(Err(err),) => {
+								error!("Failed to lookup project! {}", err);
+								return Err(err);
+							}
+						};
 					let (commits, merge_requests) = tokio::try_join!(
 						// Send id to these functions
-						gitlab_client.get_commits(project_id),
-						gitlab_client.get_merge_requests(project_id),
+						gitlab_client.get_commits(project_id, head),
+						gitlab_client.get_merge_requests(project_id, head),
 					)?;
 					debug!("Number of GitLab commits: {}", commits.len());
 					debug!(
@@ -376,7 +386,10 @@ impl<'a> Changelog<'a> {
 	/// If no Gitea related variable is used in the template then this function
 	/// returns empty vectors.
 	#[cfg(feature = "gitea")]
-	fn get_gitea_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
+	fn get_gitea_metadata(
+		&self,
+		head: Option<&str>,
+	) -> Result<crate::remote::RemoteMetadata> {
 		use crate::remote::gitea;
 		if self.config.remote.gitea.is_custom ||
 			self.body_template
@@ -399,8 +412,8 @@ impl<'a> Changelog<'a> {
 				.build()?
 				.block_on(async {
 					let (commits, pull_requests) = tokio::try_join!(
-						gitea_client.get_commits(),
-						gitea_client.get_pull_requests(),
+						gitea_client.get_commits(head),
+						gitea_client.get_pull_requests(head),
 					)?;
 					debug!("Number of Gitea commits: {}", commits.len());
 					debug!("Number of Gitea pull requests: {}", pull_requests.len());
@@ -429,7 +442,10 @@ impl<'a> Changelog<'a> {
 	/// If no bitbucket related variable is used in the template then this
 	/// function returns empty vectors.
 	#[cfg(feature = "bitbucket")]
-	fn get_bitbucket_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
+	fn get_bitbucket_metadata(
+		&self,
+		head: Option<&str>,
+	) -> Result<crate::remote::RemoteMetadata> {
 		use crate::remote::bitbucket;
 		if self.config.remote.bitbucket.is_custom ||
 			self.body_template
@@ -452,8 +468,8 @@ impl<'a> Changelog<'a> {
 				.build()?
 				.block_on(async {
 					let (commits, pull_requests) = tokio::try_join!(
-						bitbucket_client.get_commits(),
-						bitbucket_client.get_pull_requests()
+						bitbucket_client.get_commits(head),
+						bitbucket_client.get_pull_requests(head)
 					)?;
 					debug!("Number of Bitbucket commits: {}", commits.len());
 					debug!(
@@ -479,14 +495,21 @@ impl<'a> Changelog<'a> {
 	}
 
 	/// Adds remote data (e.g. GitHub commits) to the releases.
-	pub fn add_remote_data(&mut self) -> Result<()> {
+	pub fn add_remote_data(&mut self, range: Option<&str>) -> Result<()> {
 		debug!("Adding remote data...");
 		self.add_remote_context()?;
+
+		let range_head = range.and_then(|r| r.split("..").last());
+		// Create variable that is None if head is "HEAD", otherwise head
+		let head = match range_head {
+			Some("HEAD") => None,
+			other => other,
+		};
 
 		#[cfg(feature = "github")]
 		let (github_commits, github_pull_requests) = if self.config.remote.github.is_set()
 		{
-			self.get_github_metadata()
+			self.get_github_metadata(head)
 				.expect("Could not get github metadata")
 		} else {
 			(vec![], vec![])
@@ -494,14 +517,14 @@ impl<'a> Changelog<'a> {
 		#[cfg(feature = "gitlab")]
 		let (gitlab_commits, gitlab_merge_request) = if self.config.remote.gitlab.is_set()
 		{
-			self.get_gitlab_metadata()
+			self.get_gitlab_metadata(head)
 				.expect("Could not get gitlab metadata")
 		} else {
 			(vec![], vec![])
 		};
 		#[cfg(feature = "gitea")]
 		let (gitea_commits, gitea_merge_request) = if self.config.remote.gitea.is_set() {
-			self.get_gitea_metadata()
+			self.get_gitea_metadata(head)
 				.expect("Could not get gitea metadata")
 		} else {
 			(vec![], vec![])
@@ -509,7 +532,7 @@ impl<'a> Changelog<'a> {
 		#[cfg(feature = "bitbucket")]
 		let (bitbucket_commits, bitbucket_pull_request) =
 			if self.config.remote.bitbucket.is_set() {
-				self.get_bitbucket_metadata()
+				self.get_bitbucket_metadata(head)
 					.expect("Could not get bitbucket metadata")
 			} else {
 				(vec![], vec![])
@@ -1058,7 +1081,7 @@ mod test {
 	#[test]
 	fn changelog_generator() -> Result<()> {
 		let (config, releases) = get_test_data();
-		let mut changelog = Changelog::new(releases, &config)?;
+		let mut changelog = Changelog::new(releases, &config, None)?;
 		changelog.bump_version()?;
 		changelog.releases[0].timestamp = 0;
 		let mut out = Vec::new();
@@ -1180,7 +1203,7 @@ chore(deps): fix broken deps
 ",
 			),
 		));
-		let changelog = Changelog::new(releases, &config)?;
+		let changelog = Changelog::new(releases, &config, None)?;
 		let mut out = Vec::new();
 		changelog.generate(&mut out)?;
 		assert_eq!(
@@ -1282,7 +1305,7 @@ chore(deps): fix broken deps
 				- {{ commit.message }}{% endfor %}
 				{% endfor %}{% endfor %}"#
 			.to_string();
-		let mut changelog = Changelog::new(releases, &config)?;
+		let mut changelog = Changelog::new(releases, &config, None)?;
 		changelog.add_context("custom_field", "Hello")?;
 		let mut out = Vec::new();
 		changelog.generate(&mut out)?;
