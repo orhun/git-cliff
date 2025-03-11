@@ -116,6 +116,29 @@ impl<'a> Changelog<'a> {
 		}
 	}
 
+	fn split_commit_by_newline(
+		commit: Commit<'a>,
+		git_config: &GitConfig,
+	) -> Vec<Commit<'a>> {
+		if git_config.split_commits.unwrap_or(false) {
+			commit
+				.message
+				.lines()
+				.filter_map(|line| {
+					if !line.is_empty() {
+						let mut c = commit.clone();
+						c.message = line.to_string();
+						Some(c)
+					} else {
+						None
+					}
+				})
+				.collect()
+		} else {
+			vec![commit]
+		}
+	}
+
 	/// Processes the commits and omits the ones that doesn't match the
 	/// criteria set by configuration file.
 	fn process_commits(&mut self) -> Result<()> {
@@ -125,26 +148,10 @@ impl<'a> Changelog<'a> {
 				.commits
 				.iter()
 				.cloned()
-				.filter_map(|commit| Self::process_commit(&commit, &self.config.git))
 				.flat_map(|commit| {
-					if self.config.git.split_commits.unwrap_or(false) {
-						commit
-							.message
-							.lines()
-							.filter_map(|line| {
-								let mut c = commit.clone();
-								c.message = line.to_string();
-								if c.message.is_empty() {
-									None
-								} else {
-									Self::process_commit(&c, &self.config.git)
-								}
-							})
-							.collect()
-					} else {
-						vec![commit]
-					}
+					Self::split_commit_by_newline(commit, &self.config.git)
 				})
+				.filter_map(|commit| Self::process_commit(&commit, &self.config.git))
 				.filter(|commit| !commit.is_skipped)
 				.collect::<Vec<Commit>>();
 		});
