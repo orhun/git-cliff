@@ -521,10 +521,6 @@ pub fn run_with_changelog_modifier(
 		}
 		EmbeddedConfig::parse()?
 	};
-	if config.changelog.body.is_none() && !args.context && !args.bumped_version {
-		warn!("Changelog body is not specified, using the default template.");
-		config.changelog.body = EmbeddedConfig::parse()?.changelog.body;
-	}
 
 	// Update the configuration based on command line arguments and vice versa.
 	let output = args.output.clone().or(config.changelog.output.clone());
@@ -558,25 +554,19 @@ pub fn run_with_changelog_modifier(
 			 files",
 		)));
 	}
-	if args.body.is_some() {
-		config.changelog.body.clone_from(&args.body);
+	if let Some(body) = args.body.clone() {
+		config.changelog.body = body;
 	}
 	if args.sort == Sort::Oldest {
-		if let Some(ref sort_commits) = config.git.sort_commits {
-			args.sort = Sort::from_str(sort_commits, true)
-				.expect("Incorrect config value for 'sort_commits'");
-		}
+		args.sort = Sort::from_str(&config.git.sort_commits, true)
+			.expect("Incorrect config value for 'sort_commits'");
 	}
 	if !args.topo_order {
-		if let Some(topo_order) = config.git.topo_order {
-			args.topo_order = topo_order;
-		}
+		args.topo_order = config.git.topo_order;
 	}
 
 	if !args.use_branch_tags {
-		if let Some(use_branch_tags) = config.git.use_branch_tags {
-			args.use_branch_tags = use_branch_tags;
-		}
+		args.use_branch_tags = config.git.use_branch_tags;
 	}
 
 	if args.github_token.is_some() {
@@ -616,16 +606,16 @@ pub fn run_with_changelog_modifier(
 		config.remote.gitea.is_custom = true;
 	}
 	if args.no_exec {
-		if let Some(ref mut preprocessors) = config.git.commit_preprocessors {
-			preprocessors
-				.iter_mut()
-				.for_each(|v| v.replace_command = None);
-		}
-		if let Some(ref mut postprocessors) = config.changelog.postprocessors {
-			postprocessors
-				.iter_mut()
-				.for_each(|v| v.replace_command = None);
-		}
+		config
+			.git
+			.commit_preprocessors
+			.iter_mut()
+			.for_each(|v| v.replace_command = None);
+		config
+			.changelog
+			.postprocessors
+			.iter_mut()
+			.for_each(|v| v.replace_command = None);
 	}
 	config.git.skip_tags = config.git.skip_tags.filter(|r| !r.as_str().is_empty());
 	if args.tag_pattern.is_some() {
@@ -677,14 +667,12 @@ pub fn run_with_changelog_modifier(
 			if let Some(ref skip_commit) = args.skip_commit {
 				skip_list.extend(skip_commit.clone());
 			}
-			if let Some(commit_parsers) = config.git.commit_parsers.as_mut() {
-				for sha1 in skip_list {
-					commit_parsers.insert(0, CommitParser {
-						sha: Some(sha1.to_string()),
-						skip: Some(true),
-						..Default::default()
-					});
-				}
+			for sha1 in skip_list {
+				config.git.commit_parsers.insert(0, CommitParser {
+					sha: Some(sha1.to_string()),
+					skip: Some(true),
+					..Default::default()
+				});
 			}
 
 			// Process the repository.
