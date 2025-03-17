@@ -162,11 +162,15 @@ impl Repository {
 
 	/// Returns submodule repositories for a given commit range.
 	///
-	/// For a two given commits in this repository, a list of changed submodules
+	/// Returns submodule repositories for a given commit range.
+	///
+	/// For given two commits in this repository, a list of changed submodules
 	/// is calculated. For each submodule a [`Repository`] object is created
-	/// along with a commit range string
-	/// "first_submodule_commit..last_submodule_commit". This can then be used
-	/// to query the submodule's commits by using [`Repository::commits`].
+	/// along with a commit range string in
+	/// "<first_submodule_commit>..<last_submodule_commit>" format.
+	///
+	/// This can then be used to query the submodule's commits by using
+	/// [`Repository::commits`].
 	pub fn submodules_range(
 		&self,
 		commit_range: &(Commit, Commit),
