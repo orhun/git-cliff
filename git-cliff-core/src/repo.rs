@@ -80,7 +80,7 @@ impl Repository {
 	}
 
 	/// Returns the path of the repository.
-	pub fn path(&self) -> Result<PathBuf> {
+	pub fn root_path(&self) -> Result<PathBuf> {
 		let mut path = if self.inner.is_worktree() {
 			let worktree = Worktree::open_from_repository(&self.inner)?;
 			worktree.path().to_path_buf()
@@ -97,7 +97,7 @@ impl Repository {
 	///
 	/// In case of a submodule this is the relative path to the toplevel
 	/// repository.
-	pub fn initial_path(&self) -> &PathBuf {
+	pub fn path(&self) -> &PathBuf {
 		&self.path
 	}
 

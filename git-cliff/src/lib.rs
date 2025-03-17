@@ -107,7 +107,7 @@ fn process_submodules(
 					.map(|commits| commits.iter().map(Commit::from).collect());
 
 				let submodule_path =
-					sub_repo.initial_path().to_string_lossy().into_owned();
+					sub_repo.path().to_string_lossy().into_owned();
 				Some(submodule_path).zip(commits)
 			});
 		submodule_commits.for_each(|(submodule_path, commits)| {
@@ -263,7 +263,7 @@ fn process_repository<'a>(
 	// Include only the current directory if not running from the root repository
 	let mut include_path = args.include_path.clone();
 	if let Some(mut path_diff) =
-		pathdiff::diff_paths(env::current_dir()?, repository.path()?)
+		pathdiff::diff_paths(env::current_dir()?, repository.root_path()?)
 	{
 		if args.workdir.is_none() &&
 			include_path.is_none() &&
@@ -314,7 +314,7 @@ fn process_repository<'a>(
 	// Process releases.
 	let mut previous_release = Release::default();
 	let mut first_processed_tag = None;
-	let repository_path = repository.path()?.to_string_lossy().into_owned();
+	let repository_path = repository.root_path()?.to_string_lossy().into_owned();
 	for git_commit in commits.iter().rev() {
 		let release = releases.last_mut().unwrap();
 		let commit = Commit::from(git_commit);
