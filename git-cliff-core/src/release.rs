@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::commit::commits_to_conventional_commits;
 use crate::error::Result;
 use crate::{
@@ -15,7 +17,6 @@ use crate::{
 	},
 };
 
-use indexmap::IndexMap;
 use next_version::{
 	NextVersion,
 	VersionUpdater,
@@ -51,7 +52,7 @@ pub struct Release<'a> {
 	///
 	/// Maps submodule path to a list of commits.
 	#[serde(rename = "submodule_commits")]
-	pub submodule_commits: Option<IndexMap<String, Vec<Commit<'a>>>>,
+	pub submodule_commits: Option<HashMap<String, Vec<Commit<'a>>>>,
 	/// Arbitrary data to be used with the `--from-context` CLI option.
 	pub extra:             Option<Value>,
 	/// Contributors.

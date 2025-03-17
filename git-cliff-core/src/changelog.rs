@@ -116,73 +116,84 @@ impl<'a> Changelog<'a> {
 		}
 	}
 
-	/// Processes the commits and omits the ones that doesn't match the
-	/// criteria set by configuration file.
-	fn process_commits(&mut self) -> Result<()> {
-		debug!("Processing the commits...");
-		self.releases.iter_mut().for_each(|release| {
-			release.commits = release
-				.commits
-				.iter()
-				.cloned()
-				.filter_map(|commit| Self::process_commit(&commit, &self.config.git))
-				.flat_map(|commit| {
-					if self.config.git.split_commits.unwrap_or(false) {
-						commit
-							.message
-							.lines()
-							.filter_map(|line| {
-								let mut c = commit.clone();
-								c.message = line.to_string();
-								if c.message.is_empty() {
-									None
-								} else {
-									Self::process_commit(&c, &self.config.git)
-								}
-							})
-							.collect()
-					} else {
-						vec![commit]
-					}
-				})
-				.collect::<Vec<Commit>>();
-		});
-
-		if self.config.git.require_conventional.unwrap_or(false) {
-			self.check_conventional_commits()?;
-		}
-
-		Ok(())
-	}
-
 	/// Checks the commits and returns an error if any unconventional commits
 	/// are found.
-	fn check_conventional_commits(&mut self) -> Result<()> {
+	fn check_conventional_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
 		debug!("Verifying that all commits are conventional.");
 		let mut unconventional_count = 0;
 
-		self.releases.iter().for_each(|release| {
-			release.commits.iter().for_each(|commit| {
-				if commit.conv.is_none() {
-					error!(
-						"Commit {id} is not conventional:\n{message}",
-						id = &commit.id[..7],
-						message = commit
-							.message
-							.lines()
-							.map(|line| { format!("    | {}", line.trim()) })
-							.collect::<Vec<String>>()
-							.join("\n")
-					);
-					unconventional_count += 1;
-				}
-			});
+		commits.iter().for_each(|commit| {
+			if commit.conv.is_none() {
+				error!(
+					"Commit {id} is not conventional:\n{message}",
+					id = &commit.id[..7],
+					message = commit
+						.message
+						.lines()
+						.map(|line| { format!("    | {}", line.trim()) })
+						.collect::<Vec<String>>()
+						.join("\n")
+				);
+				unconventional_count += 1;
+			}
 		});
 
 		if unconventional_count > 0 {
 			return Err(Error::UnconventionalCommitsError(unconventional_count));
 		}
 
+		Ok(())
+	}
+
+	fn process_commit_list(
+		commits: &mut Vec<Commit<'a>>,
+		git_config: &GitConfig,
+	) -> Result<()> {
+		*commits = commits
+			.iter()
+			.filter_map(|commit| Self::process_commit(commit, git_config))
+			.flat_map(|commit| {
+				if git_config.split_commits.unwrap_or(false) {
+					commit
+						.message
+						.lines()
+						.filter_map(|line| {
+							let mut c = commit.clone();
+							c.message = line.to_string();
+							if c.message.is_empty() {
+								None
+							} else {
+								Self::process_commit(&c, git_config)
+							}
+						})
+						.collect()
+				} else {
+					vec![commit]
+				}
+			})
+			.collect::<Vec<Commit>>();
+		if git_config.require_conventional.unwrap_or(false) {
+			Self::check_conventional_commits(commits)?;
+		}
+
+		Ok(())
+	}
+
+	/// Processes the commits and omits the ones that doesn't match the
+	/// criteria set by configuration file.
+	fn process_commits(&mut self) -> Result<()> {
+		debug!("Processing the commits...");
+		for release in self.releases.iter_mut() {
+			Self::process_commit_list(&mut release.commits, &self.config.git)?;
+			if let Some(submodule_commits) = &mut release.submodule_commits {
+				for submodule_commit_vec in submodule_commits.values_mut() {
+					Self::process_commit_list(
+						submodule_commit_vec,
+						&self.config.git,
+					)?;
+				}
+			}
+		}
 		Ok(())
 	}
 
@@ -686,7 +697,6 @@ mod test {
 		RemoteConfig,
 		TextProcessor,
 	};
-	use indexmap::indexmap;
 	use pretty_assertions::assert_eq;
 	use regex::Regex;
 	use std::str;
@@ -985,8 +995,9 @@ mod test {
 			timestamp: 50000000,
 			previous: None,
 			repository: Some(String::from("/root/repo")),
-			submodule_commits: Some(indexmap! {
-				String::from("submodule_one") => vec![
+			submodule_commits: Some(HashMap::from([(
+				String::from("submodule_one"),
+				vec![
 					Commit::new(
 						String::from("sub0jkl12"),
 						String::from("chore(app): submodule_one do nothing"),
@@ -997,14 +1008,19 @@ mod test {
 					),
 					Commit::new(
 						String::from("subqwertz"),
-						String::from("feat!: submodule_one support breaking commits"),
+						String::from(
+							"feat!: submodule_one support breaking commits",
+						),
 					),
 					Commit::new(
 						String::from("subqwert0"),
-						String::from("match(group): submodule_one support regex-replace for groups"),
+						String::from(
+							"match(group): submodule_one support regex-replace for \
+							 groups",
+						),
 					),
-				]
-			}),
+				],
+			)])),
 			#[cfg(feature = "github")]
 			github: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],
@@ -1067,15 +1083,22 @@ mod test {
 				timestamp: 1000,
 				previous: Some(Box::new(test_release)),
 				repository: Some(String::from("/root/repo")),
-				submodule_commits: Some(indexmap![
-					String::from("submodule_one") => vec![
-						Commit::new(String::from("def349"), String::from("sub_one merge #4")),
-						Commit::new(String::from("da8912"), String::from("sub_one merge #5")),
-					],
-					String::from("submodule_two") => vec![
-						Commit::new(String::from("ab76ef"), String::from("sub_two bump")),
-					]
-				]),
+				submodule_commits: Some(HashMap::from([
+					(String::from("submodule_one"), vec![
+						Commit::new(
+							String::from("def349"),
+							String::from("sub_one merge #4"),
+						),
+						Commit::new(
+							String::from("da8912"),
+							String::from("sub_one merge #5"),
+						),
+					]),
+					(String::from("submodule_two"), vec![Commit::new(
+						String::from("ab76ef"),
+						String::from("sub_two bump"),
+					)]),
+				])),
 				#[cfg(feature = "github")]
 				github: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
