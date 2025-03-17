@@ -88,15 +88,14 @@ fn process_submodules(
 ) -> Result<()> {
 	// Retrieve first and last commit of a release to create a commit range.
 	let first_commit = release
-		.commits
-		.first()
-		.map(|commit| &commit.id)
-		.and_then(|commit_id| repository.find_commit(commit_id));
+		.previous
+		.as_ref()
+		.and_then(|previous_release| previous_release.commit_id.clone())
+		.and_then(|commit_id| repository.find_commit(&commit_id));
 	let last_commit = release
-		.commits
-		.last()
-		.map(|commit| &commit.id)
-		.and_then(|commit_id| repository.find_commit(commit_id));
+		.commit_id
+		.clone()
+		.and_then(|commit_id| repository.find_commit(&commit_id));
 	let commit_range = first_commit.zip(last_commit);
 
 	let mut submodule_map: HashMap<String, Vec<Commit>> = HashMap::new();
@@ -336,10 +335,6 @@ fn process_repository<'a>(
 		release.commits.push(commit);
 		release.repository = Some(repository_path.clone());
 		if let Some(tag) = tags.get(&commit_id) {
-			if recurse_submodules {
-				process_submodules(repository, release)?;
-			}
-
 			release.version = Some(tag.name.to_string());
 			release.message.clone_from(&tag.message);
 			release.commit_id = Some(commit_id);
@@ -360,6 +355,9 @@ fn process_repository<'a>(
 			previous_release.previous = None;
 			release.previous = Some(Box::new(previous_release));
 			previous_release = release.clone();
+			if recurse_submodules {
+				process_submodules(repository, release)?;
+			}
 			releases.push(Release::default());
 		}
 	}
