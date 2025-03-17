@@ -48,6 +48,8 @@ pub struct Release<'a> {
 	/// Repository path.
 	pub repository:        Option<String>,
 	/// Submodule commits.
+	/// 
+	/// Maps submodule path to a list of commits.
 	pub submodule_commits: Option<IndexMap<String, Vec<Commit<'a>>>>,
 	/// Arbitrary data to be used with the `--from-context` CLI option.
 	pub extra:             Option<Value>,
