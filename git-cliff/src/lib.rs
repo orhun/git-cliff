@@ -35,7 +35,10 @@ use git_cliff_core::error::{
 	Result,
 };
 use git_cliff_core::release::Release;
-use git_cliff_core::repo::Repository;
+use git_cliff_core::repo::{
+	Repository,
+	SubmoduleRange,
+};
 use git_cliff_core::{
 	DEFAULT_CONFIG,
 	IGNORE_FILE,
@@ -83,6 +86,7 @@ fn process_submodules(
 	repository: &'static Repository,
 	release: &mut Release,
 ) -> Result<()> {
+	// Retrieve first and last commit of a release to create a commit range.
 	let first_commit = release
 		.commits
 		.first()
@@ -98,21 +102,31 @@ fn process_submodules(
 	let mut submodule_map: IndexMap<String, Vec<Commit>> = IndexMap::new();
 
 	if let Some(commit_range) = &commit_range {
+		// Query repository for submodule changes. For each submodule a
+		// SubmoduleRange is created, describing the range of commits in the context
+		// of that submodule.
 		let submodule_ranges = repository.submodules_range(commit_range)?;
 		let submodule_commits =
-			submodule_ranges.iter().filter_map(|(sub_repo, range_str)| {
+			submodule_ranges.iter().filter_map(|submodule_range| {
+				// For each submodule, the commit range is exploded into a list of
+				// commits.
+				let SubmoduleRange {
+					repository: sub_repo,
+					range: range_str,
+				} = submodule_range;
 				let commits = sub_repo
 					.commits(Some(range_str), None, None)
 					.ok()
 					.map(|commits| commits.iter().map(Commit::from).collect());
 
-				let submodule_path =
-					sub_repo.path().to_string_lossy().into_owned();
+				let submodule_path = sub_repo.path().to_string_lossy().into_owned();
+				// (submodule_path, Vec<Commit>)
 				Some(submodule_path).zip(commits)
 			});
-		submodule_commits.for_each(|(submodule_path, commits)| {
+		// Insert submodule commits into map.
+		for (submodule_path, commits) in submodule_commits {
 			submodule_map.insert(submodule_path, commits);
-		});
+		}
 	}
 	release.submodule_commits = Some(submodule_map);
 	Ok(())

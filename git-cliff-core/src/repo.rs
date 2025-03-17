@@ -49,6 +49,15 @@ pub struct Repository {
 	changed_files_cache_path: PathBuf,
 }
 
+/// Range of commits in a submodule.
+pub struct SubmoduleRange {
+	/// Repository object to which this range belongs.
+	pub repository: Repository,
+	/// Commit range in "<first_submodule_commit>..<last_submodule_commit>"
+	/// format.
+	pub range:      String,
+}
+
 impl Repository {
 	/// Initializes (opens) the repository.
 	pub fn init(path: PathBuf) -> Result<Self> {
@@ -174,7 +183,7 @@ impl Repository {
 	pub fn submodules_range(
 		&self,
 		commit_range: &(Commit, Commit),
-	) -> Result<Vec<(Repository, String)>> {
+	) -> Result<Vec<SubmoduleRange>> {
 		let (first_commit, last_commit) = commit_range;
 		let diff = self.inner.diff_tree_to_tree(
 			first_commit.tree().ok().as_ref(),
@@ -202,11 +211,12 @@ impl Repository {
 		});
 		// (repository, commit_range)
 		let submodule_range = before_and_after_deltas.filter_map(|(path, range)| {
-			self.inner
+			let repository = self
+				.inner
 				.find_submodule(path)
 				.ok()
-				.and_then(|submodule| Self::init(submodule.path().into()).ok())
-				.zip(Some(range))
+				.and_then(|submodule| Self::init(submodule.path().into()).ok());
+			repository.map(|repository| SubmoduleRange { repository, range })
 		});
 		Ok(submodule_range.collect())
 	}
