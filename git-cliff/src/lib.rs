@@ -44,7 +44,6 @@ use git_cliff_core::{
 	IGNORE_FILE,
 };
 use glob::Pattern;
-use std::collections::HashMap;
 use std::env;
 use std::fs::{
 	self,
@@ -98,8 +97,6 @@ fn process_submodules(
 		.and_then(|commit_id| repository.find_commit(&commit_id));
 	let commit_range = first_commit.zip(last_commit);
 
-	let mut submodule_map: HashMap<String, Vec<Commit>> = HashMap::new();
-
 	if let Some(commit_range) = &commit_range {
 		// Query repository for submodule changes. For each submodule a
 		// SubmoduleRange is created, describing the range of commits in the context
@@ -124,10 +121,9 @@ fn process_submodules(
 			});
 		// Insert submodule commits into map.
 		for (submodule_path, commits) in submodule_commits {
-			submodule_map.insert(submodule_path, commits);
+			release.submodule_commits.insert(submodule_path, commits);
 		}
 	}
-	release.submodule_commits = Some(submodule_map);
 	Ok(())
 }
 

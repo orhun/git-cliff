@@ -22,8 +22,7 @@ body = """
         - {{ commit.message | upper_first }}\
     {% endfor %}
 {% endfor %}\
-{% if submodule_commits %}
-{% for submodule_path, commits in submodule_commits %}\
+{% for submodule_path, commits in submodule_commits %}
     ### {{ submodule_path | upper_first }}
     {% for group, commits in commits | group_by(attribute="group") %}
         #### {{ group | upper_first }}
@@ -31,8 +30,7 @@ body = """
             - {{ commit.message | upper_first }}\
         {% endfor %}
     {% endfor %}
-{% endfor %}\
-{% endif %}\n
+{% endfor %}\n
 """
 # A Tera template to be rendered as the changelog's footer.
 # See https://keats.github.io/tera/docs/#introduction

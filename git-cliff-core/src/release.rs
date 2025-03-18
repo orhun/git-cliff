@@ -52,7 +52,7 @@ pub struct Release<'a> {
 	///
 	/// Maps submodule path to a list of commits.
 	#[serde(rename = "submodule_commits")]
-	pub submodule_commits: Option<HashMap<String, Vec<Commit<'a>>>>,
+	pub submodule_commits: HashMap<String, Vec<Commit<'a>>>,
 	/// Arbitrary data to be used with the `--from-context` CLI option.
 	pub extra:             Option<Value>,
 	/// Contributors.
@@ -209,7 +209,7 @@ mod test {
 					..Default::default()
 				})),
 				repository: Some(String::from("/root/repo")),
-				submodule_commits: None,
+				submodule_commits: HashMap::new(),
 				#[cfg(feature = "github")]
 				github: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
@@ -426,7 +426,7 @@ mod test {
 				..Default::default()
 			})),
 			repository: Some(String::from("/root/repo")),
-			submodule_commits: None,
+			submodule_commits: HashMap::new(),
 			github: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
@@ -795,7 +795,7 @@ mod test {
 				..Default::default()
 			})),
 			repository: Some(String::from("/root/repo")),
-			submodule_commits: None,
+			submodule_commits: HashMap::new(),
 			#[cfg(feature = "github")]
 			github: RemoteReleaseMetadata {
 				contributors: vec![],
@@ -1186,7 +1186,7 @@ mod test {
 				..Default::default()
 			})),
 			repository: Some(String::from("/root/repo")),
-			submodule_commits: None,
+			submodule_commits: HashMap::new(),
 			#[cfg(feature = "github")]
 			github: RemoteReleaseMetadata {
 				contributors: vec![],
@@ -1545,7 +1545,7 @@ mod test {
 				..Default::default()
 			})),
 			repository: Some(String::from("/root/repo")),
-			submodule_commits: None,
+			submodule_commits: HashMap::new(),
 			#[cfg(feature = "github")]
 			github: RemoteReleaseMetadata {
 				contributors: vec![],

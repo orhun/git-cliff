@@ -172,6 +172,7 @@ impl<'a> Changelog<'a> {
 				}
 			})
 			.collect::<Vec<Commit>>();
+
 		if git_config.require_conventional.unwrap_or(false) {
 			Self::check_conventional_commits(commits)?;
 		}
@@ -185,13 +186,8 @@ impl<'a> Changelog<'a> {
 		debug!("Processing the commits...");
 		for release in self.releases.iter_mut() {
 			Self::process_commit_list(&mut release.commits, &self.config.git)?;
-			if let Some(submodule_commits) = &mut release.submodule_commits {
-				for submodule_commit_vec in submodule_commits.values_mut() {
-					Self::process_commit_list(
-						submodule_commit_vec,
-						&self.config.git,
-					)?;
-				}
+			for submodule_commit_vec in release.submodule_commits.values_mut() {
+				Self::process_commit_list(submodule_commit_vec, &self.config.git)?;
 			}
 		}
 		Ok(())
@@ -995,7 +991,7 @@ mod test {
 			timestamp: 50000000,
 			previous: None,
 			repository: Some(String::from("/root/repo")),
-			submodule_commits: Some(HashMap::from([(
+			submodule_commits: HashMap::from([(
 				String::from("submodule_one"),
 				vec![
 					Commit::new(
@@ -1020,7 +1016,7 @@ mod test {
 						),
 					),
 				],
-			)])),
+			)]),
 			#[cfg(feature = "github")]
 			github: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],
@@ -1083,7 +1079,7 @@ mod test {
 				timestamp: 1000,
 				previous: Some(Box::new(test_release)),
 				repository: Some(String::from("/root/repo")),
-				submodule_commits: Some(HashMap::from([
+				submodule_commits: HashMap::from([
 					(String::from("submodule_one"), vec![
 						Commit::new(
 							String::from("def349"),
@@ -1098,7 +1094,7 @@ mod test {
 						String::from("ab76ef"),
 						String::from("sub_two bump"),
 					)]),
-				])),
+				]),
 				#[cfg(feature = "github")]
 				github: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
