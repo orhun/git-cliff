@@ -330,10 +330,10 @@ fn process_repository<'a>(
 		let commit_id = commit.id.to_string();
 		release.commits.push(commit);
 		release.repository = Some(repository_path.clone());
-		if let Some(tag) = tags.get(&commit_id) {
+		release.commit_id = Some(commit_id);
+		if let Some(tag) = tags.get(release.commit_id.as_ref().unwrap()) {
 			release.version = Some(tag.name.to_string());
 			release.message.clone_from(&tag.message);
-			release.commit_id = Some(commit_id);
 			release.timestamp = if args.tag.as_deref() == Some(tag.name.as_str()) {
 				match tag_timestamp {
 					Some(timestamp) => timestamp,
@@ -351,9 +351,6 @@ fn process_repository<'a>(
 			previous_release.previous = None;
 			release.previous = Some(Box::new(previous_release));
 			previous_release = release.clone();
-			if recurse_submodules {
-				process_submodules(repository, release)?;
-			}
 			releases.push(Release::default());
 		}
 	}
@@ -363,6 +360,12 @@ fn process_repository<'a>(
 	if releases.len() > 1 {
 		previous_release.previous = None;
 		releases.last_mut().unwrap().previous = Some(Box::new(previous_release));
+	}
+
+	if recurse_submodules {
+		for release in &mut releases {
+			process_submodules(repository, release)?;
+		}
 	}
 
 	if args.sort == Sort::Newest {
