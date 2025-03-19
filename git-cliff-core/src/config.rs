@@ -252,6 +252,7 @@ impl Remote {
 
 /// Version bump type.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "lowercase")]
 pub enum BumpType {
 	/// Bump major version.
 	Major,
