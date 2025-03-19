@@ -31,19 +31,24 @@
 
 ## Documentation
 
-Learn how to use **git-cliff** from the [documentation](https://git-cliff.org/docs).
+Learn how to use **git-cliff** from the [official documentation](https://git-cliff.org/docs).
 
 - [Installation](https://git-cliff.org/docs/installation/)
 - [Usage](https://git-cliff.org/docs/usage/examples)
 - [Configuration](https://git-cliff.org/docs/configuration)
 - [Templating](https://git-cliff.org/docs/category/templating)
 
+You can also check out the blog posts written by the community:
+
+- [An introduction to git-cliff for release management](https://substack.evancarroll.com/p/git-cliff-for-automated-release-management): Learn how to automate your software releases
+- [Git-cliff and monorepos](https://substack.evancarroll.com/p/git-cliff-and-monorepos): An introduction to the monorepo capabilities of git-cliff
+- [git-cliff: The Smart Way to Handle Changelogs](https://medium.com/@toniomasotti/git-cliff-96449950db48)
+
 ## In The Media
 
 - [Turning Git commits into changelog with git-cliff](https://www.youtube.com/watch?v=RWh8qbiLRts) - RustLab 2023 (Talk)
 - [An Interview with Orhun of git-cliff](https://console.substack.com/p/console-141) - Console #141 (Newsletter)
 - [KaiCode Open Source Festival 2024](https://www.kaicode.org/2024.html) (Second place winner)
-- [git-cliff: The Smart Way to Handle Changelogs](https://medium.com/@toniomasotti/git-cliff-96449950db48) (Blog post)
 
 ## Editor Support
 
