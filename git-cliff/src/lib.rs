@@ -35,12 +35,17 @@ use git_cliff_core::error::{
 	Result,
 };
 use git_cliff_core::release::Release;
-use git_cliff_core::repo::Repository;
+use git_cliff_core::repo::{
+	GitSubmodule,
+	Repository,
+};
 use git_cliff_core::{
 	DEFAULT_CONFIG,
 	IGNORE_FILE,
 };
 use glob::Pattern;
+use std::borrow::BorrowMut;
+use std::collections::HashMap;
 use std::env;
 use std::fs::{
 	self,
@@ -95,6 +100,8 @@ fn process_repository<'a>(
 	let skip_regex = config.git.skip_tags.as_ref();
 	let ignore_regex = config.git.ignore_tags.as_ref();
 	let count_tags = config.git.count_tags.as_ref();
+	let recurse_submodules =
+		*config.git.recurse_submodules.as_ref().unwrap_or(&false);
 	tags.retain(|_, tag| {
 		let name = &tag.name;
 
@@ -167,6 +174,7 @@ fn process_repository<'a>(
 
 	// Parse commits.
 	let mut commit_range = args.range.clone();
+
 	if args.unreleased {
 		if let Some(last_tag) = tags.last().map(|(k, _)| k) {
 			commit_range = Some(format!("{last_tag}..HEAD"));
@@ -216,7 +224,7 @@ fn process_repository<'a>(
 				commit_range = Some(format!("{tag1}..{tag2}"));
 			}
 		}
-	}
+	};
 
 	// Include only the current directory if not running from the root repository
 	let mut include_path = args.include_path.clone();
@@ -273,10 +281,34 @@ fn process_repository<'a>(
 	let mut previous_release = Release::default();
 	let mut first_processed_tag = None;
 	let repository_path = repository.path()?.to_string_lossy().into_owned();
+	let mut submodule_commits: HashMap<PathBuf, (&mut Repository, Vec<Commit>)> =
+		HashMap::new();
 	for git_commit in commits.iter().rev() {
 		let release = releases.last_mut().unwrap();
 		let commit = Commit::from(git_commit);
 		let commit_id = commit.id.to_string();
+		if recurse_submodules {
+			if let Some(submodule_deltas) = commit.get_submodule_updates(repository)
+			{
+				for (path, (_submodule, old, new)) in submodule_deltas {
+					submodule_commits
+						.entry(path.clone())
+						.and_modify(|e| {
+							let c = e.0.find_commit(&new.to_string()).unwrap();
+							e.1.push(Commit::from(&c));
+						})
+						.or_insert_with(|| {
+							let _repo = Box::leak(Box::new(
+								Repository::init(path.clone()).unwrap(),
+							));
+							let v = vec![Commit::from(
+								&_repo.find_commit(&old.to_string()).unwrap(),
+							)];
+							(_repo.borrow_mut(), v)
+						});
+				}
+			}
+		}
 		release.commits.push(commit);
 		release.repository = Some(repository_path.clone());
 		if let Some(tag) = tags.get(&commit_id) {
@@ -302,6 +334,14 @@ fn process_repository<'a>(
 			previous_release = release.clone();
 			releases.push(Release::default());
 		}
+	}
+	if recurse_submodules {
+		process_submodule_releases(
+			submodule_commits,
+			config,
+			&mut releases,
+			&mut previous_release,
+		)?;
 	}
 
 	debug_assert!(!releases.is_empty());
@@ -372,6 +412,41 @@ fn process_repository<'a>(
 	}
 
 	Ok(releases)
+}
+
+// Loop through submodule commit changes and create release
+fn process_submodule_releases<'a>(
+	submodule_commits: HashMap<PathBuf, (&'a mut Repository, Vec<Commit>)>,
+	config: &mut Config,
+	releases: &mut Vec<Release<'a>>,
+	previous_release: &mut Release<'a>,
+) -> Result<()> {
+	for (path, (submodule, commits)) in submodule_commits {
+		log::trace!("Recursing {:?}.", submodule.path());
+		let commit_range = format!(
+			"{}..{}",
+			commits.first().unwrap().id,
+			commits.last().unwrap().id
+		);
+		let mut _internal_commits =
+			submodule.commits(Some(&commit_range), None, None)?;
+		if let Some(commit_limit_value) = config.git.limit_commits {
+			_internal_commits.truncate(commit_limit_value);
+		}
+		for _commit in _internal_commits.iter() {
+			let release = releases.last_mut().unwrap();
+			let commit = Commit::from(_commit);
+			let commit_id = commit.id.to_string();
+			release.commits.push(commit);
+			release.repository = Some(path.to_string_lossy().into_owned());
+			release.commit_id = Some(commit_id);
+			previous_release.previous = None;
+			release.previous = Some(Box::new(previous_release.clone()));
+			*previous_release = release.clone();
+			releases.push(Release::default());
+		}
+	}
+	Ok(())
 }
 
 /// Runs `git-cliff`.
