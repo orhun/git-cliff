@@ -709,6 +709,14 @@ pub fn run_with_changelog_modifier(
 		} else {
 			return Ok(());
 		};
+		if let Some(tag_pattern) = &config.git.tag_pattern {
+			if !tag_pattern.is_match(&next_version) {
+				return Err(Error::ChangelogError(format!(
+					"Next version ({}) does not match the tag pattern: {}",
+					next_version, tag_pattern
+				)));
+			}
+		}
 		if args.bumped_version {
 			writeln!(out, "{next_version}")?;
 			return Ok(());
