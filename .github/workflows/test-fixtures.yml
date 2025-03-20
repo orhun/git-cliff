@@ -108,6 +108,7 @@ jobs:
             command: v2.6.1..v2.7.0 --include-path .github/fixtures/
           - fixtures-name: test-require-conventional-negative
           - fixtures-name: test-require-conventional-skipped
+          - fixtures-name: test-submodules
 
     steps:
       - name: Checkout

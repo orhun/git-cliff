@@ -35,7 +35,10 @@ use git_cliff_core::error::{
 	Result,
 };
 use git_cliff_core::release::Release;
-use git_cliff_core::repo::Repository;
+use git_cliff_core::repo::{
+	Repository,
+	SubmoduleRange,
+};
 use git_cliff_core::{
 	DEFAULT_CONFIG,
 	IGNORE_FILE,
@@ -77,6 +80,53 @@ fn check_new_version() {
 	}
 }
 
+/// Process submodules and add commits to release.
+fn process_submodules(
+	repository: &'static Repository,
+	release: &mut Release,
+) -> Result<()> {
+	// Retrieve first and last commit of a release to create a commit range.
+	let first_commit = release
+		.previous
+		.as_ref()
+		.and_then(|previous_release| previous_release.commit_id.clone())
+		.and_then(|commit_id| repository.find_commit(&commit_id));
+	let last_commit = release
+		.commit_id
+		.clone()
+		.and_then(|commit_id| repository.find_commit(&commit_id));
+	let commit_range = first_commit.zip(last_commit);
+
+	if let Some(commit_range) = &commit_range {
+		// Query repository for submodule changes. For each submodule a
+		// SubmoduleRange is created, describing the range of commits in the context
+		// of that submodule.
+		let submodule_ranges = repository.submodules_range(commit_range)?;
+		let submodule_commits =
+			submodule_ranges.iter().filter_map(|submodule_range| {
+				// For each submodule, the commit range is exploded into a list of
+				// commits.
+				let SubmoduleRange {
+					repository: sub_repo,
+					range: range_str,
+				} = submodule_range;
+				let commits = sub_repo
+					.commits(Some(range_str), None, None)
+					.ok()
+					.map(|commits| commits.iter().map(Commit::from).collect());
+
+				let submodule_path = sub_repo.path().to_string_lossy().into_owned();
+				// (submodule_path, Vec<Commit>)
+				Some(submodule_path).zip(commits)
+			});
+		// Insert submodule commits into map.
+		for (submodule_path, commits) in submodule_commits {
+			release.submodule_commits.insert(submodule_path, commits);
+		}
+	}
+	Ok(())
+}
+
 /// Processes the tags and commits for creating release entries for the
 /// changelog.
 ///
@@ -95,6 +145,7 @@ fn process_repository<'a>(
 	let skip_regex = config.git.skip_tags.as_ref();
 	let ignore_regex = config.git.ignore_tags.as_ref();
 	let count_tags = config.git.count_tags.as_ref();
+	let recurse_submodules = config.git.recurse_submodules.unwrap_or(false);
 	tags.retain(|_, tag| {
 		let name = &tag.name;
 
@@ -221,7 +272,7 @@ fn process_repository<'a>(
 	// Include only the current directory if not running from the root repository
 	let mut include_path = args.include_path.clone();
 	if let Some(mut path_diff) =
-		pathdiff::diff_paths(env::current_dir()?, repository.path()?)
+		pathdiff::diff_paths(env::current_dir()?, repository.root_path()?)
 	{
 		if args.workdir.is_none() &&
 			include_path.is_none() &&
@@ -272,7 +323,7 @@ fn process_repository<'a>(
 	// Process releases.
 	let mut previous_release = Release::default();
 	let mut first_processed_tag = None;
-	let repository_path = repository.path()?.to_string_lossy().into_owned();
+	let repository_path = repository.root_path()?.to_string_lossy().into_owned();
 	for git_commit in commits.iter().rev() {
 		let release = releases.last_mut().unwrap();
 		let commit = Commit::from(git_commit);
@@ -300,6 +351,9 @@ fn process_repository<'a>(
 			previous_release.previous = None;
 			release.previous = Some(Box::new(previous_release));
 			previous_release = release.clone();
+			if recurse_submodules {
+				process_submodules(repository, release)?;
+			}
 			releases.push(Release::default());
 		}
 	}
