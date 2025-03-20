@@ -932,6 +932,7 @@ dependencies = [
  "pretty_assertions",
  "rand",
  "regex",
+ "reqwest",
  "secrecy",
  "shellexpand",
  "update-informer",

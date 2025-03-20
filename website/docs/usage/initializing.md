@@ -41,3 +41,13 @@ Here are the list of available templates:
 - [`scopesorted.toml`](https://github.com/orhun/git-cliff/tree/main/examples/scopesorted.toml): changelog with commits grouped by their scopes and sorted by group.
 - [`cocogitto.toml`](https://github.com/orhun/git-cliff/tree/main/examples/cocogitto.toml): changelog similar to [cocogitto's format](https://github.com/cocogitto/cocogitto/blob/main/CHANGELOG.md).
 - [`unconventional.toml`](https://github.com/orhun/git-cliff/tree/main/examples/unconventional.toml): changelog for unconventional commits.
+
+:::tip
+
+It is also possible to use a remote URL for the configuration file as follows:
+
+```bash
+git cliff --config-url https://github.com/orhun/git-cliff/blob/main/examples/github-keepachangelog.toml?raw=true
+```
+
+:::
