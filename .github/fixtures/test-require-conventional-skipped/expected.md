@@ -6,12 +6,15 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Fixes
 
-#### Cli
+#### Gui
 
-- Fix feature 1
 - Fix feature 2
 
 ### Features
+
+#### App
+
+- Add feature 1
 
 #### Gui
 
