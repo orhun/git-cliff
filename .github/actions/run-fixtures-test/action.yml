@@ -39,13 +39,14 @@ runs:
 
     - name: Generate a changelog
       working-directory: ${{ inputs.fixtures-dir }}
+      shell: bash
       run: |
-        git cliff --config cliff.toml ${{ inputs.command }} > output.md || true
+        set +e
+        git cliff --config cliff.toml ${{ inputs.command }} > output.md
         echo "$?" > output.rc
         if [ -f output.md ]; then
           cat output.md
         fi
-      shell: bash
 
     - name: Compare the output with the expected output
       working-directory: ${{ inputs.fixtures-dir }}
@@ -67,7 +68,7 @@ runs:
       shell: bash
       run: |
         if [ -f expected.rc ]; then
-          if ! diff --strip-trailing-cr output.rc expected.rc; then
+          if ! diff --strip-trailing-cr --ignore-all-space output.rc expected.rc; then
             echo "The return code does not match the expected return code."
             exit 1
           fi
