@@ -43,12 +43,8 @@ body = """
 conventional_commits = false
 # Exclude commits that do not match the conventional commits specification.
 filter_unconventional = true
-# Split commits on newlines, treating each line as an individual commit.
-split_commits = false
 # An array of regex based parsers to modify commit messages prior to further processing.
 commit_preprocessors = [
   # Remove issue numbers.
   { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "" },
 ]
-# Prevent commits that are breaking from being excluded by commit parsers.
-protect_breaking_commits = false
