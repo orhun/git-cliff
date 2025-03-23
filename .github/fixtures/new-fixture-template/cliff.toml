@@ -32,6 +32,9 @@ footer = """
 trim = true
 
 [git]
+# Parse commits according to the conventional commits specification.
+# See https://www.conventionalcommits.org
+conventional_commits = true
 # An array of regex based parsers for extracting data from the commit message.
 # Assigns commits to groups.
 # Optionally sets the commit's `scope` and can decide to exclude commits from further processing.
