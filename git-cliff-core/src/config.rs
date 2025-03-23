@@ -423,6 +423,8 @@ impl Config {
 
 	/// Parses the config file from string and returns the values.
 	pub fn parse_from_str(contents: &str) -> Result<Config> {
+		// Adding sources one after another overwrites the previous values.
+		// Thus adding the default config initializes the config with default values.
 		let default_config_str = EmbeddedConfig::get_config()?;
 
 		Ok(config::Config::builder()
@@ -449,8 +451,9 @@ impl Config {
 			}
 		}
 
+		// Adding sources one after another overwrites the previous values.
+		// Thus adding the default config initializes the config with default values.
 		let default_config_str = EmbeddedConfig::get_config()?;
-
 		Ok(config::Config::builder()
 			.add_source(config::File::from_str(
 				&default_config_str,
