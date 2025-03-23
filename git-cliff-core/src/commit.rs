@@ -109,6 +109,9 @@ pub struct Commit<'a> {
 	/// Conventional commit.
 	#[serde(skip_deserializing)]
 	pub conv:          Option<ConventionalCommit<'a>>,
+	/// Whether the commit was skipped by a CommitParser.
+	#[serde(skip_deserializing)]
+	pub is_skipped:    bool,
 	/// Commit group based on a commit parser or its conventional type.
 	pub group:         Option<String>,
 	/// Default commit scope based on (inherited from) conventional type or a
@@ -337,9 +340,8 @@ impl Commit<'_> {
 				Some(&self.id)
 			{
 				if self.skip_commit(parser, protect_breaking) {
-					return Err(AppError::GroupError(String::from(
-						"Skipping commit",
-					)));
+					self.is_skipped = true;
+					return Ok(self);
 				} else {
 					self.group = parser.group.clone().or(self.group);
 					self.scope = parser.scope.clone().or(self.scope);
@@ -351,9 +353,8 @@ impl Commit<'_> {
 			for (regex, text) in regex_checks {
 				if regex.is_match(text.trim()) {
 					if self.skip_commit(parser, protect_breaking) {
-						return Err(AppError::GroupError(String::from(
-							"Skipping commit",
-						)));
+						self.is_skipped = true;
+						return Ok(self);
 					} else {
 						let regex_replace = |mut value: String| {
 							for mat in regex.find_iter(&text) {
@@ -750,7 +751,7 @@ mod test {
 			false,
 			false,
 		);
-		assert!(parsed_commit.is_err());
+		assert!(parsed_commit.is_ok_and(|commit| commit.is_skipped));
 
 		let parsed_commit = commit.parse(
 			&[CommitParser {
