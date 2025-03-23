@@ -76,7 +76,7 @@ cacache = { version = "=13.0.0", features = ["mmap"], default-features = false }
 time = "0.3.37"
 
 [dependencies.git2]
-version = "0.20.0"
+version = "0.20.1"
 default-features = false
 optional = true
 
