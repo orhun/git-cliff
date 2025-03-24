@@ -109,6 +109,8 @@ jobs:
           - fixtures-name: test-require-conventional-negative
           - fixtures-name: test-require-conventional-skipped
           - fixtures-name: test-submodules
+          - fixtures-name: test-remote-config
+            command: --config-url "https://github.com/orhun/git-cliff/blob/main/.github/fixtures/new-fixture-template/cliff.toml?raw=true"
 
     steps:
       - name: Checkout

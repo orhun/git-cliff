@@ -533,7 +533,20 @@ pub fn run_with_changelog_modifier(
 
 	// Parse the configuration file.
 	// Load the default configuration if necessary.
-	let mut config = if let Ok((config, name)) = builtin_config {
+	let mut config = if let Some(url) = &args.config_url {
+		debug!("Using configuration file from: {url}");
+		#[cfg(feature = "remote")]
+		{
+			let contents = reqwest::blocking::get(url.clone())?
+				.error_for_status()?
+				.text()?;
+			Config::parse_from_str(&contents)?
+		}
+		#[cfg(not(feature = "remote"))]
+		unreachable!(
+			"This option is not available without the 'remote' build-time feature"
+		);
+	} else if let Ok((config, name)) = builtin_config {
 		info!("Using built-in configuration file: {name}");
 		config
 	} else if path.exists() {
@@ -764,6 +777,14 @@ pub fn run_with_changelog_modifier(
 		} else {
 			return Ok(());
 		};
+		if let Some(tag_pattern) = &config.git.tag_pattern {
+			if !tag_pattern.is_match(&next_version) {
+				return Err(Error::ChangelogError(format!(
+					"Next version ({}) does not match the tag pattern: {}",
+					next_version, tag_pattern
+				)));
+			}
+		}
 		if args.bumped_version {
 			writeln!(out, "{next_version}")?;
 			return Ok(());
