@@ -182,32 +182,30 @@ impl Repository {
 	/// [`Repository::commits`].
 	pub fn submodules_range(
 		&self,
-		commit_range: &(Commit, Commit),
+		old_commit: Option<Commit<'_>>,
+		new_commit: Commit<'_>,
 	) -> Result<Vec<SubmoduleRange>> {
-		let (first_commit, last_commit) = commit_range;
+		let old_tree = old_commit.and_then(|commit| commit.tree().ok());
+		let new_tree = new_commit.tree().ok();
 		let diff = self.inner.diff_tree_to_tree(
-			first_commit.tree().ok().as_ref(),
-			last_commit.tree().ok().as_ref(),
+			old_tree.as_ref(),
+			new_tree.as_ref(),
 			None,
 		)?;
-		// (path, commit_range)
 		let before_and_after_deltas = diff.deltas().filter_map(|delta| {
 			let old_file_id = delta.old_file().id();
 			let new_file_id = delta.new_file().id();
-			// no changes or element added/removed
-			if old_file_id == new_file_id ||
-				new_file_id.is_zero() ||
-				old_file_id.is_zero()
-			{
+			let range = if old_file_id == new_file_id || new_file_id.is_zero() {
+				// no changes or submodule removed
 				None
+			} else if old_file_id.is_zero() {
+				// submodule added
+				Some(new_file_id.to_string())
 			} else {
-				let range = format!("{}..{}", old_file_id, new_file_id);
-				delta
-					.new_file()
-					.path()
-					.and_then(Path::to_str)
-					.zip(Some(range))
-			}
+				// submodule updated
+				Some(format!("{}..{}", old_file_id, new_file_id))
+			};
+			delta.new_file().path().and_then(Path::to_str).zip(range)
 		});
 		// (repository, commit_range)
 		let submodule_range = before_and_after_deltas.filter_map(|(path, range)| {
