@@ -285,4 +285,4 @@ These extracted links can be used in the [template](/docs/templating/context) wi
 
 ### recurse_submodules
 
-`recurse_submodules` is an **optional** boolean value that indicates whether git-cliff should read and process commits of submodules. This only considers submodules at the toplevel (depth 1). These commits can then be accessed by the variable `submodule_commits` during [templating](/docs/templating/context).
+`recurse_submodules` is an _optional_ boolean value that indicates whether **git-cliff** should read and process commits of submodules. This only considers submodules at the toplevel (depth 1). These commits can then be accessed by the variable `submodule_commits` during [templating](/docs/templating/context).
