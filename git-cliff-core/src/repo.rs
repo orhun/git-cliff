@@ -50,7 +50,6 @@ pub struct Repository {
 }
 
 /// Range of commits in a submodule.
-#[derive(Debug, Clone)]
 pub struct SubmoduleRange {
 	/// Repository object to which this range belongs.
 	pub repository: Repository,
