@@ -186,8 +186,8 @@ impl<'a> Changelog<'a> {
 		debug!("Processing the commits...");
 		for release in self.releases.iter_mut() {
 			Self::process_commit_list(&mut release.commits, &self.config.git)?;
-			for submodule_commit_vec in release.submodule_commits.values_mut() {
-				Self::process_commit_list(submodule_commit_vec, &self.config.git)?;
+			for submodule_commits in release.submodule_commits.values_mut() {
+				Self::process_commit_list(submodule_commits, &self.config.git)?;
 			}
 		}
 		Ok(())

@@ -50,11 +50,12 @@ pub struct Repository {
 }
 
 /// Range of commits in a submodule.
+#[derive(Debug, Clone)]
 pub struct SubmoduleRange {
 	/// Repository object to which this range belongs.
 	pub repository: Repository,
-	/// Commit range in "<first_submodule_commit>..<last_submodule_commit>"
-	/// format.
+	/// Commit range in "<first_submodule_commit>..<last_submodule_commit>" or
+	/// "<last_submodule_commit>" format.
 	pub range:      String,
 }
 
@@ -171,12 +172,12 @@ impl Repository {
 
 	/// Returns submodule repositories for a given commit range.
 	///
-	/// Returns submodule repositories for a given commit range.
+	/// For one or two given commits in this repository, a list of changed
+	/// submodules is calculated. If only one commit is given, then all
+	/// submodule commits up to the referenced commit will be included. This is
+	/// usually the case if a submodule is added to the repository.
 	///
-	/// For given two commits in this repository, a list of changed submodules
-	/// is calculated. For each submodule a [`Repository`] object is created
-	/// along with a commit range string in
-	/// "<first_submodule_commit>..<last_submodule_commit>" format.
+	///  For each submodule a [`SubmoduleRange`] object is created
 	///
 	/// This can then be used to query the submodule's commits by using
 	/// [`Repository::commits`].
@@ -192,6 +193,7 @@ impl Repository {
 			new_tree.as_ref(),
 			None,
 		)?;
+		// iterate through all diffs and accumulate old/new commit ids
 		let before_and_after_deltas = diff.deltas().filter_map(|delta| {
 			let old_file_id = delta.old_file().id();
 			let new_file_id = delta.new_file().id();
@@ -208,7 +210,8 @@ impl Repository {
 			trace!("Release commit range for submodules: {:?}", range);
 			delta.new_file().path().and_then(Path::to_str).zip(range)
 		});
-		// (repository, commit_range)
+		// iterate through all path diffs and find corresponding submodule if
+		// possible
 		let submodule_range = before_and_after_deltas.filter_map(|(path, range)| {
 			let repository = self
 				.inner
