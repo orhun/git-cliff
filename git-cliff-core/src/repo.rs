@@ -205,6 +205,7 @@ impl Repository {
 				// submodule updated
 				Some(format!("{}..{}", old_file_id, new_file_id))
 			};
+			trace!("Release commit range for submodules: {:?}", range);
 			delta.new_file().path().and_then(Path::to_str).zip(range)
 		});
 		// (repository, commit_range)
