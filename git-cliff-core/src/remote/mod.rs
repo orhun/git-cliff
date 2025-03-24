@@ -74,7 +74,13 @@ pub(crate) const MAX_PAGE_SIZE: usize = 100;
 /// Trait for handling the different entries returned from the remote.
 pub trait RemoteEntry {
 	/// Returns the API URL for fetching the entries at the specified page.
-	fn url(project_id: i64, api_url: &str, remote: &Remote, page: i32) -> String;
+	fn url(
+		project_id: i64,
+		api_url: &str,
+		remote: &Remote,
+		head: Option<&str>,
+		page: i32,
+	) -> String;
 	/// Returns the request buffer size.
 	fn buffer_size() -> usize;
 	/// Whether if exit early.
@@ -204,9 +210,10 @@ pub trait RemoteClient {
 	async fn get_entry<T: DeserializeOwned + RemoteEntry>(
 		&self,
 		project_id: i64,
+		head: Option<&str>,
 		page: i32,
 	) -> Result<T> {
-		let url = T::url(project_id, &self.api_url(), &self.remote(), page);
+		let url = T::url(project_id, &self.api_url(), &self.remote(), head, page);
 		debug!("Sending request to: {url}");
 		let response = self.client().get(&url).send().await?;
 		let response_text = if response.status().is_success() {
@@ -225,9 +232,10 @@ pub trait RemoteClient {
 	async fn get_entries_with_page<T: DeserializeOwned + RemoteEntry>(
 		&self,
 		project_id: i64,
+		head: Option<&str>,
 		page: i32,
 	) -> Result<Vec<T>> {
-		let url = T::url(project_id, &self.api_url(), &self.remote(), page);
+		let url = T::url(project_id, &self.api_url(), &self.remote(), head, page);
 		debug!("Sending request to: {url}");
 		let response = self.client().get(&url).send().await?;
 		let response_text = if response.status().is_success() {
@@ -253,9 +261,10 @@ pub trait RemoteClient {
 	async fn fetch<T: DeserializeOwned + RemoteEntry>(
 		&self,
 		project_id: i64,
+		head: Option<&str>,
 	) -> Result<Vec<T>> {
 		let entries: Vec<Vec<T>> = stream::iter(0..)
-			.map(|i| self.get_entries_with_page(project_id, i))
+			.map(|i| self.get_entries_with_page(project_id, head, i))
 			.buffered(T::buffer_size())
 			.take_while(|page| {
 				if let Err(e) = page {
@@ -281,9 +290,10 @@ pub trait RemoteClient {
 	async fn fetch_with_early_exit<T: DeserializeOwned + RemoteEntry>(
 		&self,
 		project_id: i64,
+		head: Option<&str>,
 	) -> Result<Vec<T>> {
 		let entries: Vec<T> = stream::iter(0..)
-			.map(|i| self.get_entry::<T>(project_id, i))
+			.map(|i| self.get_entry::<T>(project_id, head, i))
 			.buffered(T::buffer_size())
 			.take_while(|page| {
 				let status = match page {

@@ -60,12 +60,25 @@ impl RemoteCommit for GitHubCommit {
 }
 
 impl RemoteEntry for GitHubCommit {
-	fn url(_id: i64, api_url: &str, remote: &Remote, page: i32) -> String {
-		format!(
+	fn url(
+		_id: i64,
+		api_url: &str,
+		remote: &Remote,
+		head: Option<&str>,
+		page: i32,
+	) -> String {
+		let mut url = format!(
 			"{}/repos/{}/{}/commits?per_page={MAX_PAGE_SIZE}&page={page}",
 			api_url, remote.owner, remote.repo
-		)
+		);
+
+		if let Some(head) = head {
+			url.push_str(&format!("&sha={}", head));
+		}
+
+		url
 	}
+
 	fn buffer_size() -> usize {
 		10
 	}
@@ -122,7 +135,13 @@ impl RemotePullRequest for GitHubPullRequest {
 }
 
 impl RemoteEntry for GitHubPullRequest {
-	fn url(_id: i64, api_url: &str, remote: &Remote, page: i32) -> String {
+	fn url(
+		_id: i64,
+		api_url: &str,
+		remote: &Remote,
+		_head: Option<&str>,
+		page: i32,
+	) -> String {
 		format!(
 			"{}/repos/{}/{}/pulls?per_page={MAX_PAGE_SIZE}&page={page}&state=closed",
 			api_url, remote.owner, remote.repo
@@ -173,9 +192,12 @@ impl RemoteClient for GitHubClient {
 
 impl GitHubClient {
 	/// Fetches the GitHub API and returns the commits.
-	pub async fn get_commits(&self) -> Result<Vec<Box<dyn RemoteCommit>>> {
+	pub async fn get_commits(
+		&self,
+		head: Option<&str>,
+	) -> Result<Vec<Box<dyn RemoteCommit>>> {
 		Ok(self
-			.fetch::<GitHubCommit>(0)
+			.fetch::<GitHubCommit>(0, head)
 			.await?
 			.into_iter()
 			.map(|v| Box::new(v) as Box<dyn RemoteCommit>)
@@ -185,9 +207,10 @@ impl GitHubClient {
 	/// Fetches the GitHub API and returns the pull requests.
 	pub async fn get_pull_requests(
 		&self,
+		head: Option<&str>,
 	) -> Result<Vec<Box<dyn RemotePullRequest>>> {
 		Ok(self
-			.fetch::<GitHubPullRequest>(0)
+			.fetch::<GitHubPullRequest>(0, head)
 			.await?
 			.into_iter()
 			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
