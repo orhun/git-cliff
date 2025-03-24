@@ -114,7 +114,6 @@ fn process_submodules(
 			.map(|commits| commits.iter().map(Commit::from).collect());
 
 		let submodule_path = sub_repo.path().to_string_lossy().into_owned();
-		// (submodule_path, Vec<Commit>)
 		Some(submodule_path).zip(commits)
 	});
 	// Insert submodule commits into map.
