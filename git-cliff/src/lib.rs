@@ -94,33 +94,35 @@ fn process_submodules(
 	let last_commit = release
 		.commit_id
 		.clone()
-		.and_then(|commit_id| repository.find_commit(&commit_id))
-		.expect("Release should at least contain one commit");
+		.and_then(|commit_id| repository.find_commit(&commit_id));
 
 	// Query repository for submodule changes. For each submodule a
 	// SubmoduleRange is created, describing the range of commits in the context
 	// of that submodule.
-	let submodule_ranges = repository.submodules_range(first_commit, last_commit)?;
-	let submodule_commits = submodule_ranges.iter().filter_map(|submodule_range| {
-		// For each submodule, the commit range is exploded into a list of
-		// commits.
-		let SubmoduleRange {
-			repository: sub_repo,
-			range: range_str,
-		} = submodule_range;
-		let commits = sub_repo
-			.commits(Some(range_str), None, None)
-			.ok()
-			.map(|commits| commits.iter().map(Commit::from).collect());
+	if let Some(last_commit) = last_commit {
+		let submodule_ranges =
+			repository.submodules_range(first_commit, last_commit)?;
+		let submodule_commits =
+			submodule_ranges.iter().filter_map(|submodule_range| {
+				// For each submodule, the commit range is exploded into a list of
+				// commits.
+				let SubmoduleRange {
+					repository: sub_repo,
+					range: range_str,
+				} = submodule_range;
+				let commits = sub_repo
+					.commits(Some(range_str), None, None)
+					.ok()
+					.map(|commits| commits.iter().map(Commit::from).collect());
 
-		let submodule_path = sub_repo.path().to_string_lossy().into_owned();
-		Some(submodule_path).zip(commits)
-	});
-	// Insert submodule commits into map.
-	for (submodule_path, commits) in submodule_commits {
-		release.submodule_commits.insert(submodule_path, commits);
+				let submodule_path = sub_repo.path().to_string_lossy().into_owned();
+				Some(submodule_path).zip(commits)
+			});
+		// Insert submodule commits into map.
+		for (submodule_path, commits) in submodule_commits {
+			release.submodule_commits.insert(submodule_path, commits);
+		}
 	}
-
 	Ok(())
 }
 
