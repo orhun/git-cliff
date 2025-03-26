@@ -94,6 +94,8 @@ link_parsers = []
 use_branch_tags = false
 # Order releases topologically instead of chronologically.
 topo_order = false
+# Disable topological order for commits.
+disable_topo_order_commits = false
 # Order of commits in each group/release within the changelog.
 # Allowed values: newest, oldest
 sort_commits = "oldest"

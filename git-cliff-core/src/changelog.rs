@@ -708,11 +708,11 @@ mod test {
 				output:         None,
 			},
 			git:       GitConfig {
-				conventional_commits:     true,
-				require_conventional:     false,
-				filter_unconventional:    false,
-				split_commits:            false,
-				commit_preprocessors:     vec![TextProcessor {
+				conventional_commits:       true,
+				require_conventional:       false,
+				filter_unconventional:      false,
+				split_commits:              false,
+				commit_preprocessors:       vec![TextProcessor {
 					pattern:         Regex::new("<preprocess>")
 						.expect("failed to compile regex"),
 					replace:         Some(String::from(
@@ -720,7 +720,7 @@ mod test {
 					)),
 					replace_command: None,
 				}],
-				commit_parsers:           vec![
+				commit_parsers:             vec![
 					CommitParser {
 						sha:           Some(String::from("tea")),
 						message:       None,
@@ -854,17 +854,18 @@ mod test {
 						pattern:       None,
 					},
 				],
-				protect_breaking_commits: false,
-				filter_commits:           false,
-				tag_pattern:              None,
-				skip_tags:                Regex::new("v3.*").ok(),
-				ignore_tags:              None,
-				count_tags:               None,
-				use_branch_tags:          false,
-				topo_order:               false,
-				sort_commits:             String::from("oldest"),
-				link_parsers:             [].to_vec(),
-				limit_commits:            None,
+				protect_breaking_commits:   false,
+				filter_commits:             false,
+				tag_pattern:                None,
+				skip_tags:                  Regex::new("v3.*").ok(),
+				ignore_tags:                None,
+				count_tags:                 None,
+				use_branch_tags:            false,
+				topo_order:                 false,
+				disable_topo_order_commits: Some(false),
+				sort_commits:               String::from("oldest"),
+				link_parsers:               [].to_vec(),
+				limit_commits:              None,
 			},
 			remote:    RemoteConfig {
 				github:    Remote {

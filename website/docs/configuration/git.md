@@ -252,6 +252,18 @@ If set to `true`, tags are processed in topological order instead of chronologic
 
 This can also be achieved by using the `--topo-order` command line flag.
 
+### disable_topo_order_commits
+
+If set to `true`, commits are processed in chronological order instead of topological.
+
+This can also be achieved by using the `--disable-topo-order-commits` command line flag.
+
+```toml
+# if true , sorting commit is equivalent to git log 
+# if false (default), sorting commit is equivalent to git log --topo-order
+disable_topo_order_commits = true
+```
+
 ### sort_commits
 
 Sort the commits inside sections by specified order.
