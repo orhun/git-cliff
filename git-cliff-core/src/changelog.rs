@@ -173,7 +173,7 @@ impl<'a> Changelog<'a> {
 			})
 			.collect::<Vec<Commit>>();
 
-		if git_config.git.require_conventional) {
+		if git_config.git.require_conventional {
 			Self::check_conventional_commits(commits)?;
 		}
 
