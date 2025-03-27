@@ -153,7 +153,7 @@ impl<'a> Changelog<'a> {
 			.iter()
 			.filter_map(|commit| Self::process_commit(commit, git_config))
 			.flat_map(|commit| {
-				if git_config.git.split_commits {
+				if git_config.split_commits {
 					commit
 						.message
 						.lines()
@@ -173,7 +173,7 @@ impl<'a> Changelog<'a> {
 			})
 			.collect::<Vec<Commit>>();
 
-		if git_config.git.require_conventional {
+		if git_config.require_conventional {
 			Self::check_conventional_commits(commits)?;
 		}
 
