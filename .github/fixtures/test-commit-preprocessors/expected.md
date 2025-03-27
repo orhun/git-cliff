@@ -4,15 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [0.1.0] - 2022-04-06
 
-### Feat
+### <!-- 0 -->🚀 Features
 
 - Add feature 1
 
-### Fix
+### <!-- 1 -->🐛 Bug Fixes
 
 - Fix feature 1 ([issue#1](https://github.com/orhun/git-cliff/issues/1))
 
-### Refactor
+### <!-- 2 -->🚜 Refactor
 
 - Move classes
 

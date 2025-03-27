@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [0.1.1] - 2021-01-23
 
-### Feat
+### <!-- 0 -->🚀 Features
 
 - Fix feature 1
 

@@ -54,7 +54,7 @@ impl<'a> Changelog<'a> {
 
 	/// Builds a changelog from releases and config.
 	fn build(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
-		let trim = config.changelog.trim.unwrap_or(true);
+		let trim = config.changelog.trim;
 		Ok(Self {
 			releases,
 			header_template: match &config.changelog.header {
@@ -153,7 +153,7 @@ impl<'a> Changelog<'a> {
 			.iter()
 			.filter_map(|commit| Self::process_commit(commit, git_config))
 			.flat_map(|commit| {
-				if git_config.split_commits.unwrap_or(false) {
+				if git_config.git.split_commits {
 					commit
 						.message
 						.lines()
@@ -173,7 +173,7 @@ impl<'a> Changelog<'a> {
 			})
 			.collect::<Vec<Commit>>();
 
-		if git_config.require_conventional.unwrap_or(false) {
+		if git_config.git.require_conventional) {
 			Self::check_conventional_commits(commits)?;
 		}
 
@@ -210,7 +210,7 @@ impl<'a> Changelog<'a> {
 					}
 					match &release.previous {
 						Some(prev_release) if prev_release.commits.is_empty() => {
-							self.config.changelog.render_always.unwrap_or(false)
+							self.config.changelog.render_always
 						}
 						_ => false,
 					}
@@ -568,12 +568,7 @@ impl<'a> Changelog<'a> {
 	/// Generates the changelog and writes it to the given output.
 	pub fn generate<W: Write + ?Sized>(&self, out: &mut W) -> Result<()> {
 		debug!("Generating changelog...");
-		let postprocessors = self
-			.config
-			.changelog
-			.postprocessors
-			.clone()
-			.unwrap_or_default();
+		let postprocessors = self.config.changelog.postprocessors.clone();
 
 		if let Some(header_template) = &self.header_template {
 			let write_result = writeln!(
@@ -660,13 +655,7 @@ impl<'a> Changelog<'a> {
 }
 
 fn get_body_template(config: &Config, trim: bool) -> Result<Template> {
-	let template_str = config
-		.changelog
-		.body
-		.as_deref()
-		.unwrap_or_default()
-		.to_string();
-	let template = Template::new("body", template_str, trim)?;
+	let template = Template::new("body", config.changelog.body.clone(), trim)?;
 	let deprecated_vars = [
 		"commit.github",
 		"commit.gitea",
@@ -701,7 +690,7 @@ mod test {
 		let config = Config {
 			changelog: ChangelogConfig {
 				header:         Some(String::from("# Changelog")),
-				body:           Some(String::from(
+				body:           String::from(
 					r#"{% if version %}
 				## Release [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }} - ({{ repository }})
 				{% if commit_id %}({{ commit_id }}){% endif %}{% else %}
@@ -711,34 +700,34 @@ mod test {
 				#### {{ group }}{% for commit in commits %}
 				- {{ commit.message }}{% endfor %}
 				{% endfor %}{% endfor %}"#,
-				)),
+				),
 				footer:         Some(String::from(
 					r#"-- total releases: {{ releases | length }} --"#,
 				)),
-				trim:           Some(true),
-				postprocessors: Some(vec![TextProcessor {
+				trim:           true,
+				postprocessors: vec![TextProcessor {
 					pattern:         Regex::new("boring")
 						.expect("failed to compile regex"),
 					replace:         Some(String::from("exciting")),
 					replace_command: None,
-				}]),
-				render_always:  None,
+				}],
+				render_always:  false,
 				output:         None,
 			},
 			git:       GitConfig {
-				conventional_commits:     Some(true),
-				require_conventional:     Some(false),
-				filter_unconventional:    Some(false),
-				split_commits:            Some(false),
-				commit_preprocessors:     Some(vec![TextProcessor {
+				conventional_commits:     true,
+				require_conventional:     false,
+				filter_unconventional:    false,
+				split_commits:            false,
+				commit_preprocessors:     vec![TextProcessor {
 					pattern:         Regex::new("<preprocess>")
 						.expect("failed to compile regex"),
 					replace:         Some(String::from(
 						"this commit is preprocessed",
 					)),
 					replace_command: None,
-				}]),
-				commit_parsers:           Some(vec![
+				}],
+				commit_parsers:           vec![
 					CommitParser {
 						sha:           Some(String::from("tea")),
 						message:       None,
@@ -871,17 +860,17 @@ mod test {
 						field:         None,
 						pattern:       None,
 					},
-				]),
-				protect_breaking_commits: None,
-				filter_commits:           Some(false),
+				],
+				protect_breaking_commits: false,
+				filter_commits:           false,
 				tag_pattern:              None,
 				skip_tags:                Regex::new("v3.*").ok(),
 				ignore_tags:              None,
 				count_tags:               None,
-				use_branch_tags:          Some(false),
-				topo_order:               Some(false),
-				sort_commits:             Some(String::from("oldest")),
-				link_parsers:             None,
+				use_branch_tags:          false,
+				topo_order:               false,
+				sort_commits:             String::from("oldest"),
+				link_parsers:             [].to_vec(),
 				limit_commits:            None,
 				recurse_submodules:       None,
 			},
@@ -1200,14 +1189,17 @@ mod test {
 	#[test]
 	fn changelog_generator_split_commits() -> Result<()> {
 		let (mut config, mut releases) = get_test_data();
-		config.git.split_commits = Some(true);
-		config.git.filter_unconventional = Some(false);
-		config.git.protect_breaking_commits = Some(true);
+		config.git.split_commits = true;
+		config.git.filter_unconventional = false;
+		config.git.protect_breaking_commits = true;
 
-		if let Some(parsers) = config.git.commit_parsers.as_mut() {
-			for parser in parsers.iter_mut().filter(|p| p.footer.is_some()) {
-				parser.skip = Some(true);
-			}
+		for parser in config
+			.git
+			.commit_parsers
+			.iter_mut()
+			.filter(|p| p.footer.is_some())
+		{
+			parser.skip = Some(true);
 		}
 
 		releases[0].commits.push(Commit::new(
@@ -1330,8 +1322,7 @@ chore(deps): fix broken deps
 	fn changelog_adds_additional_context() -> Result<()> {
 		let (mut config, releases) = get_test_data();
 		// add `{{ custom_field }}` to the template
-		config.changelog.body = Some(
-			r#"{% if version %}
+		config.changelog.body = r#"{% if version %}
 				## {{ custom_field }} [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
 				{% if commit_id %}({{ commit_id }}){% endif %}{% else %}
 				## Unreleased{% endif %}
@@ -1340,8 +1331,7 @@ chore(deps): fix broken deps
 				#### {{ group }}{% for commit in commits %}
 				- {{ commit.message }}{% endfor %}
 				{% endfor %}{% endfor %}"#
-				.to_string(),
-		);
+			.to_string();
 		let mut changelog = Changelog::new(releases, &config)?;
 		changelog.add_context("custom_field", "Hello")?;
 		let mut out = Vec::new();
