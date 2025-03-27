@@ -1,4 +1,5 @@
 use crate::command;
+use crate::embed::EmbeddedConfig;
 use crate::error::Result;
 use regex::{
 	Regex,
@@ -72,15 +73,15 @@ pub struct ChangelogConfig {
 	/// Changelog header.
 	pub header:         Option<String>,
 	/// Changelog body, template.
-	pub body:           Option<String>,
+	pub body:           String,
 	/// Changelog footer.
 	pub footer:         Option<String>,
 	/// Trim the template.
-	pub trim:           Option<bool>,
+	pub trim:           bool,
 	/// Always render the body template.
-	pub render_always:  Option<bool>,
+	pub render_always:  bool,
 	/// Changelog postprocessors.
-	pub postprocessors: Option<Vec<TextProcessor>>,
+	pub postprocessors: Vec<TextProcessor>,
 	/// Output file path.
 	pub output:         Option<PathBuf>,
 }
@@ -89,30 +90,30 @@ pub struct ChangelogConfig {
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct GitConfig {
 	/// Parse commits according to the conventional commits specification.
-	pub conventional_commits:  Option<bool>,
+	pub conventional_commits:  bool,
 	/// Require all commits to be conventional.
 	/// Takes precedence over filter_unconventional.
-	pub require_conventional:  Option<bool>,
+	pub require_conventional:  bool,
 	/// Exclude commits that do not match the conventional commits specification
 	/// from the changelog.
-	pub filter_unconventional: Option<bool>,
+	pub filter_unconventional: bool,
 	/// Split commits on newlines, treating each line as an individual commit.
-	pub split_commits:         Option<bool>,
+	pub split_commits:         bool,
 
 	/// An array of regex based parsers to modify commit messages prior to
 	/// further processing.
-	pub commit_preprocessors:     Option<Vec<TextProcessor>>,
+	pub commit_preprocessors:     Vec<TextProcessor>,
 	/// An array of regex based parsers for extracting data from the commit
 	/// message.
-	pub commit_parsers:           Option<Vec<CommitParser>>,
+	pub commit_parsers:           Vec<CommitParser>,
 	/// Prevent commits having the `BREAKING CHANGE:` footer from being excluded
 	/// by commit parsers.
-	pub protect_breaking_commits: Option<bool>,
+	pub protect_breaking_commits: bool,
 	/// An array of regex based parsers to extract links from the commit message
 	/// and add them to the commit's context.
-	pub link_parsers:             Option<Vec<LinkParser>>,
+	pub link_parsers:             Vec<LinkParser>,
 	/// Exclude commits that are not matched by any commit parser.
-	pub filter_commits:           Option<bool>,
+	pub filter_commits:           bool,
 	/// Regex to select git tags that represent releases.
 	#[serde(with = "serde_regex", default)]
 	pub tag_pattern:              Option<Regex>,
@@ -126,11 +127,11 @@ pub struct GitConfig {
 	#[serde(with = "serde_regex", default)]
 	pub count_tags:               Option<Regex>,
 	/// Include only the tags that belong to the current branch.
-	pub use_branch_tags:          Option<bool>,
+	pub use_branch_tags:          bool,
 	/// Order releases topologically instead of chronologically.
-	pub topo_order:               Option<bool>,
+	pub topo_order:               bool,
 	/// How to order commits in each group/release within the changelog.
-	pub sort_commits:             Option<String>,
+	pub sort_commits:             String,
 	/// Limit the total number of commits included in the changelog.
 	pub limit_commits:            Option<usize>,
 }
@@ -422,7 +423,15 @@ impl Config {
 
 	/// Parses the config file from string and returns the values.
 	pub fn parse_from_str(contents: &str) -> Result<Config> {
+		// Adding sources one after another overwrites the previous values.
+		// Thus adding the default config initializes the config with default values.
+		let default_config_str = EmbeddedConfig::get_config()?;
+
 		Ok(config::Config::builder()
+			.add_source(config::File::from_str(
+				&default_config_str,
+				config::FileFormat::Toml,
+			))
 			.add_source(config::File::from_str(contents, config::FileFormat::Toml))
 			.add_source(
 				config::Environment::with_prefix("GIT_CLIFF").separator("__"),
@@ -442,7 +451,14 @@ impl Config {
 			}
 		}
 
+		// Adding sources one after another overwrites the previous values.
+		// Thus adding the default config initializes the config with default values.
+		let default_config_str = EmbeddedConfig::get_config()?;
 		Ok(config::Config::builder()
+			.add_source(config::File::from_str(
+				&default_config_str,
+				config::FileFormat::Toml,
+			))
 			.add_source(config::File::from(path))
 			.add_source(
 				config::Environment::with_prefix("GIT_CLIFF").separator("__"),

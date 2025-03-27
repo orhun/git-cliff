@@ -33,6 +33,8 @@ footer = """
 """
 # Remove leading and trailing whitespaces from the changelog's body.
 trim = true
+# Render body even when there are no releases to process.
+render_always = true
 # An array of regex based postprocessors to modify the changelog.
 postprocessors = [
   # Replace the placeholder <REPO> with a URL.
@@ -62,6 +64,8 @@ commit_preprocessors = [
   # If the spelling is incorrect, it will be fixed automatically.
   #{ pattern = '.*', replace_command = 'typos --write-changes -' },
 ]
+# Prevent commits that are breaking from being excluded by commit parsers.
+protect_breaking_commits = false
 # An array of regex based parsers for extracting data from the commit message.
 # Assigns commits to groups.
 # Optionally sets the commit's scope and can decide to exclude commits from further processing.
@@ -84,6 +88,10 @@ commit_parsers = [
 ]
 # Exclude commits that are not matched by any commit parser.
 filter_commits = false
+# An array of link parsers for extracting external references, and turning them into URLs, using regex.
+link_parsers = []
+# Include only the tags that belong to the current branch.
+use_branch_tags = false
 # Order releases topologically instead of chronologically.
 topo_order = false
 # Order of commits in each group/release within the changelog.
