@@ -173,7 +173,12 @@ fn process_repository<'a>(
 		}
 	} else if args.latest || args.current {
 		if tags.len() < 2 {
-			let commits = repository.commits(None, None, None)?;
+			let commits = repository.commits(
+				None,
+				None,
+				None,
+				args.disable_topo_order_commits,
+			)?;
 			if let (Some(tag1), Some(tag2)) = (
 				commits.last().map(|c| c.id().to_string()),
 				tags.get_index(0).map(|(k, _)| k),
@@ -241,6 +246,7 @@ fn process_repository<'a>(
 		commit_range.as_deref(),
 		include_path,
 		args.exclude_path.clone(),
+		args.disable_topo_order_commits,
 	)?;
 	if let Some(commit_limit_value) = config.git.limit_commits {
 		commits.truncate(commit_limit_value);
@@ -563,6 +569,16 @@ pub fn run_with_changelog_modifier(
 	}
 	if !args.topo_order {
 		args.topo_order = config.git.topo_order;
+	}
+
+	if !args.disable_topo_order_commits {
+		if let Some(disable_topo_order_commits) =
+			config.git.disable_topo_order_commits
+		{
+			args.disable_topo_order_commits = disable_topo_order_commits;
+		} else {
+			args.disable_topo_order_commits = false
+		}
 	}
 
 	if !args.use_branch_tags {

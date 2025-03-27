@@ -102,38 +102,40 @@ pub struct GitConfig {
 
 	/// An array of regex based parsers to modify commit messages prior to
 	/// further processing.
-	pub commit_preprocessors:     Vec<TextProcessor>,
+	pub commit_preprocessors:       Vec<TextProcessor>,
 	/// An array of regex based parsers for extracting data from the commit
 	/// message.
-	pub commit_parsers:           Vec<CommitParser>,
+	pub commit_parsers:             Vec<CommitParser>,
 	/// Prevent commits having the `BREAKING CHANGE:` footer from being excluded
 	/// by commit parsers.
-	pub protect_breaking_commits: bool,
+	pub protect_breaking_commits:   bool,
 	/// An array of regex based parsers to extract links from the commit message
 	/// and add them to the commit's context.
-	pub link_parsers:             Vec<LinkParser>,
+	pub link_parsers:               Vec<LinkParser>,
 	/// Exclude commits that are not matched by any commit parser.
-	pub filter_commits:           bool,
+	pub filter_commits:             bool,
 	/// Regex to select git tags that represent releases.
 	#[serde(with = "serde_regex", default)]
-	pub tag_pattern:              Option<Regex>,
+	pub tag_pattern:                Option<Regex>,
 	/// Regex to select git tags that do not represent proper releases.
 	#[serde(with = "serde_regex", default)]
-	pub skip_tags:                Option<Regex>,
+	pub skip_tags:                  Option<Regex>,
 	/// Regex to exclude git tags after applying the tag_pattern.
 	#[serde(with = "serde_regex", default)]
-	pub ignore_tags:              Option<Regex>,
+	pub ignore_tags:                Option<Regex>,
 	/// Regex to count matched tags.
 	#[serde(with = "serde_regex", default)]
-	pub count_tags:               Option<Regex>,
+	pub count_tags:                 Option<Regex>,
 	/// Include only the tags that belong to the current branch.
-	pub use_branch_tags:          bool,
+	pub use_branch_tags:            bool,
 	/// Order releases topologically instead of chronologically.
-	pub topo_order:               bool,
+	pub topo_order:                 bool,
+	/// Disable topological order for commits.
+	pub disable_topo_order_commits: Option<bool>,
 	/// How to order commits in each group/release within the changelog.
-	pub sort_commits:             String,
+	pub sort_commits:               String,
 	/// Limit the total number of commits included in the changelog.
-	pub limit_commits:            Option<usize>,
+	pub limit_commits:              Option<usize>,
 }
 
 /// Remote configuration.
