@@ -375,6 +375,7 @@
       "timestamp": 0,
       "previous": null,
       "repository": null,
+      "submodule_commits": {},
       "extra": null,
       "github": { "contributors": [] },
       "gitlab": { "contributors": [] },
@@ -382,6 +383,7 @@
       "bitbucket": { "contributors": [] }
     },
     "repository": "/path/to/repository",
+    "submodule_commits": {},
     "extra": null,
     "github": { "contributors": [] },
     "gitlab": { "contributors": [] },

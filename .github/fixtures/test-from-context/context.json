@@ -160,6 +160,7 @@
             "timestamp": 1649201112,
             "previous": null,
             "repository": "/home/johndoe/repo/",
+            "submodule_commits": {},
             "github": {
                 "contributors": []
             },
@@ -174,6 +175,7 @@
             }
         },
         "repository": "/home/johndoe/repo/",
+        "submodule_commits": {},
         "github": {
             "contributors": []
         },
@@ -449,6 +451,7 @@
             "timestamp": 1649201110,
             "previous": null,
             "repository": "/home/johndoe/repo/",
+            "submodule_commits": {},
             "github": {
                 "contributors": []
             },
@@ -466,6 +469,7 @@
             "note": "This is so awesome!"
         },
         "repository": "/home/johndoe/repo/",
+        "submodule_commits": {},
         "github": {
             "contributors": []
         },
@@ -596,6 +600,7 @@
             "timestamp": 0,
             "previous": null,
             "repository": null,
+            "submodule_commits": {},
             "github": {
                 "contributors": []
             },
@@ -610,6 +615,7 @@
             }
         },
         "repository": "/home/johndoe/repo/",
+        "submodule_commits": {},
         "github": {
             "contributors": []
         },
