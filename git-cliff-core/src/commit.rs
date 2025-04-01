@@ -98,6 +98,25 @@ impl<'a> From<CommitSignature<'a>> for Signature {
 	}
 }
 
+/// Commit range (from..to)
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Range {
+	/// Full commit SHA the range starts at
+	from: String,
+	/// Full commit SHA the range ends at
+	to:   String,
+}
+
+impl Range {
+	/// Creates a new [`Range`] from [`crate::commit::Commit`].
+	pub fn new(from: &Commit, to: &Commit) -> Self {
+		Self {
+			from: from.id.clone(),
+			to:   to.id.clone(),
+		}
+	}
+}
+
 /// Common commit object that is parsed from a repository.
 #[derive(Debug, Default, Clone, PartialEq, Deserialize)]
 #[serde(rename_all(serialize = "camelCase"))]

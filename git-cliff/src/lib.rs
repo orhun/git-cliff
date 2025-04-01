@@ -21,7 +21,10 @@ use args::{
 };
 use clap::ValueEnum;
 use git_cliff_core::changelog::Changelog;
-use git_cliff_core::commit::Commit;
+use git_cliff_core::commit::{
+	Commit,
+	Range,
+};
 use git_cliff_core::config::{
 	CommitParser,
 	Config,
@@ -439,8 +442,21 @@ fn process_repository<'a>(
 		}
 	}
 
-	if recurse_submodules {
-		for release in &mut releases {
+	for release in &mut releases {
+		// Set the commit ranges for all releases
+		if !release.commits.is_empty() {
+			release.commit_range = Some(match args.sort {
+				Sort::Oldest => Range::new(
+					release.commits.first().unwrap(),
+					release.commits.last().unwrap(),
+				),
+				Sort::Newest => Range::new(
+					release.commits.last().unwrap(),
+					release.commits.first().unwrap(),
+				),
+			})
+		}
+		if recurse_submodules {
 			process_submodules(repository, release, config.git.topo_order_commits)?;
 		}
 	}

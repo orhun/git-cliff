@@ -64,6 +64,9 @@ following context is generated to use for templating:
   "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210 (release commit)",
   "timestamp": 1625169301,
   "repository": "/path/to/repository",
+  "commit_range": {
+      "from": "(id of the first commit used for this release)",
+      "to": "(id of the last commit used for this release)"
   "submodule_commits": {
     "<relative/submodule_path/in/repository>": [
       {
@@ -169,6 +172,10 @@ If [`conventional_commits`](/docs/configuration/git#conventional_commits) is set
   "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210 (release commit)",
   "timestamp": 1625169301,
   "repository": "/path/to/repository",
+  "commit_range": {
+      "from": "(id of the first commit used for this release)",
+      "to": "(id of the last commit used for this release)",
+  },
   "previous": {
     "version": "previous release"
   }
