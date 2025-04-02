@@ -254,7 +254,7 @@ This can also be achieved by using the `--topo-order` command line flag.
 
 ### topo_order_commits
 
-If set to `false`, commits are processed in chronological order instead of topological.
+If set to `true`, commits are processed in topological order instead of chronological.
 
 
 ```toml
