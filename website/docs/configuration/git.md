@@ -256,9 +256,8 @@ This can also be achieved by using the `--topo-order` command line flag.
 
 If set to `true`, commits are processed in topological order instead of chronological.
 
-
 ```toml
-# if false , sorting commit is equivalent to git log 
+# if false, sorting commit is equivalent to git log 
 # if true (default), sorting commit is equivalent to git log --topo-order
 topo_order_commits = false
 ```
