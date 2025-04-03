@@ -44,7 +44,7 @@ impl RemoteEntry for GitLabProject {
 		_id: i64,
 		api_url: &str,
 		remote: &Remote,
-		_head: Option<&str>,
+		_ref_name: Option<&str>,
 		_page: i32,
 	) -> String {
 		format!(
@@ -116,7 +116,7 @@ impl RemoteEntry for GitLabCommit {
 		id: i64,
 		api_url: &str,
 		_remote: &Remote,
-		head: Option<&str>,
+		ref_name: Option<&str>,
 		page: i32,
 	) -> String {
 		let commit_page = page + 1;
@@ -126,8 +126,8 @@ impl RemoteEntry for GitLabCommit {
 			api_url, id
 		);
 
-		if let Some(head) = head {
-			url.push_str(&format!("&ref_name={}", head));
+		if let Some(ref_name) = ref_name {
+			url.push_str(&format!("&ref_name={}", ref_name));
 		}
 
 		url
@@ -201,7 +201,7 @@ impl RemoteEntry for GitLabMergeRequest {
 		id: i64,
 		api_url: &str,
 		_remote: &Remote,
-		_head: Option<&str>,
+		_ref_name: Option<&str>,
 		page: i32,
 	) -> String {
 		format!(
@@ -283,18 +283,21 @@ impl RemoteClient for GitLabClient {
 
 impl GitLabClient {
 	/// Fetches the GitLab API and returns the pull requests.
-	pub async fn get_project(&self, head: Option<&str>) -> Result<GitLabProject> {
-		self.get_entry::<GitLabProject>(0, head, 1).await
+	pub async fn get_project(
+		&self,
+		ref_name: Option<&str>,
+	) -> Result<GitLabProject> {
+		self.get_entry::<GitLabProject>(0, ref_name, 1).await
 	}
 
 	/// Fetches the GitLab API and returns the commits.
 	pub async fn get_commits(
 		&self,
 		project_id: i64,
-		head: Option<&str>,
+		ref_name: Option<&str>,
 	) -> Result<Vec<Box<dyn RemoteCommit>>> {
 		Ok(self
-			.fetch::<GitLabCommit>(project_id, head)
+			.fetch::<GitLabCommit>(project_id, ref_name)
 			.await?
 			.into_iter()
 			.map(|v| Box::new(v) as Box<dyn RemoteCommit>)
@@ -305,10 +308,10 @@ impl GitLabClient {
 	pub async fn get_merge_requests(
 		&self,
 		project_id: i64,
-		head: Option<&str>,
+		ref_name: Option<&str>,
 	) -> Result<Vec<Box<dyn RemotePullRequest>>> {
 		Ok(self
-			.fetch::<GitLabMergeRequest>(project_id, head)
+			.fetch::<GitLabMergeRequest>(project_id, ref_name)
 			.await?
 			.into_iter()
 			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)

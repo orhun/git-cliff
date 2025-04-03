@@ -700,7 +700,7 @@ pub fn run_with_changelog_modifier(
 
 			// The commit range, used for determining the remote commits to include
 			// in the changelog, doesn't make sense if multiple repositories are
-			// specified. As such, pick the commit range from an arbitrary
+			// specified. As such, pick the commit range from the last given
 			// repository.
 			commit_range = determine_commit_range(&args, &config, &repository)?;
 

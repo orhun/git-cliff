@@ -52,7 +52,7 @@ impl RemoteEntry for BitbucketPagination<BitbucketCommit> {
 		_id: i64,
 		api_url: &str,
 		remote: &Remote,
-		head: Option<&str>,
+		ref_name: Option<&str>,
 		page: i32,
 	) -> String {
 		let commit_page = page + 1;
@@ -61,8 +61,8 @@ impl RemoteEntry for BitbucketPagination<BitbucketCommit> {
 			api_url, remote.owner, remote.repo
 		);
 
-		if let Some(head) = head {
-			url.push_str(&format!("&include={}", head));
+		if let Some(ref_name) = ref_name {
+			url.push_str(&format!("&include={}", ref_name));
 		}
 
 		url
@@ -157,7 +157,7 @@ impl RemoteEntry for BitbucketPagination<BitbucketPullRequest> {
 		_id: i64,
 		api_url: &str,
 		remote: &Remote,
-		_head: Option<&str>,
+		_ref_name: Option<&str>,
 		page: i32,
 	) -> String {
 		let pr_page = page + 1;
@@ -214,10 +214,12 @@ impl BitbucketClient {
 	/// Fetches the Bitbucket API and returns the commits.
 	pub async fn get_commits(
 		&self,
-		head: Option<&str>,
+		ref_name: Option<&str>,
 	) -> Result<Vec<Box<dyn RemoteCommit>>> {
 		Ok(self
-			.fetch_with_early_exit::<BitbucketPagination<BitbucketCommit>>(0, head)
+			.fetch_with_early_exit::<BitbucketPagination<BitbucketCommit>>(
+				0, ref_name,
+			)
 			.await?
 			.into_iter()
 			.flat_map(|v| v.values)
@@ -228,11 +230,11 @@ impl BitbucketClient {
 	/// Fetches the Bitbucket API and returns the pull requests.
 	pub async fn get_pull_requests(
 		&self,
-		head: Option<&str>,
+		ref_name: Option<&str>,
 	) -> Result<Vec<Box<dyn RemotePullRequest>>> {
 		Ok(self
 			.fetch_with_early_exit::<BitbucketPagination<BitbucketPullRequest>>(
-				0, head,
+				0, ref_name,
 			)
 			.await?
 			.into_iter()

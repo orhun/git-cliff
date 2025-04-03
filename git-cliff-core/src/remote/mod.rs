@@ -78,7 +78,7 @@ pub trait RemoteEntry {
 		project_id: i64,
 		api_url: &str,
 		remote: &Remote,
-		head: Option<&str>,
+		ref_name: Option<&str>,
 		page: i32,
 	) -> String;
 	/// Returns the request buffer size.
@@ -210,10 +210,11 @@ pub trait RemoteClient {
 	async fn get_entry<T: DeserializeOwned + RemoteEntry>(
 		&self,
 		project_id: i64,
-		head: Option<&str>,
+		ref_name: Option<&str>,
 		page: i32,
 	) -> Result<T> {
-		let url = T::url(project_id, &self.api_url(), &self.remote(), head, page);
+		let url =
+			T::url(project_id, &self.api_url(), &self.remote(), ref_name, page);
 		debug!("Sending request to: {url}");
 		let response = self.client().get(&url).send().await?;
 		let response_text = if response.status().is_success() {
@@ -232,10 +233,11 @@ pub trait RemoteClient {
 	async fn get_entries_with_page<T: DeserializeOwned + RemoteEntry>(
 		&self,
 		project_id: i64,
-		head: Option<&str>,
+		ref_name: Option<&str>,
 		page: i32,
 	) -> Result<Vec<T>> {
-		let url = T::url(project_id, &self.api_url(), &self.remote(), head, page);
+		let url =
+			T::url(project_id, &self.api_url(), &self.remote(), ref_name, page);
 		debug!("Sending request to: {url}");
 		let response = self.client().get(&url).send().await?;
 		let response_text = if response.status().is_success() {
@@ -261,10 +263,10 @@ pub trait RemoteClient {
 	async fn fetch<T: DeserializeOwned + RemoteEntry>(
 		&self,
 		project_id: i64,
-		head: Option<&str>,
+		ref_name: Option<&str>,
 	) -> Result<Vec<T>> {
 		let entries: Vec<Vec<T>> = stream::iter(0..)
-			.map(|i| self.get_entries_with_page(project_id, head, i))
+			.map(|i| self.get_entries_with_page(project_id, ref_name, i))
 			.buffered(T::buffer_size())
 			.take_while(|page| {
 				if let Err(e) = page {
@@ -290,10 +292,10 @@ pub trait RemoteClient {
 	async fn fetch_with_early_exit<T: DeserializeOwned + RemoteEntry>(
 		&self,
 		project_id: i64,
-		head: Option<&str>,
+		ref_name: Option<&str>,
 	) -> Result<Vec<T>> {
 		let entries: Vec<T> = stream::iter(0..)
-			.map(|i| self.get_entry::<T>(project_id, head, i))
+			.map(|i| self.get_entry::<T>(project_id, ref_name, i))
 			.buffered(T::buffer_size())
 			.take_while(|page| {
 				let status = match page {
