@@ -24,6 +24,7 @@ tag_pattern = "v[0-9].*"
 skip_tags = "v0.1.0-beta.1"
 ignore_tags = ""
 topo_order = false
+topo_order_commits = true
 sort_commits = "oldest"
 link_parsers = [
     { pattern = "#(\\d+)", href = "https://github.com/orhun/git-cliff/issues/$1"},
