@@ -50,5 +50,3 @@ commit_preprocessors = [
   # Remove issue numbers.
   { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "" },
 ]
-# Prevent commits that are breaking from being excluded by commit parsers.
-protect_breaking_commits = false
