@@ -99,7 +99,12 @@ fn determine_commit_range(
 		}
 	} else if args.latest || args.current {
 		if tags.len() < 2 {
-			let commits = repository.commits(None, None, None)?;
+			let commits = repository.commits(
+				None,
+				None,
+				None,
+				config.git.topo_order_commits,
+			)?;
 			if let (Some(tag1), Some(tag2)) = (
 				commits.last().map(|c| c.id().to_string()),
 				tags.get_index(0).map(|(k, _)| k),
