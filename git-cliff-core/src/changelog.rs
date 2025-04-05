@@ -862,6 +862,7 @@ mod test {
 				count_tags:               None,
 				use_branch_tags:          false,
 				topo_order:               false,
+				topo_order_commits:       true,
 				sort_commits:             String::from("oldest"),
 				link_parsers:             [].to_vec(),
 				limit_commits:            None,
