@@ -261,6 +261,7 @@ fn process_repository<'a>(
 		commit_range.as_deref(),
 		include_path,
 		args.exclude_path.clone(),
+		config.git.topo_order_commits,
 	)?;
 	if let Some(commit_limit_value) = config.git.limit_commits {
 		commits.truncate(commit_limit_value);

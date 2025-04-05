@@ -130,6 +130,8 @@ pub struct GitConfig {
 	pub use_branch_tags:          bool,
 	/// Order releases topologically instead of chronologically.
 	pub topo_order:               bool,
+	/// Order commits chronologically instead of topologically.
+	pub topo_order_commits:       bool,
 	/// How to order commits in each group/release within the changelog.
 	pub sort_commits:             String,
 	/// Limit the total number of commits included in the changelog.
