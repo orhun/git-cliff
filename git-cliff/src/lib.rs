@@ -77,9 +77,10 @@ fn check_new_version() {
 	}
 }
 
-/// Produces a commit range on the format BASE..HEAD, derived from the
-/// command line arguments and repository tags. If no commit range could be
-/// determined, None is returned.
+/// Produces a commit range on the format `BASE..HEAD`, derived from the
+/// command line arguments and repository tags.
+///
+/// If no commit range could be determined, `None` is returned.
 fn determine_commit_range(
 	args: &Opt,
 	config: &Config,
