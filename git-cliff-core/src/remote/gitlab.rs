@@ -40,7 +40,13 @@ pub struct GitLabProject {
 }
 
 impl RemoteEntry for GitLabProject {
-	fn url(_id: i64, api_url: &str, remote: &Remote, _page: i32) -> String {
+	fn url(
+		_id: i64,
+		api_url: &str,
+		remote: &Remote,
+		_ref_name: Option<&str>,
+		_page: i32,
+	) -> String {
 		format!(
 			"{}/projects/{}%2F{}",
 			api_url,
@@ -106,14 +112,27 @@ impl RemoteCommit for GitLabCommit {
 }
 
 impl RemoteEntry for GitLabCommit {
-	fn url(id: i64, api_url: &str, _remote: &Remote, page: i32) -> String {
+	fn url(
+		id: i64,
+		api_url: &str,
+		_remote: &Remote,
+		ref_name: Option<&str>,
+		page: i32,
+	) -> String {
 		let commit_page = page + 1;
-		format!(
+		let mut url = format!(
 			"{}/projects/{}/repository/commits?per_page={MAX_PAGE_SIZE}&\
 			 page={commit_page}",
 			api_url, id
-		)
+		);
+
+		if let Some(ref_name) = ref_name {
+			url.push_str(&format!("&ref_name={}", ref_name));
+		}
+
+		url
 	}
+
 	fn buffer_size() -> usize {
 		10
 	}
@@ -178,7 +197,13 @@ impl RemotePullRequest for GitLabMergeRequest {
 }
 
 impl RemoteEntry for GitLabMergeRequest {
-	fn url(id: i64, api_url: &str, _remote: &Remote, page: i32) -> String {
+	fn url(
+		id: i64,
+		api_url: &str,
+		_remote: &Remote,
+		_ref_name: Option<&str>,
+		page: i32,
+	) -> String {
 		format!(
 			"{}/projects/{}/merge_requests?per_page={MAX_PAGE_SIZE}&page={page}&\
 			 state=merged",
@@ -258,17 +283,21 @@ impl RemoteClient for GitLabClient {
 
 impl GitLabClient {
 	/// Fetches the GitLab API and returns the pull requests.
-	pub async fn get_project(&self) -> Result<GitLabProject> {
-		self.get_entry::<GitLabProject>(0, 1).await
+	pub async fn get_project(
+		&self,
+		ref_name: Option<&str>,
+	) -> Result<GitLabProject> {
+		self.get_entry::<GitLabProject>(0, ref_name, 1).await
 	}
 
 	/// Fetches the GitLab API and returns the commits.
 	pub async fn get_commits(
 		&self,
 		project_id: i64,
+		ref_name: Option<&str>,
 	) -> Result<Vec<Box<dyn RemoteCommit>>> {
 		Ok(self
-			.fetch::<GitLabCommit>(project_id)
+			.fetch::<GitLabCommit>(project_id, ref_name)
 			.await?
 			.into_iter()
 			.map(|v| Box::new(v) as Box<dyn RemoteCommit>)
@@ -279,9 +308,10 @@ impl GitLabClient {
 	pub async fn get_merge_requests(
 		&self,
 		project_id: i64,
+		ref_name: Option<&str>,
 	) -> Result<Vec<Box<dyn RemotePullRequest>>> {
 		Ok(self
-			.fetch::<GitLabMergeRequest>(project_id)
+			.fetch::<GitLabMergeRequest>(project_id, ref_name)
 			.await?
 			.into_iter()
 			.map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
@@ -298,7 +328,13 @@ mod test {
 		let remote = Remote::new("abc/def", "xyz1");
 		assert_eq!(
 			"https://gitlab.test.com/api/v4/projects/abc%2Fdef%2Fxyz1",
-			GitLabProject::url(1, "https://gitlab.test.com/api/v4", &remote, 0)
+			GitLabProject::url(
+				1,
+				"https://gitlab.test.com/api/v4",
+				&remote,
+				None,
+				0
+			)
 		);
 	}
 

@@ -18,9 +18,17 @@ jobs:
         include:
           - fixtures-name: new-fixture-template
           - fixtures-name: test-github-integration
+          - fixtures-name: test-github-integration-custom-range
+            command: v1.0.0..v1.0.1
           - fixtures-name: test-gitlab-integration
+          - fixtures-name: test-gitlab-integration-custom-range
+            command: 9f66ac0f76..89de5e8e50
           - fixtures-name: test-gitea-integration
+          - fixtures-name: test-gitea-integration-custom-range
+            command: 5ed596d935..c074c439b5
           - fixtures-name: test-bitbucket-integration
+          - fixtures-name: test-bitbucket-integration-custom-range
+            command: v1.0.0..v1.0.1
           - fixtures-name: test-ignore-tags
           - fixtures-name: test-invert-ignore-tags
           - fixtures-name: test-topo-order

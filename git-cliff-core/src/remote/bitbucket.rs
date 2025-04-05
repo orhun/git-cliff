@@ -48,12 +48,24 @@ impl RemoteCommit for BitbucketCommit {
 
 /// <https://developer.atlassian.com/cloud/bitbucket/rest/api-group-commits/#api-repositories-workspace-repo-slug-commits-get>
 impl RemoteEntry for BitbucketPagination<BitbucketCommit> {
-	fn url(_id: i64, api_url: &str, remote: &Remote, page: i32) -> String {
+	fn url(
+		_id: i64,
+		api_url: &str,
+		remote: &Remote,
+		ref_name: Option<&str>,
+		page: i32,
+	) -> String {
 		let commit_page = page + 1;
-		format!(
+		let mut url = format!(
 			"{}/{}/{}/commits?pagelen={MAX_PAGE_SIZE}&page={commit_page}",
 			api_url, remote.owner, remote.repo
-		)
+		);
+
+		if let Some(ref_name) = ref_name {
+			url.push_str(&format!("&include={}", ref_name));
+		}
+
+		url
 	}
 
 	fn buffer_size() -> usize {
@@ -141,7 +153,13 @@ impl RemotePullRequest for BitbucketPullRequest {
 
 /// <https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/#api-repositories-workspace-repo-slug-pullrequests-get>
 impl RemoteEntry for BitbucketPagination<BitbucketPullRequest> {
-	fn url(_id: i64, api_url: &str, remote: &Remote, page: i32) -> String {
+	fn url(
+		_id: i64,
+		api_url: &str,
+		remote: &Remote,
+		_ref_name: Option<&str>,
+		page: i32,
+	) -> String {
 		let pr_page = page + 1;
 		format!(
 			"{}/{}/{}/pullrequests?&pagelen={BITBUCKET_MAX_PAGE_PRS}&\
@@ -194,9 +212,14 @@ impl RemoteClient for BitbucketClient {
 
 impl BitbucketClient {
 	/// Fetches the Bitbucket API and returns the commits.
-	pub async fn get_commits(&self) -> Result<Vec<Box<dyn RemoteCommit>>> {
+	pub async fn get_commits(
+		&self,
+		ref_name: Option<&str>,
+	) -> Result<Vec<Box<dyn RemoteCommit>>> {
 		Ok(self
-			.fetch_with_early_exit::<BitbucketPagination<BitbucketCommit>>(0)
+			.fetch_with_early_exit::<BitbucketPagination<BitbucketCommit>>(
+				0, ref_name,
+			)
 			.await?
 			.into_iter()
 			.flat_map(|v| v.values)
@@ -207,9 +230,12 @@ impl BitbucketClient {
 	/// Fetches the Bitbucket API and returns the pull requests.
 	pub async fn get_pull_requests(
 		&self,
+		ref_name: Option<&str>,
 	) -> Result<Vec<Box<dyn RemotePullRequest>>> {
 		Ok(self
-			.fetch_with_early_exit::<BitbucketPagination<BitbucketPullRequest>>(0)
+			.fetch_with_early_exit::<BitbucketPagination<BitbucketPullRequest>>(
+				0, ref_name,
+			)
 			.await?
 			.into_iter()
 			.flat_map(|v| v.values)

@@ -77,6 +77,81 @@ fn check_new_version() {
 	}
 }
 
+/// Produces a commit range on the format `BASE..HEAD`, derived from the
+/// command line arguments and repository tags.
+///
+/// If no commit range could be determined, `None` is returned.
+fn determine_commit_range(
+	args: &Opt,
+	config: &Config,
+	repository: &Repository,
+) -> Result<Option<String>> {
+	let tags = repository.tags(
+		&config.git.tag_pattern,
+		args.topo_order,
+		args.use_branch_tags,
+	)?;
+
+	let mut commit_range = args.range.clone();
+	if args.unreleased {
+		if let Some(last_tag) = tags.last().map(|(k, _)| k) {
+			commit_range = Some(format!("{last_tag}..HEAD"));
+		}
+	} else if args.latest || args.current {
+		if tags.len() < 2 {
+			let commits = repository.commits(
+				None,
+				None,
+				None,
+				config.git.topo_order_commits,
+			)?;
+			if let (Some(tag1), Some(tag2)) = (
+				commits.last().map(|c| c.id().to_string()),
+				tags.get_index(0).map(|(k, _)| k),
+			) {
+				if tags.len() == 1 {
+					commit_range = Some(tag2.to_owned());
+				} else {
+					commit_range = Some(format!("{tag1}..{tag2}"));
+				}
+			}
+		} else {
+			let mut tag_index = tags.len() - 2;
+			if args.current {
+				if let Some(current_tag_index) =
+					repository.current_tag().as_ref().and_then(|tag| {
+						tags.iter()
+							.enumerate()
+							.find(|(_, (_, v))| v.name == tag.name)
+							.map(|(i, _)| i)
+					}) {
+					match current_tag_index.checked_sub(1) {
+						Some(i) => tag_index = i,
+						None => {
+							return Err(Error::ChangelogError(String::from(
+								"No suitable tags found. Maybe run with \
+								 '--topo-order'?",
+							)));
+						}
+					}
+				} else {
+					return Err(Error::ChangelogError(String::from(
+						"No tag exists for the current commit",
+					)));
+				}
+			}
+			if let (Some(tag1), Some(tag2)) = (
+				tags.get_index(tag_index).map(|(k, _)| k),
+				tags.get_index(tag_index + 1).map(|(k, _)| k),
+			) {
+				commit_range = Some(format!("{tag1}..{tag2}"));
+			}
+		}
+	}
+
+	Ok(commit_range)
+}
+
 /// Processes the tags and commits for creating release entries for the
 /// changelog.
 ///
@@ -166,62 +241,7 @@ fn process_repository<'a>(
 	log::trace!("Config: {:#?}", config);
 
 	// Parse commits.
-	let mut commit_range = args.range.clone();
-	if args.unreleased {
-		if let Some(last_tag) = tags.last().map(|(k, _)| k) {
-			commit_range = Some(format!("{last_tag}..HEAD"));
-		}
-	} else if args.latest || args.current {
-		if tags.len() < 2 {
-			let commits = repository.commits(
-				None,
-				None,
-				None,
-				config.git.topo_order_commits,
-			)?;
-			if let (Some(tag1), Some(tag2)) = (
-				commits.last().map(|c| c.id().to_string()),
-				tags.get_index(0).map(|(k, _)| k),
-			) {
-				if tags.len() == 1 {
-					commit_range = Some(tag2.to_owned());
-				} else {
-					commit_range = Some(format!("{tag1}..{tag2}"));
-				}
-			}
-		} else {
-			let mut tag_index = tags.len() - 2;
-			if args.current {
-				if let Some(current_tag_index) =
-					repository.current_tag().as_ref().and_then(|tag| {
-						tags.iter()
-							.enumerate()
-							.find(|(_, (_, v))| v.name == tag.name)
-							.map(|(i, _)| i)
-					}) {
-					match current_tag_index.checked_sub(1) {
-						Some(i) => tag_index = i,
-						None => {
-							return Err(Error::ChangelogError(String::from(
-								"No suitable tags found. Maybe run with \
-								 '--topo-order'?",
-							)));
-						}
-					}
-				} else {
-					return Err(Error::ChangelogError(String::from(
-						"No tag exists for the current commit",
-					)));
-				}
-			}
-			if let (Some(tag1), Some(tag2)) = (
-				tags.get_index(tag_index).map(|(k, _)| k),
-				tags.get_index(tag_index + 1).map(|(k, _)| k),
-			) {
-				commit_range = Some(format!("{tag1}..{tag2}"));
-			}
-		}
-	}
+	let commit_range = determine_commit_range(args, config, repository)?;
 
 	// Include only the current directory if not running from the root repository
 	let mut include_path = args.include_path.clone();
@@ -657,6 +677,7 @@ pub fn run_with_changelog_modifier(
 		let repositories =
 			args.repository.clone().unwrap_or(vec![env::current_dir()?]);
 		let mut releases = Vec::<Release>::new();
+		let mut commit_range = None;
 		for repository in repositories {
 			// Skip commits
 			let mut skip_list = Vec::new();
@@ -683,13 +704,20 @@ pub fn run_with_changelog_modifier(
 
 			// Process the repository.
 			let repository = Repository::init(repository)?;
+
+			// The commit range, used for determining the remote commits to include
+			// in the changelog, doesn't make sense if multiple repositories are
+			// specified. As such, pick the commit range from the last given
+			// repository.
+			commit_range = determine_commit_range(&args, &config, &repository)?;
+
 			releases.extend(process_repository(
 				Box::leak(Box::new(repository)),
 				&mut config,
 				&args,
 			)?);
 		}
-		Changelog::new(releases, &config)?
+		Changelog::new(releases, &config, commit_range.as_deref())?
 	};
 	changelog_modifier(&mut changelog)?;
 
