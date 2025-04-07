@@ -138,9 +138,15 @@ impl Repository {
 		range: Option<&str>,
 		include_path: Option<Vec<Pattern>>,
 		exclude_path: Option<Vec<Pattern>>,
+		topo_order_commits: bool,
 	) -> Result<Vec<Commit>> {
 		let mut revwalk = self.inner.revwalk()?;
-		revwalk.set_sorting(Sort::TOPOLOGICAL)?;
+		if topo_order_commits {
+			revwalk.set_sorting(Sort::TOPOLOGICAL)?;
+		} else {
+			revwalk.set_sorting(Sort::TIME)?;
+		}
+
 		Self::set_commit_range(&mut revwalk, range).map_err(|e| {
 			Error::SetCommitRangeError(
 				range.map(String::from).unwrap_or_else(|| "?".to_string()),
@@ -694,7 +700,7 @@ mod test {
 	#[test]
 	fn get_latest_commit() -> Result<()> {
 		let repository = get_repository()?;
-		let commits = repository.commits(None, None, None)?;
+		let commits = repository.commits(None, None, None, false)?;
 		let last_commit =
 			AppCommit::from(&commits.first().expect("no commits found").clone());
 		assert_eq!(get_last_commit_hash()?, last_commit.id);
@@ -812,7 +818,7 @@ mod test {
 		let repository = get_repository()?;
 		// a close descendant of the root commit
 		let range = Some("eea3914c7ab07472841aa85c36d11bdb2589a234");
-		let commits = repository.commits(range, None, None)?;
+		let commits = repository.commits(range, None, None, false)?;
 		let root_commit =
 			AppCommit::from(&commits.last().expect("no commits found").clone());
 		assert_eq!(get_root_commit_hash()?, root_commit.id);
