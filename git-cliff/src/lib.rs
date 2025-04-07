@@ -187,12 +187,7 @@ fn process_submodules(
 					range: range_str,
 				} = submodule_range;
 				let commits = sub_repo
-					.commits(
-						Some(range_str),
-						None,
-						None,
-						topo_order_commits,
-					)
+					.commits(Some(range_str), None, None, topo_order_commits)
 					.ok()
 					.map(|commits| commits.iter().map(Commit::from).collect());
 
