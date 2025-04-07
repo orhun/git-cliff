@@ -37,8 +37,8 @@ trim = true
 render_always = true
 # An array of regex based postprocessors to modify the changelog.
 postprocessors = [
-  # Replace the placeholder <REPO> with a URL.
-  #{ pattern = '<REPO>', replace = "https://github.com/orhun/git-cliff" },
+    # Replace the placeholder <REPO> with a URL.
+    #{ pattern = '<REPO>', replace = "https://github.com/orhun/git-cliff" },
 ]
 # render body even when there are no releases to process
 # render_always = true
@@ -58,11 +58,11 @@ require_conventional = false
 split_commits = false
 # An array of regex based parsers to modify commit messages prior to further processing.
 commit_preprocessors = [
-  # Replace issue numbers with link templates to be updated in `changelog.postprocessors`.
-  #{ pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](<REPO>/issues/${2}))"},
-  # Check spelling of the commit message using https://github.com/crate-ci/typos.
-  # If the spelling is incorrect, it will be fixed automatically.
-  #{ pattern = '.*', replace_command = 'typos --write-changes -' },
+    # Replace issue numbers with link templates to be updated in `changelog.postprocessors`.
+    #{ pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](<REPO>/issues/${2}))"},
+    # Check spelling of the commit message using https://github.com/crate-ci/typos.
+    # If the spelling is incorrect, it will be fixed automatically.
+    #{ pattern = '.*', replace_command = 'typos --write-changes -' },
 ]
 # Prevent commits that are breaking from being excluded by commit parsers.
 protect_breaking_commits = false
@@ -70,21 +70,21 @@ protect_breaking_commits = false
 # Assigns commits to groups.
 # Optionally sets the commit's scope and can decide to exclude commits from further processing.
 commit_parsers = [
-  { message = "^feat", group = "<!-- 0 -->🚀 Features" },
-  { message = "^fix", group = "<!-- 1 -->🐛 Bug Fixes" },
-  { message = "^doc", group = "<!-- 3 -->📚 Documentation" },
-  { message = "^perf", group = "<!-- 4 -->⚡ Performance" },
-  { message = "^refactor", group = "<!-- 2 -->🚜 Refactor" },
-  { message = "^style", group = "<!-- 5 -->🎨 Styling" },
-  { message = "^test", group = "<!-- 6 -->🧪 Testing" },
-  { message = "^chore\\(release\\): prepare for", skip = true },
-  { message = "^chore\\(deps.*\\)", skip = true },
-  { message = "^chore\\(pr\\)", skip = true },
-  { message = "^chore\\(pull\\)", skip = true },
-  { message = "^chore|^ci", group = "<!-- 7 -->⚙️ Miscellaneous Tasks" },
-  { body = ".*security", group = "<!-- 8 -->🛡️ Security" },
-  { message = "^revert", group = "<!-- 9 -->◀️ Revert" },
-  { message = ".*", group = "<!-- 10 -->💼 Other" },
+    { message = "^feat", group = "<!-- 0 -->🚀 Features" },
+    { message = "^fix", group = "<!-- 1 -->🐛 Bug Fixes" },
+    { message = "^doc", group = "<!-- 3 -->📚 Documentation" },
+    { message = "^perf", group = "<!-- 4 -->⚡ Performance" },
+    { message = "^refactor", group = "<!-- 2 -->🚜 Refactor" },
+    { message = "^style", group = "<!-- 5 -->🎨 Styling" },
+    { message = "^test", group = "<!-- 6 -->🧪 Testing" },
+    { message = "^chore\\(release\\): prepare for", skip = true },
+    { message = "^chore\\(deps.*\\)", skip = true },
+    { message = "^chore\\(pr\\)", skip = true },
+    { message = "^chore\\(pull\\)", skip = true },
+    { message = "^chore|^ci", group = "<!-- 7 -->⚙️ Miscellaneous Tasks" },
+    { body = ".*security", group = "<!-- 8 -->🛡️ Security" },
+    { message = "^revert", group = "<!-- 9 -->◀️ Revert" },
+    { message = ".*", group = "<!-- 10 -->💼 Other" },
 ]
 # Exclude commits that are not matched by any commit parser.
 filter_commits = false
@@ -99,3 +99,5 @@ topo_order_commits = true
 # Order of commits in each group/release within the changelog.
 # Allowed values: newest, oldest
 sort_commits = "oldest"
+# Process submodules commits
+recurse_submodules = false
