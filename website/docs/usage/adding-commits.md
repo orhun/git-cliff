@@ -27,3 +27,9 @@ git commit -m "$commit_msg"
 ```
 
 The commit SHA will be empty as default when `--with-commit` is used. Specify the hash with a message separated by single whitespace for setting the commit SHA. e.g. `--with-commit "8f55e69eba6e6ce811ace32bd84cc82215673cb6 feat: add X"`
+
+:::info
+
+Adding custom commits will purge some of the `commit_range` (see [context](/docs/templating/context)) commit SHAs.
+
+:::

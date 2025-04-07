@@ -1,0 +1,31 @@
+# git-cliff ~ configuration file
+# https://git-cliff.org/docs/configuration
+
+[changelog]
+# A Tera template to be rendered for each release in the changelog.
+# See https://keats.github.io/tera/docs/#introduction
+body = """
+{% if version %}\
+    ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+    ## [unreleased]
+{% endif %}
+{{ commit_range.from_short }}..{{ commit_range.to_short }}
+{{ commit_range.from }}..{{ commit_range.to }}
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | upper_first }}
+    {% for commit in commits %}
+        - {{ commit.message | upper_first }}\
+    {% endfor %}
+{% endfor %}\n
+"""
+
+[git]
+# An array of regex based parsers for extracting data from the commit message.
+# Assigns commits to groups.
+# Optionally sets the commit's `scope` and can decide to exclude commits from further processing.
+commit_parsers = [
+    { message = "^feat", group = "Features", default_scope = "app" },
+    { message = "^fix", group = "Bug Fixes", scope = "cli" },
+]
+sort_commits = "newest"

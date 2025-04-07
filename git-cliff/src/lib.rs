@@ -34,6 +34,7 @@ use git_cliff_core::error::{
 	Error,
 	Result,
 };
+use git_cliff_core::range::Range;
 use git_cliff_core::release::Release;
 use git_cliff_core::repo::Repository;
 use git_cliff_core::{
@@ -394,6 +395,22 @@ fn process_repository<'a>(
 			.next_back()
 		{
 			latest_release.message = Some(message.to_owned());
+		}
+	}
+
+	// Set the commit ranges for all releases
+	for release in &mut releases {
+		if !release.commits.is_empty() {
+			release.commit_range = Some(match args.sort {
+				Sort::Oldest => Range::new(
+					release.commits.first().unwrap(),
+					release.commits.last().unwrap(),
+				),
+				Sort::Newest => Range::new(
+					release.commits.last().unwrap(),
+					release.commits.first().unwrap(),
+				),
+			})
 		}
 	}
 

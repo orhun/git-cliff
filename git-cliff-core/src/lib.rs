@@ -26,6 +26,8 @@ pub mod contributor;
 pub mod embed;
 /// Error handling.
 pub mod error;
+/// Commit Range
+pub mod range;
 /// Common release type.
 pub mod release;
 /// Remote handler.

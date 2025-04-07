@@ -215,6 +215,7 @@ mod test {
 			.into_iter()
 			.filter_map(|c| c.into_conventional().ok())
 			.collect(),
+			commit_range: None,
 			commit_id: None,
 			timestamp: 0,
 			previous: None,

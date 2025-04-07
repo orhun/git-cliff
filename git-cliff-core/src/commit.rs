@@ -104,6 +104,8 @@ impl<'a> From<CommitSignature<'a>> for Signature {
 pub struct Commit<'a> {
 	/// Commit ID.
 	pub id:            String,
+	/// Commit short ID.
+	pub short_id:      String,
 	/// Commit message including title, description and summary.
 	pub message:       String,
 	/// Conventional commit.
@@ -181,6 +183,13 @@ impl<'a> From<&GitCommit<'a>> for Commit<'a> {
 	fn from(commit: &GitCommit<'a>) -> Self {
 		Commit {
 			id: commit.id().to_string(),
+			short_id: commit
+				.as_object()
+				.short_id()
+				.unwrap_or_default()
+				.as_str()
+				.unwrap_or_default()
+				.to_string(),
 			message: commit.message().unwrap_or_default().trim_end().to_string(),
 			author: commit.author().into(),
 			committer: commit.committer().into(),

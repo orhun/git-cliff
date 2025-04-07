@@ -274,6 +274,8 @@ Possible values:
 
 This can also be achieved by specifying the `--sort` command line argument.
 
+The default value is `oldest`.
+
 ### link_parsers
 
 An array of link parsers for extracting external references, and turning them into URLs, using regex.

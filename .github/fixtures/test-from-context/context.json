@@ -5,6 +5,7 @@
         "commits": [
             {
                 "id": "c7541276668616c136d12a9ccd87087314d66fb6",
+                "short_id": "c754127",
                 "message": "add tests",
                 "body": null,
                 "footers": [],
@@ -63,6 +64,7 @@
             "commits": [
                 {
                     "id": "ce8cecc9834e5cbdb5b4e79c8260cace3c0dd949",
+                    "short_id": "ce8cecc",
                     "message": "feat(gui): add feature 2\n",
                     "group": null,
                     "scope": null,
@@ -110,6 +112,7 @@
                 },
                 {
                     "id": "5061081d6272b1da2146fab49d803c193db309d9",
+                    "short_id": "5061081",
                     "message": "fix(gui): fix feature 2\n",
                     "group": null,
                     "scope": null,
@@ -160,6 +163,7 @@
             "timestamp": 1649201112,
             "previous": null,
             "repository": "/home/johndoe/repo/",
+            "commit_range": null,
             "github": {
                 "contributors": []
             },
@@ -174,6 +178,7 @@
             }
         },
         "repository": "/home/johndoe/repo/",
+        "commit_range": null,
         "github": {
             "contributors": []
         },
@@ -193,6 +198,7 @@
         "commits": [
             {
                 "id": "ce8cecc9834e5cbdb5b4e79c8260cace3c0dd949",
+                "short_id": "ce8cecc",
                 "message": "add feature 2",
                 "body": null,
                 "footers": [],
@@ -244,6 +250,7 @@
             },
             {
                 "id": "5061081d6272b1da2146fab49d803c193db309d9",
+                "short_id": "5061081",
                 "message": "fix feature 2",
                 "body": null,
                 "footers": [],
@@ -305,6 +312,7 @@
             "commits": [
                 {
                     "id": "c6ba7fe73c3b639ff2f934f3f98e5f50350ab463",
+                    "short_id": "c6ba7fe",
                     "message": "Initial commit\n",
                     "group": null,
                     "scope": null,
@@ -352,6 +360,7 @@
                 },
                 {
                     "id": "9c10e506bf103998e303d8164c7b4a1a841e2471",
+                    "short_id": "9c10e50",
                     "message": "feat: add feature 1\n",
                     "group": null,
                     "scope": null,
@@ -399,6 +408,7 @@
                 },
                 {
                     "id": "98b1464c2f99a0c6812ce6d3ea4a5b953dd35fe2",
+                    "short_id": "98b1464",
                     "message": "fix: fix feature 1\n",
                     "group": null,
                     "scope": null,
@@ -449,6 +459,7 @@
             "timestamp": 1649201110,
             "previous": null,
             "repository": "/home/johndoe/repo/",
+            "commit_range": null,
             "github": {
                 "contributors": []
             },
@@ -466,6 +477,7 @@
             "note": "This is so awesome!"
         },
         "repository": "/home/johndoe/repo/",
+        "commit_range": null,
         "github": {
             "contributors": []
         },
@@ -485,6 +497,7 @@
         "commits": [
             {
                 "id": "9c10e506bf103998e303d8164c7b4a1a841e2471",
+                "short_id": "9c10e50",
                 "message": "add feature 1",
                 "body": null,
                 "footers": [],
@@ -536,6 +549,7 @@
             },
             {
                 "id": "98b1464c2f99a0c6812ce6d3ea4a5b953dd35fe2",
+                "short_id": "98b1464",
                 "message": "fix feature 1",
                 "body": null,
                 "footers": [],
@@ -596,6 +610,7 @@
             "timestamp": 0,
             "previous": null,
             "repository": null,
+            "commit_range": null,
             "github": {
                 "contributors": []
             },
@@ -610,6 +625,7 @@
             }
         },
         "repository": "/home/johndoe/repo/",
+        "commit_range": null,
         "github": {
             "contributors": []
         },
