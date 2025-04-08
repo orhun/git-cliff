@@ -46,19 +46,19 @@ fn generate_changelog() -> Result<()> {
 		output:         None,
 	};
 	let git_config = GitConfig {
-		conventional_commits:                     true,
-		require_conventional:                     false,
-		filter_unconventional:                    true,
-        blame_ignore_revs_file:                   String::from(BLAME_IGNORE_FILE),
-		filter_blame_ignored_revs:                false,
-        filter_mono_commits_to_blame_ignore_file: true,
-		split_commits:                            false,
-		commit_preprocessors:                     vec![TextProcessor {
+		conventional_commits: true,
+		require_conventional: false,
+		filter_unconventional: true,
+		blame_ignore_revs_file: String::from(BLAME_IGNORE_FILE),
+		filter_blame_ignored_revs: false,
+		filter_mono_commits_to_blame_ignore_file: true,
+		split_commits: false,
+		commit_preprocessors: vec![TextProcessor {
 			pattern:         Regex::new(r"\(fixes (#[1-9]+)\)").unwrap(),
 			replace:         Some(String::from("[closes Issue${1}]")),
 			replace_command: None,
 		}],
-		commit_parsers:           vec![
+		commit_parsers: vec![
 			CommitParser {
 				sha:           Some(String::from("coffee")),
 				message:       None,
@@ -121,16 +121,16 @@ fn generate_changelog() -> Result<()> {
 			},
 		],
 		protect_breaking_commits: false,
-		filter_commits:           true,
-		tag_pattern:              None,
-		skip_tags:                None,
-		ignore_tags:              None,
-		count_tags:               None,
-		use_branch_tags:          false,
-		topo_order:               false,
-		topo_order_commits:       true,
-		sort_commits:             String::from("oldest"),
-		link_parsers:             vec![
+		filter_commits: true,
+		tag_pattern: None,
+		skip_tags: None,
+		ignore_tags: None,
+		count_tags: None,
+		use_branch_tags: false,
+		topo_order: false,
+		topo_order_commits: true,
+		sort_commits: String::from("oldest"),
+		link_parsers: vec![
 			LinkParser {
 				pattern: Regex::new("#(\\d+)").unwrap(),
 				href:    String::from("https://github.com/$1"),
@@ -142,7 +142,7 @@ fn generate_changelog() -> Result<()> {
 				text:    Some(String::from("$1")),
 			},
 		],
-		limit_commits:            None,
+		limit_commits: None,
 	};
 
 	let mut commit_with_author = Commit::new(

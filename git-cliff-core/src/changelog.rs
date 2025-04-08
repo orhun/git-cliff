@@ -126,8 +126,10 @@ impl<'a> Changelog<'a> {
 	/// criteria set by configuration file.
 	fn process_commits(&mut self) -> Result<()> {
 		debug!("Processing the commits...");
-		let blame_ignore_file = Some(self.config.git.blame_ignore_revs_file.as_str());
-		let filter_mono_commits = self.config.git.filter_mono_commits_to_blame_ignore_file;
+		let blame_ignore_file =
+			Some(self.config.git.blame_ignore_revs_file.as_str());
+		let filter_mono_commits =
+			self.config.git.filter_mono_commits_to_blame_ignore_file;
 
 		// Derive repository path dynamically
 		let repository_path = PathBuf::from("."); // Default to current directory
