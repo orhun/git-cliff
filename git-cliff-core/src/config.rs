@@ -496,10 +496,19 @@ mod test {
 		const FOOTER_VALUE: &str = "test";
 		const TAG_PATTERN_VALUE: &str = ".*[0-9].*";
 		const IGNORE_TAGS_VALUE: &str = "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+";
+		const BLAME_IGNORE_REVS_FILE: &str = ".git-blame-ignore-revs";
+		const FILTER_BLAME_IGNORED_REVS: &str = "false";
+		const FILTER_MONO_COMMITS_TO_BLAME_IGNORE_FILE: &str = "true";
 
 		env::set_var("GIT_CLIFF__CHANGELOG__FOOTER", FOOTER_VALUE);
 		env::set_var("GIT_CLIFF__GIT__TAG_PATTERN", TAG_PATTERN_VALUE);
 		env::set_var("GIT_CLIFF__GIT__IGNORE_TAGS", IGNORE_TAGS_VALUE);
+		env::set_var("GIT_CLIFF__GIT__BLAME_IGNORE_REVS_FILE", BLAME_IGNORE_REVS_FILE);
+		env::set_var("GIT_CLIFF__GIT__FILTER_BLAME_IGNORED_REVS", FILTER_BLAME_IGNORED_REVS);
+		env::set_var(
+			"GIT_CLIFF__GIT__FILTER_MONO_COMMITS_TO_BLAME_IGNORE_FILE",
+			FILTER_MONO_COMMITS_TO_BLAME_IGNORE_FILE,
+		);
 
 		let config = Config::parse(&path)?;
 
@@ -517,6 +526,18 @@ mod test {
 				.git
 				.ignore_tags
 				.map(|ignore_tags| ignore_tags.to_string())
+		);
+		assert_eq!(
+			Some(String::from(BLAME_IGNORE_REVS_FILE)),
+			Some(config.git.blame_ignore_revs_file)
+		);
+		assert_eq!(
+			Some(false),
+			Some(config.git.filter_blame_ignored_revs)
+		);
+		assert_eq!(
+			Some(true),
+			Some(config.git.filter_mono_commits_to_blame_ignore_file)
 		);
 		Ok(())
 	}
