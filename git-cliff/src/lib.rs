@@ -37,6 +37,7 @@ use git_cliff_core::error::{
 use git_cliff_core::release::Release;
 use git_cliff_core::repo::Repository;
 use git_cliff_core::{
+	BLAME_IGNORE_FILE,
 	DEFAULT_CONFIG,
 	IGNORE_FILE,
 };
@@ -654,6 +655,16 @@ pub fn run_with_changelog_modifier(
 			let ignore_file = repository.join(IGNORE_FILE);
 			if ignore_file.exists() {
 				let contents = fs::read_to_string(ignore_file)?;
+				let commits = contents
+					.lines()
+					.filter(|v| !(v.starts_with('#') || v.trim().is_empty()))
+					.map(|v| String::from(v.trim()))
+					.collect::<Vec<String>>();
+				skip_list.extend(commits);
+			}
+			let blame_ignore_file = repository.join(BLAME_IGNORE_FILE);
+			if blame_ignore_file.exists() {
+				let contents = fs::read_to_string(blame_ignore_file)?;
 				let commits = contents
 					.lines()
 					.filter(|v| !(v.starts_with('#') || v.trim().is_empty()))

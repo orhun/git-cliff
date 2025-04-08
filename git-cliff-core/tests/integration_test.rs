@@ -12,6 +12,7 @@ use git_cliff_core::config::{
 use git_cliff_core::error::Result;
 use git_cliff_core::release::*;
 use git_cliff_core::template::Template;
+use git_cliff_core::BLAME_IGNORE_FILE;
 use pretty_assertions::assert_eq;
 use regex::Regex;
 use std::collections::HashMap;
@@ -45,16 +46,19 @@ fn generate_changelog() -> Result<()> {
 		output:         None,
 	};
 	let git_config = GitConfig {
-		conventional_commits:     Some(true),
-		require_conventional:     Some(false),
-		filter_unconventional:    Some(true),
-		split_commits:            Some(false),
-		commit_preprocessors:     Some(vec![TextProcessor {
+		conventional_commits: Some(true),
+		require_conventional: Some(false),
+		filter_unconventional: Some(true),
+		blame_ignore_revs_file: Some(String::from(BLAME_IGNORE_FILE)),
+		filter_blame_ignored_revs: Some(false),
+		filter_mono_commits_to_blame_ignore_file: Some(true),
+		split_commits: Some(false),
+		commit_preprocessors: Some(vec![TextProcessor {
 			pattern:         Regex::new(r"\(fixes (#[1-9]+)\)").unwrap(),
 			replace:         Some(String::from("[closes Issue${1}]")),
 			replace_command: None,
 		}]),
-		commit_parsers:           Some(vec![
+		commit_parsers: Some(vec![
 			CommitParser {
 				sha:           Some(String::from("coffee")),
 				message:       None,
@@ -117,15 +121,15 @@ fn generate_changelog() -> Result<()> {
 			},
 		]),
 		protect_breaking_commits: None,
-		filter_commits:           Some(true),
-		tag_pattern:              None,
-		skip_tags:                None,
-		ignore_tags:              None,
-		count_tags:               None,
-		use_branch_tags:          None,
-		topo_order:               None,
-		sort_commits:             None,
-		link_parsers:             Some(vec![
+		filter_commits: Some(true),
+		tag_pattern: None,
+		skip_tags: None,
+		ignore_tags: None,
+		count_tags: None,
+		use_branch_tags: None,
+		topo_order: None,
+		sort_commits: None,
+		link_parsers: Some(vec![
 			LinkParser {
 				pattern: Regex::new("#(\\d+)").unwrap(),
 				href:    String::from("https://github.com/$1"),
@@ -137,7 +141,7 @@ fn generate_changelog() -> Result<()> {
 				text:    Some(String::from("$1")),
 			},
 		]),
-		limit_commits:            None,
+		limit_commits: None,
 	};
 
 	let mut commit_with_author = Commit::new(

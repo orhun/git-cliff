@@ -686,6 +686,7 @@ mod test {
 		RemoteConfig,
 		TextProcessor,
 	};
+	use crate::BLAME_IGNORE_FILE;
 	use pretty_assertions::assert_eq;
 	use regex::Regex;
 	use std::str;
@@ -722,6 +723,8 @@ mod test {
 				conventional_commits:     Some(true),
 				require_conventional:     Some(false),
 				filter_unconventional:    Some(false),
+                blame_ignore_revs_file:   Some(BLAME_IGNORE_FILE.to_string()),
+				filter_blame_ignored_revs:                Some(false),
 				split_commits:            Some(false),
 				commit_preprocessors:     Some(vec![TextProcessor {
 					pattern:         Regex::new("<preprocess>")

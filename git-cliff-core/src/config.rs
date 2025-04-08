@@ -96,6 +96,13 @@ pub struct GitConfig {
 	/// Exclude commits that do not match the conventional commits specification
 	/// from the changelog.
 	pub filter_unconventional: Option<bool>,
+
+	/// Path to a file containing revision hashes to ignore when blaming
+	/// This is typically configured with `git config blame.ignoreRevsFile`
+	pub blame_ignore_revs_file:                   Option<String>,
+	/// Exclude commits with refs in the `blame_ignore_revs_file`
+	pub filter_blame_ignored_revs:                Option<bool>,
+
 	/// Split commits on newlines, treating each line as an individual commit.
 	pub split_commits:         Option<bool>,
 
