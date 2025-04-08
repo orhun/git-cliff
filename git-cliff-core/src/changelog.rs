@@ -19,12 +19,14 @@ use crate::remote::gitea::GiteaClient;
 use crate::remote::github::GitHubClient;
 #[cfg(feature = "gitlab")]
 use crate::remote::gitlab::GitLabClient;
+use crate::repo::Repository;
 use crate::template::Template;
 use std::collections::HashMap;
 use std::io::{
 	Read,
 	Write,
 };
+use std::path::PathBuf;
 use std::time::{
 	SystemTime,
 	UNIX_EPOCH,
@@ -124,12 +126,38 @@ impl<'a> Changelog<'a> {
 	/// criteria set by configuration file.
 	fn process_commits(&mut self) -> Result<()> {
 		debug!("Processing the commits...");
+		let blame_ignore_file =
+			Some(self.config.git.blame_ignore_revs_file.as_str());
+		let filter_mono_commits =
+			self.config.git.filter_mono_commits_to_blame_ignore_file;
+
+		// Derive repository path dynamically
+		let repository_path = PathBuf::from("."); // Default to current directory
+		let repo = Repository::init(repository_path)?;
+
 		self.releases.iter_mut().for_each(|release| {
 			release.commits = release
 				.commits
 				.iter()
 				.cloned()
-				.filter_map(|commit| Self::process_commit(&commit, &self.config.git))
+				.filter_map(|commit| {
+					if filter_mono_commits {
+						if let Some(file) = blame_ignore_file {
+							// Convert commit::Commit to git2::Commit
+							if let Some(git_commit) = repo.find_commit(&commit.id) {
+								let changed_files =
+									repo.commit_changed_files(&git_commit);
+								if changed_files.len() == 1 &&
+									changed_files.contains(&PathBuf::from(file))
+								{
+									return None; // Exclude commits that only modify the
+									 // blame ignore file
+								}
+							}
+						}
+					}
+					Self::process_commit(&commit, &self.config.git)
+				})
 				.flat_map(|commit| {
 					if self.config.git.split_commits {
 						commit
@@ -699,6 +727,7 @@ mod test {
 		RemoteConfig,
 		TextProcessor,
 	};
+	use crate::BLAME_IGNORE_FILE;
 	use pretty_assertions::assert_eq;
 	use regex::Regex;
 	use std::str;
@@ -732,11 +761,14 @@ mod test {
 				output:         None,
 			},
 			git:       GitConfig {
-				conventional_commits:     true,
-				require_conventional:     false,
-				filter_unconventional:    false,
-				split_commits:            false,
-				commit_preprocessors:     vec![TextProcessor {
+				conventional_commits: true,
+				require_conventional: false,
+				filter_unconventional: false,
+				blame_ignore_revs_file: BLAME_IGNORE_FILE.to_string(),
+				filter_blame_ignored_revs: false,
+				filter_mono_commits_to_blame_ignore_file: true,
+				split_commits: false,
+				commit_preprocessors: vec![TextProcessor {
 					pattern:         Regex::new("<preprocess>")
 						.expect("failed to compile regex"),
 					replace:         Some(String::from(
@@ -744,7 +776,7 @@ mod test {
 					)),
 					replace_command: None,
 				}],
-				commit_parsers:           vec![
+				commit_parsers: vec![
 					CommitParser {
 						sha:           Some(String::from("tea")),
 						message:       None,
@@ -879,17 +911,17 @@ mod test {
 					},
 				],
 				protect_breaking_commits: false,
-				filter_commits:           false,
-				tag_pattern:              None,
-				skip_tags:                Regex::new("v3.*").ok(),
-				ignore_tags:              None,
-				count_tags:               None,
-				use_branch_tags:          false,
-				topo_order:               false,
-				topo_order_commits:       true,
-				sort_commits:             String::from("oldest"),
-				link_parsers:             [].to_vec(),
-				limit_commits:            None,
+				filter_commits: false,
+				tag_pattern: None,
+				skip_tags: Regex::new("v3.*").ok(),
+				ignore_tags: None,
+				count_tags: None,
+				use_branch_tags: false,
+				topo_order: false,
+				topo_order_commits: true,
+				sort_commits: String::from("oldest"),
+				link_parsers: [].to_vec(),
+				limit_commits: None,
 			},
 			remote:    RemoteConfig {
 				github:    Remote {

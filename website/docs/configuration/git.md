@@ -7,6 +7,9 @@ This section contains the parsing and git related configuration options.
 conventional_commits = true
 filter_unconventional = true
 require_conventional = false
+blame_ignore_revs_file = ".git-blame-ignore-revs"
+filter_blame_ignored_revs = false
+filter_mono_commits_to_blame_ignore_file = true
 split_commits = false
 commit_parsers = [
     { message = "^feat", group = "Features"},
@@ -96,6 +99,37 @@ commit_parsers = [
 If set to `true`, this option takes precedence over `filter_unconventional`.
 
 Checking takes place after `commit_parsers`. Thus commits can be skipped by matching parsers.
+
+### blame_ignore_revs_file
+
+Path to a file containing a list of commit refs to ignore when generating blame information (configured with `git config blame.ignoreRevsFile`). The file should contain one commit ref per line. By convention, this file is named `.git-blame-ignore-revs` and is located in the root of the repository.
+
+When used with `filter_blame_ignored_revs` set to `true`, commits that are listed in the file will be excluded from the changelog.
+
+```toml
+[git]
+blame_ignore_revs_file = ".git-blame-ignore-revs"
+```
+
+### filter_blame_ignored_revs
+
+If set to `true`, commits that are listed in the `blame_ignore_revs_file` will be excluded from the changelog.
+
+```toml
+[git]
+blame_ignore_revs_file = ".git-blame-ignore-revs"
+filter_blame_ignored_revs = false
+```
+
+### filter_mono_commits_to_blame_ignore_file
+
+If set to `true`, commits that only modify the `blame_ignore_revs_file` will be excluded from the changelog.
+
+```toml
+[git]
+blame_ignore_revs_file = ".git-blame-ignore-revs"
+filter_mono_commits_to_blame_ignore_file = true
+```
 
 ### split_commits
 

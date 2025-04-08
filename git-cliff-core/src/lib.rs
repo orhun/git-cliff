@@ -49,3 +49,5 @@ pub const DEFAULT_CONFIG: &str = "cliff.toml";
 pub const DEFAULT_OUTPUT: &str = "CHANGELOG.md";
 /// Default ignore file.
 pub const IGNORE_FILE: &str = ".cliffignore";
+/// Default blame ignore file.
+pub const BLAME_IGNORE_FILE: &str = ".git-blame-ignore-revs";
