@@ -27,6 +27,7 @@ tag_pattern = "v[0-9].*"
 skip_tags = "v0.1.0-beta.1"
 ignore_tags = ""
 topo_order = false
+topo_order_commits = true
 sort_commits = "oldest"
 link_parsers = [
     { pattern = "#(\\d+)", href = "https://github.com/orhun/git-cliff/issues/$1"},
@@ -285,6 +286,16 @@ This value can be also overridden with using the `--count-tags` argument.
 If set to `true`, tags are processed in topological order instead of chronological.
 
 This can also be achieved by using the `--topo-order` command line flag.
+
+### topo_order_commits
+
+If set to `true`, commits are processed in topological order instead of chronological.
+
+```toml
+# if false, sorting commit is equivalent to git log 
+# if true (default), sorting commit is equivalent to git log --topo-order
+topo_order_commits = false
+```
 
 ### sort_commits
 

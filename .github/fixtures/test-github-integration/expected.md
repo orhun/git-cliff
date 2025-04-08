@@ -1,3 +1,7 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
 ## What's Changed
 * feat(config): support multiple file formats by @orhun
 * feat(cache): use cache while fetching pages by @orhun

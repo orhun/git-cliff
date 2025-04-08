@@ -4,14 +4,21 @@ updates:
   - package-ecosystem: cargo
     directory: "/"
     schedule:
-      interval: daily
+      interval: monthly
     open-pull-requests-limit: 10
+    groups:
+      minor:
+        update-types:
+          - "minor"
+      patch:
+        update-types:
+          - "patch"
 
   # Maintain dependencies for GitHub Actions
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: daily
+      interval: monthly
     open-pull-requests-limit: 10
     groups:
       minor:
@@ -25,7 +32,7 @@ updates:
   - package-ecosystem: "npm"
     directory: "/website"
     schedule:
-      interval: daily
+      interval: monthly
     open-pull-requests-limit: 10
     groups:
       minor:

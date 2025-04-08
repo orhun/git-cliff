@@ -110,6 +110,9 @@ pub struct Opt {
 	    value_parser = Opt::parse_dir
 	)]
 	pub config:           PathBuf,
+	/// Sets the URL for the configuration file.
+	#[arg(long, env = "GIT_CLIFF_CONFIG_URL", value_name = "URL", hide = !cfg!(feature = "remote"))]
+	pub config_url:       Option<Url>,
 	/// Sets the working directory.
 	#[arg(
 	    short,

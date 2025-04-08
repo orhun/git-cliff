@@ -1,0 +1,46 @@
+# git-cliff ~ configuration file
+# https://git-cliff.org/docs/configuration
+
+# Gitea integration for fetching commit metadata.
+[remote.gitea]
+owner = "ThetaDev"
+repo = "git-cliff-readme-example"
+
+[changelog]
+# A Tera template to be rendered for each release in the changelog.
+# See https://keats.github.io/tera/docs/#introduction
+body = """
+## What's Changed
+{%- if version %} in {{ version }}{%- endif -%}
+{% for commit in commits %}
+  * {{ commit.message | split(pat="\n") | first | trim }}\
+    {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif -%}
+    {% if commit.remote.pr_number %} in #{{ commit.remote.pr_number }}{%- endif %}
+{%- endfor -%}
+
+{% if gitea.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
+  {% raw %}\n{% endraw -%}
+  ### New Contributors
+{%- endif %}\
+{% for contributor in gitea.contributors | filter(attribute="is_first_time", value=true) %}
+  * @{{ contributor.username }} made their first contribution
+    {%- if contributor.pr_number %} in \
+      [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}) \
+    {%- endif %}
+{%- endfor -%}
+{% raw %}\n\n{% endraw -%}
+"""
+
+[git]
+# Parse commits according to the conventional commits specification.
+# See https://www.conventionalcommits.org
+conventional_commits = false
+# Exclude commits that do not match the conventional commits specification.
+filter_unconventional = true
+# Split commits on newlines, treating each line as an individual commit.
+split_commits = false
+# An array of regex based parsers to modify commit messages prior to further processing.
+commit_preprocessors = [
+  # Remove issue numbers.
+  { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "" },
+]
