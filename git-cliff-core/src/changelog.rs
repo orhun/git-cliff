@@ -725,6 +725,7 @@ mod test {
 				filter_unconventional:    Some(false),
                 blame_ignore_revs_file:   Some(BLAME_IGNORE_FILE.to_string()),
 				filter_blame_ignored_revs:                Some(false),
+				filter_mono_commits_to_blame_ignore_file: Some(true),
 				split_commits:            Some(false),
 				commit_preprocessors:     Some(vec![TextProcessor {
 					pattern:         Regex::new("<preprocess>")

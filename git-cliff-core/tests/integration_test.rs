@@ -46,14 +46,14 @@ fn generate_changelog() -> Result<()> {
 		output:         None,
 	};
 	let git_config = GitConfig {
-		conventional_commits: Some(true),
-		require_conventional: Some(false),
-		filter_unconventional: Some(true),
-		blame_ignore_revs_file: Some(String::from(BLAME_IGNORE_FILE)),
-		filter_blame_ignored_revs: Some(false),
-		filter_mono_commits_to_blame_ignore_file: Some(true),
-		split_commits: Some(false),
-		commit_preprocessors: Some(vec![TextProcessor {
+		conventional_commits:                     Some(true),
+		require_conventional:                     Some(false),
+		filter_unconventional:                    Some(true),
+        blame_ignore_revs_file:                   Some(String::from(BLAME_IGNORE_FILE)),
+		filter_blame_ignored_revs:                Some(false),
+        filter_mono_commits_to_blame_ignore_file: Some(true),
+		split_commits:                            Some(false),
+		commit_preprocessors:                     Some(vec![TextProcessor {
 			pattern:         Regex::new(r"\(fixes (#[1-9]+)\)").unwrap(),
 			replace:         Some(String::from("[closes Issue${1}]")),
 			replace_command: None,

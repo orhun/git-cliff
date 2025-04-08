@@ -102,6 +102,8 @@ pub struct GitConfig {
 	pub blame_ignore_revs_file:                   Option<String>,
 	/// Exclude commits with refs in the `blame_ignore_revs_file`
 	pub filter_blame_ignored_revs:                Option<bool>,
+	/// Exclude commits that only modify the `blame_ignore_revs_file`
+	pub filter_mono_commits_to_blame_ignore_file: Option<bool>,
 
 	/// Split commits on newlines, treating each line as an individual commit.
 	pub split_commits:         Option<bool>,
