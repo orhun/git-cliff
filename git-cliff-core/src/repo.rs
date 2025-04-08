@@ -221,7 +221,7 @@ impl Repository {
 	///
 	/// If the cache is not found, it calculates the changed files and adds them
 	/// to the cache via [`Self::commit_changed_files_no_cache`].
-	fn commit_changed_files(&self, commit: &Commit) -> Vec<PathBuf> {
+	pub fn commit_changed_files(&self, commit: &Commit) -> Vec<PathBuf> {
 		// Cache key is generated from the repository path and commit id
 		let cache_key = format!("commit_id:{}", commit.id());
 

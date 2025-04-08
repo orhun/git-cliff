@@ -9,6 +9,7 @@ filter_unconventional = true
 require_conventional = false
 blame_ignore_revs_file = ".git-blame-ignore-revs"
 filter_blame_ignored_revs = false
+filter_mono_commits_to_blame_ignore_file = true
 split_commits = false
 commit_parsers = [
     { message = "^feat", group = "Features"},
@@ -117,6 +118,16 @@ If set to `true`, commits that are listed in the `blame_ignore_revs_file` will b
 [git]
 blame_ignore_revs_file = ".git-blame-ignore-revs"
 filter_blame_ignored_revs = false
+```
+
+### filter_mono_commits_to_blame_ignore_file
+
+If set to `true`, commits that only modify the `blame_ignore_revs_file` will be excluded from the changelog.
+
+```toml
+[git]
+blame_ignore_revs_file = ".git-blame-ignore-revs"
+filter_mono_commits_to_blame_ignore_file = true
 ```
 
 ### split_commits
