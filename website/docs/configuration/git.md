@@ -259,7 +259,7 @@ This can also be achieved by using the `--topo-order` command line flag.
 If set to `true`, commits are processed in topological order instead of chronological.
 
 ```toml
-# if false, sorting commit is equivalent to git log 
+# if false, sorting commit is equivalent to git log
 # if true (default), sorting commit is equivalent to git log --topo-order
 topo_order_commits = false
 ```
@@ -296,4 +296,6 @@ These extracted links can be used in the [template](/docs/templating/context) wi
 
 ### recurse_submodules
 
-`recurse_submodules` is an _optional_ boolean value that indicates whether **git-cliff** should read and process commits of submodules. This only considers submodules at the toplevel (depth 1). These commits can then be accessed by the variable `submodule_commits` during [templating](/docs/templating/context).
+`recurse_submodules` is an _optional_ boolean value that indicates whether **git-cliff** should read and process commits of submodules.
+
+This only considers submodules at the toplevel (depth 1). These commits can then be accessed by the variable `submodule_commits` during [templating](/docs/templating/context).
