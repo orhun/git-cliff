@@ -64,6 +64,15 @@ following context is generated to use for templating:
   "commit_id": "a440c6eb26404be4877b7e3ad592bfaa5d4eb210 (release commit)",
   "timestamp": 1625169301,
   "repository": "/path/to/repository",
+  "submodule_commits": {
+    "<relative/submodule_path/in/repository>": [
+      {
+        "id": "c10d0f12e85975bc1e8f41eed693c58eca1894eb",
+        "message": "release (#1671)",
+        ...
+      },
+    ],
+  },
   "previous": {
     "version": "previous release"
   }

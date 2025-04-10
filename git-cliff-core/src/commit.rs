@@ -177,8 +177,8 @@ impl From<String> for Commit<'_> {
 }
 
 #[cfg(feature = "repo")]
-impl<'a> From<&GitCommit<'a>> for Commit<'a> {
-	fn from(commit: &GitCommit<'a>) -> Self {
+impl From<&GitCommit<'_>> for Commit<'_> {
+	fn from(commit: &GitCommit<'_>) -> Self {
 		Commit {
 			id: commit.id().to_string(),
 			message: commit.message().unwrap_or_default().trim_end().to_string(),

@@ -116,6 +116,9 @@ jobs:
             command: v2.6.1..v2.7.0 --include-path .github/fixtures/
           - fixtures-name: test-require-conventional-negative
           - fixtures-name: test-require-conventional-skipped
+          - fixtures-name: test-submodules
+          - fixtures-name: test-submodules-include-path
+            command: --include-path submodule_two
           - fixtures-name: test-remote-config
             command: --config-url "https://github.com/orhun/git-cliff/blob/main/.github/fixtures/new-fixture-template/cliff.toml?raw=true"
           - fixtures-name: test-topo-order-commits

@@ -22,7 +22,10 @@ use lazy_regex::{
 	Regex,
 };
 use std::io;
-use std::path::PathBuf;
+use std::path::{
+	Path,
+	PathBuf,
+};
 use std::result::Result as StdResult;
 use url::Url;
 
@@ -44,6 +47,15 @@ pub struct Repository {
 	path:                     PathBuf,
 	/// Cache path for the changed files of the commits.
 	changed_files_cache_path: PathBuf,
+}
+
+/// Range of commits in a submodule.
+pub struct SubmoduleRange {
+	/// Repository object to which this range belongs.
+	pub repository: Repository,
+	/// Commit range in "<first_submodule_commit>..<last_submodule_commit>" or
+	/// "<last_submodule_commit>" format.
+	pub range:      String,
 }
 
 impl Repository {
@@ -77,7 +89,7 @@ impl Repository {
 	}
 
 	/// Returns the path of the repository.
-	pub fn path(&self) -> Result<PathBuf> {
+	pub fn root_path(&self) -> Result<PathBuf> {
 		let mut path = if self.inner.is_worktree() {
 			let worktree = Worktree::open_from_repository(&self.inner)?;
 			worktree.path().to_path_buf()
@@ -88,6 +100,14 @@ impl Repository {
 			path.pop();
 		}
 		Ok(path)
+	}
+
+	/// Returns the initial path of the repository.
+	///
+	/// In case of a submodule this is the relative path to the toplevel
+	/// repository.
+	pub fn path(&self) -> &PathBuf {
+		&self.path
 	}
 
 	/// Sets the range for the commit search.
@@ -153,6 +173,59 @@ impl Repository {
 			});
 		}
 		Ok(commits)
+	}
+
+	/// Returns submodule repositories for a given commit range.
+	///
+	/// For one or two given commits in this repository, a list of changed
+	/// submodules is calculated. If only one commit is given, then all
+	/// submodule commits up to the referenced commit will be included. This is
+	/// usually the case if a submodule is added to the repository.
+	///
+	///  For each submodule a [`SubmoduleRange`] object is created
+	///
+	/// This can then be used to query the submodule's commits by using
+	/// [`Repository::commits`].
+	pub fn submodules_range(
+		&self,
+		old_commit: Option<Commit<'_>>,
+		new_commit: Commit<'_>,
+	) -> Result<Vec<SubmoduleRange>> {
+		let old_tree = old_commit.and_then(|commit| commit.tree().ok());
+		let new_tree = new_commit.tree().ok();
+		let diff = self.inner.diff_tree_to_tree(
+			old_tree.as_ref(),
+			new_tree.as_ref(),
+			None,
+		)?;
+		// iterate through all diffs and accumulate old/new commit ids
+		let before_and_after_deltas = diff.deltas().filter_map(|delta| {
+			let old_file_id = delta.old_file().id();
+			let new_file_id = delta.new_file().id();
+			let range = if old_file_id == new_file_id || new_file_id.is_zero() {
+				// no changes or submodule removed
+				None
+			} else if old_file_id.is_zero() {
+				// submodule added
+				Some(new_file_id.to_string())
+			} else {
+				// submodule updated
+				Some(format!("{}..{}", old_file_id, new_file_id))
+			};
+			trace!("Release commit range for submodules: {:?}", range);
+			delta.new_file().path().and_then(Path::to_str).zip(range)
+		});
+		// iterate through all path diffs and find corresponding submodule if
+		// possible
+		let submodule_range = before_and_after_deltas.filter_map(|(path, range)| {
+			let repository = self
+				.inner
+				.find_submodule(path)
+				.ok()
+				.and_then(|submodule| Self::init(submodule.path().into()).ok());
+			repository.map(|repository| SubmoduleRange { repository, range })
+		});
+		Ok(submodule_range.collect())
 	}
 
 	/// Normalizes the glob pattern to match the git diff paths.
