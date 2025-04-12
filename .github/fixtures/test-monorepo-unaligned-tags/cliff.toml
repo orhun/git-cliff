@@ -1,0 +1,7 @@
+#
+# Tags for releases (e.g. `v1.2.3`) may be on commits that are being ignored by path filters or
+# skipped using commit_parsers. These tags must be parsed regardless, such that the releases they
+# represent are not missing from the changelog.
+#
+[git]
+commit_parsers = [{ message = "bar", skip = true }]
