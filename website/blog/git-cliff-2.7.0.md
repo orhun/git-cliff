@@ -1,6 +1,6 @@
 ---
 slug: 2.7.0
-title: "What's new in 2.7.0? \U0001F195"
+title: "What's new in 2.7.0?"
 date: 2024-11-20T00:00:00.000Z
 authors: orhun
 tags:
@@ -29,7 +29,7 @@ The full changelog can be found [here](https://github.com/orhun/git-cliff/blob/m
 
 ### 🥋 Jujutsu Support
 
-`git-cliff` now supports opening a repository that has been cloned using [Jujutsu](https://martinvonz.github.io/jj/latest/)!
+`git-cliff` now supports opening a repository that has been cloned using [Jujutsu](https://jj-vcs.github.io/jj/latest/)!
 
 For example:
 

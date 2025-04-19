@@ -4,11 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [0.1.0] - 2022-04-06
 
-### Fix
+### <!-- 1 -->🐛 Bug Fixes
 
 - Fix feature 1 (#1)
 
-### Refactor
+### <!-- 2 -->🚜 Refactor
 
 - Move  classes
 

@@ -129,7 +129,7 @@ $ git cliff --latest
 `--current` flag behaves the same as running the following git command:
 
 ```bash
-$ git describe --tags $(git rev-parse HEAD)
+git describe --tags $(git rev-parse HEAD)
 ```
 
 So it is expected to always use the current tag if it exists.
@@ -215,12 +215,12 @@ commit_parsers = [
 Other use cases of [`filter_unconventional`](/docs/configuration/git#filter_unconventional) are the following:
 
 ```toml
-# allow only conventional commits (default)
+# Allow only conventional commits (default)
 [git]
 conventional_commits = true
 filter_unconventional = true
 
-# allow any type of commit in the changelog without parsing
+# Allow any type of commit in the changelog without parsing
 [git]
 conventional_commits = false
 filter_unconventional = false

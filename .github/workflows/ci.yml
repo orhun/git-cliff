@@ -70,7 +70,7 @@ jobs:
           cargo tarpaulin --out xml --verbose --all-features \
             -- --skip "repo::test::git_upstream_remote"
       - name: Upload reports to codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           name: code-coverage-report
           file: cobertura.xml
@@ -98,25 +98,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: >
-              --all-targets --verbose -- -W clippy::pedantic 
-              -A clippy::needless_raw_string_hashes 
-              -A clippy::unreadable_literal 
-              -A clippy::redundant_else 
-              -A clippy::items_after_statements 
-              -A clippy::missing_errors_doc 
-              -A clippy::module_name_repetitions 
-              -A clippy::uninlined_format_args 
-              -A clippy::manual_string_new 
-              -A clippy::must_use_candidate 
-              -A clippy::too_many_lines 
-              -A clippy::wildcard_imports 
-              -A clippy::missing_panics_doc 
-              -A clippy::inefficient_to_string 
-              -A clippy::redundant_closure_for_method_calls 
-              -A clippy::map_unwrap_or 
-              -A clippy::struct_excessive_bools 
-              -A clippy::unnecessary_wraps
+          args: --all-targets --verbose -- -W clippy::pedantic
 
   rustfmt:
     name: Formatting
@@ -134,6 +116,22 @@ jobs:
           command: fmt
           args: --all -- --check --verbose
 
+  doctest:
+    name: Doctests
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Check the formatting
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --doc
+
   lychee:
     name: Links
     runs-on: ubuntu-22.04
@@ -141,7 +139,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Check the links
-        uses: lycheeverse/lychee-action@v1
+        uses: lycheeverse/lychee-action@v2
         with:
           args: -v --max-concurrency 1 *.md website/docs/* website/blog/*
           fail: true
@@ -233,7 +231,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Nix
-        uses: nixbuild/nix-quick-install-action@v27
+        uses: nixbuild/nix-quick-install-action@v29
 
       - name: Restore and cache Nix store
         uses: nix-community/cache-nix-action@v5

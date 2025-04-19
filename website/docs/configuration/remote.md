@@ -56,6 +56,18 @@ Same applies for GitLab/Bitbucket with `--gitlab-token`/`--gitea-token`/`--bitbu
 
 Sets the API URL for a particular remote.
 
+### native_tls
+
+When set to `true`, the TLS certificates are loaded from the platform's native certificate store.
+
+:::info
+
+By default, **git-cliff** loads certificates from the bundled [`webpki-roots`](https://github.com/rustls/webpki-roots) crate which is a reliable set of trust roots from Mozilla.
+
+However, in some cases, you may want to use the platform's native certificate store, especially if you're relying on a corporate trust root (e.g., for a mandatory proxy) that's included in your system's certificate store.
+
+:::
+
 ---
 
 Here is a complete example for a project hosted on GitLab:
@@ -66,4 +78,5 @@ owner = "archlinux"
 repo = "arch-repro-status"
 api_url = "https://gitlab.archlinux.org/api/v4"
 token = "deadbeef"
+native_tls = false
 ```

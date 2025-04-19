@@ -21,7 +21,7 @@ use std::fmt::Write;
 fn generate_changelog() -> Result<()> {
 	let changelog_config = ChangelogConfig {
 		header:         Some(String::from("this is a changelog")),
-		body:           Some(String::from(
+		body:           String::from(
 			r#"
 ## Release {{ version }} - <DATE>
 {% for group, commits in commits | group_by(attribute="group") %}
@@ -37,23 +37,24 @@ fn generate_changelog() -> Result<()> {
 {% endif -%}
 {% endfor -%}
 {% endfor %}"#,
-		)),
+		),
 		footer:         Some(String::from("eoc - end of changelog")),
-		trim:           None,
-		render_always:  None,
-		postprocessors: None,
+		trim:           true,
+		render_always:  false,
+		postprocessors: [].to_vec(),
 		output:         None,
 	};
 	let git_config = GitConfig {
-		conventional_commits:     Some(true),
-		filter_unconventional:    Some(true),
-		split_commits:            Some(false),
-		commit_preprocessors:     Some(vec![TextProcessor {
+		conventional_commits:     true,
+		require_conventional:     false,
+		filter_unconventional:    true,
+		split_commits:            false,
+		commit_preprocessors:     vec![TextProcessor {
 			pattern:         Regex::new(r"\(fixes (#[1-9]+)\)").unwrap(),
 			replace:         Some(String::from("[closes Issue${1}]")),
 			replace_command: None,
-		}]),
-		commit_parsers:           Some(vec![
+		}],
+		commit_parsers:           vec![
 			CommitParser {
 				sha:           Some(String::from("coffee")),
 				message:       None,
@@ -114,17 +115,18 @@ fn generate_changelog() -> Result<()> {
 				field:         Some(String::from("author.name")),
 				pattern:       Regex::new("John Doe").ok(),
 			},
-		]),
-		protect_breaking_commits: None,
-		filter_commits:           Some(true),
+		],
+		protect_breaking_commits: false,
+		filter_commits:           true,
 		tag_pattern:              None,
 		skip_tags:                None,
 		ignore_tags:              None,
 		count_tags:               None,
-		use_branch_tags:          None,
-		topo_order:               None,
-		sort_commits:             None,
-		link_parsers:             Some(vec![
+		use_branch_tags:          false,
+		topo_order:               false,
+		topo_order_commits:       true,
+		sort_commits:             String::from("oldest"),
+		link_parsers:             vec![
 			LinkParser {
 				pattern: Regex::new("#(\\d+)").unwrap(),
 				href:    String::from("https://github.com/$1"),
@@ -135,8 +137,9 @@ fn generate_changelog() -> Result<()> {
 				href:    String::from("https://github.com/$1"),
 				text:    Some(String::from("$1")),
 			},
-		]),
+		],
 		limit_commits:            None,
+		recurse_submodules:       None,
 	};
 
 	let mut commit_with_author = Commit::new(
@@ -200,6 +203,7 @@ fn generate_changelog() -> Result<()> {
 			timestamp: 0,
 			previous:  None,
 			repository: Some(String::from("/root/repo")),
+			submodule_commits: HashMap::new(),
 			#[cfg(feature = "github")]
 			github: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],
@@ -243,6 +247,7 @@ fn generate_changelog() -> Result<()> {
 			timestamp: 0,
 			previous:  None,
 			repository: Some(String::from("/root/repo")),
+			submodule_commits: HashMap::new(),
 			#[cfg(feature = "github")]
 			github: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],
@@ -263,7 +268,7 @@ fn generate_changelog() -> Result<()> {
 	];
 
 	let out = &mut String::new();
-	let template = Template::new("test", changelog_config.body.unwrap(), false)?;
+	let template = Template::new("test", changelog_config.body, false)?;
 
 	writeln!(out, "{}", changelog_config.header.unwrap()).unwrap();
 	let text_processors = [TextProcessor {

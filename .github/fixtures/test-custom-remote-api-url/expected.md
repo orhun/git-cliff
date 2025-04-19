@@ -1,3 +1,7 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
 ## What's Changed in v1.4.1
 * Update the copyright year in license by @Orhun Parmaksız
 * bump dependencies by @Orhun Parmaksız

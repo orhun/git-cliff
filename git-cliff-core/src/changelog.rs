@@ -3,7 +3,10 @@ use crate::config::{
 	Config,
 	GitConfig,
 };
-use crate::error::Result;
+use crate::error::{
+	Error,
+	Result,
+};
 use crate::release::{
 	Release,
 	Releases,
@@ -41,17 +44,21 @@ pub struct Changelog<'a> {
 
 impl<'a> Changelog<'a> {
 	/// Constructs a new instance.
-	pub fn new(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
+	pub fn new(
+		releases: Vec<Release<'a>>,
+		config: &'a Config,
+		range: Option<&str>,
+	) -> Result<Self> {
 		let mut changelog = Changelog::build(releases, config)?;
-		changelog.add_remote_data()?;
-		changelog.process_commits();
+		changelog.add_remote_data(range)?;
+		changelog.process_commits()?;
 		changelog.process_releases();
 		Ok(changelog)
 	}
 
 	/// Builds a changelog from releases and config.
 	fn build(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
-		let trim = config.changelog.trim.unwrap_or(true);
+		let trim = config.changelog.trim;
 		Ok(Self {
 			releases,
 			header_template: match &config.changelog.header {
@@ -104,7 +111,7 @@ impl<'a> Changelog<'a> {
 			Err(e) => {
 				trace!(
 					"{} - {} ({})",
-					commit.id[..7].to_string(),
+					commit.id.chars().take(7).collect::<String>(),
 					e,
 					commit.message.lines().next().unwrap_or_default().trim()
 				);
@@ -113,37 +120,81 @@ impl<'a> Changelog<'a> {
 		}
 	}
 
+	/// Checks the commits and returns an error if any unconventional commits
+	/// are found.
+	fn check_conventional_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
+		debug!("Verifying that all commits are conventional.");
+		let mut unconventional_count = 0;
+
+		commits.iter().for_each(|commit| {
+			if commit.conv.is_none() {
+				error!(
+					"Commit {id} is not conventional:\n{message}",
+					id = &commit.id[..7],
+					message = commit
+						.message
+						.lines()
+						.map(|line| { format!("    | {}", line.trim()) })
+						.collect::<Vec<String>>()
+						.join("\n")
+				);
+				unconventional_count += 1;
+			}
+		});
+
+		if unconventional_count > 0 {
+			return Err(Error::UnconventionalCommitsError(unconventional_count));
+		}
+
+		Ok(())
+	}
+
+	fn process_commit_list(
+		commits: &mut Vec<Commit<'a>>,
+		git_config: &GitConfig,
+	) -> Result<()> {
+		*commits = commits
+			.iter()
+			.filter_map(|commit| Self::process_commit(commit, git_config))
+			.flat_map(|commit| {
+				if git_config.split_commits {
+					commit
+						.message
+						.lines()
+						.filter_map(|line| {
+							let mut c = commit.clone();
+							c.message = line.to_string();
+							if c.message.is_empty() {
+								None
+							} else {
+								Self::process_commit(&c, git_config)
+							}
+						})
+						.collect()
+				} else {
+					vec![commit]
+				}
+			})
+			.collect::<Vec<Commit>>();
+
+		if git_config.require_conventional {
+			Self::check_conventional_commits(commits)?;
+		}
+
+		Ok(())
+	}
+
 	/// Processes the commits and omits the ones that doesn't match the
 	/// criteria set by configuration file.
-	fn process_commits(&mut self) {
+	fn process_commits(&mut self) -> Result<()> {
 		debug!("Processing the commits...");
-		self.releases.iter_mut().for_each(|release| {
-			release.commits = release
-				.commits
-				.iter()
-				.cloned()
-				.filter_map(|commit| Self::process_commit(&commit, &self.config.git))
-				.flat_map(|commit| {
-					if self.config.git.split_commits.unwrap_or(false) {
-						commit
-							.message
-							.lines()
-							.filter_map(|line| {
-								let mut c = commit.clone();
-								c.message = line.to_string();
-								if c.message.is_empty() {
-									None
-								} else {
-									Self::process_commit(&c, &self.config.git)
-								}
-							})
-							.collect()
-					} else {
-						vec![commit]
-					}
-				})
-				.collect::<Vec<Commit>>();
-		});
+		for release in self.releases.iter_mut() {
+			Self::process_commit_list(&mut release.commits, &self.config.git)?;
+			for submodule_commits in release.submodule_commits.values_mut() {
+				Self::process_commit_list(submodule_commits, &self.config.git)?;
+			}
+		}
+		Ok(())
 	}
 
 	/// Processes the releases and filters them out based on the configuration.
@@ -163,7 +214,7 @@ impl<'a> Changelog<'a> {
 					}
 					match &release.previous {
 						Some(prev_release) if prev_release.commits.is_empty() => {
-							self.config.changelog.render_always.unwrap_or(false)
+							self.config.changelog.render_always
 						}
 						_ => false,
 					}
@@ -216,7 +267,10 @@ impl<'a> Changelog<'a> {
 	/// If no GitHub related variable is used in the template then this function
 	/// returns empty vectors.
 	#[cfg(feature = "github")]
-	fn get_github_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
+	fn get_github_metadata(
+		&self,
+		ref_name: Option<&str>,
+	) -> Result<crate::remote::RemoteMetadata> {
 		use crate::remote::github;
 		if self.config.remote.github.is_custom ||
 			self.body_template
@@ -239,8 +293,8 @@ impl<'a> Changelog<'a> {
 				.build()?
 				.block_on(async {
 					let (commits, pull_requests) = tokio::try_join!(
-						github_client.get_commits(),
-						github_client.get_pull_requests(),
+						github_client.get_commits(ref_name),
+						github_client.get_pull_requests(ref_name),
 					)?;
 					debug!("Number of GitHub commits: {}", commits.len());
 					debug!(
@@ -272,7 +326,10 @@ impl<'a> Changelog<'a> {
 	/// If no GitLab related variable is used in the template then this function
 	/// returns empty vectors.
 	#[cfg(feature = "gitlab")]
-	fn get_gitlab_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
+	fn get_gitlab_metadata(
+		&self,
+		ref_name: Option<&str>,
+	) -> Result<crate::remote::RemoteMetadata> {
 		use crate::remote::gitlab;
 		if self.config.remote.gitlab.is_custom ||
 			self.body_template
@@ -295,18 +352,18 @@ impl<'a> Changelog<'a> {
 				.build()?
 				.block_on(async {
 					// Map repo/owner to gitlab id
-					let project_id = match tokio::join!(gitlab_client.get_project())
-					{
-						(Ok(project),) => project.id,
-						(Err(err),) => {
-							error!("Failed to lookup project! {}", err);
-							return Err(err);
-						}
-					};
+					let project_id =
+						match tokio::join!(gitlab_client.get_project(ref_name)) {
+							(Ok(project),) => project.id,
+							(Err(err),) => {
+								error!("Failed to lookup project! {}", err);
+								return Err(err);
+							}
+						};
 					let (commits, merge_requests) = tokio::try_join!(
 						// Send id to these functions
-						gitlab_client.get_commits(project_id),
-						gitlab_client.get_merge_requests(project_id),
+						gitlab_client.get_commits(project_id, ref_name),
+						gitlab_client.get_merge_requests(project_id, ref_name),
 					)?;
 					debug!("Number of GitLab commits: {}", commits.len());
 					debug!(
@@ -336,7 +393,10 @@ impl<'a> Changelog<'a> {
 	/// If no Gitea related variable is used in the template then this function
 	/// returns empty vectors.
 	#[cfg(feature = "gitea")]
-	fn get_gitea_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
+	fn get_gitea_metadata(
+		&self,
+		ref_name: Option<&str>,
+	) -> Result<crate::remote::RemoteMetadata> {
 		use crate::remote::gitea;
 		if self.config.remote.gitea.is_custom ||
 			self.body_template
@@ -359,8 +419,8 @@ impl<'a> Changelog<'a> {
 				.build()?
 				.block_on(async {
 					let (commits, pull_requests) = tokio::try_join!(
-						gitea_client.get_commits(),
-						gitea_client.get_pull_requests(),
+						gitea_client.get_commits(ref_name),
+						gitea_client.get_pull_requests(ref_name),
 					)?;
 					debug!("Number of Gitea commits: {}", commits.len());
 					debug!("Number of Gitea pull requests: {}", pull_requests.len());
@@ -389,7 +449,10 @@ impl<'a> Changelog<'a> {
 	/// If no bitbucket related variable is used in the template then this
 	/// function returns empty vectors.
 	#[cfg(feature = "bitbucket")]
-	fn get_bitbucket_metadata(&self) -> Result<crate::remote::RemoteMetadata> {
+	fn get_bitbucket_metadata(
+		&self,
+		ref_name: Option<&str>,
+	) -> Result<crate::remote::RemoteMetadata> {
 		use crate::remote::bitbucket;
 		if self.config.remote.bitbucket.is_custom ||
 			self.body_template
@@ -412,8 +475,8 @@ impl<'a> Changelog<'a> {
 				.build()?
 				.block_on(async {
 					let (commits, pull_requests) = tokio::try_join!(
-						bitbucket_client.get_commits(),
-						bitbucket_client.get_pull_requests()
+						bitbucket_client.get_commits(ref_name),
+						bitbucket_client.get_pull_requests(ref_name)
 					)?;
 					debug!("Number of Bitbucket commits: {}", commits.len());
 					debug!(
@@ -439,14 +502,22 @@ impl<'a> Changelog<'a> {
 	}
 
 	/// Adds remote data (e.g. GitHub commits) to the releases.
-	pub fn add_remote_data(&mut self) -> Result<()> {
+	pub fn add_remote_data(&mut self, range: Option<&str>) -> Result<()> {
 		debug!("Adding remote data...");
 		self.add_remote_context()?;
+
+		// Determine the ref at which to fetch remote commits, based on the commit
+		// range
+		let range_head = range.and_then(|r| r.split("..").last());
+		let ref_name = match range_head {
+			Some("HEAD") => None,
+			other => other,
+		};
 
 		#[cfg(feature = "github")]
 		let (github_commits, github_pull_requests) = if self.config.remote.github.is_set()
 		{
-			self.get_github_metadata()
+			self.get_github_metadata(ref_name)
 				.expect("Could not get github metadata")
 		} else {
 			(vec![], vec![])
@@ -454,14 +525,14 @@ impl<'a> Changelog<'a> {
 		#[cfg(feature = "gitlab")]
 		let (gitlab_commits, gitlab_merge_request) = if self.config.remote.gitlab.is_set()
 		{
-			self.get_gitlab_metadata()
+			self.get_gitlab_metadata(ref_name)
 				.expect("Could not get gitlab metadata")
 		} else {
 			(vec![], vec![])
 		};
 		#[cfg(feature = "gitea")]
 		let (gitea_commits, gitea_merge_request) = if self.config.remote.gitea.is_set() {
-			self.get_gitea_metadata()
+			self.get_gitea_metadata(ref_name)
 				.expect("Could not get gitea metadata")
 		} else {
 			(vec![], vec![])
@@ -469,7 +540,7 @@ impl<'a> Changelog<'a> {
 		#[cfg(feature = "bitbucket")]
 		let (bitbucket_commits, bitbucket_pull_request) =
 			if self.config.remote.bitbucket.is_set() {
-				self.get_bitbucket_metadata()
+				self.get_bitbucket_metadata(ref_name)
 					.expect("Could not get bitbucket metadata")
 			} else {
 				(vec![], vec![])
@@ -521,12 +592,7 @@ impl<'a> Changelog<'a> {
 	/// Generates the changelog and writes it to the given output.
 	pub fn generate<W: Write + ?Sized>(&self, out: &mut W) -> Result<()> {
 		debug!("Generating changelog...");
-		let postprocessors = self
-			.config
-			.changelog
-			.postprocessors
-			.clone()
-			.unwrap_or_default();
+		let postprocessors = self.config.changelog.postprocessors.clone();
 
 		if let Some(header_template) = &self.header_template {
 			let write_result = writeln!(
@@ -612,13 +678,7 @@ impl<'a> Changelog<'a> {
 }
 
 fn get_body_template(config: &Config, trim: bool) -> Result<Template> {
-	let template_str = config
-		.changelog
-		.body
-		.as_deref()
-		.unwrap_or_default()
-		.to_string();
-	let template = Template::new("body", template_str, trim)?;
+	let template = Template::new("body", config.changelog.body.clone(), trim)?;
 	let deprecated_vars = [
 		"commit.github",
 		"commit.gitea",
@@ -653,7 +713,7 @@ mod test {
 		let config = Config {
 			changelog: ChangelogConfig {
 				header:         Some(String::from("# Changelog")),
-				body:           Some(String::from(
+				body:           String::from(
 					r#"{% if version %}
 				## Release [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }} - ({{ repository }})
 				{% if commit_id %}({{ commit_id }}){% endif %}{% else %}
@@ -663,33 +723,34 @@ mod test {
 				#### {{ group }}{% for commit in commits %}
 				- {{ commit.message }}{% endfor %}
 				{% endfor %}{% endfor %}"#,
-				)),
+				),
 				footer:         Some(String::from(
 					r#"-- total releases: {{ releases | length }} --"#,
 				)),
-				trim:           Some(true),
-				postprocessors: Some(vec![TextProcessor {
+				trim:           true,
+				postprocessors: vec![TextProcessor {
 					pattern:         Regex::new("boring")
 						.expect("failed to compile regex"),
 					replace:         Some(String::from("exciting")),
 					replace_command: None,
-				}]),
-				render_always:  None,
+				}],
+				render_always:  false,
 				output:         None,
 			},
 			git:       GitConfig {
-				conventional_commits:     Some(true),
-				filter_unconventional:    Some(false),
-				split_commits:            Some(false),
-				commit_preprocessors:     Some(vec![TextProcessor {
+				conventional_commits:     true,
+				require_conventional:     false,
+				filter_unconventional:    false,
+				split_commits:            false,
+				commit_preprocessors:     vec![TextProcessor {
 					pattern:         Regex::new("<preprocess>")
 						.expect("failed to compile regex"),
 					replace:         Some(String::from(
 						"this commit is preprocessed",
 					)),
 					replace_command: None,
-				}]),
-				commit_parsers:           Some(vec![
+				}],
+				commit_parsers:           vec![
 					CommitParser {
 						sha:           Some(String::from("tea")),
 						message:       None,
@@ -822,47 +883,53 @@ mod test {
 						field:         None,
 						pattern:       None,
 					},
-				]),
-				protect_breaking_commits: None,
-				filter_commits:           Some(false),
+				],
+				protect_breaking_commits: false,
+				filter_commits:           false,
 				tag_pattern:              None,
 				skip_tags:                Regex::new("v3.*").ok(),
 				ignore_tags:              None,
 				count_tags:               None,
-				use_branch_tags:          Some(false),
-				topo_order:               Some(false),
-				sort_commits:             Some(String::from("oldest")),
-				link_parsers:             None,
+				use_branch_tags:          false,
+				topo_order:               false,
+				topo_order_commits:       true,
+				sort_commits:             String::from("oldest"),
+				link_parsers:             [].to_vec(),
 				limit_commits:            None,
+				recurse_submodules:       None,
 			},
 			remote:    RemoteConfig {
 				github:    Remote {
-					owner:     String::from("coolguy"),
-					repo:      String::from("awesome"),
-					token:     None,
-					is_custom: false,
-					api_url:   None,
+					owner:      String::from("coolguy"),
+					repo:       String::from("awesome"),
+					token:      None,
+					is_custom:  false,
+					api_url:    None,
+					native_tls: None,
 				},
 				gitlab:    Remote {
-					owner:     String::from("coolguy"),
-					repo:      String::from("awesome"),
-					token:     None,
-					is_custom: false,
-					api_url:   None,
+					owner:      String::from("coolguy"),
+					repo:       String::from("awesome"),
+					token:      None,
+					is_custom:  false,
+					api_url:    None,
+					native_tls: None,
 				},
 				gitea:     Remote {
-					owner:     String::from("coolguy"),
-					repo:      String::from("awesome"),
-					token:     None,
-					is_custom: false,
-					api_url:   None,
+					owner:      String::from("coolguy"),
+					repo:       String::from("awesome"),
+					token:      None,
+					is_custom:  false,
+					api_url:    None,
+					native_tls: None,
 				},
 				bitbucket: Remote {
-					owner:     String::from("coolguy"),
-					repo:      String::from("awesome"),
-					token:     None,
-					is_custom: false,
-					api_url:   None,
+					owner:      String::from("coolguy"),
+					repo:       String::from("awesome"),
+					token:      None,
+					is_custom:  false,
+					api_url:    None,
+					native_tls: None,
 				},
 			},
 			bump:      Bump::default(),
@@ -937,6 +1004,32 @@ mod test {
 			timestamp: 50000000,
 			previous: None,
 			repository: Some(String::from("/root/repo")),
+			submodule_commits: HashMap::from([(
+				String::from("submodule_one"),
+				vec![
+					Commit::new(
+						String::from("sub0jkl12"),
+						String::from("chore(app): submodule_one do nothing"),
+					),
+					Commit::new(
+						String::from("subqwerty"),
+						String::from("chore: submodule_one <preprocess>"),
+					),
+					Commit::new(
+						String::from("subqwertz"),
+						String::from(
+							"feat!: submodule_one support breaking commits",
+						),
+					),
+					Commit::new(
+						String::from("subqwert0"),
+						String::from(
+							"match(group): submodule_one support regex-replace for \
+							 groups",
+						),
+					),
+				],
+			)]),
 			#[cfg(feature = "github")]
 			github: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],
@@ -999,6 +1092,22 @@ mod test {
 				timestamp: 1000,
 				previous: Some(Box::new(test_release)),
 				repository: Some(String::from("/root/repo")),
+				submodule_commits: HashMap::from([
+					(String::from("submodule_one"), vec![
+						Commit::new(
+							String::from("def349"),
+							String::from("sub_one merge #4"),
+						),
+						Commit::new(
+							String::from("da8912"),
+							String::from("sub_one merge #5"),
+						),
+					]),
+					(String::from("submodule_two"), vec![Commit::new(
+						String::from("ab76ef"),
+						String::from("sub_two bump"),
+					)]),
+				]),
 				#[cfg(feature = "github")]
 				github: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
@@ -1023,7 +1132,7 @@ mod test {
 	#[test]
 	fn changelog_generator() -> Result<()> {
 		let (config, releases) = get_test_data();
-		let mut changelog = Changelog::new(releases, &config)?;
+		let mut changelog = Changelog::new(releases, &config, None)?;
 		changelog.bump_version()?;
 		changelog.releases[0].timestamp = 0;
 		let mut out = Vec::new();
@@ -1104,14 +1213,17 @@ mod test {
 	#[test]
 	fn changelog_generator_split_commits() -> Result<()> {
 		let (mut config, mut releases) = get_test_data();
-		config.git.split_commits = Some(true);
-		config.git.filter_unconventional = Some(false);
-		config.git.protect_breaking_commits = Some(true);
+		config.git.split_commits = true;
+		config.git.filter_unconventional = false;
+		config.git.protect_breaking_commits = true;
 
-		if let Some(parsers) = config.git.commit_parsers.as_mut() {
-			for parser in parsers.iter_mut().filter(|p| p.footer.is_some()) {
-				parser.skip = Some(true);
-			}
+		for parser in config
+			.git
+			.commit_parsers
+			.iter_mut()
+			.filter(|p| p.footer.is_some())
+		{
+			parser.skip = Some(true);
 		}
 
 		releases[0].commits.push(Commit::new(
@@ -1142,7 +1254,7 @@ chore(deps): fix broken deps
 ",
 			),
 		));
-		let changelog = Changelog::new(releases, &config)?;
+		let changelog = Changelog::new(releases, &config, None)?;
 		let mut out = Vec::new();
 		changelog.generate(&mut out)?;
 		assert_eq!(
@@ -1234,8 +1346,7 @@ chore(deps): fix broken deps
 	fn changelog_adds_additional_context() -> Result<()> {
 		let (mut config, releases) = get_test_data();
 		// add `{{ custom_field }}` to the template
-		config.changelog.body = Some(
-			r#"{% if version %}
+		config.changelog.body = r#"{% if version %}
 				## {{ custom_field }} [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
 				{% if commit_id %}({{ commit_id }}){% endif %}{% else %}
 				## Unreleased{% endif %}
@@ -1244,9 +1355,8 @@ chore(deps): fix broken deps
 				#### {{ group }}{% for commit in commits %}
 				- {{ commit.message }}{% endfor %}
 				{% endfor %}{% endfor %}"#
-				.to_string(),
-		);
-		let mut changelog = Changelog::new(releases, &config)?;
+			.to_string();
+		let mut changelog = Changelog::new(releases, &config, None)?;
 		changelog.add_context("custom_field", "Hello")?;
 		let mut out = Vec::new();
 		changelog.generate(&mut out)?;

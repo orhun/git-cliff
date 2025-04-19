@@ -22,6 +22,7 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
     --use-branch-tags  Include only the tags that belong to the current branch
     --no-exec          Disables the external command execution
 -x, --context          Prints changelog context as JSON
+    --use-native-tls   Load TLS certificates from the native certificate store
 ```
 
 ## Options
@@ -30,6 +31,7 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
 -i, --init [<CONFIG>]              Writes the default configuration file to cliff.toml
     --bump                         Bumps the version for unreleased changes [default: auto] [possible values: auto, major, minor, patch]
 -c, --config <PATH>                Sets the configuration file [env: GIT_CLIFF_CONFIG=] [default: cliff.toml]
+    --config-url <URL>             Sets the URL for the configuration file [env: GIT_CLIFF_CONFIG_URL=]
 -w, --workdir <PATH>               Sets the working directory [env: GIT_CLIFF_WORKDIR=]
 -r, --repository <PATH>...         Sets the git repository [env: GIT_CLIFF_REPOSITORY=]
     --include-path <PATTERN>...    Sets the path to include related commits [env: GIT_CLIFF_INCLUDE_PATH=]

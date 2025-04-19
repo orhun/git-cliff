@@ -110,6 +110,9 @@ pub struct Opt {
 	    value_parser = Opt::parse_dir
 	)]
 	pub config:           PathBuf,
+	/// Sets the URL for the configuration file.
+	#[arg(long, env = "GIT_CLIFF_CONFIG_URL", value_name = "URL", hide = !cfg!(feature = "remote"))]
+	pub config_url:       Option<Url>,
 	/// Sets the working directory.
 	#[arg(
 	    short,
@@ -343,6 +346,9 @@ pub struct Opt {
 		hide = !cfg!(feature = "bitbucket"),
 	)]
 	pub bitbucket_repo:   Option<RemoteValue>,
+	/// Load TLS certificates from the native certificate store.
+	#[arg(long, help_heading = Some("FLAGS"), hide = !cfg!(feature = "remote"))]
+	pub use_native_tls:   bool,
 }
 
 /// Custom type for the remote value.

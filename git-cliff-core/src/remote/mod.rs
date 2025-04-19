@@ -74,7 +74,13 @@ pub(crate) const MAX_PAGE_SIZE: usize = 100;
 /// Trait for handling the different entries returned from the remote.
 pub trait RemoteEntry {
 	/// Returns the API URL for fetching the entries at the specified page.
-	fn url(project_id: i64, api_url: &str, remote: &Remote, page: i32) -> String;
+	fn url(
+		project_id: i64,
+		api_url: &str,
+		remote: &Remote,
+		ref_name: Option<&str>,
+		page: i32,
+	) -> String;
 	/// Returns the request buffer size.
 	fn buffer_size() -> usize;
 	/// Whether if exit early.
@@ -124,47 +130,52 @@ pub struct RemoteReleaseMetadata {
 	pub contributors: Vec<RemoteContributor>,
 }
 
-/// Creates a HTTP client for the remote.
-fn create_remote_client(
-	remote: &Remote,
-	accept_header: &str,
-) -> Result<ClientWithMiddleware> {
-	if !remote.is_set() {
-		return Err(Error::RemoteNotSetError);
-	}
-	let mut headers = HeaderMap::new();
-	headers.insert(
-		reqwest::header::ACCEPT,
-		HeaderValue::from_str(accept_header)?,
-	);
-	if let Some(token) = &remote.token {
+impl Remote {
+	/// Creates a HTTP client for the remote.
+	fn create_client(&self, accept_header: &str) -> Result<ClientWithMiddleware> {
+		if !self.is_set() {
+			return Err(Error::RemoteNotSetError);
+		}
+		let mut headers = HeaderMap::new();
 		headers.insert(
-			reqwest::header::AUTHORIZATION,
-			format!("Bearer {}", token.expose_secret()).parse()?,
+			reqwest::header::ACCEPT,
+			HeaderValue::from_str(accept_header)?,
 		);
+		if let Some(token) = &self.token {
+			headers.insert(
+				reqwest::header::AUTHORIZATION,
+				format!("Bearer {}", token.expose_secret()).parse()?,
+			);
+		}
+		headers.insert(reqwest::header::USER_AGENT, USER_AGENT.parse()?);
+		let client_builder = Client::builder()
+			.timeout(Duration::from_secs(REQUEST_TIMEOUT))
+			.tcp_keepalive(Duration::from_secs(REQUEST_KEEP_ALIVE))
+			.default_headers(headers)
+			.tls_built_in_root_certs(false);
+		let client_builder = if self.native_tls.unwrap_or(false) {
+			client_builder.tls_built_in_native_certs(true)
+		} else {
+			client_builder.tls_built_in_webpki_certs(true)
+		};
+		let client = client_builder.build()?;
+		let client = ClientBuilder::new(client)
+			.with(Cache(HttpCache {
+				mode:    CacheMode::Default,
+				manager: CACacheManager {
+					path: dirs::cache_dir()
+						.ok_or_else(|| {
+							Error::DirsError(String::from(
+								"failed to find the user's cache directory",
+							))
+						})?
+						.join(env!("CARGO_PKG_NAME")),
+				},
+				options: HttpCacheOptions::default(),
+			}))
+			.build();
+		Ok(client)
 	}
-	headers.insert(reqwest::header::USER_AGENT, USER_AGENT.parse()?);
-	let client = Client::builder()
-		.timeout(Duration::from_secs(REQUEST_TIMEOUT))
-		.tcp_keepalive(Duration::from_secs(REQUEST_KEEP_ALIVE))
-		.default_headers(headers)
-		.build()?;
-	let client = ClientBuilder::new(client)
-		.with(Cache(HttpCache {
-			mode:    CacheMode::Default,
-			manager: CACacheManager {
-				path: dirs::cache_dir()
-					.ok_or_else(|| {
-						Error::DirsError(String::from(
-							"failed to find the user's cache directory",
-						))
-					})?
-					.join(env!("CARGO_PKG_NAME")),
-			},
-			options: HttpCacheOptions::default(),
-		}))
-		.build();
-	Ok(client)
 }
 
 /// Trait for handling the API connection and fetching.
@@ -199,9 +210,11 @@ pub trait RemoteClient {
 	async fn get_entry<T: DeserializeOwned + RemoteEntry>(
 		&self,
 		project_id: i64,
+		ref_name: Option<&str>,
 		page: i32,
 	) -> Result<T> {
-		let url = T::url(project_id, &self.api_url(), &self.remote(), page);
+		let url =
+			T::url(project_id, &self.api_url(), &self.remote(), ref_name, page);
 		debug!("Sending request to: {url}");
 		let response = self.client().get(&url).send().await?;
 		let response_text = if response.status().is_success() {
@@ -220,9 +233,11 @@ pub trait RemoteClient {
 	async fn get_entries_with_page<T: DeserializeOwned + RemoteEntry>(
 		&self,
 		project_id: i64,
+		ref_name: Option<&str>,
 		page: i32,
 	) -> Result<Vec<T>> {
-		let url = T::url(project_id, &self.api_url(), &self.remote(), page);
+		let url =
+			T::url(project_id, &self.api_url(), &self.remote(), ref_name, page);
 		debug!("Sending request to: {url}");
 		let response = self.client().get(&url).send().await?;
 		let response_text = if response.status().is_success() {
@@ -248,9 +263,10 @@ pub trait RemoteClient {
 	async fn fetch<T: DeserializeOwned + RemoteEntry>(
 		&self,
 		project_id: i64,
+		ref_name: Option<&str>,
 	) -> Result<Vec<T>> {
 		let entries: Vec<Vec<T>> = stream::iter(0..)
-			.map(|i| self.get_entries_with_page(project_id, i))
+			.map(|i| self.get_entries_with_page(project_id, ref_name, i))
 			.buffered(T::buffer_size())
 			.take_while(|page| {
 				if let Err(e) = page {
@@ -276,9 +292,10 @@ pub trait RemoteClient {
 	async fn fetch_with_early_exit<T: DeserializeOwned + RemoteEntry>(
 		&self,
 		project_id: i64,
+		ref_name: Option<&str>,
 	) -> Result<Vec<T>> {
 		let entries: Vec<T> = stream::iter(0..)
-			.map(|i| self.get_entry::<T>(project_id, i))
+			.map(|i| self.get_entry::<T>(project_id, ref_name, i))
 			.buffered(T::buffer_size())
 			.take_while(|page| {
 				let status = match page {

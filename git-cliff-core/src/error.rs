@@ -14,6 +14,13 @@ pub enum Error {
 	#[cfg(feature = "repo")]
 	#[error("Git error: `{0}`")]
 	GitError(#[from] git2::Error),
+	/// Error that may occur when failed to set a commit range.
+	#[cfg(feature = "repo")]
+	#[error(
+		"Failed to set the commit range: {1}
+{0:?} is not a valid commit range. Did you provide the correct arguments?"
+	)]
+	SetCommitRangeError(String, #[source] git2::Error),
 	/// Error variant that represents other repository related errors.
 	#[cfg(feature = "repo")]
 	#[error("Git repository error: `{0}`")]
@@ -104,6 +111,13 @@ pub enum Error {
 	/// Error that may occur while constructing patterns.
 	#[error("Pattern error: `{0}`")]
 	PatternError(#[from] glob::PatternError),
+	/// Error that may occur when unconventional commits are found.
+	/// See `require_conventional` option for more information.
+	#[error(
+		"Requiring all commits be conventional but found {0} unconventional \
+		 commits."
+	)]
+	UnconventionalCommitsError(i32),
 }
 
 /// Result type of the core library.

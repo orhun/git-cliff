@@ -21,7 +21,7 @@ Also, see the other [installation options](installation).
 2. Initialize **git-cliff**:
 
 ```bash
-git cliff --init
+git-cliff --init
 ```
 
 Edit the default [configuration](configuration) (`cliff.toml`) as you like. Check out the [examples](templating/examples) for different templates.
@@ -29,10 +29,14 @@ Edit the default [configuration](configuration) (`cliff.toml`) as you like. Chec
 3. Generate a changelog:
 
 ```bash
-git cliff -o CHANGELOG.md
+git-cliff -o CHANGELOG.md
 ```
 
 See the [command-line usage examples](usage/examples).
+
+:::note
+The `git cliff` command can also be used interchangeably with `git-cliff` (with a `-`) in most environments (when `git` is installed). However, when using the [NPM](/docs/installation/npm) installation method is used, the `git-cliff` command should be used.
+:::
 
 ## Contribute
 

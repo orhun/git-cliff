@@ -35,7 +35,10 @@ use git_cliff_core::error::{
 	Result,
 };
 use git_cliff_core::release::Release;
-use git_cliff_core::repo::Repository;
+use git_cliff_core::repo::{
+	Repository,
+	SubmoduleRange,
+};
 use git_cliff_core::tag::Tag;
 use git_cliff_core::{
 	DEFAULT_CONFIG,
@@ -48,7 +51,10 @@ use std::fs::{
 	File,
 };
 use std::io;
-use std::path::Path;
+use std::path::{
+	Path,
+	PathBuf,
+};
 use std::time::{
 	SystemTime,
 	UNIX_EPOCH,
@@ -75,6 +81,128 @@ fn check_new_version() {
 	}
 }
 
+/// Produces a commit range on the format `BASE..HEAD`, derived from the
+/// command line arguments and repository tags.
+///
+/// If no commit range could be determined, `None` is returned.
+fn determine_commit_range(
+	args: &Opt,
+	config: &Config,
+	repository: &Repository,
+) -> Result<Option<String>> {
+	let tags = repository.tags(
+		config.git.tag_pattern.as_ref(),
+		args.topo_order,
+		args.use_branch_tags,
+	)?;
+
+	let mut commit_range = args.range.clone();
+	if args.unreleased {
+		if let Some(last_tag) = tags.last().map(|tag| &tag.name) {
+			commit_range = Some(format!("{last_tag}..HEAD"));
+		}
+	} else if args.latest || args.current {
+		if tags.len() < 2 {
+			let commits = repository.commits(
+				None,
+				None,
+				None,
+				config.git.topo_order_commits,
+			)?;
+			if let (Some(tag1), Some(tag2)) = (
+				commits.last().map(|c| c.id().to_string()),
+				tags.get_index(0).map(|tag| &tag.name),
+			) {
+				if tags.len() == 1 {
+					commit_range = Some(tag2.to_owned());
+				} else {
+					commit_range = Some(format!("{tag1}..{tag2}"));
+				}
+			}
+		} else {
+			let mut tag_index = tags.len() - 2;
+			if args.current {
+				if let Some(current_tag_index) =
+					repository.current_tag().as_ref().and_then(|tag| {
+						tags.tags()
+							.enumerate()
+							.find(|(_, v)| v.name == tag.name)
+							.map(|(i, _)| i)
+					}) {
+					match current_tag_index.checked_sub(1) {
+						Some(i) => tag_index = i,
+						None => {
+							return Err(Error::ChangelogError(String::from(
+								"No suitable tags found. Maybe run with \
+								 '--topo-order'?",
+							)));
+						}
+					}
+				} else {
+					return Err(Error::ChangelogError(String::from(
+						"No tag exists for the current commit",
+					)));
+				}
+			}
+			if let (Some(tag1), Some(tag2)) = (
+				tags.get_index(tag_index).map(|tag| &tag.name),
+				tags.get_index(tag_index + 1).map(|tag| &tag.name),
+			) {
+				commit_range = Some(format!("{tag1}..{tag2}"));
+			}
+		}
+	}
+
+	Ok(commit_range)
+}
+
+/// Process submodules and add commits to release.
+fn process_submodules(
+	repository: &'static Repository,
+	release: &mut Release,
+	topo_order_commits: bool,
+) -> Result<()> {
+	// Retrieve first and last commit of a release to create a commit range.
+	let first_commit = release
+		.previous
+		.as_ref()
+		.and_then(|previous_release| previous_release.commit_id.clone())
+		.and_then(|commit_id| repository.find_commit(&commit_id));
+	let last_commit = release
+		.commit_id
+		.clone()
+		.and_then(|commit_id| repository.find_commit(&commit_id));
+
+	// Query repository for submodule changes. For each submodule a
+	// SubmoduleRange is created, describing the range of commits in the context
+	// of that submodule.
+	if let Some(last_commit) = last_commit {
+		let submodule_ranges =
+			repository.submodules_range(first_commit, last_commit)?;
+		let submodule_commits =
+			submodule_ranges.iter().filter_map(|submodule_range| {
+				// For each submodule, the commit range is exploded into a list of
+				// commits.
+				let SubmoduleRange {
+					repository: sub_repo,
+					range: range_str,
+				} = submodule_range;
+				let commits = sub_repo
+					.commits(Some(range_str), None, None, topo_order_commits)
+					.ok()
+					.map(|commits| commits.iter().map(Commit::from).collect());
+
+				let submodule_path = sub_repo.path().to_string_lossy().into_owned();
+				Some(submodule_path).zip(commits)
+			});
+		// Insert submodule commits into map.
+		for (submodule_path, commits) in submodule_commits {
+			release.submodule_commits.insert(submodule_path, commits);
+		}
+	}
+	Ok(())
+}
+
 /// Processes the tags and commits for creating release entries for the
 /// changelog.
 ///
@@ -93,6 +221,7 @@ fn process_repository<'a>(
 	let skip_regex = config.git.skip_tags.as_ref();
 	let ignore_regex = config.git.ignore_tags.as_ref();
 	let count_tags = config.git.count_tags.as_ref();
+	let recurse_submodules = config.git.recurse_submodules.unwrap_or(false);
 	tags.retain(|tag| {
 		let name = &tag.name;
 
@@ -155,72 +284,26 @@ fn process_repository<'a>(
 			}
 		}
 	}
+	if args.use_native_tls {
+		config.remote.enable_native_tls();
+	}
 
 	// Print debug information about configuration and arguments.
 	log::trace!("Arguments: {:#?}", args);
 	log::trace!("Config: {:#?}", config);
 
 	// Parse commits.
-	let mut commit_range = args.range.clone();
-	if args.unreleased {
-		if let Some(last_tag) = tags.last() {
-			commit_range =
-				Some(format!("{last_tag}..HEAD", last_tag = last_tag.name));
-		}
-	} else if args.latest || args.current {
-		if tags.len() < 2 {
-			let commits = repository.commits(None, None, None)?;
-			if let (Some(tag1), Some(tag2)) = (
-				commits.last().map(|c| c.id().to_string()),
-				tags.get_index(0).map(|tag| &tag.name),
-			) {
-				if tags.len() == 1 {
-					let tag2 = tags.get_commit(tag2).unwrap();
-					commit_range = Some(tag2.to_owned());
-				} else {
-					commit_range = Some(format!("{tag1}..{tag2}"));
-				}
-			}
-		} else {
-			let mut tag_index = tags.len() - 2;
-			if args.current {
-				if let Some(current_tag_index) =
-					repository.current_tag().as_ref().and_then(|tag| {
-						tags.tags().enumerate().position(|(_, t)| t == tag)
-					}) {
-					match current_tag_index.checked_sub(1) {
-						Some(i) => tag_index = i,
-						None => {
-							return Err(Error::ChangelogError(String::from(
-								"No suitable tags found. Maybe run with \
-								 '--topo-order'?",
-							)));
-						}
-					}
-				} else {
-					return Err(Error::ChangelogError(String::from(
-						"No tag exists for the current commit",
-					)));
-				}
-			}
-			if let (Some(tag1), Some(tag2)) =
-				(tags.get_index(tag_index), tags.get_index(tag_index + 1))
-			{
-				commit_range = Some(format!(
-					"{tag1}..{tag2}",
-					tag1 = tag1.name,
-					tag2 = tag2.name
-				));
-			}
-		}
-	}
+	let commit_range = determine_commit_range(args, config, repository)?;
 
 	// Include only the current directory if not running from the root repository
 	let mut include_path = args.include_path.clone();
 	if let Some(mut path_diff) =
-		pathdiff::diff_paths(env::current_dir()?, repository.path())
+		pathdiff::diff_paths(env::current_dir()?, repository.root_path()?)
 	{
-		if include_path.is_none() && path_diff != Path::new("") {
+		if args.workdir.is_none() &&
+			include_path.is_none() &&
+			path_diff != Path::new("")
+		{
 			info!(
 				"Including changes from the current directory: {:?}",
 				path_diff.display()
@@ -235,6 +318,7 @@ fn process_repository<'a>(
 		commit_range.as_deref(),
 		include_path,
 		args.exclude_path.clone(),
+		config.git.topo_order_commits,
 	)?;
 	if let Some(commit_limit_value) = config.git.limit_commits {
 		commits.truncate(commit_limit_value);
@@ -271,8 +355,9 @@ fn process_repository<'a>(
 		.and_then(|root| tags.get_closest(&root.id().to_string()));
 	let mut first_processed_tag = None;
 
+	let repository_path = repository.path().to_string_lossy().into_owned();
 	let fill_release = |release: &mut Release, tag: Option<&Tag>| -> Result<()> {
-		release.repository = Some(repository.path().to_string_lossy().into_owned());
+		release.repository = Some(repository_path.clone());
 		let Some(tag) = tag else { return Ok(()) };
 		let Some(release_commit) = tags.get_commit(&tag.name) else {
 			return Ok(());
@@ -318,6 +403,12 @@ fn process_repository<'a>(
 	}
 	fill_release(&mut release, current_tag)?;
 	append_release(&mut releases, &mut release);
+
+	if recurse_submodules {
+		for release in &mut releases {
+			process_submodules(repository, release, config.git.topo_order_commits)?;
+		}
+	}
 
 	if args.sort == Sort::Newest {
 		for release in &mut releases {
@@ -373,7 +464,7 @@ fn process_repository<'a>(
 		if let Some(latest_release) = releases
 			.iter_mut()
 			.filter(|release| !release.commits.is_empty())
-			.last()
+			.next_back()
 		{
 			latest_release.message = Some(message.to_owned());
 		}
@@ -392,7 +483,51 @@ fn append_release<'a>(releases: &mut Vec<Release<'a>>, release: &mut Release<'a>
 }
 
 /// Runs `git-cliff`.
-pub fn run(mut args: Opt) -> Result<()> {
+///
+/// # Example
+///
+/// ```no_run
+/// use clap::Parser;
+/// use git_cliff::args::Opt;
+/// use git_cliff_core::error::Result;
+///
+/// fn main() -> Result<()> {
+/// 	let args = Opt::parse();
+/// 	git_cliff::run(args)?;
+/// 	Ok(())
+/// }
+/// ```
+pub fn run(args: Opt) -> Result<()> {
+	run_with_changelog_modifier(args, |_| Ok(()))
+}
+
+/// Runs `git-cliff` with a changelog modifier.
+///
+/// This is useful if you want to modify the [`Changelog`] before
+/// it's written or the context is printed (depending how git-cliff is started).
+///
+/// # Example
+///
+/// ```no_run
+/// use clap::Parser;
+/// use git_cliff::args::Opt;
+/// use git_cliff_core::error::Result;
+///
+/// fn main() -> Result<()> {
+/// 	let args = Opt::parse();
+///
+/// 	git_cliff::run_with_changelog_modifier(args, |changelog| {
+/// 		println!("Releases: {:?}", changelog.releases);
+/// 		Ok(())
+/// 	})?;
+///
+/// 	Ok(())
+/// }
+/// ```
+pub fn run_with_changelog_modifier(
+	mut args: Opt,
+	changelog_modifier: impl FnOnce(&mut Changelog) -> Result<()>,
+) -> Result<()> {
 	// Check if there is a new version available.
 	#[cfg(feature = "update-informer")]
 	check_new_version();
@@ -403,12 +538,19 @@ pub fn run(mut args: Opt) -> Result<()> {
 			Some(ref name) => BuiltinConfig::get_config(name.to_string())?,
 			None => EmbeddedConfig::get_config()?,
 		};
+
+		let config_path = if args.config == PathBuf::from(DEFAULT_CONFIG) {
+			PathBuf::from(DEFAULT_CONFIG)
+		} else {
+			args.config.clone()
+		};
+
 		info!(
 			"Saving the configuration file{} to {:?}",
 			init_config.map(|v| format!(" ({v})")).unwrap_or_default(),
-			DEFAULT_CONFIG
+			config_path
 		);
-		fs::write(DEFAULT_CONFIG, contents)?;
+		fs::write(config_path, contents)?;
 		return Ok(());
 	}
 
@@ -444,7 +586,20 @@ pub fn run(mut args: Opt) -> Result<()> {
 
 	// Parse the configuration file.
 	// Load the default configuration if necessary.
-	let mut config = if let Ok((config, name)) = builtin_config {
+	let mut config = if let Some(url) = &args.config_url {
+		debug!("Using configuration file from: {url}");
+		#[cfg(feature = "remote")]
+		{
+			let contents = reqwest::blocking::get(url.clone())?
+				.error_for_status()?
+				.text()?;
+			Config::parse_from_str(&contents)?
+		}
+		#[cfg(not(feature = "remote"))]
+		unreachable!(
+			"This option is not available without the 'remote' build-time feature"
+		);
+	} else if let Ok((config, name)) = builtin_config {
 		info!("Using built-in configuration file: {name}");
 		config
 	} else if path.exists() {
@@ -474,10 +629,6 @@ pub fn run(mut args: Opt) -> Result<()> {
 		}
 		EmbeddedConfig::parse()?
 	};
-	if config.changelog.body.is_none() && !args.context && !args.bumped_version {
-		warn!("Changelog body is not specified, using the default template.");
-		config.changelog.body = EmbeddedConfig::parse()?.changelog.body;
-	}
 
 	// Update the configuration based on command line arguments and vice versa.
 	let output = args.output.clone().or(config.changelog.output.clone());
@@ -511,25 +662,19 @@ pub fn run(mut args: Opt) -> Result<()> {
 			 files",
 		)));
 	}
-	if args.body.is_some() {
-		config.changelog.body.clone_from(&args.body);
+	if let Some(body) = args.body.clone() {
+		config.changelog.body = body;
 	}
 	if args.sort == Sort::Oldest {
-		if let Some(ref sort_commits) = config.git.sort_commits {
-			args.sort = Sort::from_str(sort_commits, true)
-				.expect("Incorrect config value for 'sort_commits'");
-		}
+		args.sort = Sort::from_str(&config.git.sort_commits, true)
+			.expect("Incorrect config value for 'sort_commits'");
 	}
 	if !args.topo_order {
-		if let Some(topo_order) = config.git.topo_order {
-			args.topo_order = topo_order;
-		}
+		args.topo_order = config.git.topo_order;
 	}
 
 	if !args.use_branch_tags {
-		if let Some(use_branch_tags) = config.git.use_branch_tags {
-			args.use_branch_tags = use_branch_tags;
-		}
+		args.use_branch_tags = config.git.use_branch_tags;
 	}
 
 	if args.github_token.is_some() {
@@ -569,16 +714,16 @@ pub fn run(mut args: Opt) -> Result<()> {
 		config.remote.gitea.is_custom = true;
 	}
 	if args.no_exec {
-		if let Some(ref mut preprocessors) = config.git.commit_preprocessors {
-			preprocessors
-				.iter_mut()
-				.for_each(|v| v.replace_command = None);
-		}
-		if let Some(ref mut postprocessors) = config.changelog.postprocessors {
-			postprocessors
-				.iter_mut()
-				.for_each(|v| v.replace_command = None);
-		}
+		config
+			.git
+			.commit_preprocessors
+			.iter_mut()
+			.for_each(|v| v.replace_command = None);
+		config
+			.changelog
+			.postprocessors
+			.iter_mut()
+			.for_each(|v| v.replace_command = None);
 	}
 	config.git.skip_tags = config.git.skip_tags.filter(|r| !r.as_str().is_empty());
 	if args.tag_pattern.is_some() {
@@ -614,6 +759,7 @@ pub fn run(mut args: Opt) -> Result<()> {
 		let repositories =
 			args.repository.clone().unwrap_or(vec![env::current_dir()?]);
 		let mut releases = Vec::<Release>::new();
+		let mut commit_range = None;
 		for repository in repositories {
 			// Skip commits
 			let mut skip_list = Vec::new();
@@ -630,26 +776,32 @@ pub fn run(mut args: Opt) -> Result<()> {
 			if let Some(ref skip_commit) = args.skip_commit {
 				skip_list.extend(skip_commit.clone());
 			}
-			if let Some(commit_parsers) = config.git.commit_parsers.as_mut() {
-				for sha1 in skip_list {
-					commit_parsers.insert(0, CommitParser {
-						sha: Some(sha1.to_string()),
-						skip: Some(true),
-						..Default::default()
-					});
-				}
+			for sha1 in skip_list {
+				config.git.commit_parsers.insert(0, CommitParser {
+					sha: Some(sha1.to_string()),
+					skip: Some(true),
+					..Default::default()
+				});
 			}
 
 			// Process the repository.
 			let repository = Repository::init(repository)?;
+
+			// The commit range, used for determining the remote commits to include
+			// in the changelog, doesn't make sense if multiple repositories are
+			// specified. As such, pick the commit range from the last given
+			// repository.
+			commit_range = determine_commit_range(&args, &config, &repository)?;
+
 			releases.extend(process_repository(
 				Box::leak(Box::new(repository)),
 				&mut config,
 				&args,
 			)?);
 		}
-		Changelog::new(releases, &config)?
+		Changelog::new(releases, &config, commit_range.as_deref())?
 	};
+	changelog_modifier(&mut changelog)?;
 
 	// Print the result.
 	let mut out: Box<dyn io::Write> = if let Some(path) = &output {
@@ -674,6 +826,14 @@ pub fn run(mut args: Opt) -> Result<()> {
 		} else {
 			return Ok(());
 		};
+		if let Some(tag_pattern) = &config.git.tag_pattern {
+			if !tag_pattern.is_match(&next_version) {
+				return Err(Error::ChangelogError(format!(
+					"Next version ({}) does not match the tag pattern: {}",
+					next_version, tag_pattern
+				)));
+			}
+		}
 		if args.bumped_version {
 			writeln!(out, "{next_version}")?;
 			return Ok(());

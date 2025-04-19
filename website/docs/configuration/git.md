@@ -6,6 +6,7 @@ This section contains the parsing and git related configuration options.
 [git]
 conventional_commits = true
 filter_unconventional = true
+require_conventional = false
 split_commits = false
 commit_parsers = [
     { message = "^feat", group = "Features"},
@@ -23,12 +24,14 @@ tag_pattern = "v[0-9].*"
 skip_tags = "v0.1.0-beta.1"
 ignore_tags = ""
 topo_order = false
+topo_order_commits = true
 sort_commits = "oldest"
 link_parsers = [
     { pattern = "#(\\d+)", href = "https://github.com/orhun/git-cliff/issues/$1"},
     { pattern = "RFC(\\d+)", text = "ietf-rfc$1", href = "https://datatracker.ietf.org/doc/html/rfc$1"},
 ]
 limit_commits = 42
+recurse_submodules = false
 ```
 
 ### conventional_commits
@@ -78,6 +81,23 @@ conventional_commits = false
 filter_unconventional = false
 ```
 
+### require_conventional
+
+If set to `true`, all commits included in the changelog must be conventional. If any unconventional commits are found, an error will be logged and changelog generation fails.
+
+```toml
+conventional_commits = true
+require_conventional = false
+commit_parsers = [
+  { message = ".*", group = "Other", default_scope = "other"},
+  { message = "^Merging", skip = true }
+]
+```
+
+If set to `true`, this option takes precedence over `filter_unconventional`.
+
+Checking takes place after `commit_parsers`. Thus commits can be skipped by matching parsers.
+
 ### split_commits
 
 > This flag violates "conventional commits". It should remain off by default if conventional commits is to be respected.
@@ -103,7 +123,7 @@ a commit being treated as a changelog entry.
 
 An array of commit preprocessors for manipulating the commit messages before parsing/grouping them. These regex-based preprocessors can be used for removing or selecting certain parts of the commit message/body to be used in the following processes.
 
-:::note 
+:::note
 The `replace` or `replace_command` will take into account of the entire log of commit messages where the specified `pattern` is matched.
 :::
 
@@ -182,7 +202,6 @@ Examples:
   - `body` is a special field which contains the body of a convetional commit, if applicable.
   - Be aware that all fields are converted to JSON strings before they are parsed by the given regex, especially when dealing with arrays.
 
-
 ### protect_breaking_commits
 
 If set to `true`, any breaking changes will be protected against being skipped
@@ -235,6 +254,16 @@ If set to `true`, tags are processed in topological order instead of chronologic
 
 This can also be achieved by using the `--topo-order` command line flag.
 
+### topo_order_commits
+
+If set to `true`, commits are processed in topological order instead of chronological.
+
+```toml
+# if false, sorting commit is equivalent to git log
+# if true (default), sorting commit is equivalent to git log --topo-order
+topo_order_commits = false
+```
+
 ### sort_commits
 
 Sort the commits inside sections by specified order.
@@ -264,3 +293,9 @@ These extracted links can be used in the [template](/docs/templating/context) wi
 `limit_commits` is an **optional** positive integer number that limits the number of included commits in the generated changelog.
 
 `limit_commits` is not part of the default configuration.
+
+### recurse_submodules
+
+`recurse_submodules` is an _optional_ boolean value that indicates whether **git-cliff** should read and process commits of submodules.
+
+This only considers submodules at the toplevel (depth 1). These commits can then be accessed by the variable `submodule_commits` during [templating](/docs/templating/context).

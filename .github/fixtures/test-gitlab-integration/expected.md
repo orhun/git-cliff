@@ -1,3 +1,7 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
 ## What's Changed
 * Initial commit by @dark0dave
 * Added tmux files by @dark0dave

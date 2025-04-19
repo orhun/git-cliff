@@ -27,5 +27,3 @@ body = """
     {% endfor %}
 {% endfor %}\n
 """
-# remove the leading and trailing whitespace from the templates
-trim = true

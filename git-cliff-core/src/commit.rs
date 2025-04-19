@@ -177,8 +177,8 @@ impl From<String> for Commit<'_> {
 }
 
 #[cfg(feature = "repo")]
-impl<'a> From<&GitCommit<'a>> for Commit<'a> {
-	fn from(commit: &GitCommit<'a>) -> Self {
+impl From<&GitCommit<'_>> for Commit<'_> {
+	fn from(commit: &GitCommit<'_>) -> Self {
 		Commit {
 			id: commit.id().to_string(),
 			message: commit.message().unwrap_or_default().trim_end().to_string(),
@@ -212,28 +212,26 @@ impl Commit<'_> {
 	/// * extracts links and generates URLs
 	pub fn process(&self, config: &GitConfig) -> Result<Self> {
 		let mut commit = self.clone();
-		if let Some(preprocessors) = &config.commit_preprocessors {
-			commit = commit.preprocess(preprocessors)?;
-		}
-		if config.conventional_commits.unwrap_or(true) {
-			if config.filter_unconventional.unwrap_or(true) &&
-				!config.split_commits.unwrap_or(false)
+		commit = commit.preprocess(&config.commit_preprocessors)?;
+		if config.conventional_commits {
+			if !config.require_conventional &&
+				config.filter_unconventional &&
+				!config.split_commits
 			{
 				commit = commit.into_conventional()?;
 			} else if let Ok(conv_commit) = commit.clone().into_conventional() {
 				commit = conv_commit;
 			}
 		}
-		if let Some(parsers) = &config.commit_parsers {
-			commit = commit.parse(
-				parsers,
-				config.protect_breaking_commits.unwrap_or(false),
-				config.filter_commits.unwrap_or(false),
-			)?;
-		}
-		if let Some(parsers) = &config.link_parsers {
-			commit = commit.parse_links(parsers)?;
-		}
+
+		commit = commit.parse(
+			&config.commit_parsers,
+			config.protect_breaking_commits,
+			config.filter_commits,
+		)?;
+
+		commit = commit.parse_links(&config.link_parsers)?;
+
 		Ok(commit)
 	}
 
@@ -554,7 +552,7 @@ mod test {
 	#[test]
 	fn conventional_footers() {
 		let cfg = crate::config::GitConfig {
-			conventional_commits: Some(true),
+			conventional_commits: true,
 			..Default::default()
 		};
 		let test_cases = vec![

@@ -12,6 +12,7 @@ use git2::{
 	Repository as GitRepository,
 	Sort,
 	TreeWalkMode,
+	Worktree,
 };
 use glob::Pattern;
 use indexmap::IndexMap;
@@ -22,7 +23,11 @@ use lazy_regex::{
 };
 use std::cmp::Reverse;
 use std::io;
-use std::path::PathBuf;
+use std::path::{
+	Path,
+	PathBuf,
+};
+use std::result::Result as StdResult;
 use url::Url;
 
 /// Regex for replacing the signature part of a tag message.
@@ -43,6 +48,15 @@ pub struct Repository {
 	path:                     PathBuf,
 	/// Cache path for the changed files of the commits.
 	changed_files_cache_path: PathBuf,
+}
+
+/// Range of commits in a submodule.
+pub struct SubmoduleRange {
+	/// Repository object to which this range belongs.
+	pub repository: Repository,
+	/// Commit range in "<first_submodule_commit>..<last_submodule_commit>" or
+	/// "<last_submodule_commit>" format.
+	pub range:      String,
 }
 
 impl Repository {
@@ -76,12 +90,45 @@ impl Repository {
 	}
 
 	/// Returns the path of the repository.
-	pub fn path(&self) -> PathBuf {
-		let mut path = self.inner.path().to_path_buf();
+	pub fn root_path(&self) -> Result<PathBuf> {
+		let mut path = if self.inner.is_worktree() {
+			let worktree = Worktree::open_from_repository(&self.inner)?;
+			worktree.path().to_path_buf()
+		} else {
+			self.inner.path().to_path_buf()
+		};
 		if path.ends_with(".git") {
 			path.pop();
 		}
-		path
+		Ok(path)
+	}
+
+	/// Returns the initial path of the repository.
+	///
+	/// In case of a submodule this is the relative path to the toplevel
+	/// repository.
+	pub fn path(&self) -> &PathBuf {
+		&self.path
+	}
+
+	/// Sets the range for the commit search.
+	///
+	/// When a single SHA is provided as the range, start from the
+	/// root.
+	fn set_commit_range(
+		revwalk: &mut git2::Revwalk<'_>,
+		range: Option<&str>,
+	) -> StdResult<(), git2::Error> {
+		if let Some(range) = range {
+			if range.contains("..") {
+				revwalk.push_range(range)?;
+			} else {
+				revwalk.push(Oid::from_str(range)?)?;
+			}
+		} else {
+			revwalk.push_head()?;
+		}
+		Ok(())
 	}
 
 	/// Parses and returns the commits.
@@ -92,19 +139,21 @@ impl Repository {
 		range: Option<&str>,
 		include_path: Option<Vec<Pattern>>,
 		exclude_path: Option<Vec<Pattern>>,
+		topo_order_commits: bool,
 	) -> Result<Vec<Commit>> {
 		let mut revwalk = self.inner.revwalk()?;
-		revwalk.set_sorting(Sort::TOPOLOGICAL)?;
-		if let Some(range) = range {
-			if range.contains("..") {
-				revwalk.push_range(range)?;
-			} else {
-				// When a single SHA is provided as the "range", start from the root.
-				revwalk.push(Oid::from_str(range)?)?;
-			}
+		if topo_order_commits {
+			revwalk.set_sorting(Sort::TOPOLOGICAL)?;
 		} else {
-			revwalk.push_head()?;
+			revwalk.set_sorting(Sort::TIME)?;
 		}
+
+		Self::set_commit_range(&mut revwalk, range).map_err(|e| {
+			Error::SetCommitRangeError(
+				range.map(String::from).unwrap_or_else(|| "?".to_string()),
+				e,
+			)
+		})?;
 		let mut commits: Vec<Commit> = revwalk
 			.filter_map(|id| id.ok())
 			.filter_map(|id| self.inner.find_commit(id).ok())
@@ -125,6 +174,59 @@ impl Repository {
 			});
 		}
 		Ok(commits)
+	}
+
+	/// Returns submodule repositories for a given commit range.
+	///
+	/// For one or two given commits in this repository, a list of changed
+	/// submodules is calculated. If only one commit is given, then all
+	/// submodule commits up to the referenced commit will be included. This is
+	/// usually the case if a submodule is added to the repository.
+	///
+	///  For each submodule a [`SubmoduleRange`] object is created
+	///
+	/// This can then be used to query the submodule's commits by using
+	/// [`Repository::commits`].
+	pub fn submodules_range(
+		&self,
+		old_commit: Option<Commit<'_>>,
+		new_commit: Commit<'_>,
+	) -> Result<Vec<SubmoduleRange>> {
+		let old_tree = old_commit.and_then(|commit| commit.tree().ok());
+		let new_tree = new_commit.tree().ok();
+		let diff = self.inner.diff_tree_to_tree(
+			old_tree.as_ref(),
+			new_tree.as_ref(),
+			None,
+		)?;
+		// iterate through all diffs and accumulate old/new commit ids
+		let before_and_after_deltas = diff.deltas().filter_map(|delta| {
+			let old_file_id = delta.old_file().id();
+			let new_file_id = delta.new_file().id();
+			let range = if old_file_id == new_file_id || new_file_id.is_zero() {
+				// no changes or submodule removed
+				None
+			} else if old_file_id.is_zero() {
+				// submodule added
+				Some(new_file_id.to_string())
+			} else {
+				// submodule updated
+				Some(format!("{}..{}", old_file_id, new_file_id))
+			};
+			trace!("Release commit range for submodules: {:?}", range);
+			delta.new_file().path().and_then(Path::to_str).zip(range)
+		});
+		// iterate through all path diffs and find corresponding submodule if
+		// possible
+		let submodule_range = before_and_after_deltas.filter_map(|(path, range)| {
+			let repository = self
+				.inner
+				.find_submodule(path)
+				.ok()
+				.and_then(|submodule| Self::init(submodule.path().into()).ok());
+			repository.map(|repository| SubmoduleRange { repository, range })
+		});
+		Ok(submodule_range.collect())
 	}
 
 	/// Normalizes the glob pattern to match the git diff paths.
@@ -470,7 +572,7 @@ impl<'a> TaggedCommits<'a> {
 		repository: &'a Repository,
 		tags: Vec<(Commit<'a>, Tag)>,
 	) -> Result<Self> {
-		let commits = repository.commits(None, None, None)?;
+		let commits = repository.commits(None, None, None, false)?;
 		let commits: IndexMap<_, _> = commits
 			.into_iter()
 			.map(|c| (c.id().to_string(), c))
@@ -619,11 +721,12 @@ fn url_path_segments(url: &str) -> Result<Remote> {
 		)));
 	};
 	Ok(Remote {
-		owner:     owner.to_string(),
-		repo:      repo.to_string(),
-		token:     None,
-		is_custom: false,
-		api_url:   None,
+		owner:      owner.to_string(),
+		repo:       repo.to_string(),
+		token:      None,
+		is_custom:  false,
+		api_url:    None,
+		native_tls: None,
 	})
 }
 
@@ -649,11 +752,12 @@ fn ssh_path_segments(url: &str) -> Result<Remote> {
 		)));
 	};
 	Ok(Remote {
-		owner:     owner.to_string(),
-		repo:      repo.to_string(),
-		token:     None,
-		is_custom: false,
-		api_url:   None,
+		owner:      owner.to_string(),
+		repo:       repo.to_string(),
+		token:      None,
+		is_custom:  false,
+		api_url:    None,
+		native_tls: None,
 	})
 }
 
@@ -734,7 +838,7 @@ mod test {
 	#[test]
 	fn get_latest_commit() -> Result<()> {
 		let repository = get_repository()?;
-		let commits = repository.commits(None, None, None)?;
+		let commits = repository.commits(None, None, None, false)?;
 		let last_commit =
 			AppCommit::from(&commits.first().expect("no commits found").clone());
 		assert_eq!(get_last_commit_hash()?, last_commit.id);
@@ -809,11 +913,12 @@ mod test {
 		let remote = repository.upstream_remote()?;
 		assert_eq!(
 			Remote {
-				owner:     remote.owner.clone(),
-				repo:      String::from("git-cliff"),
-				token:     None,
-				is_custom: false,
-				api_url:   remote.api_url.clone(),
+				owner:      remote.owner.clone(),
+				repo:       String::from("git-cliff"),
+				token:      None,
+				is_custom:  false,
+				api_url:    remote.api_url.clone(),
+				native_tls: None,
 			},
 			remote
 		);
@@ -851,7 +956,7 @@ mod test {
 		let repository = get_repository()?;
 		// a close descendant of the root commit
 		let range = Some("eea3914c7ab07472841aa85c36d11bdb2589a234");
-		let commits = repository.commits(range, None, None)?;
+		let commits = repository.commits(range, None, None, false)?;
 		let root_commit =
 			AppCommit::from(&commits.last().expect("no commits found").clone());
 		assert_eq!(get_root_commit_hash()?, root_commit.id);

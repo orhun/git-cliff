@@ -1,0 +1,34 @@
+[changelog]
+# A Tera template to be rendered as the changelog's header.
+# See https://keats.github.io/tera/docs/#introduction
+header = """
+# Changelog\n
+All notable changes to this project will be documented in this file.
+"""
+# A Tera template to be rendered for each release in the changelog.
+# See https://keats.github.io/tera/docs/#introduction
+body = """
+{% for group, commits in commits | group_by(attribute="group") %}
+    ## {{ group | striptags | trim | upper_first }}
+    {% for commit in commits %}
+          {% if commit.scope %}*({{ commit.scope }})* {% endif %}\
+          {% if commit.breaking %}[**breaking**]: {{ commit.breaking_description }}{% endif %}
+          {{ commit.message }}: {{ commit.body }}\
+          {% for footer in commit.footers %}
+            - {{ footer.token }}{{ footer.separator }} {{ footer.value }}\
+          {% endfor %}
+    {% endfor %}\
+{% endfor %}\n
+"""
+
+[git]
+# Require all commits to be conventional.
+# Takes precedence over filter_unconventional.
+require_conventional = true
+# An array of regex based parsers for extracting data from the commit message.
+# Assigns commits to groups.
+# Optionally sets the commit's scope and can decide to exclude commits from further processing.
+commit_parsers = [
+  { message = "^feat", group = "Features", default_scope = "app" },
+  { message = "^fix" },
+]

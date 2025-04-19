@@ -144,26 +144,6 @@ The changelog looks something like this now:
 
 See the other template examples in the [documentation](https://git-cliff.org/docs/templating/examples).
 
-### New GitHub Action
-
-A new GitHub Action for `git-cliff` has been created by [@jackton1](https://github.com/jackton1)!
-
-> [tj-actions/git-cliff](https://github.com/tj-actions/git-cliff) is another GitHub Action that you can use to generate changelogs for your project.
-
-> It uses a generic `cliff-template.toml` without the need to maintain multiple configuration files for each project or you can optionally provide a customized template as a path or URL which falls back to project's `cliff.toml` if it exist.
-
-```yml
-- name: Check out repository
-  uses: actions/checkout@v3
-  with:
-    fetch-depth: 0
-
-- name: Run git-cliff
-  uses: tj-actions/git-cliff@v1
-```
-
-See the [documentation](https://git-cliff.org/docs/github-actions/tj-actions-git-cliff) for more information.
-
 ### Internal changes
 
 Here is a list of changes that are worth mentioning if you use `git-cliff`/`git-cliff-core` in your Rust project as a library:
