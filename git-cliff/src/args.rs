@@ -1,27 +1,27 @@
 use clap::{
+	ArgAction,
+	Parser,
+	ValueEnum,
 	builder::{
+		Styles,
+		TypedValueParser,
+		ValueParserFactory,
 		styling::{
 			Ansi256Color,
 			AnsiColor,
 		},
-		Styles,
-		TypedValueParser,
-		ValueParserFactory,
 	},
 	error::{
 		ContextKind,
 		ContextValue,
 		ErrorKind,
 	},
-	ArgAction,
-	Parser,
-	ValueEnum,
 };
 use git_cliff_core::{
-	config::BumpType,
-	config::Remote,
 	DEFAULT_CONFIG,
 	DEFAULT_OUTPUT,
+	config::BumpType,
+	config::Remote,
 };
 use glob::Pattern;
 use regex::Regex;
@@ -512,12 +512,16 @@ mod tests {
 				OsStr::new("https://gitlab.archlinux.org/archlinux/packaging/packages/arch-repro-status")
 			)?
 		);
-		assert!(remote_value_parser
-			.parse_ref(&Opt::command(), None, OsStr::new("test"))
-			.is_err());
-		assert!(remote_value_parser
-			.parse_ref(&Opt::command(), None, OsStr::new(""))
-			.is_err());
+		assert!(
+			remote_value_parser
+				.parse_ref(&Opt::command(), None, OsStr::new("test"))
+				.is_err()
+		);
+		assert!(
+			remote_value_parser
+				.parse_ref(&Opt::command(), None, OsStr::new(""))
+				.is_err()
+		);
 		Ok(())
 	}
 
@@ -532,9 +536,11 @@ mod tests {
 				OsStr::new("auto")
 			)?
 		);
-		assert!(bump_option_parser
-			.parse_ref(&Opt::command(), None, OsStr::new("test"))
-			.is_err());
+		assert!(
+			bump_option_parser
+				.parse_ref(&Opt::command(), None, OsStr::new("test"))
+				.is_err()
+		);
 		assert_eq!(
 			BumpOption::Specific(BumpType::Major),
 			bump_option_parser.parse_ref(

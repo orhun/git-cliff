@@ -1,10 +1,10 @@
 use env_logger::{
+	Builder,
 	fmt::{
 		Color,
 		Style,
 		StyledValue,
 	},
-	Builder,
 };
 use git_cliff_core::error::{
 	Error,

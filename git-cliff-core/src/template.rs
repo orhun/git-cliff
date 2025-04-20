@@ -12,11 +12,11 @@ use std::collections::{
 };
 use std::error::Error as ErrorImpl;
 use tera::{
-	ast,
 	Context as TeraContext,
 	Result as TeraResult,
 	Tera,
 	Value,
+	ast,
 };
 
 /// Wrapper for [`Tera`].

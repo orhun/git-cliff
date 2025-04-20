@@ -8,19 +8,19 @@ use crate::error::{
 	Error as AppError,
 	Result,
 };
+use git_conventional::{
+	Commit as ConventionalCommit,
+	Footer as ConventionalFooter,
+};
 #[cfg(feature = "repo")]
 use git2::{
 	Commit as GitCommit,
 	Signature as CommitSignature,
 };
-use git_conventional::{
-	Commit as ConventionalCommit,
-	Footer as ConventionalFooter,
-};
 use lazy_regex::{
-	lazy_regex,
 	Lazy,
 	Regex,
+	lazy_regex,
 };
 use serde::ser::{
 	SerializeStruct,
