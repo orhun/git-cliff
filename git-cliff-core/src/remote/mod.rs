@@ -22,9 +22,9 @@ use crate::error::{
 };
 use dyn_clone::DynClone;
 use futures::{
+	StreamExt,
 	future,
 	stream,
-	StreamExt,
 };
 use http_cache_reqwest::{
 	CACacheManager,
@@ -33,11 +33,11 @@ use http_cache_reqwest::{
 	HttpCache,
 	HttpCacheOptions,
 };
+use reqwest::Client;
 use reqwest::header::{
 	HeaderMap,
 	HeaderValue,
 };
-use reqwest::Client;
 use reqwest_middleware::{
 	ClientBuilder,
 	ClientWithMiddleware,
@@ -52,8 +52,8 @@ use std::env;
 use std::fmt::Debug;
 use std::time::Duration;
 use time::{
-	format_description::well_known::Rfc3339,
 	OffsetDateTime,
+	format_description::well_known::Rfc3339,
 };
 
 /// User agent for interacting with the GitHub API.

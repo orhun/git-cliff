@@ -584,11 +584,7 @@ pub fn run_with_changelog_modifier(
 	} else if let Some(discovered_path) =
 		env::current_dir()?.ancestors().find_map(|dir| {
 			let path = dir.join(DEFAULT_CONFIG);
-			if path.is_file() {
-				Some(path)
-			} else {
-				None
-			}
+			if path.is_file() { Some(path) } else { None }
 		}) {
 		info!(
 			"Using configuration from parent directory: {}",

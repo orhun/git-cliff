@@ -17,9 +17,9 @@ use git2::{
 use glob::Pattern;
 use indexmap::IndexMap;
 use lazy_regex::{
-	lazy_regex,
 	Lazy,
 	Regex,
+	lazy_regex,
 };
 use std::io;
 use std::path::{
@@ -238,12 +238,11 @@ impl Repository {
 				.expect("failed to add '**' to the end of glob"),
 			_ => pattern,
 		};
-		let pattern_normal = match star_added.as_str().strip_prefix("./") {
+		match star_added.as_str().strip_prefix("./") {
 			Some(stripped) => Pattern::new(stripped)
 				.expect("failed to remove leading ./ from glob"),
 			None => star_added,
-		};
-		pattern_normal
+		}
 	}
 
 	/// Calculates whether the commit should be retained or not.
@@ -710,9 +709,11 @@ mod test {
 	#[test]
 	fn commit_search() -> Result<()> {
 		let repository = get_repository()?;
-		assert!(repository
-			.find_commit("e936ed571533ea6c41a1dd2b1a29d085c8dbada5")
-			.is_some());
+		assert!(
+			repository
+				.find_commit("e936ed571533ea6c41a1dd2b1a29d085c8dbada5")
+				.is_some()
+		);
 		Ok(())
 	}
 
@@ -912,10 +913,12 @@ mod test {
 
 		assert!(result.is_err());
 		if let Err(error) = result {
-			assert!(format!("{error:?}").contains(
-				format!("could not find repository at '{}'", path.display())
-					.as_str()
-			))
+			assert!(
+				format!("{error:?}").contains(
+					format!("could not find repository at '{}'", path.display())
+						.as_str()
+				)
+			)
 		}
 	}
 
@@ -945,13 +948,10 @@ mod test {
 			.expect("failed to execute git commit");
 		assert!(output.status.success(), "git commit failed {:?}", output);
 
-		let last_commit = repo
-			.inner
+		repo.inner
 			.head()
 			.and_then(|head| head.peel_to_commit())
-			.expect("failed to get the last commit");
-
-		last_commit
+			.expect("failed to get the last commit")
 	}
 
 	#[test]

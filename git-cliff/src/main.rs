@@ -13,11 +13,11 @@ fn main() -> Result<()> {
 	// Parse the command line arguments
 	let args = Opt::parse();
 	if args.verbose == 1 {
-		env::set_var("RUST_LOG", "debug");
+		unsafe { env::set_var("RUST_LOG", "debug") };
 	} else if args.verbose > 1 {
-		env::set_var("RUST_LOG", "trace");
+		unsafe { env::set_var("RUST_LOG", "trace") };
 	} else if env::var_os("RUST_LOG").is_none() {
-		env::set_var("RUST_LOG", "info");
+		unsafe { env::set_var("RUST_LOG", "info") };
 	}
 	logger::init()?;
 
