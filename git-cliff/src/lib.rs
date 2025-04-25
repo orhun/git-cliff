@@ -172,6 +172,11 @@ fn process_submodules(
 		.clone()
 		.and_then(|commit_id| repository.find_commit(&commit_id));
 
+	trace!(
+		"Processing submodule commits in {:?}..{:?}",
+		first_commit, last_commit
+	);
+
 	// Query repository for submodule changes. For each submodule a
 	// SubmoduleRange is created, describing the range of commits in the context
 	// of that submodule.
@@ -388,12 +393,6 @@ fn process_repository<'a>(
 		releases.last_mut().unwrap().previous = Some(Box::new(previous_release));
 	}
 
-	if recurse_submodules {
-		for release in &mut releases {
-			process_submodules(repository, release, config.git.topo_order_commits)?;
-		}
-	}
-
 	if args.sort == Sort::Newest {
 		for release in &mut releases {
 			release.commits.reverse();
@@ -440,6 +439,12 @@ fn process_repository<'a>(
 				..Default::default()
 			};
 			releases[0].previous = Some(Box::new(previous_release));
+		}
+	}
+
+	if recurse_submodules {
+		for release in &mut releases {
+			process_submodules(repository, release, config.git.topo_order_commits)?;
 		}
 	}
 
