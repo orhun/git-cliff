@@ -117,6 +117,8 @@ jobs:
           - fixtures-name: test-require-conventional-negative
           - fixtures-name: test-require-conventional-skipped
           - fixtures-name: test-submodules
+          - fixtures-name: test-submodules-range
+            command: v0.1.0..HEAD
           - fixtures-name: test-submodules-include-path
             command: --include-path submodule_two
           - fixtures-name: test-remote-config
