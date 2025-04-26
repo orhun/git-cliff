@@ -172,10 +172,7 @@ fn process_submodules(
 		.clone()
 		.and_then(|commit_id| repository.find_commit(&commit_id));
 
-	trace!(
-		"Processing submodule commits in {:?}..{:?}",
-		first_commit, last_commit
-	);
+	trace!("Processing submodule commits in {first_commit:?}..{last_commit:?}");
 
 	// Query repository for submodule changes. For each submodule a
 	// SubmoduleRange is created, describing the range of commits in the context
