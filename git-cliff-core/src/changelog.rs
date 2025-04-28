@@ -577,6 +577,18 @@ impl<'a> Changelog<'a> {
 			if last_release.version.is_none() {
 				let next_version = last_release
 					.calculate_next_version_with_config(&self.config.bump)?;
+
+				// Validate against tag pattern if configured
+				if let Some(tag_pattern) = &self.config.git.tag_pattern {
+					if !tag_pattern.is_match(&next_version) {
+						return Err(Error::ChangelogError(format!(
+							"Bumped version '{}' does not match configured tag pattern '{}'",
+							next_version,
+							tag_pattern
+						)));
+					}
+				}
+
 				debug!("Bumping the version to {next_version}");
 				last_release.version = Some(next_version.to_string());
 				last_release.timestamp = SystemTime::now()
@@ -1426,6 +1438,37 @@ chore(deps): fix broken deps
     -- total releases: 2 --
 "#]]
 		.assert_eq(str::from_utf8(&out).unwrap_or_default());
+		Ok(())
+	}
+
+	#[test]
+	fn test_bump_version_with_tag_pattern() -> Result<()> {
+		let (mut config, releases) = get_test_data();
+		
+		// Configure a tag pattern that won't match the default version
+		config.git.tag_pattern = Some(Regex::new("foo-[0-9]+\\.[0-9]+\\.[0-9]+").unwrap());
+		
+		let mut changelog = Changelog::new(releases.clone(), &config, None)?;
+		
+		// Test that bumping version fails when it doesn't match the pattern
+		match changelog.bump_version() {
+			Err(Error::ChangelogError(msg)) => {
+				assert!(msg.contains("does not match configured tag pattern"));
+			}
+			other => panic!("Expected ChangelogError, got {:?}", other),
+		}
+
+		// Now test with a pattern that will match
+		config.git.tag_pattern = Some(Regex::new("v[0-9]+\\.[0-9]+\\.[0-9]+").unwrap());
+		let mut changelog = Changelog::new(releases, &config, None)?;
+		
+		// This should succeed
+		if let Ok(Some(version)) = changelog.bump_version() {
+			assert!(config.git.tag_pattern.as_ref().unwrap().is_match(&version));
+		} else {
+			panic!("Expected successful version bump");
+		}
+
 		Ok(())
 	}
 }
