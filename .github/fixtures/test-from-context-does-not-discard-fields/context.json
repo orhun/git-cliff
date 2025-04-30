@@ -200,7 +200,12 @@
         "message": "fix 1, use scope as group",
         "body": "Body fix 1",
         "footers": [
-          { "token": "Fix", "separator": ":", "value": "#1", "breaking": false }
+          {
+            "token": "Fix",
+            "separator": ":",
+            "value": "#1",
+            "breaking": false
+          }
         ],
         "group": "fix",
         "breaking_description": null,
@@ -314,7 +319,12 @@
             "value": "#3",
             "breaking": false
           },
-          { "token": "Fix", "separator": ":", "value": "#4", "breaking": false }
+          {
+            "token": "Fix",
+            "separator": ":",
+            "value": "#4",
+            "breaking": false
+          }
         ],
         "group": "fix",
         "breaking_description": null,
@@ -375,19 +385,37 @@
       "timestamp": 0,
       "previous": null,
       "repository": null,
+      "commit_range": null,
       "submodule_commits": {},
       "extra": null,
-      "github": { "contributors": [] },
-      "gitlab": { "contributors": [] },
-      "gitea": { "contributors": [] },
-      "bitbucket": { "contributors": [] }
+      "github": {
+        "contributors": []
+      },
+      "gitlab": {
+        "contributors": []
+      },
+      "gitea": {
+        "contributors": []
+      },
+      "bitbucket": {
+        "contributors": []
+      }
     },
     "repository": "/path/to/repository",
+    "commit_range": null,
     "submodule_commits": {},
     "extra": null,
-    "github": { "contributors": [] },
-    "gitlab": { "contributors": [] },
-    "gitea": { "contributors": [] },
-    "bitbucket": { "contributors": [] }
+    "github": {
+      "contributors": []
+    },
+    "gitlab": {
+      "contributors": []
+    },
+    "gitea": {
+      "contributors": []
+    },
+    "bitbucket": {
+      "contributors": []
+    }
   }
 ]

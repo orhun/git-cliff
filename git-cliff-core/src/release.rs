@@ -3,7 +3,10 @@ use std::collections::HashMap;
 use crate::commit::commits_to_conventional_commits;
 use crate::error::Result;
 use crate::{
-	commit::Commit,
+	commit::{
+		Commit,
+		Range,
+	},
 	config::Bump,
 	config::BumpType,
 };
@@ -48,6 +51,9 @@ pub struct Release<'a> {
 	pub previous:          Option<Box<Release<'a>>>,
 	/// Repository path.
 	pub repository:        Option<String>,
+	/// Commit range.
+	#[serde(rename = "commit_range")]
+	pub commit_range:      Option<Range>,
 	/// Submodule commits.
 	///
 	/// Maps submodule path to a list of commits.
@@ -202,6 +208,7 @@ mod test {
 					.iter()
 					.map(|v| Commit::from(v.to_string()))
 					.collect(),
+				commit_range: None,
 				commit_id: None,
 				timestamp: 0,
 				previous: Some(Box::new(Release {
@@ -419,6 +426,7 @@ mod test {
 					"6c34967147560ea09658776d4901709139b4ad66 should be fine",
 				)),
 			],
+			commit_range: None,
 			commit_id: None,
 			timestamp: 0,
 			previous: Some(Box::new(Release {
@@ -788,6 +796,7 @@ mod test {
 					"6c34967147560ea09658776d4901709139b4ad66 should be fine",
 				)),
 			],
+			commit_range: None,
 			commit_id: None,
 			timestamp: 0,
 			previous: Some(Box::new(Release {
@@ -1179,6 +1188,7 @@ mod test {
 					"6c34967147560ea09658776d4901709139b4ad66 should be fine",
 				)),
 			],
+			commit_range: None,
 			commit_id: None,
 			timestamp: 0,
 			previous: Some(Box::new(Release {
@@ -1538,6 +1548,7 @@ mod test {
 					"6c34967147560ea09658776d4901709139b4ad66 should be fine",
 				)),
 			],
+			commit_range: None,
 			commit_id: None,
 			timestamp: 0,
 			previous: Some(Box::new(Release {
