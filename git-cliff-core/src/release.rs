@@ -114,7 +114,7 @@ impl Release<'_> {
 				let mut prefix = None;
 				if semver.is_err() && version.split('.').count() >= 2 {
 					let mut found_numeric = false;
-					for (i, c) in version.chars().enumerate() {
+					for (i, c) in version.char_indices() {
 						if c.is_numeric() && !found_numeric {
 							found_numeric = true;
 							let version_prefix = version[..i].to_string();
