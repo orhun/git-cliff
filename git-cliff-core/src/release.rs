@@ -174,7 +174,7 @@ impl Release<'_> {
 					Ok(next_version)
 				}
 			}
-			None => Ok(config.get_initial_tag()),
+			None => Ok(config.get_initial_tag(None)),
 		}
 	}
 }
