@@ -321,13 +321,7 @@ impl Bump {
 	///
 	/// This function also logs the returned value.
 	pub fn get_initial_tag(&self,  cli_initial_tag: Option<String>) -> String {
-	    if let Some(tag) = cli_initial_tag {
-			warn!(
-			    "No releases found, using initial tag '{tag}' as the next version."
-			);
-			tag		
-		}
-		else if let Some(tag) = self.initial_tag.clone() {
+		if let Some(tag) = self.initial_tag.clone().or(cli_initial_tag) {
 			warn!(
 				"No releases found, using initial tag '{tag}' as the next version."
 			);
