@@ -335,8 +335,11 @@ impl Commit<'_> {
 				let value = if field_name == "body" {
 					body.clone()
 				} else {
-					tera::dotted_pointer(&lookup_context, field_name)
-						.map(|v| v.to_string())
+					tera::dotted_pointer(&lookup_context, field_name).and_then(|v| match &v {
+						Value::String(s) => Some(s.clone()),
+						Value::Number(_) | Value::Bool(_) | Value::Null => Some(v.to_string()),
+						_ => None,
+					})
 				};
 				match value {
 					Some(value) => {
@@ -344,7 +347,7 @@ impl Commit<'_> {
 					}
 					None => {
 						return Err(AppError::FieldError(format!(
-							"field {field_name} does not have a value",
+							"field '{field_name}' is missing or has unsupported type (expected String, Number, Bool, or Null)",
 						)));
 					}
 				}
