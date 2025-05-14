@@ -1,4 +1,4 @@
-# Security Reporting
+# Security
 
 If you wish to report a security vulnerability privately, we appreciate your diligence. Please follow the guidelines below to submit your report.
 
@@ -18,6 +18,7 @@ The following versions are supported with security updates:
 To report a security vulnerability, please provide the following information:
 
 1. **PUBLIC**
+
    - Indicate whether this vulnerability has already been publicly discussed or disclosed.
    - If so, provide relevant links.
 
@@ -25,7 +26,7 @@ To report a security vulnerability, please provide the following information:
    - Provide a detailed description of the security vulnerability.
    - Include as much information as possible to help us understand and address the issue.
 
-Send this information, along with any additional relevant details, to <orhunparmaksiz@gmail.com>>.
+Send this information, along with any additional relevant details, to <orhunparmaksiz@gmail.com>.
 
 ## Confidentiality
 
@@ -38,4 +39,4 @@ We kindly ask you to keep the report confidential until a public announcement is
 - You will be notified via email simultaneously with the public announcement.
 - We will respond within a few weeks to confirm whether your report has been accepted or rejected.
 
-Thank you for helping to improve the security of **git-cliff**!
+Thank you for helping to improve the security of **git-cliff**! ⛰️
