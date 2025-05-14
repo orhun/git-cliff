@@ -335,10 +335,14 @@ impl Commit<'_> {
 				let value = if field_name == "body" {
 					body.clone()
 				} else {
-					tera::dotted_pointer(&lookup_context, field_name).and_then(|v| match &v {
-						Value::String(s) => Some(s.clone()),
-						Value::Number(_) | Value::Bool(_) | Value::Null => Some(v.to_string()),
-						_ => None,
+					tera::dotted_pointer(&lookup_context, field_name).and_then(|v| {
+						match &v {
+							Value::String(s) => Some(s.clone()),
+							Value::Number(_) | Value::Bool(_) | Value::Null => {
+								Some(v.to_string())
+							}
+							_ => None,
+						}
 					})
 				};
 				match value {
@@ -347,7 +351,8 @@ impl Commit<'_> {
 					}
 					None => {
 						return Err(AppError::FieldError(format!(
-							"field '{field_name}' is missing or has unsupported type (expected String, Number, Bool, or Null)",
+							"field '{field_name}' is missing or has unsupported \
+							 type (expected String, Number, Bool, or Null)",
 						)));
 					}
 				}
@@ -712,7 +717,7 @@ mod test {
 	}
 
 	#[test]
-	fn parse_commit_field() -> Result<()> {
+	fn parse_commit_fields() -> Result<()> {
 		let mut commit = Commit::new(
 			String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
 			String::from("feat: do something"),
@@ -742,6 +747,39 @@ mod test {
 		)?;
 
 		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+
+		let mut commit = Commit::new(
+			String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
+			String::from("feat: do something"),
+		);
+
+		commit.remote = Some(crate::contributor::RemoteContributor {
+			username:      None,
+			pr_title:      Some("feat: do something".to_string()),
+			pr_number:     None,
+			pr_labels:     Vec::new(),
+			is_first_time: true,
+		});
+
+		let parsed_commit = commit.parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("remote.pr_title")),
+				pattern:       Regex::new("^feat").ok(),
+			}],
+			false,
+			false,
+		)?;
+
+		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+
 		Ok(())
 	}
 
