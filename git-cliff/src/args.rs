@@ -223,6 +223,10 @@ pub struct Opt {
 	/// Prints bumped version for unreleased changes.
 	#[arg(long, help_heading = Some("FLAGS"))]
 	pub bumped_version:   bool,
+	
+	#[arg(long)]
+	pub initial_tag: Option<String>,
+	
 	/// Sets the template for the changelog body.
 	#[arg(
 		short,
