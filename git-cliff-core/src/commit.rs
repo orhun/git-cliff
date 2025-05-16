@@ -574,7 +574,10 @@ mod test {
 			false,
 		)?;
 		assert_eq!(Some(String::from("test_group")), parsed_commit.group);
-		assert_eq!(Some(String::from("test_scope")), parsed_commit.default_scope);
+		assert_eq!(
+			Some(String::from("test_scope")),
+			parsed_commit.default_scope
+		);
 
 		Ok(())
 	}
@@ -787,7 +790,7 @@ mod test {
 				message:       None,
 				body:          None,
 				footer:        None,
-				group:         Some(String::from("Invalid group")),
+				group:         Some(String::from("Test group")),
 				default_scope: None,
 				scope:         None,
 				skip:          None,
@@ -870,6 +873,13 @@ mod test {
 			email:     None,
 			timestamp: 0x0,
 		};
+		commit.remote = Some(crate::contributor::RemoteContributor {
+			username:      None,
+			pr_title:      Some("feat: do something".to_string()),
+			pr_number:     None,
+			pr_labels:     Vec::new(),
+			is_first_time: true,
+		});
 
 		let parsed_commit = commit.clone().parse(
 			&[CommitParser {
@@ -882,14 +892,68 @@ mod test {
 				scope:         None,
 				skip:          None,
 				field:         Some(String::from("author.name")),
-				pattern:       Regex::new("John Doe").ok(),
+				pattern:       Regex::new("^John").ok(),
 			}],
 			false,
 			false,
 		)?;
 		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
 
-		let parse_result = commit.parse(
+		let parsed_commit = commit.clone().parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("author.name")),
+				pattern:       Regex::new("Doe$").ok(),
+			}],
+			false,
+			false,
+		)?;
+		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+
+		let parsed_commit = commit.clone().parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("remote.pr_title")),
+				pattern:       Regex::new("^feat").ok(),
+			}],
+			false,
+			false,
+		)?;
+		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+
+		let parsed_commit = commit.clone().parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("remote.pr_title")),
+				pattern:       Regex::new("something$").ok(),
+			}],
+			false,
+			false,
+		)?;
+		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+
+		let parse_result = commit.clone().parse(
 			&[CommitParser {
 				sha:           None,
 				message:       None,
@@ -908,6 +972,28 @@ mod test {
 		assert!(
 			parse_result.is_err(),
 			"Expected error because `author.name` did not match the given pattern"
+		);
+
+		let parse_result = commit.parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("remote.pr_title")),
+				pattern:       Regex::new("Something else").ok(),
+			}],
+			false,
+			true,
+		);
+		assert!(
+			parse_result.is_err(),
+			"Expected error because `remote.pr_title` did not match the given \
+			 pattern"
 		);
 
 		Ok(())
