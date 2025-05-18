@@ -555,7 +555,7 @@ mod test {
 		for (commit, is_conventional) in &test_cases {
 			assert_eq!(is_conventional, &commit.clone().into_conventional().is_ok());
 		}
-		let commit = test_cases[0].0.clone().parse(
+		let parsed_commit = test_cases[0].0.clone().parse(
 			&[CommitParser {
 				sha:           None,
 				message:       Regex::new("test*").ok(),
@@ -571,8 +571,11 @@ mod test {
 			false,
 			false,
 		)?;
-		assert_eq!(Some(String::from("test_group")), commit.group);
-		assert_eq!(Some(String::from("test_scope")), commit.default_scope);
+		assert_eq!(Some(String::from("test_group")), parsed_commit.group);
+		assert_eq!(
+			Some(String::from("test_scope")),
+			parsed_commit.default_scope
+		);
 		Ok(())
 	}
 
@@ -623,8 +626,9 @@ mod test {
 			),
 		];
 		for (commit, footers) in &test_cases {
-			let commit = commit.process(&cfg).expect("commit should process");
-			assert_eq!(&commit.footers().collect::<Vec<_>>(), footers);
+			let processed_commit =
+				commit.process(&cfg).expect("commit should process");
+			assert_eq!(&processed_commit.footers().collect::<Vec<_>>(), footers);
 		}
 		Ok(())
 	}
@@ -656,7 +660,7 @@ mod test {
 			String::from("123123"),
 			String::from("test(commit): add test\n\nImlement RFC456\n\nFixes: #455"),
 		);
-		let commit = commit.parse_links(&[
+		let parsed_commit = commit.parse_links(&[
 			LinkParser {
 				pattern: Regex::new("RFC(\\d+)")?,
 				href:    String::from("rfc://$1"),
@@ -679,7 +683,7 @@ mod test {
 					href: String::from("https://github.com/455"),
 				}
 			],
-			commit.links
+			parsed_commit.links
 		);
 		Ok(())
 	}
@@ -809,7 +813,7 @@ mod test {
 			String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
 			String::from("feat: do something"),
 		);
-		let parsed_commit = commit.clone().parse(
+		let parse_result = commit.clone().parse(
 			&[CommitParser {
 				sha:           Some(String::from(
 					"8f55e69eba6e6ce811ace32bd84cc82215673cb6",
@@ -827,7 +831,7 @@ mod test {
 			false,
 			false,
 		);
-		assert!(parsed_commit.is_err());
+		assert!(parse_result.is_err());
 
 		let parsed_commit = commit.parse(
 			&[CommitParser {
