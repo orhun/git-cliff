@@ -809,7 +809,28 @@ mod test {
 			String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
 			String::from("feat: do something"),
 		);
-		let parse_result = commit.clone().parse(
+
+		let parsed_commit = commit.clone().parse(
+			&[CommitParser {
+				sha:           Some(String::from(
+					"8f55e69eba6e6ce811ace32bd84cc82215673cb6",
+				)),
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         None,
+				pattern:       None,
+			}],
+			false,
+			false,
+		)?;
+		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+
+		let parse_result = commit.parse(
 			&[CommitParser {
 				sha:           Some(String::from(
 					"8f55e69eba6e6ce811ace32bd84cc82215673cb6",
@@ -827,27 +848,10 @@ mod test {
 			false,
 			false,
 		);
-		assert!(parse_result.is_err());
-
-		let parsed_commit = commit.parse(
-			&[CommitParser {
-				sha:           Some(String::from(
-					"8f55e69eba6e6ce811ace32bd84cc82215673cb6",
-				)),
-				message:       None,
-				body:          None,
-				footer:        None,
-				group:         Some(String::from("Test group")),
-				default_scope: None,
-				scope:         None,
-				skip:          None,
-				field:         None,
-				pattern:       None,
-			}],
-			false,
-			false,
-		)?;
-		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+		assert!(
+			parse_result.is_err(),
+			"Expected error when parsing with `skip: Some(true)`, but got Ok"
+		);
 
 		Ok(())
 	}
@@ -863,26 +867,8 @@ mod test {
 			email:     None,
 			timestamp: 0x0,
 		};
+
 		let parsed_commit = commit.clone().parse(
-			&[CommitParser {
-				sha:           None,
-				message:       None,
-				body:          None,
-				footer:        None,
-				group:         Some(String::from("Test group")),
-				default_scope: None,
-				scope:         None,
-				skip:          None,
-				field:         Some(String::from("author.name")),
-				pattern:       Regex::new("Something else").ok(),
-			}],
-			false,
-			true,
-		);
-
-		assert!(parsed_commit.is_err());
-
-		let parsed_commit = commit.parse(
 			&[CommitParser {
 				sha:           None,
 				message:       None,
@@ -900,6 +886,29 @@ mod test {
 		)?;
 
 		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+
+		let parse_result = commit.parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("author.name")),
+				pattern:       Regex::new("Something else").ok(),
+			}],
+			false,
+			true,
+		);
+
+		assert!(
+			parse_result.is_err(),
+			"Expected error because `author.name` did not match the given pattern, \
+			 but got Ok"
+		);
 		Ok(())
 	}
 }
