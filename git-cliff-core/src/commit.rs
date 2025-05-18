@@ -854,14 +854,14 @@ mod test {
 
 	#[test]
 	fn field_name_regex() -> Result<()> {
-		let commit = Commit {
-			message: String::from("feat: do something"),
-			author: Signature {
-				name:      Some("John Doe".to_string()),
-				email:     None,
-				timestamp: 0x0,
-			},
-			..Default::default()
+		let mut commit = Commit::new(
+			String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
+			String::from("feat: do something"),
+		);
+		commit.author = Signature {
+			name:      Some("John Doe".to_string()),
+			email:     None,
+			timestamp: 0x0,
 		};
 		let parsed_commit = commit.clone().parse(
 			&[CommitParser {
