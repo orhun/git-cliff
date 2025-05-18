@@ -577,7 +577,7 @@ mod test {
 	}
 
 	#[test]
-	fn conventional_footers() {
+	fn conventional_footers() -> Result<()> {
 		let cfg = crate::config::GitConfig {
 			conventional_commits: true,
 			..Default::default()
@@ -626,6 +626,7 @@ mod test {
 			let commit = commit.process(&cfg).expect("commit should process");
 			assert_eq!(&commit.footers().collect::<Vec<_>>(), footers);
 		}
+		Ok(())
 	}
 
 	#[test]
@@ -684,7 +685,7 @@ mod test {
 	}
 
 	#[test]
-	fn parse_commit() {
+	fn parse_commit() -> Result<()> {
 		assert_eq!(
 			Commit::new(String::new(), String::from("test: no sha1 given")),
 			Commit::from(String::from("test: no sha1 given"))
@@ -714,6 +715,7 @@ mod test {
 			),
 			Commit::from(String::from("thisisinvalidsha1 style: add formatting"))
 		);
+		Ok(())
 	}
 
 	#[test]
