@@ -552,9 +552,11 @@ mod test {
 				false,
 			),
 		];
+
 		for (commit, is_conventional) in &test_cases {
 			assert_eq!(is_conventional, &commit.clone().into_conventional().is_ok());
 		}
+
 		let parsed_commit = test_cases[0].0.clone().parse(
 			&[CommitParser {
 				sha:           None,
@@ -576,6 +578,7 @@ mod test {
 			Some(String::from("test_scope")),
 			parsed_commit.default_scope
 		);
+
 		Ok(())
 	}
 
@@ -625,11 +628,13 @@ mod test {
 				],
 			),
 		];
+
 		for (commit, footers) in &test_cases {
 			let processed_commit =
 				commit.process(&cfg).expect("commit should process");
 			assert_eq!(&processed_commit.footers().collect::<Vec<_>>(), footers);
 		}
+
 		Ok(())
 	}
 
@@ -653,9 +658,11 @@ mod test {
 				true,
 			),
 		];
+
 		for (commit, is_conventional) in &test_cases {
 			assert_eq!(is_conventional, &commit.clone().into_conventional().is_ok());
 		}
+
 		let parsed_commit = test_cases[1].0.clone().parse_links(&[
 			LinkParser {
 				pattern: Regex::new("RFC(\\d+)")?,
@@ -681,6 +688,7 @@ mod test {
 			],
 			parsed_commit.links
 		);
+
 		Ok(())
 	}
 
@@ -690,6 +698,7 @@ mod test {
 			Commit::new(String::new(), String::from("test: no sha1 given")),
 			Commit::from(String::from("test: no sha1 given"))
 		);
+
 		assert_eq!(
 			Commit::new(
 				String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
@@ -699,6 +708,7 @@ mod test {
 				"8f55e69eba6e6ce811ace32bd84cc82215673cb6 feat: do something"
 			))
 		);
+
 		assert_eq!(
 			Commit::new(
 				String::from("3bdd0e690c4cd5bd00e5201cc8ef3ce3fb235853"),
@@ -708,6 +718,7 @@ mod test {
 				"3bdd0e690c4cd5bd00e5201cc8ef3ce3fb235853 chore: do something"
 			))
 		);
+
 		assert_eq!(
 			Commit::new(
 				String::new(),
@@ -715,6 +726,7 @@ mod test {
 			),
 			Commit::from(String::from("thisisinvalidsha1 style: add formatting"))
 		);
+
 		Ok(())
 	}
 
@@ -724,13 +736,11 @@ mod test {
 			String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
 			String::from("feat: do something"),
 		);
-
 		commit.author = Signature {
 			name:      Some("John Doe".to_string()),
 			email:     None,
 			timestamp: 0x0,
 		};
-
 		commit.remote = Some(crate::contributor::RemoteContributor {
 			username:      None,
 			pr_title:      Some("feat: do something".to_string()),
@@ -755,7 +765,6 @@ mod test {
 			false,
 			false,
 		)?;
-
 		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
 
 		let parsed_commit = commit.clone().parse(
@@ -774,7 +783,6 @@ mod test {
 			false,
 			false,
 		)?;
-
 		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
 
 		let parse_result = commit.parse(
@@ -793,7 +801,6 @@ mod test {
 			false,
 			false,
 		);
-
 		assert!(
 			parse_result.is_err(),
 			"Expected error when using unsupported field `remote.pr_labels`, but \
@@ -884,7 +891,6 @@ mod test {
 			false,
 			false,
 		)?;
-
 		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
 
 		let parse_result = commit.parse(
@@ -903,12 +909,12 @@ mod test {
 			false,
 			true,
 		);
-
 		assert!(
 			parse_result.is_err(),
 			"Expected error because `author.name` did not match the given pattern, \
 			 but got Ok"
 		);
+
 		Ok(())
 	}
 }
