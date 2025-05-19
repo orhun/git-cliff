@@ -317,7 +317,7 @@ impl<'a> Changelog<'a> {
 	/// requests. The following are fetched from the GitLab REST API:
 	///
 	/// - Commits
-	/// - Marge requests
+	/// - Merge requests
 	///
 	/// Each of these are paginated requests so they are being run in parallel
 	/// for speedup.
