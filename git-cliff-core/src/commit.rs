@@ -556,6 +556,7 @@ mod test {
 		for (commit, is_conventional) in &test_cases {
 			assert_eq!(is_conventional, &commit.clone().into_conventional().is_ok());
 		}
+
 		let commit = test_cases[0].0.clone().parse(
 			&[CommitParser {
 				sha:           None,
@@ -574,6 +575,7 @@ mod test {
 		)?;
 		assert_eq!(Some(String::from("test_group")), commit.group);
 		assert_eq!(Some(String::from("test_scope")), commit.default_scope);
+
 		Ok(())
 	}
 
@@ -654,10 +656,12 @@ mod test {
 		for (commit, is_conventional) in &test_cases {
 			assert_eq!(is_conventional, &commit.clone().into_conventional().is_ok());
 		}
+
 		let commit = Commit::new(
 			String::from("123123"),
 			String::from("test(commit): add test\n\nImlement RFC456\n\nFixes: #455"),
 		);
+
 		let commit = commit.parse_links(&[
 			LinkParser {
 				pattern: Regex::new("RFC(\\d+)")?,
@@ -809,6 +813,7 @@ mod test {
 			String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
 			String::from("feat: do something"),
 		);
+
 		let parsed_commit = commit.clone().parse(
 			&[CommitParser {
 				sha:           Some(String::from(
