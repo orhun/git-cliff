@@ -832,7 +832,10 @@ mod test {
 			false,
 			false,
 		);
-		assert!(parsed_commit.is_err());
+		assert!(
+			parsed_commit.is_err(),
+			"Expected error when parsing with `skip: Some(true)`, but got Ok"
+		);
 
 		Ok(())
 	}
