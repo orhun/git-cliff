@@ -656,7 +656,7 @@ mod test {
 		}
 		let commit = Commit::new(
 			String::from("123123"),
-			String::from("test(commit): add test\n\nImlement RFC456\n\nFixes: #456"),
+			String::from("test(commit): add test\n\nImlement RFC456\n\nFixes: #455"),
 		);
 		let commit = commit.parse_links(&[
 			LinkParser {
@@ -677,8 +677,8 @@ mod test {
 					href: String::from("rfc://456"),
 				},
 				Link {
-					text: String::from("#456"),
-					href: String::from("https://github.com/456"),
+					text: String::from("#455"),
+					href: String::from("https://github.com/455"),
 				}
 			],
 			commit.links
@@ -778,7 +778,7 @@ mod test {
 		)?;
 		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
 
-		let parse_result = commit.parse(
+		let parse_result = commit.clone().parse(
 			&[CommitParser {
 				sha:           None,
 				message:       None,
