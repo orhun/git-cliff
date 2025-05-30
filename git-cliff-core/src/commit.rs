@@ -38,7 +38,7 @@ use serde_json::value::Value;
 static SHA1_REGEX: Lazy<Regex> = lazy_regex!(r#"^\b([a-f0-9]{40})\b (.*)$"#);
 
 /// Object representing a link
-#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
 #[serde(rename_all(serialize = "camelCase"))]
 pub struct Link {
 	/// Text of the link.
@@ -123,6 +123,8 @@ impl Range {
 pub struct Commit<'a> {
 	/// Commit ID.
 	pub id:            String,
+	/// Timestamp of the commit in seconds, from epoch.
+	pub timestamp:     i64,
 	/// Commit message including title, description and summary.
 	pub message:       String,
 	/// Conventional commit.
@@ -200,6 +202,7 @@ impl From<&GitCommit<'_>> for Commit<'_> {
 	fn from(commit: &GitCommit<'_>) -> Self {
 		Commit {
 			id: commit.id().to_string(),
+			timestamp: commit.time().seconds(),
 			message: commit.message().unwrap_or_default().trim_end().to_string(),
 			author: commit.author().into(),
 			committer: commit.committer().into(),
@@ -464,6 +467,7 @@ impl Serialize for Commit<'_> {
 
 		let mut commit = serializer.serialize_struct("Commit", 20)?;
 		commit.serialize_field("id", &self.id)?;
+		commit.serialize_field("timestamp", &self.timestamp)?;
 		if let Some(conv) = &self.conv {
 			commit.serialize_field("message", conv.description())?;
 			commit.serialize_field("body", &conv.body())?;
