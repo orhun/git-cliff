@@ -141,8 +141,12 @@ impl Release<'_> {
 		link_parsers: &[LinkParser],
 	) -> Result<Statistics> {
 		let commit_count = self.commits.len();
-		let commit_duration_days = if self.commits.is_empty() {
-			trace!("commit_duration_days: no commits to calculate duration");
+		let commit_duration_days = if self.commits.len() < 2 {
+			trace!(
+				"commit_duration_days: insufficient commits to calculate duration \
+				 (found {})",
+				self.commits.len()
+			);
 			None
 		} else {
 			self.commits
