@@ -8,6 +8,7 @@ use serde_json::value::Value;
 use crate::commit::{Commit, Range, commits_to_conventional_commits};
 use crate::config::{Bump, BumpType};
 use crate::error::Result;
+use crate::statistics::Statistics;
 #[cfg(feature = "remote")]
 use crate::{
 	contributor::RemoteContributor,
@@ -29,7 +30,7 @@ pub struct Release<'a> {
 	#[serde(rename = "commit_id")]
 	pub commit_id:         Option<String>,
 	/// Timestamp of the release in seconds, from epoch.
-	pub timestamp:         i64,
+	pub timestamp:         Option<i64>,
 	/// Previous release.
 	pub previous:          Option<Box<Release<'a>>>,
 	/// Repository path.
@@ -42,6 +43,8 @@ pub struct Release<'a> {
 	/// Maps submodule path to a list of commits.
 	#[serde(rename = "submodule_commits")]
 	pub submodule_commits: HashMap<String, Vec<Commit<'a>>>,
+	/// Aggregated statistics computed from the release's commits.
+	pub statistics:        Option<Statistics>,
 	/// Arbitrary data to be used with the `--from-context` CLI option.
 	pub extra:             Option<Value>,
 	/// Contributors.
@@ -77,6 +80,16 @@ impl Release<'_> {
 	/// version.
 	pub fn calculate_next_version(&self) -> Result<String> {
 		self.calculate_next_version_with_config(&Bump::default())
+	}
+
+	/// Returns a new `Release` instance with aggregated statistics populated.
+	///
+	/// This method computes various statistics from the release data and sets
+	/// the `statistics` field. It does not modify the original release but
+	/// returns a new instance with the computed statistics included.
+	pub fn with_statistics(mut self) -> Self {
+		self.statistics = Some((&self).into());
+		self
 	}
 
 	/// Calculates the next version based on the commits.
@@ -194,13 +207,14 @@ mod test {
 					.collect(),
 				commit_range: None,
 				commit_id: None,
-				timestamp: 0,
+				timestamp: None,
 				previous: Some(Box::new(Release {
 					version: Some(String::from(version)),
 					..Default::default()
 				})),
 				repository: Some(String::from("/root/repo")),
 				submodule_commits: HashMap::new(),
+				statistics: None,
 				#[cfg(feature = "github")]
 				github: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
@@ -372,6 +386,26 @@ mod test {
 		Ok(())
 	}
 
+	#[test]
+	fn with_statistics() -> Result<()> {
+		let release = Release {
+			commits: vec![],
+			timestamp: Some(1649373910),
+			previous: Some(Box::new(Release {
+				timestamp: Some(1649201110),
+				..Default::default()
+			})),
+			repository: Some(String::from("/root/repo")),
+			..Default::default()
+		};
+
+		assert!(release.statistics.is_none());
+		let release = release.with_statistics();
+		assert!(release.statistics.is_some());
+
+		Ok(())
+	}
+
 	#[cfg(feature = "github")]
 	#[test]
 	fn update_github_metadata() -> Result<()> {
@@ -408,13 +442,14 @@ mod test {
 			],
 			commit_range: None,
 			commit_id: None,
-			timestamp: 0,
+			timestamp: None,
 			previous: Some(Box::new(Release {
 				version: Some(String::from("1.0.0")),
 				..Default::default()
 			})),
 			repository: Some(String::from("/root/repo")),
 			submodule_commits: HashMap::new(),
+			statistics: None,
 			github: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
@@ -774,13 +809,14 @@ mod test {
 			],
 			commit_range: None,
 			commit_id: None,
-			timestamp: 0,
+			timestamp: None,
 			previous: Some(Box::new(Release {
 				version: Some(String::from("1.0.0")),
 				..Default::default()
 			})),
 			repository: Some(String::from("/root/repo")),
 			submodule_commits: HashMap::new(),
+			statistics: None,
 			#[cfg(feature = "github")]
 			github: RemoteReleaseMetadata {
 				contributors: vec![],
@@ -1163,13 +1199,14 @@ mod test {
 			],
 			commit_range: None,
 			commit_id: None,
-			timestamp: 0,
+			timestamp: None,
 			previous: Some(Box::new(Release {
 				version: Some(String::from("1.0.0")),
 				..Default::default()
 			})),
 			repository: Some(String::from("/root/repo")),
 			submodule_commits: HashMap::new(),
+			statistics: None,
 			#[cfg(feature = "github")]
 			github: RemoteReleaseMetadata {
 				contributors: vec![],
@@ -1521,13 +1558,14 @@ mod test {
 			],
 			commit_range: None,
 			commit_id: None,
-			timestamp: 0,
+			timestamp: None,
 			previous: Some(Box::new(Release {
 				version: Some(String::from("1.0.0")),
 				..Default::default()
 			})),
 			repository: Some(String::from("/root/repo")),
 			submodule_commits: HashMap::new(),
+			statistics: None,
 			#[cfg(feature = "github")]
 			github: RemoteReleaseMetadata {
 				contributors: vec![],

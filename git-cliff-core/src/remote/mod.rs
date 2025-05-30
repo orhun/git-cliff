@@ -374,7 +374,7 @@ macro_rules! update_release_metadata {
 								// if current release is unreleased no need to filter
 								// commits or filter commits that are from
 								// newer releases
-								self.timestamp == 0 ||
+								self.timestamp == None ||
 									commit.timestamp() < release_commit_timestamp
 							})
 							.map(|v| v.username())

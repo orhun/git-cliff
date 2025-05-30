@@ -35,6 +35,8 @@ pub mod remote;
 /// Git repository.
 #[cfg(feature = "repo")]
 pub mod repo;
+/// Release statistics.
+pub mod statistics;
 /// Git tag.
 pub mod tag;
 /// Template engine.
