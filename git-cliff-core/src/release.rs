@@ -147,12 +147,12 @@ impl Release<'_> {
 		} else {
 			self.commits
 				.iter()
-				.min_by_key(|c| c.timestamp)
-				.zip(self.commits.iter().max_by_key(|c| c.timestamp))
+				.min_by_key(|c| c.committer.timestamp)
+				.zip(self.commits.iter().max_by_key(|c| c.committer.timestamp))
 				.and_then(|(first, last)| {
-					Utc.timestamp_opt(first.timestamp, 0)
+					Utc.timestamp_opt(first.committer.timestamp, 0)
 						.single()
-						.zip(Utc.timestamp_opt(last.timestamp, 0).single())
+						.zip(Utc.timestamp_opt(last.committer.timestamp, 0).single())
 						.map(|(start, end)| {
 							(end.date_naive() - start.date_naive()).num_days() as i32
 						})
