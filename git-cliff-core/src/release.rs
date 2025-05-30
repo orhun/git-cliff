@@ -1,14 +1,19 @@
-use std::collections::HashMap;
+use std::collections::{
+	HashMap,
+	HashSet,
+};
 
 use crate::commit::commits_to_conventional_commits;
 use crate::error::Result;
 use crate::{
 	commit::{
 		Commit,
+		Link,
 		Range,
 	},
 	config::Bump,
 	config::BumpType,
+	config::LinkParser,
 };
 #[cfg(feature = "remote")]
 use crate::{
@@ -20,6 +25,10 @@ use crate::{
 	},
 };
 
+use chrono::{
+	TimeZone,
+	Utc,
+};
 use next_version::{
 	NextVersion,
 	VersionUpdater,
@@ -30,6 +39,24 @@ use serde::{
 	Serialize,
 };
 use serde_json::value::Value;
+
+/// Aggregated statistics about commits in the release.
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
+pub struct Statistics {
+	/// The total number of commits included in the release.
+	pub commit_count:                   usize,
+	/// The time span, in days, from the first to the last commit in the
+	/// release. Only present if there is more than one commit.
+	pub commit_duration_days:           Option<i32>,
+	/// The number of commits that follow the Conventional Commits
+	/// specification.
+	pub conventional_commit_count:      usize,
+	/// The links that were referenced in commit messages.
+	pub unique_links:                   Vec<Link>,
+	/// The number of days since the previous release.
+	/// Only present if this is not the first release.
+	pub days_passed_since_last_release: Option<i32>,
+}
 
 /// Representation of a release.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -94,6 +121,95 @@ impl Release<'_> {
 	/// version.
 	pub fn calculate_next_version(&self) -> Result<String> {
 		self.calculate_next_version_with_config(&Bump::default())
+	}
+
+	/// Aggregates various statistics from the release data.
+	///
+	/// This method computes several metrics based on the current release and
+	/// its commits:
+	///
+	/// - Counts the total number of commits.
+	/// - Determines the number of days between the first and last commit.
+	/// - Counts the number of commits that follow the Conventional Commits
+	///   specification.
+	/// - Extracts and deduplicates all unique links found in commit messages
+	///   using the given link parsers.
+	/// - Calculates the number of days since the previous release, if
+	///   available.
+	pub fn aggregate_statistics(
+		&self,
+		link_parsers: &[LinkParser],
+	) -> Result<Statistics> {
+		let commit_count = self.commits.len();
+		let commit_duration_days = if self.commits.is_empty() {
+			trace!("commit_duration_days: no commits to calculate duration");
+			None
+		} else {
+			self.commits
+				.iter()
+				.min_by_key(|c| c.timestamp)
+				.zip(self.commits.iter().max_by_key(|c| c.timestamp))
+				.and_then(|(first, last)| {
+					Utc.timestamp_opt(first.timestamp, 0)
+						.single()
+						.zip(Utc.timestamp_opt(last.timestamp, 0).single())
+						.map(|(start, end)| {
+							(end.date_naive() - start.date_naive()).num_days() as i32
+						})
+				})
+				.or_else(|| {
+					trace!("commit_duration_days: timestamp conversion failed");
+					None
+				})
+		};
+		let conventional_commit_count =
+			self.commits.iter().filter(|c| c.conv.is_some()).count();
+		let unique_links: Vec<Link> = self
+			.commits
+			.iter()
+			.filter_map(|c| match c.clone().parse_links(link_parsers) {
+				Ok(parsed) => Some(parsed.links),
+				Err(err) => {
+					trace!(
+						"unique_links: parse_links failed for commit {} - {} ({})",
+						c.id.chars().take(7).collect::<String>(),
+						err,
+						c.message.lines().next().unwrap_or_default().trim()
+					);
+					None
+				}
+			})
+			.flatten()
+			.collect::<HashSet<_>>()
+			.into_iter()
+			.collect();
+		let days_passed_since_last_release = match self.previous.as_ref() {
+			Some(prev) => Utc
+				.timestamp_opt(self.timestamp, 0)
+				.single()
+				.zip(Utc.timestamp_opt(prev.timestamp, 0).single())
+				.map(|(curr, prev)| {
+					(curr.date_naive() - prev.date_naive()).num_days() as i32
+				})
+				.or_else(|| {
+					trace!(
+						"days_passed_since_last_release: timestamp conversion \
+						 failed"
+					);
+					None
+				}),
+			None => {
+				trace!("days_passed_since_last_release: previous release not found");
+				None
+			}
+		};
+		Ok(Statistics {
+			commit_count,
+			commit_duration_days,
+			conventional_commit_count,
+			unique_links,
+			days_passed_since_last_release,
+		})
 	}
 
 	/// Calculates the next version based on the commits.
