@@ -232,6 +232,7 @@ fn generate_changelog() -> Result<()> {
 			previous: None,
 			repository: Some(String::from("/root/repo")),
 			submodule_commits: HashMap::new(),
+			statistics: None,
 			#[cfg(feature = "github")]
 			github: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],
@@ -260,6 +261,7 @@ fn generate_changelog() -> Result<()> {
 			previous: None,
 			repository: Some(String::from("/root/repo")),
 			submodule_commits: HashMap::new(),
+			statistics: None,
 			#[cfg(feature = "github")]
 			github: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],
