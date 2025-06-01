@@ -1,7 +1,4 @@
-use std::collections::{
-	HashMap,
-	HashSet,
-};
+use std::collections::HashMap;
 
 use crate::commit::commits_to_conventional_commits;
 use crate::error::Result;
@@ -51,8 +48,8 @@ pub struct Statistics {
 	/// The number of commits that follow the Conventional Commits
 	/// specification.
 	pub conventional_commit_count:      usize,
-	/// The links that were referenced in commit messages.
-	pub unique_links:                   Vec<Link>,
+	/// The number of times each link was referenced in commit messages.
+	pub link_counts:                    HashMap<Link, usize>,
 	/// The number of days since the previous release.
 	/// Only present if this is not the first release.
 	pub days_passed_since_last_release: Option<i32>,
@@ -132,8 +129,7 @@ impl Release<'_> {
 	/// - Determines the number of days between the first and last commit.
 	/// - Counts the number of commits that follow the Conventional Commits
 	///   specification.
-	/// - Extracts and deduplicates all unique links found in commit messages
-	///   using the given link parsers.
+	/// - Tallies how many times each link appears across all commit messages.
 	/// - Calculates the number of days since the previous release, if
 	///   available.
 	pub fn aggregate_statistics(
@@ -171,25 +167,24 @@ impl Release<'_> {
 			.iter()
 			.filter_map(|c| c.clone().into_conventional().ok())
 			.count();
-		let unique_links: Vec<Link> = self
-			.commits
-			.iter()
-			.filter_map(|c| match c.clone().parse_links(link_parsers) {
-				Ok(parsed) => Some(parsed.links),
+		let mut link_counts: HashMap<Link, usize> = HashMap::new();
+		for commit in self.commits.iter() {
+			match commit.clone().parse_links(link_parsers) {
+				Ok(parsed) => {
+					for link in parsed.links {
+						*link_counts.entry(link).or_insert(0) += 1;
+					}
+				}
 				Err(err) => {
 					trace!(
-						"unique_links: parse_links failed for commit {} - {} ({})",
-						c.id.chars().take(7).collect::<String>(),
+						"link_counts: parse_links failed for commit {} - {} ({})",
+						commit.id.chars().take(7).collect::<String>(),
 						err,
-						c.message.lines().next().unwrap_or_default().trim()
+						commit.message.lines().next().unwrap_or_default().trim()
 					);
-					None
 				}
-			})
-			.flatten()
-			.collect::<HashSet<_>>()
-			.into_iter()
-			.collect();
+			}
+		}
 		let days_passed_since_last_release = match self.previous.as_ref() {
 			Some(prev) => Utc
 				.timestamp_opt(self.timestamp, 0)
@@ -214,7 +209,7 @@ impl Release<'_> {
 			commit_count,
 			commit_duration_days,
 			conventional_commit_count,
-			unique_links,
+			link_counts,
 			days_passed_since_last_release,
 		})
 	}
