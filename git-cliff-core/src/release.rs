@@ -157,10 +157,6 @@ impl Release<'_> {
 							(end.date_naive() - start.date_naive()).num_days()
 						})
 				})
-				.or_else(|| {
-					trace!("commit_duration_days: timestamp conversion failed");
-					None
-				})
 		};
 		let conventional_commit_count = self
 			.commits
@@ -192,13 +188,6 @@ impl Release<'_> {
 				.zip(Utc.timestamp_opt(prev.timestamp, 0).single())
 				.map(|(curr, prev)| {
 					(curr.date_naive() - prev.date_naive()).num_days()
-				})
-				.or_else(|| {
-					trace!(
-						"days_passed_since_last_release: timestamp conversion \
-						 failed"
-					);
-					None
 				}),
 			None => {
 				trace!("days_passed_since_last_release: previous release not found");
@@ -600,7 +589,6 @@ mod test {
 			repository: Some(String::from("/root/repo")),
 			..Default::default()
 		};
-
 		let statistics = release.aggregate_statistics(&[
 			LinkParser {
 				pattern: Regex::new("RFC(\\d+)")?,
