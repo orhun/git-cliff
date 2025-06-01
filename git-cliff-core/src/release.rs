@@ -589,8 +589,7 @@ mod test {
 			},
 		];
 		let commits =
-			vec![unconventional_commits.clone(), conventional_commits.clone()]
-				.concat();
+			[unconventional_commits.clone(), conventional_commits.clone()].concat();
 		let release = Release {
 			commits,
 			timestamp: 1649373910,
