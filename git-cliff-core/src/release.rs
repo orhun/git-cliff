@@ -167,24 +167,24 @@ impl Release<'_> {
 			.iter()
 			.filter_map(|c| c.clone().into_conventional().ok())
 			.count();
-		let mut link_counts: HashMap<Link, usize> = HashMap::new();
-		for commit in self.commits.iter() {
-			match commit.clone().parse_links(link_parsers) {
+		let link_counts = self.commits.iter().fold(HashMap::new(), |mut acc, c| {
+			match c.clone().parse_links(link_parsers) {
 				Ok(parsed) => {
 					for link in parsed.links {
-						*link_counts.entry(link).or_insert(0) += 1;
+						*acc.entry(link).or_insert(0) += 1;
 					}
 				}
 				Err(err) => {
 					trace!(
 						"link_counts: parse_links failed for commit {} - {} ({})",
-						commit.id.chars().take(7).collect::<String>(),
+						c.id.chars().take(7).collect::<String>(),
 						err,
-						commit.message.lines().next().unwrap_or_default().trim()
+						c.message.lines().next().unwrap_or_default().trim()
 					);
 				}
 			}
-		}
+			acc
+		});
 		let days_passed_since_last_release = match self.previous.as_ref() {
 			Some(prev) => Utc
 				.timestamp_opt(self.timestamp, 0)
