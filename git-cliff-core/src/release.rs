@@ -166,8 +166,11 @@ impl Release<'_> {
 					None
 				})
 		};
-		let conventional_commit_count =
-			self.commits.iter().filter(|c| c.conv.is_some()).count();
+		let conventional_commit_count = self
+			.commits
+			.iter()
+			.filter_map(|c| c.clone().into_conventional().ok())
+			.count();
 		let unique_links: Vec<Link> = self
 			.commits
 			.iter()
