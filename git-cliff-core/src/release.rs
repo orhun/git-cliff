@@ -641,6 +641,40 @@ mod test {
 		);
 		assert_eq!(Some(2), statistics.days_passed_since_last_release);
 
+		let commits = vec![Commit {
+			id: String::from("123123"),
+			message: String::from("add feature"),
+			committer: Signature {
+				name:      Some(String::from("John Doe")),
+				email:     Some(String::from("john@doe.com")),
+				timestamp: 1649201111,
+			},
+			..Default::default()
+		}];
+		let release = Release {
+			commits,
+			timestamp: 1649373910,
+			previous: Some(Box::new(Release {
+				timestamp: 1649201110,
+				..Default::default()
+			})),
+			repository: Some(String::from("/root/repo")),
+			..Default::default()
+		};
+		let statistics = release.aggregate_statistics(&[])?;
+		assert_eq!(None, statistics.commit_duration_days);
+
+		let commits = vec![];
+		let release = Release {
+			commits,
+			timestamp: 1649373910,
+			previous: None,
+			repository: Some(String::from("/root/repo")),
+			..Default::default()
+		};
+		let statistics = release.aggregate_statistics(&[])?;
+		assert_eq!(None, statistics.days_passed_since_last_release);
+
 		Ok(())
 	}
 
