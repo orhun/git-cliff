@@ -44,7 +44,7 @@ pub struct Statistics {
 	pub commit_count:                   usize,
 	/// The time span, in days, from the first to the last commit in the
 	/// release. Only present if there is more than one commit.
-	pub commit_duration_days:           Option<i32>,
+	pub commit_duration_days:           Option<i64>,
 	/// The number of commits that follow the Conventional Commits
 	/// specification.
 	pub conventional_commit_count:      usize,
@@ -52,7 +52,7 @@ pub struct Statistics {
 	pub link_counts:                    HashMap<Link, usize>,
 	/// The number of days since the previous release.
 	/// Only present if this is not the first release.
-	pub days_passed_since_last_release: Option<i32>,
+	pub days_passed_since_last_release: Option<i64>,
 }
 
 /// Representation of a release.
@@ -154,7 +154,7 @@ impl Release<'_> {
 						.single()
 						.zip(Utc.timestamp_opt(last.committer.timestamp, 0).single())
 						.map(|(start, end)| {
-							(end.date_naive() - start.date_naive()).num_days() as i32
+							(end.date_naive() - start.date_naive()).num_days()
 						})
 				})
 				.or_else(|| {
@@ -191,7 +191,7 @@ impl Release<'_> {
 				.single()
 				.zip(Utc.timestamp_opt(prev.timestamp, 0).single())
 				.map(|(curr, prev)| {
-					(curr.date_naive() - prev.date_naive()).num_days() as i32
+					(curr.date_naive() - prev.date_naive()).num_days()
 				})
 				.or_else(|| {
 					trace!(
@@ -314,6 +314,8 @@ impl Releases<'_> {
 #[cfg(test)]
 mod test {
 	use super::*;
+	use crate::commit::Signature;
+	use lazy_regex::Regex;
 	use pretty_assertions::assert_eq;
 	#[test]
 	fn bump_version() -> Result<()> {
@@ -503,6 +505,143 @@ mod test {
 				})?
 			);
 		}
+		Ok(())
+	}
+
+	#[test]
+	fn aggregate_statistics() -> Result<()> {
+		let unconventional_commits = vec![
+			Commit {
+				id: String::from("123123"),
+				message: String::from("add feature"),
+				committer: Signature {
+					name:      Some(String::from("John Doe")),
+					email:     Some(String::from("john@doe.com")),
+					timestamp: 1649201111,
+				},
+				..Default::default()
+			},
+			Commit {
+				id: String::from("123123"),
+				message: String::from("fix feature"),
+				committer: Signature {
+					name:      Some(String::from("John Doe")),
+					email:     Some(String::from("john@doe.com")),
+					timestamp: 1649201112,
+				},
+				..Default::default()
+			},
+			Commit {
+				id: String::from("123123"),
+				message: String::from("refactor feature"),
+				committer: Signature {
+					name:      Some(String::from("John Doe")),
+					email:     Some(String::from("john@doe.com")),
+					timestamp: 1649201113,
+				},
+				..Default::default()
+			},
+			Commit {
+				id: String::from("123123"),
+				message: String::from("add docs for RFC456-related feature"),
+				committer: Signature {
+					name:      Some(String::from("John Doe")),
+					email:     Some(String::from("john@doe.com")),
+					timestamp: 1649201114,
+				},
+				..Default::default()
+			},
+		];
+		let conventional_commits = vec![
+			Commit {
+				id: String::from("123123"),
+				message: String::from(
+					"perf: improve feature performance, fixes #455",
+				),
+				committer: Signature {
+					name:      Some(String::from("John Doe")),
+					email:     Some(String::from("john@doe.com")),
+					timestamp: 1649287515,
+				},
+				..Default::default()
+			},
+			Commit {
+				id: String::from("123123"),
+				message: String::from("style(schema): fix feature schema"),
+				committer: Signature {
+					name:      Some(String::from("John Doe")),
+					email:     Some(String::from("john@doe.com")),
+					timestamp: 1649287516,
+				},
+				..Default::default()
+			},
+			Commit {
+				id: String::from("123123"),
+				message: String::from(
+					"test: add unit tests for RFC456-related feature",
+				),
+				committer: Signature {
+					name:      Some(String::from("John Doe")),
+					email:     Some(String::from("john@doe.com")),
+					timestamp: 1649287517,
+				},
+				..Default::default()
+			},
+		];
+		let commits =
+			vec![unconventional_commits.clone(), conventional_commits.clone()]
+				.concat();
+		let release = Release {
+			commits,
+			timestamp: 1649373910,
+			previous: Some(Box::new(Release {
+				timestamp: 1649201110,
+				..Default::default()
+			})),
+			repository: Some(String::from("/root/repo")),
+			..Default::default()
+		};
+
+		let statistics = release.aggregate_statistics(&[
+			LinkParser {
+				pattern: Regex::new("RFC(\\d+)")?,
+				href:    String::from("rfc://$1"),
+				text:    None,
+			},
+			LinkParser {
+				pattern: Regex::new("#(\\d+)")?,
+				href:    String::from("https://github.com/$1"),
+				text:    None,
+			},
+		])?;
+		assert_eq!(release.commits.len(), statistics.commit_count);
+		assert_eq!(Some(1), statistics.commit_duration_days);
+		assert_eq!(
+			conventional_commits.len(),
+			statistics.conventional_commit_count
+		);
+		assert_eq!(
+			Some(2),
+			statistics
+				.link_counts
+				.get(&Link {
+					text: String::from("RFC456"),
+					href: String::from("rfc://456"),
+				})
+				.copied()
+		);
+		assert_eq!(
+			Some(1),
+			statistics
+				.link_counts
+				.get(&Link {
+					text: String::from("#455"),
+					href: String::from("https://github.com/455"),
+				})
+				.copied()
+		);
+		assert_eq!(Some(2), statistics.days_passed_since_last_release);
+
 		Ok(())
 	}
 
