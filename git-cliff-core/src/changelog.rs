@@ -1032,6 +1032,7 @@ mod test {
 					),
 				],
 			)]),
+			statistics: None,
 			#[cfg(feature = "github")]
 			github: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],
@@ -1111,6 +1112,7 @@ mod test {
 						String::from("sub_two bump"),
 					)]),
 				]),
+				statistics: None,
 				#[cfg(feature = "github")]
 				github: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],

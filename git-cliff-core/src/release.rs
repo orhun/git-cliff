@@ -38,7 +38,7 @@ use serde::{
 use serde_json::value::Value;
 
 /// Aggregated statistics about commits in the release.
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Statistics {
 	/// The total number of commits included in the release.
 	pub commit_count:                   usize,
@@ -83,6 +83,8 @@ pub struct Release<'a> {
 	/// Maps submodule path to a list of commits.
 	#[serde(rename = "submodule_commits")]
 	pub submodule_commits: HashMap<String, Vec<Commit<'a>>>,
+	/// Aggregated statistics computed from the release's commits.
+	pub statistics:        Option<Statistics>,
 	/// Arbitrary data to be used with the `--from-context` CLI option.
 	pub extra:             Option<Value>,
 	/// Contributors.
@@ -120,75 +122,17 @@ impl Release<'_> {
 		self.calculate_next_version_with_config(&Bump::default())
 	}
 
-	/// Aggregates various statistics from the release data.
+	/// Returns a copy of the release with aggregated statistics populated.
 	///
-	/// This method computes several metrics based on the current release and
-	/// its commits:
-	///
-	/// - Counts the total number of commits.
-	/// - Determines the number of days between the first and last commit.
-	/// - Counts the number of commits that follow the Conventional Commits
-	///   specification.
-	/// - Tallies how many times each link appears across all commit messages.
-	/// - Calculates the number of days since the previous release, if
-	///   available.
-	pub fn aggregate_statistics(
-		&self,
+	/// This method computes various statistics from the release data and sets
+	/// the `statistics` field. It does not modify the original release but
+	/// returns a new instance with the computed statistics included.
+	pub fn with_aggregated_statistics(
+		mut self,
 		link_parsers: &[LinkParser],
-	) -> Result<Statistics> {
-		let commit_count = self.commits.len();
-		let commit_duration_days = if self.commits.len() < 2 {
-			trace!(
-				"commit_duration_days: insufficient commits to calculate duration \
-				 (found {})",
-				self.commits.len()
-			);
-			None
-		} else {
-			self.commits
-				.iter()
-				.min_by_key(|c| c.committer.timestamp)
-				.zip(self.commits.iter().max_by_key(|c| c.committer.timestamp))
-				.and_then(|(first, last)| {
-					Utc.timestamp_opt(first.committer.timestamp, 0)
-						.single()
-						.zip(Utc.timestamp_opt(last.committer.timestamp, 0).single())
-						.map(|(start, end)| {
-							(end.date_naive() - start.date_naive()).num_days()
-						})
-				})
-		};
-		let conventional_commit_count = self
-			.commits
-			.iter()
-			.filter_map(|c| c.clone().into_conventional().ok())
-			.count();
-		let link_counts = self.commits.iter().fold(HashMap::new(), |mut acc, c| {
-			for link in c.clone().parse_links(link_parsers).links {
-				*acc.entry(link).or_insert(0) += 1;
-			}
-			acc
-		});
-		let days_passed_since_last_release = match self.previous.as_ref() {
-			Some(prev) => Utc
-				.timestamp_opt(self.timestamp, 0)
-				.single()
-				.zip(Utc.timestamp_opt(prev.timestamp, 0).single())
-				.map(|(curr, prev)| {
-					(curr.date_naive() - prev.date_naive()).num_days()
-				}),
-			None => {
-				trace!("days_passed_since_last_release: previous release not found");
-				None
-			}
-		};
-		Ok(Statistics {
-			commit_count,
-			commit_duration_days,
-			conventional_commit_count,
-			link_counts,
-			days_passed_since_last_release,
-		})
+	) -> Self {
+		self.statistics = Some(self.aggregate_statistics(link_parsers));
+		self
 	}
 
 	/// Calculates the next version based on the commits.
@@ -272,6 +216,74 @@ impl Release<'_> {
 			None => Ok(config.get_initial_tag()),
 		}
 	}
+
+	/// Aggregates various statistics from the release data.
+	///
+	/// This method computes several metrics based on the current release and
+	/// its commits:
+	///
+	/// - Counts the total number of commits.
+	/// - Determines the number of days between the first and last commit.
+	/// - Counts the number of commits that follow the Conventional Commits
+	///   specification.
+	/// - Tallies how many times each link appears across all commit messages.
+	/// - Calculates the number of days since the previous release, if
+	///   available.
+	fn aggregate_statistics(&self, link_parsers: &[LinkParser]) -> Statistics {
+		let commit_count = self.commits.len();
+		let commit_duration_days = if self.commits.len() < 2 {
+			trace!(
+				"commit_duration_days: insufficient commits to calculate duration \
+				 (found {})",
+				self.commits.len()
+			);
+			None
+		} else {
+			self.commits
+				.iter()
+				.min_by_key(|c| c.committer.timestamp)
+				.zip(self.commits.iter().max_by_key(|c| c.committer.timestamp))
+				.and_then(|(first, last)| {
+					Utc.timestamp_opt(first.committer.timestamp, 0)
+						.single()
+						.zip(Utc.timestamp_opt(last.committer.timestamp, 0).single())
+						.map(|(start, end)| {
+							(end.date_naive() - start.date_naive()).num_days()
+						})
+				})
+		};
+		let conventional_commit_count = self
+			.commits
+			.iter()
+			.filter_map(|c| c.clone().into_conventional().ok())
+			.count();
+		let link_counts = self.commits.iter().fold(HashMap::new(), |mut acc, c| {
+			for link in c.clone().parse_links(link_parsers).links {
+				*acc.entry(link).or_insert(0) += 1;
+			}
+			acc
+		});
+		let days_passed_since_last_release = match self.previous.as_ref() {
+			Some(prev) => Utc
+				.timestamp_opt(self.timestamp, 0)
+				.single()
+				.zip(Utc.timestamp_opt(prev.timestamp, 0).single())
+				.map(|(curr, prev)| {
+					(curr.date_naive() - prev.date_naive()).num_days()
+				}),
+			None => {
+				trace!("days_passed_since_last_release: previous release not found");
+				None
+			}
+		};
+		Statistics {
+			commit_count,
+			commit_duration_days,
+			conventional_commit_count,
+			link_counts,
+			days_passed_since_last_release,
+		}
+	}
 }
 
 /// Representation of a list of releases.
@@ -314,6 +326,7 @@ mod test {
 				})),
 				repository: Some(String::from("/root/repo")),
 				submodule_commits: HashMap::new(),
+				statistics: None,
 				#[cfg(feature = "github")]
 				github: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
@@ -588,7 +601,7 @@ mod test {
 				href:    String::from("https://github.com/$1"),
 				text:    None,
 			},
-		])?;
+		]);
 		assert_eq!(release.commits.len(), statistics.commit_count);
 		assert_eq!(Some(1), statistics.commit_duration_days);
 		assert_eq!(
@@ -637,7 +650,7 @@ mod test {
 			repository: Some(String::from("/root/repo")),
 			..Default::default()
 		};
-		let statistics = release.aggregate_statistics(&[])?;
+		let statistics = release.aggregate_statistics(&[]);
 		assert_eq!(None, statistics.commit_duration_days);
 
 		let commits = vec![];
@@ -648,7 +661,7 @@ mod test {
 			repository: Some(String::from("/root/repo")),
 			..Default::default()
 		};
-		let statistics = release.aggregate_statistics(&[])?;
+		let statistics = release.aggregate_statistics(&[]);
 		assert_eq!(None, statistics.days_passed_since_last_release);
 
 		Ok(())
@@ -701,6 +714,7 @@ mod test {
 			})),
 			repository: Some(String::from("/root/repo")),
 			submodule_commits: HashMap::new(),
+			statistics: None,
 			github: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
@@ -1071,6 +1085,7 @@ mod test {
 			})),
 			repository: Some(String::from("/root/repo")),
 			submodule_commits: HashMap::new(),
+			statistics: None,
 			#[cfg(feature = "github")]
 			github: RemoteReleaseMetadata {
 				contributors: vec![],
@@ -1463,6 +1478,7 @@ mod test {
 			})),
 			repository: Some(String::from("/root/repo")),
 			submodule_commits: HashMap::new(),
+			statistics: None,
 			#[cfg(feature = "github")]
 			github: RemoteReleaseMetadata {
 				contributors: vec![],
@@ -1823,6 +1839,7 @@ mod test {
 			})),
 			repository: Some(String::from("/root/repo")),
 			submodule_commits: HashMap::new(),
+			statistics: None,
 			#[cfg(feature = "github")]
 			github: RemoteReleaseMetadata {
 				contributors: vec![],
