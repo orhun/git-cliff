@@ -164,20 +164,8 @@ impl Release<'_> {
 			.filter_map(|c| c.clone().into_conventional().ok())
 			.count();
 		let link_counts = self.commits.iter().fold(HashMap::new(), |mut acc, c| {
-			match c.clone().parse_links(link_parsers) {
-				Ok(parsed) => {
-					for link in parsed.links {
-						*acc.entry(link).or_insert(0) += 1;
-					}
-				}
-				Err(err) => {
-					trace!(
-						"link_counts: parse_links failed for commit {} - {} ({})",
-						c.id.chars().take(7).collect::<String>(),
-						err,
-						c.message.lines().next().unwrap_or_default().trim()
-					);
-				}
+			for link in c.clone().parse_links(link_parsers).links {
+				*acc.entry(link).or_insert(0) += 1;
 			}
 			acc
 		});
