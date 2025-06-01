@@ -499,6 +499,26 @@ mod test {
 	}
 
 	#[test]
+	fn with_aggregated_statistics() -> Result<()> {
+		let release = Release {
+			commits: vec![],
+			timestamp: 1649373910,
+			previous: Some(Box::new(Release {
+				timestamp: 1649201110,
+				..Default::default()
+			})),
+			repository: Some(String::from("/root/repo")),
+			..Default::default()
+		};
+
+		assert!(release.statistics.is_none());
+		let release = release.with_aggregated_statistics(&[]);
+		assert!(release.statistics.is_some());
+
+		Ok(())
+	}
+
+	#[test]
 	fn aggregate_statistics() -> Result<()> {
 		let unconventional_commits = vec![
 			Commit {
