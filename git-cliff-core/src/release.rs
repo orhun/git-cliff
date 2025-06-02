@@ -50,6 +50,8 @@ pub struct Statistics {
 	pub conventional_commit_count:      usize,
 	/// The number of times each link was referenced in commit messages.
 	pub link_counts:                    HashMap<Link, usize>,
+	/// The total number of links referenced in all commit messages.
+	pub total_link_count:               usize,
 	/// The number of days since the previous release.
 	/// Only present if this is not the first release.
 	pub days_passed_since_last_release: Option<i64>,
@@ -263,6 +265,7 @@ impl Release<'_> {
 			}
 			acc
 		});
+		let total_link_count = link_counts.values().sum();
 		let days_passed_since_last_release = match self.previous.as_ref() {
 			Some(prev) => Utc
 				.timestamp_opt(self.timestamp, 0)
@@ -281,6 +284,7 @@ impl Release<'_> {
 			commit_duration_days,
 			conventional_commit_count,
 			link_counts,
+			total_link_count,
 			days_passed_since_last_release,
 		}
 	}
@@ -648,6 +652,7 @@ mod test {
 				})
 				.copied()
 		);
+		assert_eq!(3, statistics.total_link_count);
 		assert_eq!(Some(2), statistics.days_passed_since_last_release);
 
 		let commits = vec![Commit {
