@@ -231,6 +231,9 @@ impl<'a> Changelog<'a> {
 					true
 				}
 			})
+			.map(|release| {
+				release.with_aggregated_statistics(&self.config.git.link_parsers)
+			})
 			.collect();
 		for skipped_tag in &skipped_tags {
 			if let Some(release_index) = self.releases.iter().position(|release| {
