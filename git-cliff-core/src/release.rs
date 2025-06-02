@@ -44,6 +44,7 @@ pub struct Statistics {
 	pub commit_count:                   usize,
 	/// The time span, in days, from the first to the last commit in the
 	/// release. Only present if there is more than one commit.
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub commit_duration_days:           Option<i64>,
 	/// The number of commits that follow the Conventional Commits
 	/// specification.
@@ -54,6 +55,7 @@ pub struct Statistics {
 	pub total_link_count:               usize,
 	/// The number of days since the previous release.
 	/// Only present if this is not the first release.
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub days_passed_since_last_release: Option<i64>,
 }
 
