@@ -162,17 +162,8 @@ impl<'a> Changelog<'a> {
 						.message
 						.lines()
 						.filter_map(|line| {
-							// NOTE: `links` are reset here because `parse_links` may
-							// be called multiple times on the same commit. To
-							// ensure deduplication remains correct and idempotent,
-							// we must clear any previously parsed links.
-							// Also, since the commit message is being updated
-							// (`c.message = line.to_string()`),
-							// it is essential to reset `links` so that they reflect
-							// the new message content accurately.
 							let mut c = commit.clone();
 							c.message = line.to_string();
-							c.links = vec![];
 							if c.message.is_empty() {
 								None
 							} else {
@@ -240,9 +231,7 @@ impl<'a> Changelog<'a> {
 					true
 				}
 			})
-			.map(|release| {
-				release.with_aggregated_statistics(&self.config.git.link_parsers)
-			})
+			.map(|release| release.with_aggregated_statistics())
 			.collect();
 		for skipped_tag in &skipped_tags {
 			if let Some(release_index) = self.releases.iter().position(|release| {

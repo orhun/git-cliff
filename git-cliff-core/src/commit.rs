@@ -40,7 +40,7 @@ use serde_json::value::Value;
 static SHA1_REGEX: Lazy<Regex> = lazy_regex!(r#"^\b([a-f0-9]{40})\b (.*)$"#);
 
 /// Object representing a link
-#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Eq, Hash, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all(serialize = "camelCase"))]
 pub struct Link {
 	/// Text of the link.
@@ -431,6 +431,7 @@ impl Commit<'_> {
 	///
 	/// [`links`]: Commit::links
 	pub fn parse_links(mut self, parsers: &[LinkParser]) -> Self {
+		let mut links_set = HashSet::new();
 		for parser in parsers {
 			let regex = &parser.pattern;
 			let replace = &parser.href;
@@ -441,20 +442,15 @@ impl Commit<'_> {
 				} else {
 					m.to_string()
 				};
-				let href = regex.replace(m, replace);
-				self.links.push(Link {
-					text,
-					href: href.to_string(),
-				});
+				let href = regex.replace(m, replace).to_string();
+				links_set.insert(Link { text, href });
 			}
 		}
-		// NOTE: Deduplication is done here based on (text, href) to avoid duplicate
-		// links. However, since `parse_links` may be called multiple times on the
-		// same commit, it's important to ensure that deduplication is idempotent
-		// and safe for repeated calls.
-		let mut seen = HashSet::new();
-		self.links
-			.retain(|link| seen.insert((link.text.clone(), link.href.clone())));
+		// NOTE: Links are collected into a `HashSet` based on (text, href) to
+		// prevent duplicates from being added. This ensures that deduplication is
+		// done up front, making `parse_links` both efficient and idempotent—even
+		// when called multiple times on the same commit.
+		self.links = links_set.into_iter().collect();
 		self
 	}
 
@@ -713,8 +709,11 @@ mod test {
 					text: String::from("#455"),
 					href: String::from("https://github.com/455"),
 				}
-			],
-			commit.links
+			]
+			.iter()
+			.cloned()
+			.collect::<HashSet<_>>(),
+			commit.links.iter().cloned().collect::<HashSet<_>>()
 		);
 
 		Ok(())
