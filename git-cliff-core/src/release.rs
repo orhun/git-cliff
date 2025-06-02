@@ -5,7 +5,6 @@ use crate::error::Result;
 use crate::{
 	commit::{
 		Commit,
-		Link,
 		Range,
 	},
 	config::Bump,
@@ -37,6 +36,19 @@ use serde::{
 };
 use serde_json::value::Value;
 
+/// Aggregated information about how many times a specific link appeared in
+/// commit messages.
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LinkCount {
+	/// Text of the link.
+	pub text:  String,
+	/// URL of the link
+	pub href:  String,
+	/// The number of times this link was referenced.
+	pub count: usize,
+}
+
 /// Aggregated statistics about commits in the release.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Statistics {
@@ -50,7 +62,7 @@ pub struct Statistics {
 	/// specification.
 	pub conventional_commit_count:      usize,
 	/// The number of times each link was referenced in commit messages.
-	pub link_counts:                    HashMap<Link, usize>,
+	pub link_counts:                    Vec<LinkCount>,
 	/// The total number of links referenced in all commit messages.
 	pub total_link_count:               usize,
 	/// The number of days since the previous release.
@@ -261,13 +273,20 @@ impl Release<'_> {
 			.iter()
 			.filter_map(|c| c.clone().into_conventional().ok())
 			.count();
-		let link_counts = self.commits.iter().fold(HashMap::new(), |mut acc, c| {
-			for link in c.clone().parse_links(link_parsers).links {
-				*acc.entry(link).or_insert(0) += 1;
-			}
-			acc
-		});
-		let total_link_count = link_counts.values().sum();
+		let mut link_counts: Vec<LinkCount> = self
+			.commits
+			.iter()
+			.fold(HashMap::new(), |mut acc, c| {
+				for link in c.clone().parse_links(link_parsers).links {
+					*acc.entry((link.text, link.href)).or_insert(0) += 1;
+				}
+				acc
+			})
+			.into_iter()
+			.map(|((text, href), count)| LinkCount { text, href, count })
+			.collect();
+		link_counts.sort_by(|lhs, rhs| rhs.count.cmp(&lhs.count));
+		let total_link_count: usize = link_counts.iter().map(|l| l.count).sum();
 		let days_passed_since_last_release = match self.previous.as_ref() {
 			Some(prev) => Utc
 				.timestamp_opt(self.timestamp, 0)
@@ -526,6 +545,12 @@ mod test {
 
 	#[test]
 	fn aggregate_statistics() -> Result<()> {
+		fn find_count(v: &[LinkCount], text: &str, href: &str) -> Option<usize> {
+			v.iter()
+				.find(|l| l.text == text && l.href == href)
+				.map(|l| l.count)
+		}
+
 		let unconventional_commits = vec![
 			Commit {
 				id: String::from("123123"),
@@ -636,23 +661,11 @@ mod test {
 		);
 		assert_eq!(
 			Some(2),
-			statistics
-				.link_counts
-				.get(&Link {
-					text: String::from("RFC456"),
-					href: String::from("rfc://456"),
-				})
-				.copied()
+			find_count(&statistics.link_counts, "RFC456", "rfc://456")
 		);
 		assert_eq!(
 			Some(1),
-			statistics
-				.link_counts
-				.get(&Link {
-					text: String::from("#455"),
-					href: String::from("https://github.com/455"),
-				})
-				.copied()
+			find_count(&statistics.link_counts, "#455", "https://github.com/455")
 		);
 		assert_eq!(3, statistics.total_link_count);
 		assert_eq!(Some(2), statistics.days_passed_since_last_release);
