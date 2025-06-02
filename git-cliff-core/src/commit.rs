@@ -680,7 +680,7 @@ mod test {
 			},
 		]);
 		assert_eq!(
-			vec![
+			[
 				Link {
 					text: String::from("RFC456"),
 					href: String::from("rfc://456"),
