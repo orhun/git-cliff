@@ -40,7 +40,7 @@ use serde_json::value::Value;
 static SHA1_REGEX: Lazy<Regex> = lazy_regex!(r#"^\b([a-f0-9]{40})\b (.*)$"#);
 
 /// Object representing a link
-#[derive(Debug, Clone, Eq, Hash, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all(serialize = "camelCase"))]
 pub struct Link {
 	/// Text of the link.
@@ -411,7 +411,7 @@ impl Commit<'_> {
 	///
 	/// [`links`]: Commit::links
 	pub fn parse_links(mut self, parsers: &[LinkParser]) -> Self {
-		let mut links_set = HashSet::new();
+		let mut links: Vec<Link> = vec![];
 		for parser in parsers {
 			let regex = &parser.pattern;
 			let replace = &parser.href;
@@ -422,15 +422,23 @@ impl Commit<'_> {
 				} else {
 					m.to_string()
 				};
-				let href = regex.replace(m, replace).to_string();
-				links_set.insert(Link { text, href });
+				let href = regex.replace(m, replace);
+				links.push(Link {
+					text,
+					href: href.to_string(),
+				});
 			}
 		}
-		// NOTE: Links are collected into a `HashSet` based on (text, href) to
-		// prevent duplicates from being added. This ensures that deduplication is
-		// done up front, making `parse_links` both efficient and idempotent—even
-		// when called multiple times on the same commit.
-		self.links = links_set.into_iter().collect();
+		// NOTE: Deduplication is done here based on (text, href) to avoid duplicate
+		// links. This approach preserves the original order of appearance and parser
+		// application, at the cost of slightly reduced performance compared to using
+		// a HashSet directly during collection.
+		// It also ensures that parse_links remains idempotent even if called
+		// multiple times.
+		let mut seen = HashSet::new();
+		self.links = links;
+		self.links
+			.retain(|link| seen.insert((link.text.clone(), link.href.clone())));
 		self
 	}
 
@@ -680,7 +688,7 @@ mod test {
 			},
 		]);
 		assert_eq!(
-			[
+			vec![
 				Link {
 					text: String::from("RFC456"),
 					href: String::from("rfc://456"),
@@ -689,11 +697,8 @@ mod test {
 					text: String::from("#455"),
 					href: String::from("https://github.com/455"),
 				}
-			]
-			.iter()
-			.cloned()
-			.collect::<HashSet<_>>(),
-			commit.links.iter().cloned().collect::<HashSet<_>>()
+			],
+			commit.links
 		);
 
 		Ok(())
