@@ -162,8 +162,17 @@ impl<'a> Changelog<'a> {
 						.message
 						.lines()
 						.filter_map(|line| {
+							// NOTE: `links` are reset here because `parse_links` may
+							// be called multiple times on the same commit. To
+							// ensure deduplication remains correct and idempotent,
+							// we must clear any previously parsed links.
+							// Also, since the commit message is being updated
+							// (`c.message = line.to_string()`),
+							// it is essential to reset `links` so that they reflect
+							// the new message content accurately.
 							let mut c = commit.clone();
 							c.message = line.to_string();
+							c.links = vec![];
 							if c.message.is_empty() {
 								None
 							} else {
@@ -1471,9 +1480,9 @@ chore(deps): fix broken deps
 			- 8 commits contributed to the release.
 			- 6 days spanned between the first and last commit.
 			- 8 commit was understood as conventional.
-			- 3 issues like '(#ID)' were seen in commit messages.
+			- 1 issues like '(#ID)' were seen in commit messages.
 			- Referenced Issues:
-			- [#5](https://github.com/5) (3 times referenced)
+			- [#5](https://github.com/5) (1 time referenced)
 			- -578 days passed between releases.
 
 			## Release [v1.0.0] - 1971-08-02 - (/root/repo)
@@ -1527,9 +1536,9 @@ chore(deps): fix broken deps
 			- 18 commits contributed to the release.
 			- 12 days spanned between the first and last commit.
 			- 17 commit was understood as conventional.
-			- 5 issues like '(#ID)' were seen in commit messages.
+			- 1 issues like '(#ID)' were seen in commit messages.
 			- Referenced Issues:
-			- [#3](https://github.com/3) (5 times referenced)
+			- [#3](https://github.com/3) (1 time referenced)
 			-- total releases: 2 --
 			"#
 			)

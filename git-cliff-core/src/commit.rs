@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::config::{
 	CommitParser,
 	GitConfig,
@@ -446,6 +448,13 @@ impl Commit<'_> {
 				});
 			}
 		}
+		// NOTE: Deduplication is done here based on (text, href) to avoid duplicate
+		// links. However, since `parse_links` may be called multiple times on the
+		// same commit, it's important to ensure that deduplication is idempotent
+		// and safe for repeated calls.
+		let mut seen = HashSet::new();
+		self.links
+			.retain(|link| seen.insert((link.text.clone(), link.href.clone())));
 		self
 	}
 
