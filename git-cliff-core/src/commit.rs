@@ -38,7 +38,7 @@ use serde_json::value::Value;
 static SHA1_REGEX: Lazy<Regex> = lazy_regex!(r#"^\b([a-f0-9]{40})\b (.*)$"#);
 
 /// Object representing a link
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all(serialize = "camelCase"))]
 pub struct Link {
 	/// Text of the link.

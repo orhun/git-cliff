@@ -706,6 +706,7 @@ mod test {
 		Bump,
 		ChangelogConfig,
 		CommitParser,
+		LinkParser,
 		Remote,
 		RemoteConfig,
 		TextProcessor,
@@ -735,6 +736,12 @@ mod test {
 				{%- endif %}
 				- {{ statistics.conventional_commit_count }} commit was understood as conventional.
 				- {{ statistics.total_link_count }} issues like '(#ID)' were seen in commit messages.
+				{%- if statistics.link_counts | length > 0 %}
+				- Referenced Issues:
+				{%- for link in statistics.link_counts %}
+					- [{{ link.text }}]({{ link.href }}) ({{ link.count }} time{% if link.count > 1 %}s{% endif %} referenced)
+				{%- endfor %}
+				{%- endif %}
 				{%- if statistics.days_passed_since_last_release is defined %}
 				- {{ statistics.days_passed_since_last_release }} days passed between releases.
 				{%- endif %}
@@ -910,7 +917,11 @@ mod test {
 				topo_order:               false,
 				topo_order_commits:       true,
 				sort_commits:             String::from("oldest"),
-				link_parsers:             [].to_vec(),
+				link_parsers:             vec![LinkParser {
+					pattern: Regex::new("#(\\d+)").unwrap(),
+					href:    String::from("https://github.com/$1"),
+					text:    None,
+				}],
 				limit_commits:            None,
 				recurse_submodules:       None,
 			},
@@ -1459,7 +1470,9 @@ chore(deps): fix broken deps
 			- 8 commits contributed to the release.
 			- 6 days spanned between the first and last commit.
 			- 8 commit was understood as conventional.
-			- 0 issues like '(#ID)' were seen in commit messages.
+			- 3 issues like '(#ID)' were seen in commit messages.
+			- Referenced Issues:
+			- [#5](https://github.com/5) (3 times referenced)
 			- -578 days passed between releases.
 
 			## Release [v1.0.0] - 1971-08-02 - (/root/repo)
@@ -1513,7 +1526,9 @@ chore(deps): fix broken deps
 			- 18 commits contributed to the release.
 			- 12 days spanned between the first and last commit.
 			- 17 commit was understood as conventional.
-			- 0 issues like '(#ID)' were seen in commit messages.
+			- 5 issues like '(#ID)' were seen in commit messages.
+			- Referenced Issues:
+			- [#3](https://github.com/3) (5 times referenced)
 			-- total releases: 2 --
 			"#
 			)
