@@ -918,7 +918,8 @@ mod test {
 				topo_order_commits:       true,
 				sort_commits:             String::from("oldest"),
 				link_parsers:             vec![LinkParser {
-					pattern: Regex::new("#(\\d+)").unwrap(),
+					pattern: Regex::new("#(\\d+)")
+						.expect("issue reference regex should be valid"),
 					href:    String::from("https://github.com/$1"),
 					text:    None,
 				}],
