@@ -9,7 +9,6 @@ use crate::{
 	},
 	config::Bump,
 	config::BumpType,
-	config::LinkParser,
 };
 #[cfg(feature = "remote")]
 use crate::{
@@ -143,11 +142,8 @@ impl Release<'_> {
 	/// This method computes various statistics from the release data and sets
 	/// the `statistics` field. It does not modify the original release but
 	/// returns a new instance with the computed statistics included.
-	pub fn with_aggregated_statistics(
-		mut self,
-		link_parsers: &[LinkParser],
-	) -> Self {
-		self.statistics = Some(self.aggregate_statistics(link_parsers));
+	pub fn with_aggregated_statistics(mut self) -> Self {
+		self.statistics = Some(self.aggregate_statistics());
 		self
 	}
 
@@ -245,7 +241,7 @@ impl Release<'_> {
 	/// - Tallies how many times each link appears across all commit messages.
 	/// - Calculates the number of days since the previous release, if
 	///   available.
-	fn aggregate_statistics(&self, link_parsers: &[LinkParser]) -> Statistics {
+	fn aggregate_statistics(&self) -> Statistics {
 		let commit_count = self.commits.len();
 		let commit_duration_days = if self.commits.len() < 2 {
 			trace!(
@@ -268,17 +264,15 @@ impl Release<'_> {
 						})
 				})
 		};
-		let conventional_commit_count = self
-			.commits
-			.iter()
-			.filter_map(|c| c.clone().into_conventional().ok())
-			.count();
+		let conventional_commit_count =
+			self.commits.iter().filter_map(|c| c.conv.clone()).count();
 		let mut link_counts: Vec<LinkCount> = self
 			.commits
 			.iter()
 			.fold(HashMap::new(), |mut acc, c| {
-				for link in c.clone().parse_links(link_parsers).links {
-					*acc.entry((link.text, link.href)).or_insert(0) += 1;
+				for link in &c.links {
+					*acc.entry((link.text.clone(), link.href.clone()))
+						.or_insert(0) += 1;
 				}
 				acc
 			})
@@ -329,6 +323,7 @@ impl Releases<'_> {
 mod test {
 	use super::*;
 	use crate::commit::Signature;
+	use crate::config::LinkParser;
 	use lazy_regex::Regex;
 	use pretty_assertions::assert_eq;
 	#[test]
@@ -537,7 +532,7 @@ mod test {
 		};
 
 		assert!(release.statistics.is_none());
-		let release = release.with_aggregated_statistics(&[]);
+		let release = release.with_aggregated_statistics();
 		assert!(release.statistics.is_some());
 
 		Ok(())
@@ -550,7 +545,18 @@ mod test {
 				.find(|l| l.text == text && l.href == href)
 				.map(|l| l.count)
 		}
-
+		let link_parsers = vec![
+			LinkParser {
+				pattern: Regex::new("RFC(\\d+)")?,
+				href:    String::from("rfc://$1"),
+				text:    None,
+			},
+			LinkParser {
+				pattern: Regex::new("#(\\d+)")?,
+				href:    String::from("https://github.com/$1"),
+				text:    None,
+			},
+		];
 		let unconventional_commits = vec![
 			Commit {
 				id: String::from("123123"),
@@ -629,8 +635,13 @@ mod test {
 				..Default::default()
 			},
 		];
-		let commits =
-			[unconventional_commits.clone(), conventional_commits.clone()].concat();
+		let commits: Vec<Commit> =
+			[unconventional_commits.clone(), conventional_commits.clone()]
+				.concat()
+				.into_iter()
+				.map(|c| c.parse_links(&link_parsers))
+				.map(|c| c.clone().into_conventional().unwrap_or(c))
+				.collect();
 		let release = Release {
 			commits,
 			timestamp: 1649373910,
@@ -641,18 +652,7 @@ mod test {
 			repository: Some(String::from("/root/repo")),
 			..Default::default()
 		};
-		let statistics = release.aggregate_statistics(&[
-			LinkParser {
-				pattern: Regex::new("RFC(\\d+)")?,
-				href:    String::from("rfc://$1"),
-				text:    None,
-			},
-			LinkParser {
-				pattern: Regex::new("#(\\d+)")?,
-				href:    String::from("https://github.com/$1"),
-				text:    None,
-			},
-		]);
+		let statistics = release.aggregate_statistics();
 		assert_eq!(release.commits.len(), statistics.commit_count);
 		assert_eq!(Some(1), statistics.commit_duration_days);
 		assert_eq!(
@@ -690,7 +690,7 @@ mod test {
 			repository: Some(String::from("/root/repo")),
 			..Default::default()
 		};
-		let statistics = release.aggregate_statistics(&[]);
+		let statistics = release.aggregate_statistics();
 		assert_eq!(None, statistics.commit_duration_days);
 
 		let commits = vec![];
@@ -701,7 +701,7 @@ mod test {
 			repository: Some(String::from("/root/repo")),
 			..Default::default()
 		};
-		let statistics = release.aggregate_statistics(&[]);
+		let statistics = release.aggregate_statistics();
 		assert_eq!(None, statistics.days_passed_since_last_release);
 
 		Ok(())
