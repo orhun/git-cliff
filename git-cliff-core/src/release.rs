@@ -265,7 +265,7 @@ impl Release<'_> {
 				})
 		};
 		let conventional_commit_count =
-			self.commits.iter().filter_map(|c| c.conv.clone()).count();
+			self.commits.iter().filter(|c| c.conv.is_some()).count();
 		let mut link_counts: Vec<LinkCount> = self
 			.commits
 			.iter()
