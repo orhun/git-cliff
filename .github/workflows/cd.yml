@@ -485,7 +485,7 @@ jobs:
       contents: read
     steps:
       - name: Bump formula
-        uses: mislav/bump-homebrew-formula-action@v3
+        uses: mislav/bump-homebrew-formula-action@v3.4
         with:
           formula-name: git-cliff
           formula-path: Formula/g/git-cliff.rb
