@@ -785,6 +785,18 @@ Refs: #123
 			is_first_time: true,
 		});
 		let commit = commit.into_conventional()?;
+		let commit = commit.parse_links(&[
+			LinkParser {
+				pattern: Regex::new("RFC(\\d+)")?,
+				href:    String::from("rfc://$1"),
+				text:    None,
+			},
+			LinkParser {
+				pattern: Regex::new("#(\\d+)")?,
+				href:    String::from("https://github.com/$1"),
+				text:    None,
+			},
+		])?;
 
 		let parsed_commit = commit.clone().parse(
 			&[CommitParser {
@@ -838,6 +850,18 @@ Refs: #123
 			is_first_time: true,
 		});
 		let commit = commit.into_conventional()?;
+		let commit = commit.parse_links(&[
+			LinkParser {
+				pattern: Regex::new("RFC(\\d+)")?,
+				href:    String::from("rfc://$1"),
+				text:    None,
+			},
+			LinkParser {
+				pattern: Regex::new("#(\\d+)")?,
+				href:    String::from("https://github.com/$1"),
+				text:    None,
+			},
+		])?;
 
 		let parsed_commit = commit.clone().parse(
 			&[CommitParser {
@@ -973,6 +997,28 @@ Refs: #123
 		assert!(
 			parse_result.is_err(),
 			"Expected error when using unsupported field `remote`, but got Ok"
+		);
+
+		let parse_result = commit.clone().parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("links")),
+				pattern:       Regex::new(".*").ok(),
+				match_mode:    MatchMode::Any,
+			}],
+			false,
+			false,
+		);
+		assert!(
+			parse_result.is_err(),
+			"Expected error when using unsupported field `links`, but got Ok"
 		);
 
 		Ok(())
