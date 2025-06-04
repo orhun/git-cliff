@@ -2,6 +2,7 @@ use crate::config::{
 	CommitParser,
 	GitConfig,
 	LinkParser,
+	MatchMode,
 	TextProcessor,
 };
 use crate::error::{
@@ -312,7 +313,7 @@ impl Commit<'_> {
 		for parser in parsers {
 			let mut regex_checks = Vec::new();
 			if let Some(message_regex) = parser.message.as_ref() {
-				regex_checks.push((message_regex, self.message.to_string()));
+				regex_checks.push((message_regex, vec![self.message.to_string()]));
 			}
 			let body = self
 				.conv
@@ -320,26 +321,41 @@ impl Commit<'_> {
 				.and_then(|v| v.body())
 				.map(|v| v.to_string());
 			if let Some(body_regex) = parser.body.as_ref() {
-				regex_checks.push((body_regex, body.clone().unwrap_or_default()));
+				regex_checks
+					.push((body_regex, vec![body.clone().unwrap_or_default()]));
 			}
 			if let (Some(footer_regex), Some(footers)) = (
 				parser.footer.as_ref(),
 				self.conv.as_ref().map(|v| v.footers()),
 			) {
-				regex_checks
-					.extend(footers.iter().map(|f| (footer_regex, f.to_string())));
+				regex_checks.extend(
+					footers.iter().map(|f| (footer_regex, vec![f.to_string()])),
+				);
 			}
 			if let (Some(field_name), Some(pattern_regex)) =
 				(parser.field.as_ref(), parser.pattern.as_ref())
 			{
 				let value = if field_name == "body" {
-					body.clone()
+					vec![body.clone()].into_iter().collect()
 				} else {
 					tera::dotted_pointer(&lookup_context, field_name).and_then(|v| {
-						match &v {
-							Value::String(s) => Some(s.clone()),
+						match v {
+							Value::String(s) => Some(vec![s.clone()]),
 							Value::Number(_) | Value::Bool(_) | Value::Null => {
-								Some(v.to_string())
+								Some(vec![v.to_string()])
+							}
+							Value::Array(arr) => {
+								let mut result = Vec::new();
+								for v in arr {
+									match v {
+										Value::String(s) => result.push(s.clone()),
+										Value::Number(_) |
+										Value::Bool(_) |
+										Value::Null => result.push(v.to_string()),
+										_ => return None,
+									}
+								}
+								Some(result)
 							}
 							_ => None,
 						}
@@ -372,17 +388,28 @@ impl Commit<'_> {
 					return Ok(self);
 				}
 			}
-			for (regex, text) in regex_checks {
-				if regex.is_match(text.trim()) {
+			for (regex, texts) in regex_checks {
+				let is_match = match parser.match_mode {
+					MatchMode::All => {
+						texts.iter().all(|text| regex.is_match(text.trim()))
+					}
+					MatchMode::Any => {
+						texts.iter().any(|text| regex.is_match(text.trim()))
+					}
+				};
+				if is_match {
 					if self.skip_commit(parser, protect_breaking) {
 						return Err(AppError::GroupError(String::from(
 							"Skipping commit",
 						)));
 					} else {
 						let regex_replace = |mut value: String| {
-							for mat in regex.find_iter(&text) {
-								value =
-									regex.replace(mat.as_str(), value).to_string();
+							for text in &texts {
+								for mat in regex.find_iter(text) {
+									value = regex
+										.replace(mat.as_str(), value)
+										.to_string();
+								}
 							}
 							value
 						};
@@ -569,6 +596,7 @@ mod test {
 				skip:          None,
 				field:         None,
 				pattern:       None,
+				match_mode:    MatchMode::Any,
 			}],
 			false,
 			false,
@@ -742,7 +770,7 @@ mod test {
 			username:      None,
 			pr_title:      Some("feat: do something".to_string()),
 			pr_number:     None,
-			pr_labels:     Vec::new(),
+			pr_labels:     vec![String::from("feature")],
 			is_first_time: true,
 		});
 
@@ -758,6 +786,7 @@ mod test {
 				skip:          None,
 				field:         Some(String::from("author.name")),
 				pattern:       Regex::new("John Doe").ok(),
+				match_mode:    MatchMode::Any,
 			}],
 			false,
 			false,
@@ -776,6 +805,26 @@ mod test {
 				skip:          None,
 				field:         Some(String::from("remote.pr_title")),
 				pattern:       Regex::new("feat: do something").ok(),
+				match_mode:    MatchMode::Any,
+			}],
+			false,
+			false,
+		)?;
+		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+
+		let parsed_commit = commit.clone().parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("remote.pr_labels")),
+				pattern:       Regex::new("feature").ok(),
+				match_mode:    MatchMode::Any,
 			}],
 			false,
 			false,
@@ -792,16 +841,16 @@ mod test {
 				default_scope: None,
 				scope:         None,
 				skip:          None,
-				field:         Some(String::from("remote.pr_labels")),
+				field:         Some(String::from("remote")),
 				pattern:       Regex::new(".*").ok(),
+				match_mode:    MatchMode::Any,
 			}],
 			false,
 			false,
 		);
 		assert!(
 			parse_result.is_err(),
-			"Expected error when using unsupported field `remote.pr_labels`, but \
-			 got Ok"
+			"Expected error when using unsupported field `remote`, but got Ok"
 		);
 
 		Ok(())
@@ -828,6 +877,7 @@ mod test {
 				skip:          Some(true),
 				field:         None,
 				pattern:       None,
+				match_mode:    MatchMode::Any,
 			}],
 			false,
 			false,
@@ -871,6 +921,7 @@ mod test {
 				skip:          None,
 				field:         Some(String::from("author.name")),
 				pattern:       Regex::new("^John Doe$").ok(),
+				match_mode:    MatchMode::Any,
 			}],
 			false,
 			false,
@@ -889,6 +940,7 @@ mod test {
 				skip:          None,
 				field:         Some(String::from("remote.pr_title")),
 				pattern:       Regex::new("^feat(\\([^)]+\\))?").ok(),
+				match_mode:    MatchMode::Any,
 			}],
 			false,
 			false,
@@ -907,6 +959,7 @@ mod test {
 				skip:          None,
 				field:         Some(String::from("author.name")),
 				pattern:       Regex::new("Something else").ok(),
+				match_mode:    MatchMode::Any,
 			}],
 			false,
 			true,
