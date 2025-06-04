@@ -346,12 +346,12 @@ impl Commit<'_> {
 							}
 							Value::Array(arr) => {
 								let mut result = Vec::new();
-								for v in arr {
-									match v {
+								for item in arr {
+									match item {
 										Value::String(s) => result.push(s.clone()),
 										Value::Number(_) |
 										Value::Bool(_) |
-										Value::Null => result.push(v.to_string()),
+										Value::Null => result.push(item.to_string()),
 										_ => return None,
 									}
 								}
