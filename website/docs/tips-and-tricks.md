@@ -102,3 +102,22 @@ To support unicode characters, use `xelatex` as PDF engine and a font family whi
 ```bash
 pandoc --from=gfm --to=pdf --pdf-engine=xelatex -o CHANGELOG.pdf CHANGELOG.md --variable mainfont="Segoe UI Emoji"
 ```
+
+## Use release statistics in your template
+
+```jinja2
+* {{ statistics.commit_count }} commits contributed to the release.
+{%- if statistics.commit_duration_days is defined %}
+	* {{ statistics.commit_duration_days }} days spanned between the first and last commit.
+{%- endif %}
+* {{ statistics.conventional_commit_count }} commit was understood as conventional.
+* {{ statistics.total_link_count }} issues like '(#ID)' were seen in commit messages.
+{%- if statistics.link_counts | length > 0 %}
+	{%- for link in statistics.link_counts %}
+		** [{{ link.text }}]({{ link.href }}) ({{ link.count }} time{% if link.count > 1 %}s{% endif %} referenced)
+	{%- endfor %}
+{%- endif %}
+{%- if statistics.days_passed_since_last_release is defined %}
+	* {{ statistics.days_passed_since_last_release }} days passed between releases.
+{%- endif %}
+```
