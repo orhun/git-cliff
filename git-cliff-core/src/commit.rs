@@ -756,10 +756,18 @@ mod test {
 	}
 
 	#[test]
-	fn parse_commit_field() -> Result<()> {
+	fn parse_body() -> Result<()> {
 		let mut commit = Commit::new(
 			String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
-			String::from("feat: do something"),
+			String::from(
+				"fix: do something
+
+Introduce something great
+
+BREAKING CHANGE: drop support for something else
+Refs: #123
+",
+			),
 		);
 		commit.author = Signature {
 			name:      Some("John Doe".to_string()),
@@ -770,7 +778,63 @@ mod test {
 			username:      None,
 			pr_title:      Some("feat: do something".to_string()),
 			pr_number:     None,
-			pr_labels:     vec![String::from("feature")],
+			pr_labels:     vec![
+				String::from("feature"),
+				String::from("deprecation"),
+			],
+			is_first_time: true,
+		});
+		let commit = commit.into_conventional()?;
+
+		let parsed_commit = commit.clone().parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          Regex::new("something great").ok(),
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         None,
+				pattern:       None,
+				match_mode:    MatchMode::Any,
+			}],
+			false,
+			false,
+		)?;
+		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+
+		Ok(())
+	}
+
+	#[test]
+	fn parse_commit_field() -> Result<()> {
+		let mut commit = Commit::new(
+			String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
+			String::from(
+				"fix: do something
+
+Introduce something great
+
+BREAKING CHANGE: drop support for something else
+Refs: #123
+",
+			),
+		);
+		commit.author = Signature {
+			name:      Some("John Doe".to_string()),
+			email:     None,
+			timestamp: 0x0,
+		};
+		commit.remote = Some(crate::contributor::RemoteContributor {
+			username:      None,
+			pr_title:      Some("feat: do something".to_string()),
+			pr_number:     None,
+			pr_labels:     vec![
+				String::from("feature"),
+				String::from("deprecation"),
+			],
 			is_first_time: true,
 		});
 
@@ -822,14 +886,71 @@ mod test {
 				default_scope: None,
 				scope:         None,
 				skip:          None,
-				field:         Some(String::from("remote.pr_labels")),
-				pattern:       Regex::new("feature").ok(),
+				field:         Some(String::from("body")),
+				pattern:       Regex::new("something great").ok(),
 				match_mode:    MatchMode::Any,
 			}],
 			false,
 			false,
 		)?;
 		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+
+		let parsed_commit = commit.clone().parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("remote.pr_labels")),
+				pattern:       Regex::new("feature|deprecation").ok(),
+				match_mode:    MatchMode::Any,
+			}],
+			false,
+			false,
+		)?;
+		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+
+		let parsed_commit = commit.clone().parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("remote.pr_labels")),
+				pattern:       Regex::new("feature|deprecation").ok(),
+				match_mode:    MatchMode::All,
+			}],
+			false,
+			false,
+		)?;
+		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+
+		let parsed_commit = commit.clone().parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("remote.pr_labels")),
+				pattern:       Regex::new("feature").ok(),
+				match_mode:    MatchMode::All,
+			}],
+			false,
+			false,
+		)?;
+		assert_eq!(None, parsed_commit.group);
 
 		let parse_result = commit.clone().parse(
 			&[CommitParser {
