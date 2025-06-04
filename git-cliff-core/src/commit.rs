@@ -837,6 +837,7 @@ Refs: #123
 			],
 			is_first_time: true,
 		});
+		let commit = commit.into_conventional()?;
 
 		let parsed_commit = commit.clone().parse(
 			&[CommitParser {
