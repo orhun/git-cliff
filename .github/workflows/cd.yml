@@ -257,7 +257,8 @@ jobs:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
           args: --release --sdist --out wheels
-          sccache: "true"
+          # https://github.com/PyO3/maturin-action/issues/348
+          sccache: "false"
           # https://github.com/PyO3/maturin-action/issues/245
           manylinux: ${{ matrix.build.TARGET == 'aarch64-unknown-linux-gnu' && '2_28' || 'auto' }}
       - name: Build Python wheels (macos & windows)
@@ -269,7 +270,8 @@ jobs:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
           args: --release --sdist --out wheels
-          sccache: "true"
+          # https://github.com/PyO3/maturin-action/issues/348
+          sccache: "false"
       - name: Build Python wheels (musl)
         if: matrix.build.PYPI_PUBLISH == true && endsWith(matrix.build.OS, 'musl')
         uses: PyO3/maturin-action@v1
@@ -277,7 +279,8 @@ jobs:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
           args: --release --sdist --out wheels
-          sccache: "true"
+          # https://github.com/PyO3/maturin-action/issues/348
+          sccache: "false"
           manylinux: musllinux_1_2
       - name: Upload Python wheels
         uses: actions/upload-artifact@v4
@@ -482,7 +485,7 @@ jobs:
       contents: read
     steps:
       - name: Bump formula
-        uses: mislav/bump-homebrew-formula-action@v3
+        uses: mislav/bump-homebrew-formula-action@v3.4
         with:
           formula-name: git-cliff
           formula-path: Formula/g/git-cliff.rb

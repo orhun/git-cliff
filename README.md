@@ -87,7 +87,7 @@ Made with [contrib.rocks](https://contrib.rocks).
 <a href="https://discord.gg/W3mAwMDWH4">
     <img src="https://img.shields.io/discord/1093977388892819553?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=discord&logoColor=BEC5C9&label=join%20discord"></a>
 <a href="https://twitter.com/git_cliff">
-    <img src="https://img.shields.io/twitter/follow/git_cliff?style=flat&labelColor=1C2C2E&color=BEC5C9&logo=twitter&logoColor=BEC5C9"></a>
+    <img src="https://img.shields.io/badge/follow-@git__cliff-BEC5C9?style=flat&logo=x&logoColor=BEC5C9&labelColor=1C2C2E"></a>
 <a href="https://fosstodon.org/@git_cliff">
     <img src="https://img.shields.io/mastodon/follow/111545487385097711?domain=https%3A%2F%2Ffosstodon.org&style=flat&labelColor=1C2C2E&color=BEC5C9&logo=mastodon&logoColor=BEC5C9"></a>
 

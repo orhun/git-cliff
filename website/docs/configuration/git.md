@@ -199,7 +199,7 @@ Examples:
     - `author.email`
     - `committer.email`
     - `committer.name`
-  - `body` is a special field which contains the body of a convetional commit, if applicable.
+  - `body` is a special field which contains the body of a conventional commit, if applicable.
   - Be aware that all fields are converted to JSON strings before they are parsed by the given regex, especially when dealing with arrays.
 
 ### protect_breaking_commits
