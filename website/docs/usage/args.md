@@ -45,6 +45,7 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
 -p, --prepend <PATH>               Prepends entries to the given changelog file [env: GIT_CLIFF_PREPEND=]
 -o, --output [<PATH>]              Writes output to the given file [env: GIT_CLIFF_OUTPUT=]
 -t, --tag <TAG>                    Sets the tag for the latest version [env: GIT_CLIFF_TAG=]
+--initial_tag                      Sets the initial tag
 -b, --body <TEMPLATE>              Sets the template for the changelog body [env: GIT_CLIFF_TEMPLATE=]
     --from-context <PATH>          Generates changelog from a JSON context [env: GIT_CLIFF_CONTEXT=]
 -s, --strip <PART>                 Strips the given parts from the changelog [possible values: header, footer, all]

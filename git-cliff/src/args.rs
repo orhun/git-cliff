@@ -223,11 +223,11 @@ pub struct Opt {
 	/// Prints bumped version for unreleased changes.
 	#[arg(long, help_heading = Some("FLAGS"))]
 	pub bumped_version:   bool,
-	
-	/// Sets the initial_tag
+
 	#[arg(long)]
+	/// Sets the initial_tag
 	pub initial_tag: Option<String>,
-	
+
 	/// Sets the template for the changelog body.
 	#[arg(
 		short,
@@ -236,28 +236,28 @@ pub struct Opt {
 		value_name = "TEMPLATE",
 		allow_hyphen_values = true
 	)]
-	pub body:             Option<String>,
+	pub body:            Option<String>,
 	/// Processes the commits starting from the latest tag.
 	#[arg(short, long, help_heading = Some("FLAGS"))]
-	pub latest:           bool,
+	pub latest:          bool,
 	/// Processes the commits that belong to the current tag.
 	#[arg(long, help_heading = Some("FLAGS"))]
-	pub current:          bool,
+	pub current:         bool,
 	/// Processes the commits that do not belong to a tag.
 	#[arg(short, long, help_heading = Some("FLAGS"))]
-	pub unreleased:       bool,
+	pub unreleased:      bool,
 	/// Sorts the tags topologically.
 	#[arg(long, help_heading = Some("FLAGS"))]
-	pub topo_order:       bool,
+	pub topo_order:      bool,
 	/// Include only the tags that belong to the current branch.
 	#[arg(long, help_heading = Some("FLAGS"))]
-	pub use_branch_tags:  bool,
+	pub use_branch_tags: bool,
 	/// Disables the external command execution.
 	#[arg(long, help_heading = Some("FLAGS"))]
-	pub no_exec:          bool,
+	pub no_exec:         bool,
 	/// Prints changelog context as JSON.
 	#[arg(short = 'x', long, help_heading = Some("FLAGS"))]
-	pub context:          bool,
+	pub context:         bool,
 	/// Generates changelog from a JSON context.
 	#[arg(
         long,
@@ -265,20 +265,20 @@ pub struct Opt {
 	    value_parser = Opt::parse_dir,
 		env = "GIT_CLIFF_CONTEXT",
     )]
-	pub from_context:     Option<PathBuf>,
+	pub from_context:    Option<PathBuf>,
 	/// Strips the given parts from the changelog.
 	#[arg(short, long, value_name = "PART", value_enum)]
-	pub strip:            Option<Strip>,
+	pub strip:           Option<Strip>,
 	/// Sets sorting of the commits inside sections.
 	#[arg(
 		long,
 		value_enum,
 		default_value_t = Sort::Oldest
 	)]
-	pub sort:             Sort,
+	pub sort:            Sort,
 	/// Sets the commit range to process.
 	#[arg(value_name = "RANGE", help_heading = Some("ARGS"))]
-	pub range:            Option<String>,
+	pub range:           Option<String>,
 	/// Sets the GitHub API token.
 	#[arg(
 		long,
@@ -287,7 +287,7 @@ pub struct Opt {
 		hide_env_values = true,
 		hide = !cfg!(feature = "github"),
 	)]
-	pub github_token:     Option<SecretString>,
+	pub github_token:    Option<SecretString>,
 	/// Sets the GitHub repository.
 	#[arg(
 		long,
@@ -296,7 +296,7 @@ pub struct Opt {
 		value_name = "OWNER/REPO",
 		hide = !cfg!(feature = "github"),
 	)]
-	pub github_repo:      Option<RemoteValue>,
+	pub github_repo:     Option<RemoteValue>,
 	/// Sets the GitLab API token.
 	#[arg(
 		long,
@@ -305,7 +305,7 @@ pub struct Opt {
 		hide_env_values = true,
 		hide = !cfg!(feature = "gitlab"),
 	)]
-	pub gitlab_token:     Option<SecretString>,
+	pub gitlab_token:    Option<SecretString>,
 	/// Sets the GitLab repository.
 	#[arg(
 		long,
@@ -314,7 +314,7 @@ pub struct Opt {
 		value_name = "OWNER/REPO",
 		hide = !cfg!(feature = "gitlab"),
 	)]
-	pub gitlab_repo:      Option<RemoteValue>,
+	pub gitlab_repo:     Option<RemoteValue>,
 	/// Sets the Gitea API token.
 	#[arg(
 		long,
@@ -323,7 +323,7 @@ pub struct Opt {
 		hide_env_values = true,
 		hide = !cfg!(feature = "gitea"),
 	)]
-	pub gitea_token:      Option<SecretString>,
+	pub gitea_token:     Option<SecretString>,
 	/// Sets the Gitea repository.
 	#[arg(
 		long,
@@ -332,7 +332,7 @@ pub struct Opt {
 		value_name = "OWNER/REPO",
 		hide = !cfg!(feature = "gitea"),
 	)]
-	pub gitea_repo:       Option<RemoteValue>,
+	pub gitea_repo:      Option<RemoteValue>,
 	/// Sets the Bitbucket API token.
 	#[arg(
 		long,
@@ -341,7 +341,7 @@ pub struct Opt {
 		hide_env_values = true,
 		hide = !cfg!(feature = "bitbucket"),
 	)]
-	pub bitbucket_token:  Option<SecretString>,
+	pub bitbucket_token: Option<SecretString>,
 	/// Sets the Bitbucket repository.
 	#[arg(
 		long,
@@ -350,10 +350,10 @@ pub struct Opt {
 		value_name = "OWNER/REPO",
 		hide = !cfg!(feature = "bitbucket"),
 	)]
-	pub bitbucket_repo:   Option<RemoteValue>,
+	pub bitbucket_repo:  Option<RemoteValue>,
 	/// Load TLS certificates from the native certificate store.
 	#[arg(long, help_heading = Some("FLAGS"), hide = !cfg!(feature = "remote"))]
-	pub use_native_tls:   bool,
+	pub use_native_tls:  bool,
 }
 
 /// Custom type for the remote value.
