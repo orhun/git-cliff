@@ -320,8 +320,8 @@ impl Bump {
 	/// Returns the initial tag.
 	///
 	/// This function also logs the returned value.
-	pub fn get_initial_tag(&self,  cli_initial_tag: Option<String>) -> String {
-		if let Some(tag) = self.initial_tag.clone().or(cli_initial_tag) {
+	pub fn get_initial_tag(&self) -> String {
+		if let Some(tag) = self.initial_tag.clone() {
 			warn!(
 				"No releases found, using initial tag '{tag}' as the next version."
 			);

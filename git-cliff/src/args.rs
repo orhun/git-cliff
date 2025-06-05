@@ -224,6 +224,7 @@ pub struct Opt {
 	#[arg(long, help_heading = Some("FLAGS"))]
 	pub bumped_version:   bool,
 	
+	/// Sets the initial_tag
 	#[arg(long)]
 	pub initial_tag: Option<String>,
 	
