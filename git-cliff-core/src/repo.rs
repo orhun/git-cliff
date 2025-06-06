@@ -139,7 +139,7 @@ impl Repository {
 		include_path: Option<Vec<Pattern>>,
 		exclude_path: Option<Vec<Pattern>>,
 		topo_order_commits: bool,
-	) -> Result<Vec<Commit>> {
+	) -> Result<Vec<Commit<'_>>> {
 		let mut revwalk = self.inner.revwalk()?;
 		if topo_order_commits {
 			revwalk.set_sorting(Sort::TOPOLOGICAL)?;
