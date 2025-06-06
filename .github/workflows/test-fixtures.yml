@@ -128,6 +128,7 @@ jobs:
           - fixtures-name: test-commit-range-with-sort-commits
           - fixtures-name: test-commit-range-with-given-range
             command: a140cef^..a9d4050 --ignore-tags "."
+          - fixtures-name: test-override-scope
 
     steps:
       - name: Checkout
