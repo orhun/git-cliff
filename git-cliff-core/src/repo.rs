@@ -424,7 +424,7 @@ impl Repository {
 	}
 
 	/// Returns the commit object of the given ID.
-	pub fn find_commit(&self, id: &str) -> Option<Commit> {
+	pub fn find_commit(&self, id: &str) -> Option<Commit<'_>> {
 		if let Ok(oid) = Oid::from_str(id) {
 			if let Ok(commit) = self.inner.find_commit(oid) {
 				return Some(commit);
