@@ -139,7 +139,7 @@ impl Repository {
 		include_path: Option<Vec<Pattern>>,
 		exclude_path: Option<Vec<Pattern>>,
 		topo_order_commits: bool,
-	) -> Result<Vec<Commit>> {
+	) -> Result<Vec<Commit<'_>>> {
 		let mut revwalk = self.inner.revwalk()?;
 		if topo_order_commits {
 			revwalk.set_sorting(Sort::TOPOLOGICAL)?;
@@ -424,7 +424,7 @@ impl Repository {
 	}
 
 	/// Returns the commit object of the given ID.
-	pub fn find_commit(&self, id: &str) -> Option<Commit> {
+	pub fn find_commit(&self, id: &str) -> Option<Commit<'_>> {
 		if let Ok(oid) = Oid::from_str(id) {
 			if let Ok(commit) = self.inner.find_commit(oid) {
 				return Some(commit);
