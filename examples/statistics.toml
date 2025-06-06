@@ -25,9 +25,9 @@ body = """
 ### Commit Statistics\n
 * {{ statistics.commit_count }} commits contributed to the release.
 {%- if statistics.commit_duration_days is defined %}
-	* {{ statistics.commit_duration_days }} days spanned between the first and last commit.
+	* {{ statistics.commit_duration_days }} days passed between the first and last commit.
 {%- endif %}
-* {{ statistics.conventional_commit_count }} commit was understood as conventional.
+* {{ statistics.conventional_commit_count }} commits were understood as conventional.
 * {{ statistics.total_link_count }} issues like '(#ID)' were seen in commit messages.
 {%- if statistics.link_counts | length > 0 %}
 	{%- for link in statistics.link_counts %}
