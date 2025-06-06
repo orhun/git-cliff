@@ -431,7 +431,7 @@ impl Commit<'_> {
 	///
 	/// [`links`]: Commit::links
 	pub fn parse_links(mut self, parsers: &[LinkParser]) -> Self {
-		let mut links: Vec<Link> = vec![];
+		let mut links: Vec<Link> = Vec::new();
 		for parser in parsers {
 			let regex = &parser.pattern;
 			let replace = &parser.href;
