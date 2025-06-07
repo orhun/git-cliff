@@ -14,11 +14,11 @@ body = """
     ### {{ group | upper_first }}
     {% for commit in commits %}
         - {{ commit.message | upper_first }}\
-          {% if commit.footers %}
+          {% if commit.footers %}\
             {% for footer in commit.footers -%}
                 , {{ footer.token }}{{ footer.separator }}{{ footer.value }}\
             {% endfor %}\
-          {% endif %}
+          {% endif %}\
     {% endfor %}
 {% endfor %}\n
 """
