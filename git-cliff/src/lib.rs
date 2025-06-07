@@ -810,6 +810,8 @@ pub fn run_with_changelog_modifier(
 		{
 			warn!("There is nothing to bump.");
 			last_version
+		} else if let Some(initial_tag) = args.initial_tag.clone() {
+			initial_tag
 		} else if changelog.releases.is_empty() {
 			config.bump.get_initial_tag()
 		} else {
