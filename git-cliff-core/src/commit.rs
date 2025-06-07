@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::config::{
 	CommitParser,
 	GitConfig,
@@ -249,7 +251,7 @@ impl Commit<'_> {
 			config.filter_commits,
 		)?;
 
-		commit = commit.parse_links(&config.link_parsers)?;
+		commit = commit.parse_links(&config.link_parsers);
 
 		Ok(commit)
 	}
@@ -408,7 +410,8 @@ impl Commit<'_> {
 	/// Sets the [`links`] of the commit.
 	///
 	/// [`links`]: Commit::links
-	pub fn parse_links(mut self, parsers: &[LinkParser]) -> Result<Self> {
+	pub fn parse_links(mut self, parsers: &[LinkParser]) -> Self {
+		let mut links: Vec<Link> = Vec::new();
 		for parser in parsers {
 			let regex = &parser.pattern;
 			let replace = &parser.href;
@@ -420,13 +423,23 @@ impl Commit<'_> {
 					m.to_string()
 				};
 				let href = regex.replace(m, replace);
-				self.links.push(Link {
+				links.push(Link {
 					text,
 					href: href.to_string(),
 				});
 			}
 		}
-		Ok(self)
+		// NOTE: Deduplication is done here based on (text, href) to avoid duplicate
+		// links. This approach preserves the original order of appearance and parser
+		// application, at the cost of slightly reduced performance compared to using
+		// a HashSet directly during collection.
+		// It also ensures that parse_links remains idempotent even if called
+		// multiple times.
+		let mut seen = HashSet::new();
+		self.links = links;
+		self.links
+			.retain(|link| seen.insert((link.text.clone(), link.href.clone())));
+		self
 	}
 
 	/// Returns an iterator over this commit's [`Footer`]s, if this is a
@@ -673,7 +686,7 @@ mod test {
 				href:    String::from("https://github.com/$1"),
 				text:    None,
 			},
-		])?;
+		]);
 		assert_eq!(
 			vec![
 				Link {
