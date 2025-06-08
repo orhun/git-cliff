@@ -78,7 +78,7 @@ following context is generated to use for templating:
   },
   "statistics": {
     "commit_count": 1,
-    "commit_duration_days": 0,
+    "commits_timespan": 0,
     "conventional_commit_count": 1,
     "link_counts": [
       {
@@ -192,7 +192,7 @@ If [`conventional_commits`](/docs/configuration/git#conventional_commits) is set
   },
   "statistics": {
     "commit_count": 1,
-    "commit_duration_days": 0,
+    "commits_timespan": 0,
     "conventional_commit_count": 0,
     "link_counts": [
       {
