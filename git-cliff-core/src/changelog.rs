@@ -729,8 +729,8 @@ mod test {
 				{% endfor %}{% endfor %}
 				### Commit Statistics
 				- {{ statistics.commit_count }} commits contributed to the release.
-				{%- if statistics.commit_timespan is defined %}
-				- {{ statistics.commit_timespan }} days spanned between the first and last commit.
+				{%- if statistics.commits_timespan is defined %}
+				- {{ statistics.commits_timespan }} days spanned between the first and last commit.
 				{%- endif %}
 				- {{ statistics.conventional_commit_count }} commit was understood as conventional.
 				- {{ statistics.total_link_count }} issues like '(#ID)' were seen in commit messages.

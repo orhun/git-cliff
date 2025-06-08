@@ -32,7 +32,7 @@ pub struct Statistics {
 	/// The time span, in days, from the first to the last commit in the
 	/// release. Only present if there is more than one commit.
 	#[serde(skip_serializing_if = "Option::is_none")]
-	pub commit_timespan:                Option<i64>,
+	pub commits_timespan:               Option<i64>,
 	/// The number of commits that follow the Conventional Commits
 	/// specification.
 	pub conventional_commit_count:      usize,
@@ -61,9 +61,9 @@ impl From<&Release<'_>> for Statistics {
 	///   available.
 	fn from(release: &Release) -> Self {
 		let commit_count = release.commits.len();
-		let commit_timespan = if release.commits.len() < 2 {
+		let commits_timespan = if release.commits.len() < 2 {
 			trace!(
-				"commit_timespan: insufficient commits to calculate duration \
+				"commits_timespan: insufficient commits to calculate duration \
 				 (found {})",
 				release.commits.len()
 			);
@@ -115,7 +115,7 @@ impl From<&Release<'_>> for Statistics {
 		};
 		Self {
 			commit_count,
-			commit_timespan,
+			commits_timespan,
 			conventional_commit_count,
 			link_counts,
 			total_link_count,
@@ -253,7 +253,7 @@ mod test {
 
 		let statistics = Statistics::from(&release);
 		assert_eq!(release.commits.len(), statistics.commit_count);
-		assert_eq!(Some(1), statistics.commit_timespan);
+		assert_eq!(Some(1), statistics.commits_timespan);
 		assert_eq!(
 			conventional_commits.len(),
 			statistics.conventional_commit_count
@@ -291,7 +291,7 @@ mod test {
 		};
 
 		let statistics = Statistics::from(&release);
-		assert_eq!(None, statistics.commit_timespan);
+		assert_eq!(None, statistics.commits_timespan);
 
 		let commits = vec![];
 		let release = Release {
