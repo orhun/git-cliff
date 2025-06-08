@@ -107,8 +107,8 @@ pandoc --from=gfm --to=pdf --pdf-engine=xelatex -o CHANGELOG.pdf CHANGELOG.md --
 
 ```jinja2
 * {{ statistics.commit_count }} commits contributed to the release.
-{%- if statistics.commit_timespan is defined %}
-	* {{ statistics.commit_timespan }} days passed between the first and last commit.
+{%- if statistics.commits_timespan is defined %}
+	* {{ statistics.commits_timespan }} days passed between the first and last commit.
 {%- endif %}
 * {{ statistics.conventional_commit_count }} commits were understood as conventional.
 * {{ statistics.total_link_count }} issues like '(#ID)' were seen in commit messages.
