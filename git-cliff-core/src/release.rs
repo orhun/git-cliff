@@ -99,7 +99,7 @@ impl Release<'_> {
 		self.calculate_next_version_with_config(&Bump::default())
 	}
 
-	/// Returns a copy of the release with aggregated statistics populated.
+	/// Returns a new `Release` instance with aggregated statistics populated.
 	///
 	/// This method computes various statistics from the release data and sets
 	/// the `statistics` field. It does not modify the original release but
