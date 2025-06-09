@@ -20,12 +20,12 @@ All notable changes to this project will be documented in this file.
 
 ### Commit Statistics
 * 5 commits contributed to the release.
-* 0 days spanned between the first and last commit.
-* 5 commit was understood as conventional.
+* 0 days passed between the first and last commit.
+* 5 commits were understood as conventional.
 * 4 issues like '(#ID)' were seen in commit messages.
 ** [#452](https://github.com/orhun/git-cliff/issues/452) (2 times referenced)
-** [ietf-rfc3986](https://datatracker.ietf.org/doc/html/rfc3986) (1 time referenced)
 ** [#1148](https://github.com/orhun/git-cliff/issues/1148) (1 time referenced)
+** [ietf-rfc3986](https://datatracker.ietf.org/doc/html/rfc3986) (1 time referenced)
 * -19087 days passed between releases.
 
 ## [0.2.0] - 2022-04-05
@@ -40,8 +40,8 @@ All notable changes to this project will be documented in this file.
 
 ### Commit Statistics
 * 2 commits contributed to the release.
-* 0 days spanned between the first and last commit.
-* 2 commit was understood as conventional.
+* 0 days passed between the first and last commit.
+* 2 commits were understood as conventional.
 * 0 issues like '(#ID)' were seen in commit messages.
 * 0 days passed between releases.
 
@@ -52,7 +52,7 @@ All notable changes to this project will be documented in this file.
 - Fix feature 1
 
 ### Commit Statistics
-* 1 commits contributed to the release.
+* 1 commit contributed to the release.
 * 1 commit was understood as conventional.
 * 0 issues like '(#ID)' were seen in commit messages.
 * 19087 days passed between releases.
