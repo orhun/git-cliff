@@ -87,7 +87,6 @@ following context is generated to use for templating:
         "count": 1
       }
     ],
-    "total_link_count": 1,
     "days_passed_since_last_release": 0
   },
   "previous": {
@@ -201,7 +200,6 @@ If [`conventional_commits`](/docs/configuration/git#conventional_commits) is set
         "count": 1
       }
     ],
-    "total_link_count": 1,
     "days_passed_since_last_release": 0
   },
   "previous": {

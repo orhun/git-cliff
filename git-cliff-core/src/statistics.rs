@@ -38,8 +38,6 @@ pub struct Statistics {
 	pub conventional_commit_count:      usize,
 	/// The number of times each link was referenced in commit messages.
 	pub link_counts:                    Vec<LinkCount>,
-	/// The total number of links referenced in all commit messages.
-	pub total_link_count:               usize,
 	/// The number of days since the previous release.
 	/// Only present if this is not the first release.
 	#[serde(skip_serializing_if = "Option::is_none")]
@@ -98,8 +96,12 @@ impl From<&Release<'_>> for Statistics {
 			.into_iter()
 			.map(|((text, href), count)| LinkCount { text, href, count })
 			.collect();
-		link_counts.sort_by(|lhs, rhs| rhs.count.cmp(&lhs.count));
-		let total_link_count: usize = link_counts.iter().map(|l| l.count).sum();
+		link_counts.sort_by(|lhs, rhs| {
+			rhs.count
+				.cmp(&lhs.count)
+				.then_with(|| lhs.text.cmp(&rhs.text))
+				.then_with(|| lhs.href.cmp(&rhs.href))
+		});
 		let days_passed_since_last_release = match release.previous.as_ref() {
 			Some(prev) => Utc
 				.timestamp_opt(release.timestamp, 0)
@@ -118,7 +120,6 @@ impl From<&Release<'_>> for Statistics {
 			commits_timespan,
 			conventional_commit_count,
 			link_counts,
-			total_link_count,
 			days_passed_since_last_release,
 		}
 	}
@@ -266,7 +267,6 @@ mod test {
 			Some(1),
 			find_count(&statistics.link_counts, "#455", "https://github.com/455")
 		);
-		assert_eq!(3, statistics.total_link_count);
 		assert_eq!(Some(2), statistics.days_passed_since_last_release);
 
 		let commits = vec![Commit {

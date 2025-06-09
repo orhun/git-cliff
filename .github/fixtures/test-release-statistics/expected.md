@@ -22,7 +22,7 @@ All notable changes to this project will be documented in this file.
 * 5 commits contributed to the release.
 * 0 days passed between the first and last commit.
 * 5 commits were understood as conventional.
-* 4 issues like '(#ID)' were seen in commit messages.
+* 3 issues like '(#ID)' were seen in commit messages.
 ** [#452](https://github.com/orhun/git-cliff/issues/452) (2 times referenced)
 ** [#1148](https://github.com/orhun/git-cliff/issues/1148) (1 time referenced)
 ** [ietf-rfc3986](https://datatracker.ietf.org/doc/html/rfc3986) (1 time referenced)
