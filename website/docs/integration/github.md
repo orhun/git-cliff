@@ -100,7 +100,7 @@ https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}/compare/{{
 
 ### Commit authors
 
-For each commit, GitHub related values are added as a nested object (named `github`) to the [template context](/docs/templating/context):
+For each commit, GitHub related values are added as a nested object (named `remote`) to the [template context](/docs/templating/context):
 
 ```json
 {

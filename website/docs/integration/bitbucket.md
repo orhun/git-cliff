@@ -96,7 +96,7 @@ https://bitbucket.org/{{ remote.bitbucket.owner }}/{{ remote.bitbucket.repo }}/c
 
 ### Commit authors
 
-For each commit, Bitbucket related values are added as a nested object (named `bitbucket`) to the [template context](/docs/templating/context):
+For each commit, Bitbucket related values are added as a nested object (named `remote`) to the [template context](/docs/templating/context):
 
 ```json
 {
