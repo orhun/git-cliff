@@ -730,19 +730,19 @@ mod test {
 				- {{ commit.message }}{% endfor %}
 				{% endfor %}{% endfor %}
 				### Commit Statistics
-				* {{ statistics.commit_count }} commit{% if statistics.commit_count != 1 %}s{% endif %} contributed to the release.
+				* {{ statistics.commit_count }} commit(s) contributed to the release.
 				{%- if statistics.commits_timespan is defined %}
-				* {{ statistics.commits_timespan }} day{% if statistics.commits_timespan != 1 %}s{% endif %} passed between the first and last commit.
+					* {{ statistics.commits_timespan }} day(s) passed between the first and last commit.
 				{%- endif %}
-				* {{ statistics.conventional_commit_count }} commit{% if statistics.conventional_commit_count != 1 %}s{% endif %} {% if statistics.conventional_commit_count > 1 %}were{% else %}was{% endif %} parsed as conventional.
-				* {{ statistics.links | length }} issue{% if statistics.links | length != 1 %}s{% endif %} like '(#ID)' {% if statistics.links | length != 1 %}were{% else %}was{% endif %} seen in commit messages.
+				* {{ statistics.conventional_commit_count }} commit(s) {% if statistics.conventional_commit_count > 1 %}were{% else %}was{% endif %} parsed as conventional.
+				* {{ statistics.links | length }} issue(s) like '(#ID)' {% if statistics.links | length != 1 %}were{% else %}was{% endif %} seen in commit messages.
 				{%- if statistics.links | length > 0 %}
-				{%- for link in statistics.links %}
-					** [{{ link.text }}]({{ link.href }}) ({{ link.count }} time{% if link.count != 1 %}s{% endif %} referenced)
-				{%- endfor %}
+					{%- for link in statistics.links %}
+						** [{{ link.text }}]({{ link.href }}) (referenced {{ link.count }} time(s))
+					{%- endfor %}
 				{%- endif %}
 				{%- if statistics.days_passed_since_last_release is defined %}
-				* {{ statistics.days_passed_since_last_release }} day{% if statistics.days_passed_since_last_release != 1 %}s{% endif %} passed between releases.
+				* {{ statistics.days_passed_since_last_release }} day(s) passed between releases.
 				{%- endif %}
 				"#,
 				),
@@ -1311,11 +1311,11 @@ mod test {
 			- do exciting stuff
 
 			### Commit Statistics
-			* 4 commits contributed to the release.
-			* 5 days passed between the first and last commit.
-			* 4 commits were parsed as conventional.
-			* 0 issues like '(#ID)' were seen in commit messages.
-			* -578 days passed between releases.
+			* 4 commit(s) contributed to the release.
+			* 5 day(s) passed between the first and last commit.
+			* 4 commit(s) were parsed as conventional.
+			* 0 issue(s) like '(#ID)' were seen in commit messages.
+			* -578 day(s) passed between releases.
 
 			## Release [v1.0.0] - 1971-08-02 - (/root/repo)
 			(0bc123)
@@ -1361,10 +1361,10 @@ mod test {
 			- make good stuff
 
 			### Commit Statistics
-			* 13 commits contributed to the release.
-			* 13 days passed between the first and last commit.
-			* 12 commits were parsed as conventional.
-			* 0 issues like '(#ID)' were seen in commit messages.
+			* 13 commit(s) contributed to the release.
+			* 13 day(s) passed between the first and last commit.
+			* 12 commit(s) were parsed as conventional.
+			* 0 issue(s) like '(#ID)' were seen in commit messages.
 			-- total releases: 2 --
 			"#
 			)
@@ -1467,12 +1467,12 @@ chore(deps): fix broken deps
 			- merge #5
 
 			### Commit Statistics
-			* 8 commits contributed to the release.
-			* 6 days passed between the first and last commit.
-			* 8 commits were parsed as conventional.
-			* 1 issue like '(#ID)' was seen in commit messages.
-			** [#5](https://github.com/5) (1 time referenced)
-			* -578 days passed between releases.
+			* 8 commit(s) contributed to the release.
+			* 6 day(s) passed between the first and last commit.
+			* 8 commit(s) were parsed as conventional.
+			* 1 issue(s) like '(#ID)' was seen in commit messages.
+			** [#5](https://github.com/5) (referenced 1 time(s))
+			* -578 day(s) passed between releases.
 
 			## Release [v1.0.0] - 1971-08-02 - (/root/repo)
 			(0bc123)
@@ -1522,11 +1522,11 @@ chore(deps): fix broken deps
 			- make good stuff
 
 			### Commit Statistics
-			* 18 commits contributed to the release.
-			* 12 days passed between the first and last commit.
-			* 17 commits were parsed as conventional.
-			* 1 issue like '(#ID)' was seen in commit messages.
-			** [#3](https://github.com/3) (1 time referenced)
+			* 18 commit(s) contributed to the release.
+			* 12 day(s) passed between the first and last commit.
+			* 17 commit(s) were parsed as conventional.
+			* 1 issue(s) like '(#ID)' was seen in commit messages.
+			** [#3](https://github.com/3) (referenced 1 time(s))
 			-- total releases: 2 --
 			"#
 			)
