@@ -580,10 +580,12 @@ impl<'a> Changelog<'a> {
 					.calculate_next_version_with_config(&self.config.bump)?;
 				debug!("Bumping the version to {next_version}");
 				last_release.version = Some(next_version.to_string());
-				last_release.timestamp = SystemTime::now()
-					.duration_since(UNIX_EPOCH)?
-					.as_secs()
-					.try_into()?;
+				last_release.timestamp = Some(
+					SystemTime::now()
+						.duration_since(UNIX_EPOCH)?
+						.as_secs()
+						.try_into()?,
+				);
 				return Ok(Some(next_version));
 			}
 		}
@@ -1104,7 +1106,7 @@ mod test {
 			],
 			commit_range: None,
 			commit_id: Some(String::from("0bc123")),
-			timestamp: 50000000,
+			timestamp: Some(50000000),
 			previous: None,
 			repository: Some(String::from("/root/repo")),
 			submodule_commits: HashMap::from([(
@@ -1237,7 +1239,7 @@ mod test {
 				],
 				commit_range: None,
 				commit_id: None,
-				timestamp: 1000,
+				timestamp: Some(1000),
 				previous: Some(Box::new(test_release)),
 				repository: Some(String::from("/root/repo")),
 				submodule_commits: HashMap::from([
@@ -1283,7 +1285,7 @@ mod test {
 		let (config, releases) = get_test_data();
 		let mut changelog = Changelog::new(releases, &config, None)?;
 		changelog.bump_version()?;
-		changelog.releases[0].timestamp = 0;
+		changelog.releases[0].timestamp = Some(0);
 		let mut out = Vec::new();
 		changelog.generate(&mut out)?;
 		assert_eq!(

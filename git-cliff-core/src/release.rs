@@ -47,7 +47,7 @@ pub struct Release<'a> {
 	#[serde(rename = "commit_id")]
 	pub commit_id:         Option<String>,
 	/// Timestamp of the release in seconds, from epoch.
-	pub timestamp:         i64,
+	pub timestamp:         Option<i64>,
 	/// Previous release.
 	pub previous:          Option<Box<Release<'a>>>,
 	/// Repository path.
@@ -223,7 +223,7 @@ mod test {
 					.collect(),
 				commit_range: None,
 				commit_id: None,
-				timestamp: 0,
+				timestamp: Some(0),
 				previous: Some(Box::new(Release {
 					version: Some(String::from(version)),
 					..Default::default()
@@ -406,9 +406,9 @@ mod test {
 	fn with_statistics() -> Result<()> {
 		let release = Release {
 			commits: vec![],
-			timestamp: 1649373910,
+			timestamp: Some(1649373910),
 			previous: Some(Box::new(Release {
-				timestamp: 1649201110,
+				timestamp: Some(1649201110),
 				..Default::default()
 			})),
 			repository: Some(String::from("/root/repo")),
@@ -462,7 +462,7 @@ mod test {
 			],
 			commit_range: None,
 			commit_id: None,
-			timestamp: 0,
+			timestamp: None,
 			previous: Some(Box::new(Release {
 				version: Some(String::from("1.0.0")),
 				..Default::default()
@@ -833,7 +833,7 @@ mod test {
 			],
 			commit_range: None,
 			commit_id: None,
-			timestamp: 0,
+			timestamp: None,
 			previous: Some(Box::new(Release {
 				version: Some(String::from("1.0.0")),
 				..Default::default()
@@ -1226,7 +1226,7 @@ mod test {
 			],
 			commit_range: None,
 			commit_id: None,
-			timestamp: 0,
+			timestamp: None,
 			previous: Some(Box::new(Release {
 				version: Some(String::from("1.0.0")),
 				..Default::default()
@@ -1587,7 +1587,7 @@ mod test {
 			],
 			commit_range: None,
 			commit_id: None,
-			timestamp: 0,
+			timestamp: None,
 			previous: Some(Box::new(Release {
 				version: Some(String::from("1.0.0")),
 				..Default::default()

@@ -18,7 +18,7 @@ use serde::{
 pub struct LinkCount {
 	/// Text of the link.
 	pub text:  String,
-	/// URL of the link
+	/// URL of the link.
 	pub href:  String,
 	/// The number of times this link was referenced.
 	pub count: usize,
@@ -103,10 +103,18 @@ impl From<&Release<'_>> for Statistics {
 				.then_with(|| lhs.href.cmp(&rhs.href))
 		});
 		let days_passed_since_last_release = match release.previous.as_ref() {
-			Some(prev) => Utc
-				.timestamp_opt(release.timestamp, 0)
+			Some(prev) => release
+				.timestamp
+				.map(|timestamp| Utc.timestamp_opt(timestamp, 0))
+				.unwrap_or_else(|| {
+					let now = Utc::now();
+					Utc.timestamp_opt(now.timestamp(), 0)
+				})
 				.single()
-				.zip(Utc.timestamp_opt(prev.timestamp, 0).single())
+				.zip(
+					prev.timestamp
+						.and_then(|ts| Utc.timestamp_opt(ts, 0).single()),
+				)
 				.map(|(curr, prev)| {
 					(curr.date_naive() - prev.date_naive()).num_days()
 				}),
@@ -243,9 +251,9 @@ mod test {
 				.collect();
 		let release = Release {
 			commits,
-			timestamp: 1649373910,
+			timestamp: Some(1649373910),
 			previous: Some(Box::new(Release {
-				timestamp: 1649201110,
+				timestamp: Some(1649201110),
 				..Default::default()
 			})),
 			repository: Some(String::from("/root/repo")),
@@ -281,9 +289,9 @@ mod test {
 		}];
 		let release = Release {
 			commits,
-			timestamp: 1649373910,
+			timestamp: Some(1649373910),
 			previous: Some(Box::new(Release {
-				timestamp: 1649201110,
+				timestamp: Some(1649201110),
 				..Default::default()
 			})),
 			repository: Some(String::from("/root/repo")),
@@ -296,7 +304,7 @@ mod test {
 		let commits = vec![];
 		let release = Release {
 			commits,
-			timestamp: 1649373910,
+			timestamp: Some(1649373910),
 			previous: None,
 			repository: Some(String::from("/root/repo")),
 			..Default::default()
