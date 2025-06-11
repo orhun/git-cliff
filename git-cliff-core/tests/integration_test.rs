@@ -143,6 +143,8 @@ fn generate_changelog() -> Result<()> {
 		],
 		limit_commits:            None,
 		recurse_submodules:       None,
+		include_paths:            Vec::new(),
+		exclude_paths:            Vec::new(),
 	};
 
 	let mut commit_with_author = Commit::new(

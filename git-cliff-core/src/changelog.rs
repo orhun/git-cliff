@@ -898,6 +898,8 @@ mod test {
 				link_parsers:             [].to_vec(),
 				limit_commits:            None,
 				recurse_submodules:       None,
+				include_paths:            Vec::new(),
+				exclude_paths:            Vec::new(),
 			},
 			remote:    RemoteConfig {
 				github:    Remote {
