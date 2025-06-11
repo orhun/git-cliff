@@ -106,18 +106,18 @@ pandoc --from=gfm --to=pdf --pdf-engine=xelatex -o CHANGELOG.pdf CHANGELOG.md --
 ## Use release statistics in your template
 
 ```jinja2
-* {{ statistics.commit_count }} commit{% if statistics.commit_count != 1 %}s{% endif %} contributed to the release.
+* {{ statistics.commit_count }} commit(s) contributed to the release.
 {%- if statistics.commits_timespan is defined %}
-  * {{ statistics.commits_timespan }} day{% if statistics.commits_timespan != 1 %}s{% endif %} passed between the first and last commit.
+    * {{ statistics.commits_timespan }} day(s) passed between the first and last commit.
 {%- endif %}
-* {{ statistics.conventional_commit_count }} commit{% if statistics.conventional_commit_count != 1 %}s{% endif %} {% if statistics.conventional_commit_count > 1 %}were{% else %}was{% endif %} understood as conventional.
-* {{ statistics.link_counts | length }} issue{% if statistics.link_counts | length != 1 %}s{% endif %} like '(#ID)' {% if statistics.link_counts | length != 1 %}were{% else %}was{% endif %} seen in commit messages.
-{%- if statistics.link_counts | length > 0 %}
-  {%- for link in statistics.link_counts %}
-    ** [{{ link.text }}]({{ link.href }}) ({{ link.count }} time{% if link.count != 1 %}s{% endif %} referenced)
-  {%- endfor %}
+* {{ statistics.conventional_commit_count }} commit(s) {% if statistics.conventional_commit_count > 1 %}were{% else %}was{% endif %} parsed as conventional.
+* {{ statistics.links | length }} issue(s) like '(#ID)' {% if statistics.links | length != 1 %}were{% else %}was{% endif %} seen in commit messages.
+{%- if statistics.links | length > 0 %}
+    {%- for link in statistics.links %}
+        ** [{{ link.text }}]({{ link.href }}) (referenced {{ link.count }} time(s))
+    {%- endfor %}
 {%- endif %}
 {%- if statistics.days_passed_since_last_release is defined %}
-  * {{ statistics.days_passed_since_last_release }} day{% if statistics.days_passed_since_last_release != 1 %}s{% endif %} passed between releases.
+    * {{ statistics.days_passed_since_last_release }} day(s) passed between releases.
 {%- endif %}
 ```
