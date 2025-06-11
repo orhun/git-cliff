@@ -28,16 +28,16 @@ pub struct LinkCount {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Statistics {
 	/// The total number of commits included in the release.
-	pub commit_count:                   usize,
+	pub commit_count: usize,
 	/// The time span, in days, from the first to the last commit in the
 	/// release. Only present if there is more than one commit.
 	#[serde(skip_serializing_if = "Option::is_none")]
-	pub commits_timespan:               Option<i64>,
+	pub commits_timespan: Option<i64>,
 	/// The number of commits that follow the Conventional Commits
 	/// specification.
-	pub conventional_commit_count:      usize,
+	pub conventional_commit_count: usize,
 	/// The number of times each link was referenced in commit messages.
-	pub link_counts:                    Vec<LinkCount>,
+	pub links: Vec<LinkCount>,
 	/// The number of days since the previous release.
 	/// Only present if this is not the first release.
 	#[serde(skip_serializing_if = "Option::is_none")]
@@ -83,7 +83,7 @@ impl From<&Release<'_>> for Statistics {
 		};
 		let conventional_commit_count =
 			release.commits.iter().filter(|c| c.conv.is_some()).count();
-		let mut link_counts: Vec<LinkCount> = release
+		let mut links: Vec<LinkCount> = release
 			.commits
 			.iter()
 			.fold(HashMap::new(), |mut acc, c| {
@@ -96,7 +96,7 @@ impl From<&Release<'_>> for Statistics {
 			.into_iter()
 			.map(|((text, href), count)| LinkCount { text, href, count })
 			.collect();
-		link_counts.sort_by(|lhs, rhs| {
+		links.sort_by(|lhs, rhs| {
 			rhs.count
 				.cmp(&lhs.count)
 				.then_with(|| lhs.text.cmp(&rhs.text))
@@ -127,7 +127,7 @@ impl From<&Release<'_>> for Statistics {
 			commit_count,
 			commits_timespan,
 			conventional_commit_count,
-			link_counts,
+			links,
 			days_passed_since_last_release,
 		}
 	}
@@ -269,11 +269,11 @@ mod test {
 		);
 		assert_eq!(
 			Some(2),
-			find_count(&statistics.link_counts, "RFC456", "rfc://456")
+			find_count(&statistics.links, "RFC456", "rfc://456")
 		);
 		assert_eq!(
 			Some(1),
-			find_count(&statistics.link_counts, "#455", "https://github.com/455")
+			find_count(&statistics.links, "#455", "https://github.com/455")
 		);
 		assert_eq!(Some(2), statistics.days_passed_since_last_release);
 

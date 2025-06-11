@@ -735,9 +735,9 @@ mod test {
 				* {{ statistics.commits_timespan }} day{% if statistics.commits_timespan != 1 %}s{% endif %} passed between the first and last commit.
 				{%- endif %}
 				* {{ statistics.conventional_commit_count }} commit{% if statistics.conventional_commit_count != 1 %}s{% endif %} {% if statistics.conventional_commit_count > 1 %}were{% else %}was{% endif %} understood as conventional.
-				* {{ statistics.link_counts | length }} issue{% if statistics.link_counts | length != 1 %}s{% endif %} like '(#ID)' {% if statistics.link_counts | length != 1 %}were{% else %}was{% endif %} seen in commit messages.
-				{%- if statistics.link_counts | length > 0 %}
-				{%- for link in statistics.link_counts %}
+				* {{ statistics.links | length }} issue{% if statistics.links | length != 1 %}s{% endif %} like '(#ID)' {% if statistics.links | length != 1 %}were{% else %}was{% endif %} seen in commit messages.
+				{%- if statistics.links | length > 0 %}
+				{%- for link in statistics.links %}
 					** [{{ link.text }}]({{ link.href }}) ({{ link.count }} time{% if link.count != 1 %}s{% endif %} referenced)
 				{%- endfor %}
 				{%- endif %}

@@ -80,7 +80,7 @@ following context is generated to use for templating:
     "commit_count": 1,
     "commits_timespan": 0,
     "conventional_commit_count": 1,
-    "link_counts": [
+    "links": [
       {
         "text": "#452",
         "href": "https://github.com/orhun/git-cliff/issues/452",
@@ -193,7 +193,7 @@ If [`conventional_commits`](/docs/configuration/git#conventional_commits) is set
     "commit_count": 1,
     "commits_timespan": 0,
     "conventional_commit_count": 0,
-    "link_counts": [
+    "links": [
       {
         "text": "#452",
         "href": "https://github.com/orhun/git-cliff/issues/452",
