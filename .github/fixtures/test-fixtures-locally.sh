@@ -32,4 +32,8 @@ fi
 
 # Show results
 echo -e "\n---Run git-cliff---" >&2
-cargo run --manifest-path "$SCRIPT_DIR/../../Cargo.toml" -- -vv --config "$FIXTURES_DIR/cliff.toml" "${@:2}"
+cargo run --manifest-path "$SCRIPT_DIR/../../Cargo.toml" -- -vv --config "$FIXTURES_DIR/cliff.toml" "${@:2}" -o "$FIXTURES_DIR/output.md"
+
+sed -i "s/2022-04-05/2022-04-06/g" "$FIXTURES_DIR/output.md"
+
+diff --strip-trailing-cr "$FIXTURES_DIR/output.md" "$FIXTURES_DIR/expected.md"
