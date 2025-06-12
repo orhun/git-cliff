@@ -1,0 +1,41 @@
+# git-cliff ~ configuration file
+# https://git-cliff.org/docs/configuration
+
+[remote.github]
+owner = "mta-solutions"
+repo = "fsharp-data-validation"
+
+[changelog]
+# A Tera template to be rendered for each release in the changelog.
+# See https://keats.github.io/tera/docs/#introduction
+body = """
+{% if version %}\
+    ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+    ## [unreleased]
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | upper_first }}
+    {% for commit in commits %}
+        - {{ commit.message | upper_first }}\
+    {% endfor %}
+{% endfor %}\n
+"""
+
+[git]
+# Parse commits according to the conventional commits specification.
+# See https://www.conventionalcommits.org
+conventional_commits = false
+# An array of regex based parsers for extracting data from the commit message.
+# Assigns commits to groups.
+# Optionally sets the commit's `scope` and can decide to exclude commits from further processing.
+commit_parsers = [
+    { field = "remote.pr_labels", pattern = "duplicate|invalid|wontfix|skip changelog", skip = true },
+    { field = "remote.pr_labels", pattern = "breaking change", group = "<!-- 0 -->🏗️ Breaking Changes" },
+    { field = "remote.pr_labels", pattern = "feature|deprecation", group = "<!-- 1 -->🚀 Features" },
+    { field = "remote.pr_labels", pattern = "enhancement|refactor", group = "<!-- 1 -->🛠️ Enhancements" },
+    { field = "remote.pr_labels", pattern = "bug|regression", group = "<!-- 2 -->🐛 Bug Fixes" },
+    { field = "remote.pr_labels", pattern = "security", group = "<!-- 3 -->🔐 Security" },
+    { field = "remote.pr_labels", pattern = "documentation", group = "<!-- 4 -->📝 Documentation" },
+    { message = ".*", group = "<!-- 5 -->🌀 Miscellaneous" },
+]
