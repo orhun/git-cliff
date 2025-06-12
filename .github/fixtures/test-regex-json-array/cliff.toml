@@ -14,10 +14,11 @@ body = """
 {% else %}\
     ## [unreleased]
 {% endif %}\
-{% for group, commits in commits | group_by(attribute="group") %}
+{% for group, commits in commits | unique(attribute="id") | filter(attribute="merge_commit", value=true) | group_by(attribute="group") %}
     ### {{ group | upper_first }}
     {% for commit in commits %}
-        - {{ commit.message | upper_first }}\
+        - {{ commit.message | split(pat="\n") | nth(n=2) | trim_end }} \
+        ([PR #{{ commit.remote.pr_number }}](https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}/pull/{{ commit.remote.pr_number }}))\
     {% endfor %}
 {% endfor %}\n
 """
@@ -26,6 +27,10 @@ body = """
 # Parse commits according to the conventional commits specification.
 # See https://www.conventionalcommits.org
 conventional_commits = false
+# Exclude commits that do not match the conventional commits specification.
+filter_unconventional = false
+# Split commits on newlines, treating each line as an individual commit.
+split_commits = false
 # An array of regex based parsers for extracting data from the commit message.
 # Assigns commits to groups.
 # Optionally sets the commit's `scope` and can decide to exclude commits from further processing.
@@ -39,3 +44,8 @@ commit_parsers = [
     { field = "remote.pr_labels", pattern = "documentation", group = "<!-- 4 -->📝 Documentation" },
     { message = ".*", group = "<!-- 5 -->🌀 Miscellaneous" },
 ]
+# Exclude commits that are not matched by any commit parser.
+filter_commits = true
+# Order of commits in each group/release within the changelog.
+# Allowed values: newest, oldest
+sort_commits = "newest"
