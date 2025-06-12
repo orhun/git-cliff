@@ -8,7 +8,6 @@ use git_cliff_core::config::{
 	CommitParser,
 	GitConfig,
 	LinkParser,
-	MatchMode,
 	TextProcessor,
 };
 use git_cliff_core::error::Result;
@@ -70,7 +69,6 @@ fn generate_changelog() -> Result<()> {
 				skip:          None,
 				field:         None,
 				pattern:       None,
-				match_mode:    MatchMode::Any,
 			},
 			CommitParser {
 				sha:           None,
@@ -83,7 +81,6 @@ fn generate_changelog() -> Result<()> {
 				skip:          None,
 				field:         None,
 				pattern:       None,
-				match_mode:    MatchMode::Any,
 			},
 			CommitParser {
 				sha:           None,
@@ -96,7 +93,6 @@ fn generate_changelog() -> Result<()> {
 				skip:          None,
 				field:         None,
 				pattern:       None,
-				match_mode:    MatchMode::Any,
 			},
 			CommitParser {
 				sha:           None,
@@ -109,7 +105,6 @@ fn generate_changelog() -> Result<()> {
 				skip:          None,
 				field:         None,
 				pattern:       None,
-				match_mode:    MatchMode::Any,
 			},
 			CommitParser {
 				sha:           None,
@@ -122,7 +117,6 @@ fn generate_changelog() -> Result<()> {
 				skip:          None,
 				field:         Some(String::from("author.name")),
 				pattern:       Regex::new("John Doe").ok(),
-				match_mode:    MatchMode::Any,
 			},
 		],
 		protect_breaking_commits: false,

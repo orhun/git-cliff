@@ -336,17 +336,6 @@ impl Bump {
 	}
 }
 
-/// Determines how multiple fields are matched.
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum MatchMode {
-	/// Match if any of the fields match.
-	#[default]
-	Any,
-	/// Match only if all of the fields match.
-	All,
-}
-
 /// Parser for grouping commits.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct CommitParser {
@@ -374,9 +363,6 @@ pub struct CommitParser {
 	/// Regex for matching the field value.
 	#[serde(with = "serde_regex", default)]
 	pub pattern:       Option<Regex>,
-	/// Mode to match regex against fields: any or all.
-	#[serde(default)]
-	pub match_mode:    MatchMode,
 }
 
 /// `TextProcessor`, e.g. for modifying commit messages.
