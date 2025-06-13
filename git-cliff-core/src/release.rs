@@ -223,7 +223,7 @@ mod test {
 					.collect(),
 				commit_range: None,
 				commit_id: None,
-				timestamp: Some(0),
+				timestamp: None,
 				previous: Some(Box::new(Release {
 					version: Some(String::from(version)),
 					..Default::default()
