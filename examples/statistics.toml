@@ -19,7 +19,7 @@ body = """
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | upper_first }}
     {% for commit in commits %}
-        - {{ commit.message | split(pat="\n") | first | trim_end }}\
+        - {{ commit.message | split(pat="\n") | first | upper_first | trim_end }}\
     {% endfor %}
 {% endfor %}
 ### Commit Statistics\n
