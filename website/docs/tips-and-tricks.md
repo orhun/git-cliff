@@ -105,6 +105,16 @@ pandoc --from=gfm --to=pdf --pdf-engine=xelatex -o CHANGELOG.pdf CHANGELOG.md --
 
 ## Use release statistics in your template
 
+You can access various release-related metrics via the `statistics` variable. The following fields are available:
+
+ - `commit_count`: Total number of commits in the release.
+ - `commits_timespan`: Number of days between the first and last commit.
+ - `conventional_commit_count`: Number of commits that follow the Conventional Commits spec.
+ - `links`: A list of issues or links referenced in commit messages, each with text, href, and count.
+ - `days_passed_since_last_release`: Days since the previous release, if available.
+
+You can use these fields in your templates like so:
+
 ```jinja2
 * {{ statistics.commit_count }} commit(s) contributed to the release.
 {%- if statistics.commits_timespan is defined %}
@@ -121,3 +131,18 @@ pandoc --from=gfm --to=pdf --pdf-engine=xelatex -o CHANGELOG.pdf CHANGELOG.md --
     * {{ statistics.days_passed_since_last_release }} day(s) passed between releases.
 {%- endif %}
 ```
+
+This results in the following output:
+
+<details>
+  <summary>Rendered Output</summary>
+
+### Commit Statistics
+
+* 2 commit(s) contributed to the release.
+* 0 day(s) passed between the first and last commit.
+* 2 commit(s) were parsed as conventional.
+* 0 issue(s) like '(#ID)' were seen in commit messages.
+* 1426 day(s) passed between releases.
+
+</details>
