@@ -789,7 +789,7 @@ Refs: #123
 				href:    String::from("https://github.com/$1"),
 				text:    None,
 			},
-		])?;
+		]);
 
 		let parsed_commit = commit.clone().parse(
 			&[CommitParser {
@@ -853,7 +853,7 @@ Refs: #123
 				href:    String::from("https://github.com/$1"),
 				text:    None,
 			},
-		])?;
+		]);
 
 		let parsed_commit = commit.clone().parse(
 			&[CommitParser {
