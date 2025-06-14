@@ -332,27 +332,47 @@ impl Commit<'_> {
 			if let (Some(field_name), Some(pattern_regex)) =
 				(parser.field.as_ref(), parser.pattern.as_ref())
 			{
-				let value = if field_name == "body" {
-					body.clone()
+				let values = if field_name == "body" {
+					vec![body.clone()].into_iter().collect()
 				} else {
 					tera::dotted_pointer(&lookup_context, field_name).and_then(|v| {
-						match &v {
-							Value::String(s) => Some(s.clone()),
+						match v {
+							Value::String(s) => Some(vec![s.clone()]),
 							Value::Number(_) | Value::Bool(_) | Value::Null => {
-								Some(v.to_string())
+								Some(vec![v.to_string()])
+							}
+							Value::Array(arr) => {
+								let mut values = Vec::new();
+								for item in arr {
+									match item {
+										Value::String(s) => values.push(s.clone()),
+										Value::Number(_) |
+										Value::Bool(_) |
+										Value::Null => values.push(item.to_string()),
+										_ => continue,
+									}
+								}
+								Some(values)
 							}
 							_ => None,
 						}
 					})
 				};
-				match value {
-					Some(value) => {
-						regex_checks.push((pattern_regex, value));
+				match values {
+					Some(values) => {
+						if values.is_empty() {
+							trace!("field '{field_name}' is present but empty");
+						} else {
+							for value in values {
+								regex_checks.push((pattern_regex, value));
+							}
+						}
 					}
 					None => {
 						return Err(AppError::FieldError(format!(
 							"field '{field_name}' is missing or has unsupported \
-							 type (expected String, Number, Bool, or Null)",
+							 type (expected a String, Number, Bool, or Null — or \
+							 an Array of these scalar values)",
 						)));
 					}
 				}
@@ -728,10 +748,18 @@ mod test {
 	}
 
 	#[test]
-	fn parse_commit_field() -> Result<()> {
+	fn parse_body() -> Result<()> {
 		let mut commit = Commit::new(
 			String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
-			String::from("feat: do something"),
+			String::from(
+				"fix: do something
+
+Introduce something great
+
+BREAKING CHANGE: drop support for something else
+Refs: #123
+",
+			),
 		);
 		commit.author = Signature {
 			name:      Some("John Doe".to_string()),
@@ -742,9 +770,89 @@ mod test {
 			username:      None,
 			pr_title:      Some("feat: do something".to_string()),
 			pr_number:     None,
-			pr_labels:     Vec::new(),
+			pr_labels:     vec![
+				String::from("feature"),
+				String::from("deprecation"),
+			],
 			is_first_time: true,
 		});
+		let commit = commit.into_conventional()?;
+		let commit = commit.parse_links(&[
+			LinkParser {
+				pattern: Regex::new("RFC(\\d+)")?,
+				href:    String::from("rfc://$1"),
+				text:    None,
+			},
+			LinkParser {
+				pattern: Regex::new("#(\\d+)")?,
+				href:    String::from("https://github.com/$1"),
+				text:    None,
+			},
+		])?;
+
+		let parsed_commit = commit.clone().parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          Regex::new("something great").ok(),
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         None,
+				pattern:       None,
+			}],
+			false,
+			false,
+		)?;
+		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+
+		Ok(())
+	}
+
+	#[test]
+	fn parse_commit_field() -> Result<()> {
+		let mut commit = Commit::new(
+			String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
+			String::from(
+				"fix: do something
+
+Introduce something great
+
+BREAKING CHANGE: drop support for something else
+Refs: #123
+",
+			),
+		);
+		commit.author = Signature {
+			name:      Some("John Doe".to_string()),
+			email:     None,
+			timestamp: 0x0,
+		};
+		commit.remote = Some(crate::contributor::RemoteContributor {
+			username:      None,
+			pr_title:      Some("feat: do something".to_string()),
+			pr_number:     None,
+			pr_labels:     vec![
+				String::from("feature"),
+				String::from("deprecation"),
+			],
+			is_first_time: true,
+		});
+		let commit = commit.into_conventional()?;
+		let commit = commit.parse_links(&[
+			LinkParser {
+				pattern: Regex::new("RFC(\\d+)")?,
+				href:    String::from("rfc://$1"),
+				text:    None,
+			},
+			LinkParser {
+				pattern: Regex::new("#(\\d+)")?,
+				href:    String::from("https://github.com/$1"),
+				text:    None,
+			},
+		])?;
 
 		let parsed_commit = commit.clone().parse(
 			&[CommitParser {
@@ -782,7 +890,25 @@ mod test {
 		)?;
 		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
 
-		let parse_result = commit.clone().parse(
+		let parsed_commit = commit.clone().parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("body")),
+				pattern:       Regex::new("something great").ok(),
+			}],
+			false,
+			false,
+		)?;
+		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+
+		let parsed_commit = commit.clone().parse(
 			&[CommitParser {
 				sha:           None,
 				message:       None,
@@ -793,6 +919,42 @@ mod test {
 				scope:         None,
 				skip:          None,
 				field:         Some(String::from("remote.pr_labels")),
+				pattern:       Regex::new("feature|deprecation").ok(),
+			}],
+			false,
+			false,
+		)?;
+		assert_eq!(Some(String::from("Test group")), parsed_commit.group);
+
+		let parsed_commit = commit.clone().parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("links")),
+				pattern:       Regex::new(".*").ok(),
+			}],
+			false,
+			false,
+		)?;
+		assert_eq!(None, parsed_commit.group);
+
+		let parse_result = commit.clone().parse(
+			&[CommitParser {
+				sha:           None,
+				message:       None,
+				body:          None,
+				footer:        None,
+				group:         Some(String::from("Test group")),
+				default_scope: None,
+				scope:         None,
+				skip:          None,
+				field:         Some(String::from("remote")),
 				pattern:       Regex::new(".*").ok(),
 			}],
 			false,
@@ -800,8 +962,7 @@ mod test {
 		);
 		assert!(
 			parse_result.is_err(),
-			"Expected error when using unsupported field `remote.pr_labels`, but \
-			 got Ok"
+			"Expected error when using unsupported field `remote`, but got Ok"
 		);
 
 		Ok(())
