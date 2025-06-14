@@ -300,12 +300,12 @@ fn process_repository<'a>(
 	let commit_range = determine_commit_range(args, config, repository)?;
 
 	// Include only the current directory if not running from the root repository
-	let mut include_path = args.include_path.clone();
+	let mut include_path = config.git.include_paths.clone();
 	if let Some(mut path_diff) =
 		pathdiff::diff_paths(env::current_dir()?, repository.root_path()?)
 	{
 		if args.workdir.is_none() &&
-			include_path.is_none() &&
+			include_path.is_empty() &&
 			path_diff != Path::new("")
 		{
 			info!(
@@ -313,15 +313,25 @@ fn process_repository<'a>(
 				path_diff.display()
 			);
 			path_diff.extend(["**", "*"]);
-			include_path =
-				Some(vec![Pattern::new(path_diff.to_string_lossy().as_ref())?]);
+			include_path = vec![Pattern::new(path_diff.to_string_lossy().as_ref())?];
 		}
 	}
+
+	let include_path = if include_path.is_empty() {
+		None
+	} else {
+		Some(include_path)
+	};
+	let exclude_path = if config.git.exclude_paths.is_empty() {
+		None
+	} else {
+		Some(config.git.exclude_paths.clone())
+	};
 
 	let mut commits = repository.commits(
 		commit_range.as_deref(),
 		include_path,
-		args.exclude_path.clone(),
+		exclude_path,
 		config.git.topo_order_commits,
 	)?;
 	if let Some(commit_limit_value) = config.git.limit_commits {
@@ -726,6 +736,18 @@ pub fn run_with_changelog_modifier(
 	}
 	if args.count_tags.is_some() {
 		config.git.count_tags.clone_from(&args.count_tags);
+	}
+	if let Some(include_path) = &args.include_path {
+		config
+			.git
+			.include_paths
+			.extend(include_path.iter().cloned());
+	}
+	if let Some(exclude_path) = &args.exclude_path {
+		config
+			.git
+			.exclude_paths
+			.extend(exclude_path.iter().cloned());
 	}
 
 	// Process commits and releases for the changelog.

@@ -1,6 +1,7 @@
 use crate::command;
 use crate::embed::EmbeddedConfig;
 use crate::error::Result;
+use glob::Pattern;
 use regex::{
 	Regex,
 	RegexBuilder,
@@ -138,6 +139,45 @@ pub struct GitConfig {
 	pub limit_commits:            Option<usize>,
 	/// Read submodule commits.
 	pub recurse_submodules:       Option<bool>,
+	/// Include related commits with changes at the specified paths.
+	#[serde(with = "serde_pattern", default)]
+	pub include_paths:            Vec<Pattern>,
+	/// Exclude unrelated commits with changes at the specified paths.
+	#[serde(with = "serde_pattern", default)]
+	pub exclude_paths:            Vec<Pattern>,
+}
+
+/// Serialize and deserialize implementation for [`glob::Pattern`].
+mod serde_pattern {
+	use glob::Pattern;
+	use serde::Deserialize;
+	use serde::de::Error;
+	use serde::ser::SerializeSeq;
+
+	pub fn serialize<S>(
+		patterns: &[Pattern],
+		serializer: S,
+	) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
+	{
+		let mut seq = serializer.serialize_seq(Some(patterns.len()))?;
+		for pattern in patterns {
+			seq.serialize_element(pattern.as_str())?;
+		}
+		seq.end()
+	}
+
+	pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<Pattern>, D::Error>
+	where
+		D: serde::Deserializer<'de>,
+	{
+		let patterns = Vec::<String>::deserialize(deserializer)?;
+		patterns
+			.into_iter()
+			.map(|pattern| pattern.parse().map_err(D::Error::custom))
+			.collect()
+	}
 }
 
 /// Remote configuration.

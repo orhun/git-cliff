@@ -32,6 +32,8 @@ link_parsers = [
 ]
 limit_commits = 42
 recurse_submodules = false
+include_paths = ["src/", "doc/**/*.md"]
+exclude_paths = ["unrelated/"]
 ```
 
 ### conventional_commits
@@ -301,3 +303,15 @@ These extracted links can be used in the [template](/docs/templating/context) wi
 `recurse_submodules` is an _optional_ boolean value that indicates whether **git-cliff** should read and process commits of submodules.
 
 This only considers submodules at the toplevel (depth 1). These commits can then be accessed by the variable `submodule_commits` during [templating](/docs/templating/context).
+
+### include_paths
+
+`include_paths` is an _optional_ array of (glob patterns of) paths that commits need to have touched to be included in
+the generated changelog. When this value is set, the current working directory will **not** be included.
+
+### exclude_paths
+
+`exclude_paths` is an _optional_ array of (glob patterns of) paths that will exclude commits that have only changed
+files in the excluded paths. This value takes priority over `include_paths`. If a commit changes a file in `include_paths` and changes a file in `exclude_paths`, the
+commit will be included. If a commit only changes files that match both `include_paths` and `exclude_paths`, it will be
+excluded.
