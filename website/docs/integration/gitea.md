@@ -96,7 +96,7 @@ https://codeberg.org/{{ remote.gitea.owner }}/{{ remote.gitea.repo }}/commits/ta
 
 ### Commit authors
 
-For each commit, Gitea related values are added as a nested object (named `gitea`) to the [template context](/docs/templating/context):
+For each commit, Gitea related values are added as a nested object (named `remote`) to the [template context](/docs/templating/context):
 
 ```json
 {
