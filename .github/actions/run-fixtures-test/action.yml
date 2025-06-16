@@ -58,6 +58,13 @@ runs:
           current_date=$(date +"$IN_DATE_FORMAT")
           sed -i "s/<<DATE>>/$current_date/g" expected.md
           if ! diff --strip-trailing-cr output.md expected.md; then
+
+            echo '> expected'
+            cat expected.md
+
+            echo '> output'
+            cat output.md
+
             echo "The generated changelog does not match the expected changelog."
             exit 1
           fi

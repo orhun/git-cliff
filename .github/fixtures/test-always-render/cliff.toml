@@ -2,21 +2,20 @@
 # template for the changelog body
 # https://keats.github.io/tera/docs/#introduction
 body = """
-{% if version %}
+{% if version %}\
     ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
-{% else %}
+{% else %}\
     ## [unreleased]
-{% endif %}
-
-{% if commits | length == 0 -%}
+{% endif %}\
+{% if commits | length == 0 %}
 No significant changes.
 
-{% else -%}
+{% else %}\
 {% for group, commits in commits | group_by(attribute="group") -%}
     ### {{ group | upper_first }}
     etc.
 {% endfor %}
-{%- endif %}
+{% endif %}\
 """
 # render body even when there are no releases to process
 render_always = true
