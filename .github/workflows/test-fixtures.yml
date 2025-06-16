@@ -130,6 +130,7 @@ jobs:
             command: a140cef^..a9d4050 --ignore-tags "."
           - fixtures-name: test-override-scope
           - fixtures-name: test-initial-tag
+            command: --initial-tag=0.1.0 --bump
 
     steps:
       - name: Checkout
