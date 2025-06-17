@@ -24,7 +24,7 @@ body = """
             - {{ commit.message | upper_first }}\
         {% endfor %}
     {% endfor %}
-{% endfor %}\n
+{% endfor %}
 """
 
 [git]
