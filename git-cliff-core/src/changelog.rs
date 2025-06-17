@@ -732,7 +732,7 @@ mod test {
 				### Commit Statistics
 
 				- {{ statistics.commit_count }} commit(s) contributed to the release.
-				{%- if statistics.commits_timespan is defined %}
+				{%- if statistics.commits_timespan %}
 					- {{ statistics.commits_timespan }} day(s) passed between the first and last commit.
 				{%- endif %}
 				- {{ statistics.conventional_commit_count }} commit(s) parsed as conventional.
@@ -742,7 +742,7 @@ mod test {
 						{{ "  " }}- [{{ link.text }}]({{ link.href }}) (referenced {{ link.count }} time(s))
 					{%- endfor %}
 				{%- endif %}
-				{%- if statistics.days_passed_since_last_release is defined %}
+				{%- if statistics.days_passed_since_last_release %}
 					- {{ statistics.days_passed_since_last_release }} day(s) passed between releases.
 				{%- endif %}
 				"#,
