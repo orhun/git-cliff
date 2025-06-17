@@ -25,7 +25,7 @@
   - [ietf-rfc3986](https://datatracker.ietf.org/doc/html/rfc3986) (referenced 1 time(s))
 - <<DAYS SINCE LAST RELEASE>> day(s) passed between releases.
 
-## [0.2.0] - 2022-04-05
+## [0.2.0] - 2022-04-06
 
 ### Bug Fixes
 
@@ -41,9 +41,8 @@
 - 0 day(s) passed between the first and last commit.
 - 2 commit(s) parsed as conventional.
 - 0 linked issue(s) detected in commits.
-- 0 day(s) passed between releases.
 
-## [0.1.0] - 2022-04-05
+## [0.1.0] - 2022-04-06
 
 ### Bug Fixes
 
@@ -52,6 +51,7 @@
 ### Commit Statistics
 
 - 1 commit(s) contributed to the release.
+- 0 day(s) passed between the first and last commit.
 - 1 commit(s) parsed as conventional.
 - 0 linked issue(s) detected in commits.
 

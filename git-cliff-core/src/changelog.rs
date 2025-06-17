@@ -732,9 +732,7 @@ mod test {
 				### Commit Statistics
 
 				- {{ statistics.commit_count }} commit(s) contributed to the release.
-				{%- if statistics.commits_timespan %}
-					- {{ statistics.commits_timespan }} day(s) passed between the first and last commit.
-				{%- endif %}
+				- {{ statistics.commits_timespan | default(value=0) }} day(s) passed between the first and last commit.
 				- {{ statistics.conventional_commit_count }} commit(s) parsed as conventional.
 				- {{ statistics.links | length }} linked issue(s) detected in commits.
 				{%- if statistics.links | length > 0 %}
