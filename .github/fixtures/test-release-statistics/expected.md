@@ -23,7 +23,7 @@
   - [#452](https://github.com/orhun/git-cliff/issues/452) (referenced 2 time(s))
   - [#1148](https://github.com/orhun/git-cliff/issues/1148) (referenced 1 time(s))
   - [ietf-rfc3986](https://datatracker.ietf.org/doc/html/rfc3986) (referenced 1 time(s))
-- 1169 day(s) passed between releases.
+- <<DAYS SINCE LAST RELEASE>> day(s) passed between releases.
 
 ## [0.2.0] - 2022-04-05
 
