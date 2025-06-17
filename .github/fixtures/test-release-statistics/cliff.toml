@@ -21,8 +21,8 @@ body = """
 {%- if statistics.commits_timespan is defined %}
 	- {{ statistics.commits_timespan }} day(s) passed between the first and last commit.
 {%- endif %}
-- {{ statistics.conventional_commit_count }} commit(s) {% if statistics.conventional_commit_count > 1 %}were{% else %}was{% endif %} parsed as conventional.
-- {{ statistics.links | length }} issue(s) like '(#ID)' {% if statistics.links | length != 1 %}were{% else %}was{% endif %} seen in commit messages.
+- {{ statistics.conventional_commit_count }} commit(s) parsed as conventional.
+- {{ statistics.links | length }} linked issue(s) detected in commits.
 {%- if statistics.links | length > 0 %}
 	{%- for link in statistics.links %}
         {{ "  " }}- [{{ link.text }}]({{ link.href }}) (referenced {{ link.count }} time(s))

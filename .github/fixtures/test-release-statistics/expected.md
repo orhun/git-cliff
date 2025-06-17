@@ -18,8 +18,8 @@
 
 - 5 commit(s) contributed to the release.
 - 0 day(s) passed between the first and last commit.
-- 5 commit(s) were parsed as conventional.
-- 3 issue(s) like '(#ID)' were seen in commit messages.
+- 5 commit(s) parsed as conventional.
+- 3 linked issue(s) detected in commits.
   - [#452](https://github.com/orhun/git-cliff/issues/452) (referenced 2 time(s))
   - [#1148](https://github.com/orhun/git-cliff/issues/1148) (referenced 1 time(s))
   - [ietf-rfc3986](https://datatracker.ietf.org/doc/html/rfc3986) (referenced 1 time(s))
@@ -39,8 +39,8 @@
 
 - 2 commit(s) contributed to the release.
 - 0 day(s) passed between the first and last commit.
-- 2 commit(s) were parsed as conventional.
-- 0 issue(s) like '(#ID)' were seen in commit messages.
+- 2 commit(s) parsed as conventional.
+- 0 linked issue(s) detected in commits.
 - 0 day(s) passed between releases.
 
 ## [0.1.0] - 2022-04-05
@@ -52,6 +52,6 @@
 ### Commit Statistics
 
 - 1 commit(s) contributed to the release.
-- 1 commit(s) was parsed as conventional.
-- 0 issue(s) like '(#ID)' were seen in commit messages.
+- 1 commit(s) parsed as conventional.
+- 0 linked issue(s) detected in commits.
 

@@ -735,8 +735,8 @@ mod test {
 				{%- if statistics.commits_timespan is defined %}
 					- {{ statistics.commits_timespan }} day(s) passed between the first and last commit.
 				{%- endif %}
-				- {{ statistics.conventional_commit_count }} commit(s) {% if statistics.conventional_commit_count > 1 %}were{% else %}was{% endif %} parsed as conventional.
-				- {{ statistics.links | length }} issue(s) like '(#ID)' {% if statistics.links | length != 1 %}were{% else %}was{% endif %} seen in commit messages.
+				- {{ statistics.conventional_commit_count }} commit(s) parsed as conventional.
+				- {{ statistics.links | length }} linked issue(s) detected in commits.
 				{%- if statistics.links | length > 0 %}
 					{%- for link in statistics.links %}
 						{{ "  " }}- [{{ link.text }}]({{ link.href }}) (referenced {{ link.count }} time(s))
@@ -1315,8 +1315,8 @@ mod test {
 
 			- 4 commit(s) contributed to the release.
 			- 5 day(s) passed between the first and last commit.
-			- 4 commit(s) were parsed as conventional.
-			- 0 issue(s) like '(#ID)' were seen in commit messages.
+			- 4 commit(s) parsed as conventional.
+			- 0 linked issue(s) detected in commits.
 			- -578 day(s) passed between releases.
 
 			## Release [v1.0.0] - 1971-08-02 - (/root/repo)
@@ -1366,8 +1366,8 @@ mod test {
 
 			- 13 commit(s) contributed to the release.
 			- 13 day(s) passed between the first and last commit.
-			- 12 commit(s) were parsed as conventional.
-			- 0 issue(s) like '(#ID)' were seen in commit messages.
+			- 12 commit(s) parsed as conventional.
+			- 0 linked issue(s) detected in commits.
 			-- total releases: 2 --
 			"#
 			)
@@ -1473,8 +1473,8 @@ chore(deps): fix broken deps
 
 			- 8 commit(s) contributed to the release.
 			- 6 day(s) passed between the first and last commit.
-			- 8 commit(s) were parsed as conventional.
-			- 1 issue(s) like '(#ID)' was seen in commit messages.
+			- 8 commit(s) parsed as conventional.
+			- 1 linked issue(s) detected in commits.
 			  - [#5](https://github.com/5) (referenced 1 time(s))
 			- -578 day(s) passed between releases.
 
@@ -1529,8 +1529,8 @@ chore(deps): fix broken deps
 
 			- 18 commit(s) contributed to the release.
 			- 12 day(s) passed between the first and last commit.
-			- 17 commit(s) were parsed as conventional.
-			- 1 issue(s) like '(#ID)' was seen in commit messages.
+			- 17 commit(s) parsed as conventional.
+			- 1 linked issue(s) detected in commits.
 			  - [#3](https://github.com/3) (referenced 1 time(s))
 			-- total releases: 2 --
 			"#
