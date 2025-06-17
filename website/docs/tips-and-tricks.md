@@ -116,19 +116,17 @@ You can access various release-related metrics via the `statistics` variable. Th
 You can use these fields in your templates like so:
 
 ```jinja2
-* {{ statistics.commit_count }} commit(s) contributed to the release.
-{%- if statistics.commits_timespan is defined %}
-    * {{ statistics.commits_timespan }} day(s) passed between the first and last commit.
-{%- endif %}
-* {{ statistics.conventional_commit_count }} commit(s) {% if statistics.conventional_commit_count > 1 %}were{% else %}was{% endif %} parsed as conventional.
-* {{ statistics.links | length }} issue(s) like '(#ID)' {% if statistics.links | length != 1 %}were{% else %}was{% endif %} seen in commit messages.
+- {{ statistics.commit_count }} commit(s) contributed to the release.
+- {{ statistics.commits_timespan | default(value=0) }} day(s) passed between the first and last commit.
+- {{ statistics.conventional_commit_count }} commit(s) parsed as conventional.
+- {{ statistics.links | length }} linked issue(s) detected in commits.
 {%- if statistics.links | length > 0 %}
-    {%- for link in statistics.links %}
-        ** [{{ link.text }}]({{ link.href }}) (referenced {{ link.count }} time(s))
-    {%- endfor %}
+	{%- for link in statistics.links %}
+        {{ "  " }}- [{{ link.text }}]({{ link.href }}) (referenced {{ link.count }} time(s))
+	{%- endfor %}
 {%- endif %}
-{%- if statistics.days_passed_since_last_release is defined %}
-    * {{ statistics.days_passed_since_last_release }} day(s) passed between releases.
+{%- if statistics.days_passed_since_last_release %}
+	- {{ statistics.days_passed_since_last_release }} day(s) passed between releases.
 {%- endif %}
 ```
 
@@ -139,10 +137,10 @@ This results in the following output:
 
 ### Commit Statistics
 
-* 2 commit(s) contributed to the release.
-* 0 day(s) passed between the first and last commit.
-* 2 commit(s) were parsed as conventional.
-* 0 issue(s) like '(#ID)' were seen in commit messages.
-* 1426 day(s) passed between releases.
+- 2 commit(s) contributed to the release.
+- 0 day(s) passed between the first and last commit.
+- 2 commit(s) parsed as conventional.
+- 0 linked issue(s) detected in commits.
+- 1430 day(s) passed between releases.
 
 </details>
