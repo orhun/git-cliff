@@ -730,6 +730,7 @@ mod test {
 				- {{ commit.message }}{% endfor %}
 				{% endfor %}{% endfor %}
 				### Commit Statistics
+
 				- {{ statistics.commit_count }} commit(s) contributed to the release.
 				{%- if statistics.commits_timespan is defined %}
 					- {{ statistics.commits_timespan }} day(s) passed between the first and last commit.
@@ -1311,6 +1312,7 @@ mod test {
 			- do exciting stuff
 
 			### Commit Statistics
+
 			- 4 commit(s) contributed to the release.
 			- 5 day(s) passed between the first and last commit.
 			- 4 commit(s) were parsed as conventional.
@@ -1361,6 +1363,7 @@ mod test {
 			- make good stuff
 
 			### Commit Statistics
+
 			- 13 commit(s) contributed to the release.
 			- 13 day(s) passed between the first and last commit.
 			- 12 commit(s) were parsed as conventional.
@@ -1467,6 +1470,7 @@ chore(deps): fix broken deps
 			- merge #5
 
 			### Commit Statistics
+
 			- 8 commit(s) contributed to the release.
 			- 6 day(s) passed between the first and last commit.
 			- 8 commit(s) were parsed as conventional.
@@ -1522,6 +1526,7 @@ chore(deps): fix broken deps
 			- make good stuff
 
 			### Commit Statistics
+
 			- 18 commit(s) contributed to the release.
 			- 12 day(s) passed between the first and last commit.
 			- 17 commit(s) were parsed as conventional.

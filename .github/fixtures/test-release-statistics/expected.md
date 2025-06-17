@@ -15,6 +15,7 @@
 - Add tests
 
 ### Commit Statistics
+
 - 5 commit(s) contributed to the release.
 - 0 day(s) passed between the first and last commit.
 - 5 commit(s) were parsed as conventional.
@@ -35,6 +36,7 @@
 - Add feature 2
 
 ### Commit Statistics
+
 - 2 commit(s) contributed to the release.
 - 0 day(s) passed between the first and last commit.
 - 2 commit(s) were parsed as conventional.
@@ -48,6 +50,7 @@
 - Fix feature 1
 
 ### Commit Statistics
+
 - 1 commit(s) contributed to the release.
 - 1 commit(s) was parsed as conventional.
 - 0 issue(s) like '(#ID)' were seen in commit messages.
