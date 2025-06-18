@@ -2,8 +2,8 @@
 # https://git-cliff.org/docs/configuration
 
 [remote.github]
-owner = "mta-solutions"
-repo = "fsharp-data-validation"
+owner = "orhun"
+repo = "git-cliff-readme-example-one-pr-one-commit"
 
 [changelog]
 # A Tera template to be rendered for each release in the changelog.
@@ -14,10 +14,10 @@ body = """
 {% else %}\
     ## [unreleased]
 {% endif %}\
-{% for group, commits in commits | unique(attribute="id") | filter(attribute="merge_commit", value=true) | group_by(attribute="group") %}
+{% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | upper_first }}
     {% for commit in commits %}
-        - {{ commit.message | split(pat="\n") | nth(n=2) | trim_end }} \
+        - {{ commit.message | split(pat="\n") | nth(n=0) | trim_end }} \
         ([PR #{{ commit.remote.pr_number }}](https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}/pull/{{ commit.remote.pr_number }}))\
     {% endfor %}
 {% endfor %}\n
@@ -35,17 +35,15 @@ split_commits = false
 # Assigns commits to groups.
 # Optionally sets the commit's `scope` and can decide to exclude commits from further processing.
 commit_parsers = [
-    { field = "remote.pr_labels", pattern = "duplicate|invalid|wontfix|skip changelog", skip = true },
-    { field = "remote.pr_labels", pattern = "breaking change", group = "<!-- 0 -->🏗️ Breaking Changes" },
-    { field = "remote.pr_labels", pattern = "feature|deprecation", group = "<!-- 1 -->🚀 Features" },
-    { field = "remote.pr_labels", pattern = "enhancement|refactor", group = "<!-- 1 -->🛠️ Enhancements" },
-    { field = "remote.pr_labels", pattern = "bug|regression", group = "<!-- 2 -->🐛 Bug Fixes" },
-    { field = "remote.pr_labels", pattern = "security", group = "<!-- 3 -->🔐 Security" },
-    { field = "remote.pr_labels", pattern = "documentation", group = "<!-- 4 -->📝 Documentation" },
-    { message = ".*", group = "<!-- 5 -->🌀 Miscellaneous" },
+    { message = "^chore", skip = true },
+    { field = "remote.pr_labels", pattern = "area/documentation", group = "<!-- 05 -->📝 Documentation" },
+    { field = "remote.pr_labels", pattern = "breaking change", group = "<!-- 00 -->💥 Breaking Changes" },
+    { field = "remote.pr_labels", pattern = "type/bug", group = "<!-- 03 -->🐛 Bug Fixes" },
+    { field = "remote.pr_labels", pattern = "type/enhancement", group = "<!-- 02 -->✨ Enhancements" },
+    { field = "remote.pr_labels", pattern = "type/refactor", group = "<!-- 04 -->🧹 Refactoring" },
+    { field = "remote.pr_labels", pattern = "type/update", group = "<!-- 01 -->🚀 Feature Updates" },
+    { message = ".*", group = "<!-- 06 -->🌀 Miscellaneous" },
 ]
-# Exclude commits that are not matched by any commit parser.
-filter_commits = true
 # Order of commits in each group/release within the changelog.
 # Allowed values: newest, oldest
-sort_commits = "newest"
+#sort_commits = "newest"
