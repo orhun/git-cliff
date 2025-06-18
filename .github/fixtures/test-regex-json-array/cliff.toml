@@ -44,6 +44,3 @@ commit_parsers = [
     { field = "remote.pr_labels", pattern = "type/update", group = "<!-- 01 -->🚀 Feature Updates" },
     { message = ".*", group = "<!-- 06 -->🌀 Miscellaneous" },
 ]
-# Order of commits in each group/release within the changelog.
-# Allowed values: newest, oldest
-#sort_commits = "newest"
