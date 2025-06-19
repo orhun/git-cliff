@@ -257,8 +257,7 @@ jobs:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
           args: --release --sdist --out wheels
-          # https://github.com/PyO3/maturin-action/issues/348
-          sccache: "false"
+          sccache: "true"
           # https://github.com/PyO3/maturin-action/issues/245
           manylinux: ${{ matrix.build.TARGET == 'aarch64-unknown-linux-gnu' && '2_28' || 'auto' }}
       - name: Build Python wheels (macos & windows)
@@ -270,8 +269,7 @@ jobs:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
           args: --release --sdist --out wheels
-          # https://github.com/PyO3/maturin-action/issues/348
-          sccache: "false"
+          sccache: "true"
       - name: Build Python wheels (musl)
         if: matrix.build.PYPI_PUBLISH == true && endsWith(matrix.build.OS, 'musl')
         uses: PyO3/maturin-action@v1
@@ -279,8 +277,7 @@ jobs:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
           args: --release --sdist --out wheels
-          # https://github.com/PyO3/maturin-action/issues/348
-          sccache: "false"
+          sccache: "true"
           manylinux: musllinux_1_2
       - name: Upload Python wheels
         uses: actions/upload-artifact@v4
