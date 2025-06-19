@@ -15,11 +15,11 @@ jobs:
       error_message: ${{ steps.check_semver.outputs.error_message }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Run cargo-semver-checks
         id: check_semver
-        uses: orhun/cargo-semver-checks-action@feat/add_action_output
+        uses: orhun/cargo-semver-checks-action@cc19b888f2062f8cc964c1d52f7f29d910becb31 # feat/add_action_output
 
   comment-on-pr:
     name: Comment on pull request
@@ -31,7 +31,7 @@ jobs:
     steps:
       - name: Comment
         if: ${{ needs.check-semver.outputs.error_message != null }}
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@52423e01640425a022ef5fd42c6fb5f633a02728 # v2.9.1
         with:
           header: pr-semver-check-error
           message: |
@@ -47,7 +47,7 @@ jobs:
 
       - name: Delete comment
         if: ${{ needs.check-semver.outputs.error_message == null }}
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@52423e01640425a022ef5fd42c6fb5f633a02728 # v2.9.1
         with:
           header: pr-semver-check-error
           delete: true
