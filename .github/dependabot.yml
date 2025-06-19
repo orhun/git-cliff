@@ -41,3 +41,13 @@ updates:
       patch:
         update-types:
           - "patch"
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /npm/git-cliff
+    schedule:
+      interval: daily

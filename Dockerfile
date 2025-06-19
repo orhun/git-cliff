@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4.3-labs
-FROM lukemathwalker/cargo-chef:0.1.71-rust-1.85.0-slim-bookworm AS chef
+FROM lukemathwalker/cargo-chef:0.1.71-rust-1.85.0-slim-bookworm@sha256:048654cf424dcc1efd4f6ad2e627c7526cb909cbf9172d988cd6f8491a7a2828 AS chef
 WORKDIR app
 
 FROM chef AS planner
@@ -14,7 +14,7 @@ COPY . .
 RUN cargo build --release --locked --no-default-features --features github --features gitlab --features bitbucket
 RUN rm -f target/release/deps/git_cliff*
 
-FROM debian:bookworm-slim as runner
+FROM debian:bookworm-slim@sha256:e5865e6858dacc255bead044a7f2d0ad8c362433cfaa5acefb670c1edf54dfef as runner
 
 # Everything inside this container will be explicitly mounted by the end user,
 # so we can sidestep some Git security restrictions. This app recommends
