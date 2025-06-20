@@ -1,11 +1,6 @@
-use serde::{
-	Deserialize,
-	Serialize,
-};
-use std::hash::{
-	Hash,
-	Hasher,
-};
+use std::hash::{Hash, Hasher};
+
+use serde::{Deserialize, Serialize};
 
 /// Representation of a remote contributor.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]

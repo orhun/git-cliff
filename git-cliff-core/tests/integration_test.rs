@@ -1,22 +1,15 @@
-use git_cliff_core::commit::{
-	Commit,
-	Range,
-	Signature,
-};
+use std::collections::HashMap;
+use std::fmt::Write;
+
+use git_cliff_core::commit::{Commit, Range, Signature};
 use git_cliff_core::config::{
-	ChangelogConfig,
-	CommitParser,
-	GitConfig,
-	LinkParser,
-	TextProcessor,
+	ChangelogConfig, CommitParser, GitConfig, LinkParser, TextProcessor,
 };
 use git_cliff_core::error::Result;
 use git_cliff_core::release::*;
 use git_cliff_core::template::Template;
 use pretty_assertions::assert_eq;
 use regex::Regex;
-use std::collections::HashMap;
-use std::fmt::Write;
 
 #[test]
 fn generate_changelog() -> Result<()> {

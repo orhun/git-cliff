@@ -1,23 +1,11 @@
-use crate::{
-	config::TextProcessor,
-	error::{
-		Error,
-		Result,
-	},
-};
-use serde::Serialize;
-use std::collections::{
-	HashMap,
-	HashSet,
-};
+use std::collections::{HashMap, HashSet};
 use std::error::Error as ErrorImpl;
-use tera::{
-	Context as TeraContext,
-	Result as TeraResult,
-	Tera,
-	Value,
-	ast,
-};
+
+use serde::Serialize;
+use tera::{Context as TeraContext, Result as TeraResult, Tera, Value, ast};
+
+use crate::config::TextProcessor;
+use crate::error::{Error, Result};
 
 /// Wrapper for [`Tera`].
 #[derive(Debug)]
@@ -190,12 +178,11 @@ impl Template {
 
 #[cfg(test)]
 mod test {
-	use super::*;
-	use crate::{
-		commit::Commit,
-		release::Release,
-	};
 	use regex::Regex;
+
+	use super::*;
+	use crate::commit::Commit;
+	use crate::release::Release;
 
 	fn get_fake_release_data() -> Release<'static> {
 		Release {

@@ -1,16 +1,11 @@
+use std::collections::HashMap;
+use std::io::{Read, Write};
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use crate::commit::Commit;
-use crate::config::{
-	Config,
-	GitConfig,
-};
-use crate::error::{
-	Error,
-	Result,
-};
-use crate::release::{
-	Release,
-	Releases,
-};
+use crate::config::{Config, GitConfig};
+use crate::error::{Error, Result};
+use crate::release::{Release, Releases};
 #[cfg(feature = "bitbucket")]
 use crate::remote::bitbucket::BitbucketClient;
 #[cfg(feature = "gitea")]
@@ -20,15 +15,6 @@ use crate::remote::github::GitHubClient;
 #[cfg(feature = "gitlab")]
 use crate::remote::gitlab::GitLabClient;
 use crate::template::Template;
-use std::collections::HashMap;
-use std::io::{
-	Read,
-	Write,
-};
-use std::time::{
-	SystemTime,
-	UNIX_EPOCH,
-};
 
 /// Changelog generator.
 #[derive(Debug)]
@@ -697,18 +683,15 @@ fn get_body_template(config: &Config, trim: bool) -> Result<Template> {
 
 #[cfg(test)]
 mod test {
-	use super::*;
-	use crate::config::{
-		Bump,
-		ChangelogConfig,
-		CommitParser,
-		Remote,
-		RemoteConfig,
-		TextProcessor,
-	};
+	use std::str;
+
 	use pretty_assertions::assert_eq;
 	use regex::Regex;
-	use std::str;
+
+	use super::*;
+	use crate::config::{
+		Bump, ChangelogConfig, CommitParser, Remote, RemoteConfig, TextProcessor,
+	};
 
 	fn get_test_data() -> (Config, Vec<Release<'static>>) {
 		let config = Config {

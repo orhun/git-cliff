@@ -1,37 +1,13 @@
-use crate::config::{
-	CommitParser,
-	GitConfig,
-	LinkParser,
-	TextProcessor,
-};
-use crate::error::{
-	Error as AppError,
-	Result,
-};
-use git_conventional::{
-	Commit as ConventionalCommit,
-	Footer as ConventionalFooter,
-};
+use git_conventional::{Commit as ConventionalCommit, Footer as ConventionalFooter};
 #[cfg(feature = "repo")]
-use git2::{
-	Commit as GitCommit,
-	Signature as CommitSignature,
-};
-use lazy_regex::{
-	Lazy,
-	Regex,
-	lazy_regex,
-};
-use serde::ser::{
-	SerializeStruct,
-	Serializer,
-};
-use serde::{
-	Deserialize,
-	Deserializer,
-	Serialize,
-};
+use git2::{Commit as GitCommit, Signature as CommitSignature};
+use lazy_regex::{Lazy, Regex, lazy_regex};
+use serde::ser::{SerializeStruct, Serializer};
+use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::value::Value;
+
+use crate::config::{CommitParser, GitConfig, LinkParser, TextProcessor};
+use crate::error::{Error as AppError, Result};
 
 /// Regular expression for matching SHA1 and a following commit message
 /// separated by a whitespace.

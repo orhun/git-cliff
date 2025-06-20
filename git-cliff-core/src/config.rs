@@ -1,26 +1,15 @@
+use std::path::{Path, PathBuf};
+use std::str::FromStr;
+use std::{fmt, fs};
+
+use glob::Pattern;
+use regex::{Regex, RegexBuilder};
+use secrecy::SecretString;
+use serde::{Deserialize, Serialize};
+
 use crate::embed::EmbeddedConfig;
 use crate::error::Result;
-use crate::{
-	command,
-	error,
-};
-use glob::Pattern;
-use regex::{
-	Regex,
-	RegexBuilder,
-};
-use secrecy::SecretString;
-use serde::{
-	Deserialize,
-	Serialize,
-};
-use std::fs;
-use std::path::Path;
-use std::path::PathBuf;
-use std::{
-	fmt,
-	str::FromStr,
-};
+use crate::{command, error};
 
 /// Default initial tag.
 const DEFAULT_INITIAL_TAG: &str = "0.1.0";
@@ -525,9 +514,11 @@ impl FromStr for Config {
 
 #[cfg(test)]
 mod test {
-	use super::*;
-	use pretty_assertions::assert_eq;
 	use std::env;
+
+	use pretty_assertions::assert_eq;
+
+	use super::*;
 	#[test]
 	fn load() -> Result<()> {
 		let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))

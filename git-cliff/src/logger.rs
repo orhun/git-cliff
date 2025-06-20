@@ -1,30 +1,13 @@
-use env_logger::{
-	Builder,
-	fmt::{
-		Color,
-		Style,
-		StyledValue,
-	},
-};
-use git_cliff_core::error::{
-	Error,
-	Result,
-};
-#[cfg(feature = "remote")]
-use indicatif::{
-	ProgressBar,
-	ProgressStyle,
-};
-use log::Level;
 use std::io::Write;
-use std::sync::atomic::{
-	AtomicUsize,
-	Ordering,
-};
-use std::{
-	env,
-	fmt,
-};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::{env, fmt};
+
+use env_logger::Builder;
+use env_logger::fmt::{Color, Style, StyledValue};
+use git_cliff_core::error::{Error, Result};
+#[cfg(feature = "remote")]
+use indicatif::{ProgressBar, ProgressStyle};
+use log::Level;
 
 /// Environment variable to use for the logger.
 const LOGGER_ENV: &str = "RUST_LOG";
