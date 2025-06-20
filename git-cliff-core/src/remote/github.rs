@@ -1,12 +1,9 @@
-use crate::config::Remote;
-use crate::error::*;
 use reqwest_middleware::ClientWithMiddleware;
-use serde::{
-	Deserialize,
-	Serialize,
-};
+use serde::{Deserialize, Serialize};
 
 use super::*;
+use crate::config::Remote;
+use crate::error::*;
 
 /// Log message to show while fetching data from GitHub.
 pub const START_FETCHING_MSG: &str = "Retrieving data from GitHub...";
@@ -220,9 +217,10 @@ impl GitHubClient {
 
 #[cfg(test)]
 mod test {
+	use pretty_assertions::assert_eq;
+
 	use super::*;
 	use crate::remote::RemoteCommit;
-	use pretty_assertions::assert_eq;
 
 	#[test]
 	fn timestamp() {

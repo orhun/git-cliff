@@ -13,54 +13,22 @@ pub mod logger;
 #[macro_use]
 extern crate log;
 
-use args::{
-	BumpOption,
-	Opt,
-	Sort,
-	Strip,
-};
+use std::fs::{self, File};
+use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
+use std::{env, io};
+
+use args::{BumpOption, Opt, Sort, Strip};
 use clap::ValueEnum;
 use git_cliff_core::changelog::Changelog;
-use git_cliff_core::commit::{
-	Commit,
-	Range,
-};
-use git_cliff_core::config::{
-	CommitParser,
-	Config,
-};
-use git_cliff_core::embed::{
-	BuiltinConfig,
-	EmbeddedConfig,
-};
-use git_cliff_core::error::{
-	Error,
-	Result,
-};
+use git_cliff_core::commit::{Commit, Range};
+use git_cliff_core::config::{CommitParser, Config};
+use git_cliff_core::embed::{BuiltinConfig, EmbeddedConfig};
+use git_cliff_core::error::{Error, Result};
 use git_cliff_core::release::Release;
-use git_cliff_core::repo::{
-	Repository,
-	SubmoduleRange,
-};
-use git_cliff_core::{
-	DEFAULT_CONFIG,
-	IGNORE_FILE,
-};
+use git_cliff_core::repo::{Repository, SubmoduleRange};
+use git_cliff_core::{DEFAULT_CONFIG, IGNORE_FILE};
 use glob::Pattern;
-use std::env;
-use std::fs::{
-	self,
-	File,
-};
-use std::io;
-use std::path::{
-	Path,
-	PathBuf,
-};
-use std::time::{
-	SystemTime,
-	UNIX_EPOCH,
-};
 
 /// Checks for a new version on crates.io
 #[cfg(feature = "update-informer")]
