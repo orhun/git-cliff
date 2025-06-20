@@ -1,8 +1,6 @@
 edition = "2024"
 max_width = 85
 newline_style = "Unix"
-hard_tabs = true
-tab_spaces = 4
 use_field_init_shorthand = true
 reorder_imports = true
 binop_separator = "Back"
