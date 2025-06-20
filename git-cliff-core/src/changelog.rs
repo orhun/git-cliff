@@ -164,6 +164,7 @@ impl<'a> Changelog<'a> {
 						.filter_map(|line| {
 							let mut c = commit.clone();
 							c.message = line.to_string();
+							c.links.clear();
 							if c.message.is_empty() {
 								None
 							} else {

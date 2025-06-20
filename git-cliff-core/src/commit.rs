@@ -429,7 +429,6 @@ impl Commit<'_> {
 	///
 	/// [`links`]: Commit::links
 	pub fn parse_links(mut self, parsers: &[LinkParser]) -> Self {
-		self.links.clear();
 		for parser in parsers {
 			let regex = &parser.pattern;
 			let replace = &parser.href;
