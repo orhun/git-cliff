@@ -259,7 +259,7 @@ impl Repository {
 		match (include_patterns, exclude_patterns) {
 			(Some(include_pattern), Some(exclude_pattern)) => {
 				// check if the commit has any changed files that match any of the
-				// include patterns and non of the exclude patterns.
+				// include patterns and none of the exclude patterns.
 				changed_files.iter().any(|path| {
 					include_pattern
 						.iter()
