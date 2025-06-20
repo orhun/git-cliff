@@ -76,6 +76,19 @@ following context is generated to use for templating:
       },
     ],
   },
+  "statistics": {
+    "commit_count": 1,
+    "commits_timespan": 0,
+    "conventional_commit_count": 1,
+    "links": [
+      {
+        "text": "#452",
+        "href": "https://github.com/orhun/git-cliff/issues/452",
+        "count": 1
+      }
+    ],
+    "days_passed_since_last_release": 0
+  },
   "previous": {
     "version": "previous release"
   }
@@ -175,6 +188,19 @@ If [`conventional_commits`](/docs/configuration/git#conventional_commits) is set
   "commit_range": {
       "from": "(id of the first commit used for this release)",
       "to": "(id of the last commit used for this release)",
+  },
+  "statistics": {
+    "commit_count": 1,
+    "commits_timespan": 0,
+    "conventional_commit_count": 0,
+    "links": [
+      {
+        "text": "#452",
+        "href": "https://github.com/orhun/git-cliff/issues/452",
+        "count": 1
+      }
+    ],
+    "days_passed_since_last_release": 0
   },
   "previous": {
     "version": "previous release"

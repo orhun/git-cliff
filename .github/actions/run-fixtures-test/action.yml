@@ -13,6 +13,10 @@ inputs:
     description: The date format to use
     required: false
     default: "%Y-%m-%d"
+  previous-release-timestamp:
+    description: The timestamp of the previous release
+    required: false
+    default: "1970-01-01 00:00:00"
 
 runs:
   using: composite
@@ -52,11 +56,17 @@ runs:
       working-directory: ${{ inputs.fixtures-dir }}
       env:
         IN_DATE_FORMAT: ${{ inputs.date-format }}
+        IN_PREVIOUS_RELEASE_TIMESTAMP: ${{ inputs.previous-release-timestamp }}
       shell: bash
       run: |
         if [ -f expected.md ]; then
           current_date=$(date +"$IN_DATE_FORMAT")
+          previous_release_timestamp="$IN_PREVIOUS_RELEASE_TIMESTAMP"
+          previous_release_timestamp=$(date -d "$previous_release_timestamp" +%s)
+          current_release_timestamp=$(date +%s)
+          days_since_last_release=$(( (current_release_timestamp - previous_release_timestamp) / 86400 ))
           sed -i "s/<<DATE>>/$current_date/g" expected.md
+          sed -i "s/<<DAYS SINCE LAST RELEASE>>/$days_since_last_release/g" expected.md
           if ! diff --strip-trailing-cr output.md expected.md; then
 
             echo '> expected'
