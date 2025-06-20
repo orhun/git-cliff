@@ -1,11 +1,9 @@
-use clap::{
-	CommandFactory,
-	ValueEnum,
-};
-use clap_complete::Shell;
-use git_cliff::args::Opt;
 use std::env;
 use std::io::Result;
+
+use clap::{CommandFactory, ValueEnum};
+use clap_complete::Shell;
+use git_cliff::args::Opt;
 
 /// Shell completions can be created with:
 /// `cargo run --bin git-cliff-completions`

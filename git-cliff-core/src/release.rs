@@ -1,35 +1,18 @@
 use std::collections::HashMap;
 
-use crate::commit::commits_to_conventional_commits;
+use next_version::{NextVersion, VersionUpdater};
+use semver::Version;
+use serde::{Deserialize, Serialize};
+use serde_json::value::Value;
+
+use crate::commit::{Commit, Range, commits_to_conventional_commits};
+use crate::config::{Bump, BumpType};
 use crate::error::Result;
-use crate::{
-	commit::{
-		Commit,
-		Range,
-	},
-	config::Bump,
-	config::BumpType,
-};
 #[cfg(feature = "remote")]
 use crate::{
 	contributor::RemoteContributor,
-	remote::{
-		RemoteCommit,
-		RemotePullRequest,
-		RemoteReleaseMetadata,
-	},
+	remote::{RemoteCommit, RemotePullRequest, RemoteReleaseMetadata},
 };
-
-use next_version::{
-	NextVersion,
-	VersionUpdater,
-};
-use semver::Version;
-use serde::{
-	Deserialize,
-	Serialize,
-};
-use serde_json::value::Value;
 
 /// Representation of a release.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -195,8 +178,9 @@ impl Releases<'_> {
 
 #[cfg(test)]
 mod test {
-	use super::*;
 	use pretty_assertions::assert_eq;
+
+	use super::*;
 	#[test]
 	fn bump_version() -> Result<()> {
 		fn build_release<'a>(version: &str, commits: &'a [&str]) -> Release<'a> {
@@ -392,12 +376,8 @@ mod test {
 	#[test]
 	fn update_github_metadata() -> Result<()> {
 		use crate::remote::github::{
-			GitHubCommit,
-			GitHubCommitAuthor,
-			GitHubCommitDetails,
-			GitHubCommitDetailsAuthor,
-			GitHubPullRequest,
-			PullRequestLabel,
+			GitHubCommit, GitHubCommitAuthor, GitHubCommitDetails,
+			GitHubCommitDetailsAuthor, GitHubPullRequest, PullRequestLabel,
 		};
 
 		let mut release = Release {
@@ -764,11 +744,7 @@ mod test {
 	#[cfg(feature = "gitlab")]
 	#[test]
 	fn update_gitlab_metadata() -> Result<()> {
-		use crate::remote::gitlab::{
-			GitLabCommit,
-			GitLabMergeRequest,
-			GitLabUser,
-		};
+		use crate::remote::gitlab::{GitLabCommit, GitLabMergeRequest, GitLabUser};
 
 		let mut release = Release {
 			version: None,
@@ -1156,10 +1132,7 @@ mod test {
 	#[test]
 	fn update_gitea_metadata() -> Result<()> {
 		use crate::remote::gitea::{
-			GiteaCommit,
-			GiteaCommitAuthor,
-			GiteaPullRequest,
-			PullRequestLabel,
+			GiteaCommit, GiteaCommitAuthor, GiteaPullRequest, PullRequestLabel,
 		};
 
 		let mut release = Release {
@@ -1516,9 +1489,7 @@ mod test {
 	#[test]
 	fn update_bitbucket_metadata() -> Result<()> {
 		use crate::remote::bitbucket::{
-			BitbucketCommit,
-			BitbucketCommitAuthor,
-			BitbucketPullRequest,
+			BitbucketCommit, BitbucketCommitAuthor, BitbucketPullRequest,
 			BitbucketPullRequestMergeCommit,
 		};
 

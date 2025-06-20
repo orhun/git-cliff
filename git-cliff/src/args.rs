@@ -1,32 +1,14 @@
-use clap::{
-	ArgAction,
-	Parser,
-	ValueEnum,
-	builder::{
-		Styles,
-		TypedValueParser,
-		ValueParserFactory,
-		styling::{
-			Ansi256Color,
-			AnsiColor,
-		},
-	},
-	error::{
-		ContextKind,
-		ContextValue,
-		ErrorKind,
-	},
-};
-use git_cliff_core::{
-	DEFAULT_CONFIG,
-	DEFAULT_OUTPUT,
-	config::BumpType,
-	config::Remote,
-};
+use std::path::PathBuf;
+
+use clap::builder::styling::{Ansi256Color, AnsiColor};
+use clap::builder::{Styles, TypedValueParser, ValueParserFactory};
+use clap::error::{ContextKind, ContextValue, ErrorKind};
+use clap::{ArgAction, Parser, ValueEnum};
+use git_cliff_core::config::{BumpType, Remote};
+use git_cliff_core::{DEFAULT_CONFIG, DEFAULT_OUTPUT};
 use glob::Pattern;
 use regex::Regex;
 use secrecy::SecretString;
-use std::path::PathBuf;
 use url::Url;
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
@@ -461,9 +443,11 @@ impl Opt {
 
 #[cfg(test)]
 mod tests {
-	use super::*;
-	use clap::CommandFactory;
 	use std::ffi::OsStr;
+
+	use clap::CommandFactory;
+
+	use super::*;
 
 	#[test]
 	fn verify_cli() {

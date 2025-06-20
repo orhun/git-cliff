@@ -1,11 +1,10 @@
-use crate::config::Config;
-use crate::error::{
-	Error,
-	Result,
-};
-use rust_embed::RustEmbed;
 use std::path::Path;
 use std::str;
+
+use rust_embed::RustEmbed;
+
+use crate::config::Config;
+use crate::error::{Error, Result};
 
 /// Default configuration file embedder/extractor.
 ///

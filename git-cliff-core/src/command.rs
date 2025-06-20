@@ -1,17 +1,8 @@
+use std::io::{Error as IoError, Write};
+use std::process::{Command, Stdio};
+use std::{env, str, thread};
+
 use crate::error::Result;
-use std::io::{
-	Error as IoError,
-	Write,
-};
-use std::process::{
-	Command,
-	Stdio,
-};
-use std::thread;
-use std::{
-	env,
-	str,
-};
 
 /// Runs the given OS command and returns the output as string.
 ///
