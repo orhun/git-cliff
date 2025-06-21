@@ -585,10 +585,10 @@ pub fn run_with_changelog_modifier(
 		debug!("Using configuration file from: {url}");
 		#[cfg(feature = "remote")]
 		{
-			let contents = reqwest::blocking::get(url.clone())?
+			reqwest::blocking::get(url.clone())?
 				.error_for_status()?
-				.text()?;
-			Config::parse_from_str(&contents)?
+				.text()?
+				.parse()?
 		}
 		#[cfg(not(feature = "remote"))]
 		unreachable!(
@@ -598,9 +598,9 @@ pub fn run_with_changelog_modifier(
 		info!("Using built-in configuration file: {name}");
 		config
 	} else if path.exists() {
-		Config::parse(&path)?
+		Config::load(&path)?
 	} else if let Some(contents) = Config::read_from_manifest()? {
-		Config::parse_from_str(&contents)?
+		contents.parse()?
 	} else if let Some(discovered_path) =
 		env::current_dir()?.ancestors().find_map(|dir| {
 			let path = dir.join(DEFAULT_CONFIG);
@@ -610,7 +610,7 @@ pub fn run_with_changelog_modifier(
 			"Using configuration from parent directory: {}",
 			discovered_path.display()
 		);
-		Config::parse(&discovered_path)?
+		Config::load(&discovered_path)?
 	} else {
 		if !args.context {
 			warn!(
