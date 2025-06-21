@@ -115,6 +115,10 @@ pub trait RemotePullRequest: DynClone {
 	fn labels(&self) -> Vec<String>;
 	/// Merge commit SHA.
 	fn merge_commit(&self) -> Option<String>;
+	/// Username of the author of the pull request.
+	fn author_username(&self) -> Option<String> {
+		None
+	}
 }
 
 dyn_clone::clone_trait_object!(RemotePullRequest);
@@ -354,7 +358,10 @@ macro_rules! update_release_metadata {
 							pr.merge_commit() == Some(v.id().clone()) ||
 								pr.merge_commit() == sha_short
 						});
-						commit.$remote.username = v.username();
+						let username = pull_request
+							.and_then(|pr| pr.author_username())
+							.or_else(|| v.username());
+						commit.$remote.username = username.clone();
 						commit.$remote.pr_number = pull_request.map(|v| v.number());
 						commit.$remote.pr_title =
 							pull_request.and_then(|v| v.title().clone());

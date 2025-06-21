@@ -149,6 +149,10 @@ impl RemotePullRequest for BitbucketPullRequest {
 	fn merge_commit(&self) -> Option<String> {
 		Some(self.merge_commit.hash.clone())
 	}
+
+	fn author_username(&self) -> Option<String> {
+		self.author.login.clone()
+	}
 }
 
 /// <https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/#api-repositories-workspace-repo-slug-pullrequests-get>
