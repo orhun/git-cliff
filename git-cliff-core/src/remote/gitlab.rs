@@ -194,6 +194,10 @@ impl RemotePullRequest for GitLabMergeRequest {
 			.or(self.squash_commit_sha.clone())
 			.or(Some(self.sha.clone()))
 	}
+
+	fn author_username(&self) -> Option<String> {
+		Some(self.author.username.clone())
+	}
 }
 
 impl RemoteEntry for GitLabMergeRequest {
