@@ -31,7 +31,7 @@ impl EmbeddedConfig {
 	///
 	/// [`Config`]: Config
 	pub fn parse() -> Result<Config> {
-		Config::parse_from_str(&Self::get_config()?)
+		Self::get_config()?.parse()
 	}
 }
 
@@ -62,8 +62,7 @@ impl BuiltinConfig {
 	///
 	/// [`Config`]: Config
 	pub fn parse(name: String) -> Result<(Config, String)> {
-		let raw_config = Self::get_config(name.to_string())?;
-		let parsed = Config::parse_from_str(&raw_config)?;
+		let parsed = Self::get_config(name.to_string())?.parse()?;
 		Ok((parsed, name))
 	}
 }

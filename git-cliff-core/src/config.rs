@@ -1,6 +1,9 @@
-use crate::command;
 use crate::embed::EmbeddedConfig;
 use crate::error::Result;
+use crate::{
+	command,
+	error,
+};
 use glob::Pattern;
 use regex::{
 	Regex,
@@ -11,10 +14,13 @@ use serde::{
 	Deserialize,
 	Serialize,
 };
-use std::fmt;
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
+use std::{
+	fmt,
+	str::FromStr,
+};
 
 /// Default initial tag.
 const DEFAULT_INITIAL_TAG: &str = "0.1.0";
@@ -465,33 +471,14 @@ impl Config {
 		Ok(None)
 	}
 
-	/// Parses the config file from string and returns the values.
-	pub fn parse_from_str(contents: &str) -> Result<Config> {
-		// Adding sources one after another overwrites the previous values.
-		// Thus adding the default config initializes the config with default values.
-		let default_config_str = EmbeddedConfig::get_config()?;
-
-		Ok(config::Config::builder()
-			.add_source(config::File::from_str(
-				&default_config_str,
-				config::FileFormat::Toml,
-			))
-			.add_source(config::File::from_str(contents, config::FileFormat::Toml))
-			.add_source(
-				config::Environment::with_prefix("GIT_CLIFF").separator("__"),
-			)
-			.build()?
-			.try_deserialize()?)
-	}
-
 	/// Parses the config file and returns the values.
-	pub fn parse(path: &Path) -> Result<Config> {
+	pub fn load(path: &Path) -> Result<Config> {
 		if MANIFEST_INFO
 			.iter()
 			.any(|v| path.file_name() == v.path.file_name())
 		{
 			if let Some(contents) = Self::read_from_manifest()? {
-				return Self::parse_from_str(&contents);
+				return contents.parse();
 			}
 		}
 
@@ -512,13 +499,37 @@ impl Config {
 	}
 }
 
+impl FromStr for Config {
+	type Err = error::Error;
+
+	/// Parses the config file from string and returns the values.
+	fn from_str(contents: &str) -> Result<Self> {
+		// Adding sources one after another overwrites the previous values.
+		// Thus adding the default config initializes the config with default
+		// values.
+		let default_config_str = EmbeddedConfig::get_config()?;
+
+		Ok(config::Config::builder()
+			.add_source(config::File::from_str(
+				&default_config_str,
+				config::FileFormat::Toml,
+			))
+			.add_source(config::File::from_str(contents, config::FileFormat::Toml))
+			.add_source(
+				config::Environment::with_prefix("GIT_CLIFF").separator("__"),
+			)
+			.build()?
+			.try_deserialize()?)
+	}
+}
+
 #[cfg(test)]
 mod test {
 	use super::*;
 	use pretty_assertions::assert_eq;
 	use std::env;
 	#[test]
-	fn parse_config() -> Result<()> {
+	fn load() -> Result<()> {
 		let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 			.parent()
 			.expect("parent directory not found")
@@ -536,7 +547,7 @@ mod test {
 			env::set_var("GIT_CLIFF__GIT__IGNORE_TAGS", IGNORE_TAGS_VALUE);
 		};
 
-		let config = Config::parse(&path)?;
+		let config = Config::load(&path)?;
 
 		assert_eq!(Some(String::from(FOOTER_VALUE)), config.changelog.footer);
 		assert_eq!(
