@@ -306,12 +306,15 @@ This only considers submodules at the toplevel (depth 1). These commits can then
 
 ### include_paths
 
-`include_paths` is an _optional_ array of (glob patterns of) paths that commits need to have touched to be included in
-the generated changelog. When this value is set, the current working directory will **not** be included.
+`include_paths` is an _optional_ array of glob patterns. Only commits that modify files matching these patterns will be included in the generated changelog.
+
+When this value is set, the current working directory will **not** be included.
 
 ### exclude_paths
 
-`exclude_paths` is an _optional_ array of (glob patterns of) paths that will exclude commits that have only changed
-files in the excluded paths. This value takes priority over `include_paths`. If a commit changes a file in `include_paths` and changes a file in `exclude_paths`, the
-commit will be included. If a commit only changes files that match both `include_paths` and `exclude_paths`, it will be
-excluded.
+`exclude_paths` is an _optional_ array of glob patterns. Commits that **only** modify files matching these patterns will be excluded from the changelog.
+
+This setting takes priority over `include_paths`.
+
+- If a commit touches both included and excluded paths, it **will be included**.
+- If a commit **only** modifies files that match both `include_paths` and `exclude_paths`, it **will be excluded**.
