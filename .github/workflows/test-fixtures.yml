@@ -121,6 +121,7 @@ jobs:
             command: v0.1.0..HEAD
           - fixtures-name: test-submodules-include-path
             command: --include-path submodule_two
+          - fixtures-name: test-submodules-include-path-config
           - fixtures-name: test-remote-config
             command: --config-url "https://github.com/orhun/git-cliff/blob/main/.github/fixtures/new-fixture-template/cliff.toml?raw=true"
           - fixtures-name: test-topo-order-commits
