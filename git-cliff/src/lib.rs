@@ -317,17 +317,9 @@ fn process_repository<'a>(
 		}
 	}
 
-	let include_path = if include_path.is_empty() {
-		None
-	} else {
-		Some(include_path)
-	};
-	let exclude_path = if config.git.exclude_paths.is_empty() {
-		None
-	} else {
-		Some(config.git.exclude_paths.clone())
-	};
-
+	let include_path = (!include_path.is_empty()).then_some(include_path);
+	let exclude_path = (!config.git.exclude_paths.is_empty())
+		.then_some(config.git.exclude_paths.clone());
 	let mut commits = repository.commits(
 		commit_range.as_deref(),
 		include_path,
