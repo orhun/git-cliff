@@ -1,10 +1,10 @@
+use std::io::Result;
+use std::path::PathBuf;
+use std::{env, fs};
+
 use clap::CommandFactory;
 use clap_mangen::Man;
 use git_cliff::args::Opt;
-use std::env;
-use std::fs;
-use std::io::Result;
-use std::path::PathBuf;
 
 /// Man page can be created with:
 /// `cargo run --bin git-cliff-mangen`

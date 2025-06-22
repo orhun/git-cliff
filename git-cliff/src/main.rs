@@ -1,9 +1,9 @@
+use std::{env, process};
+
 use clap::Parser;
 use git_cliff::args::Opt;
 use git_cliff::logger;
 use git_cliff_core::error::Result;
-use std::env;
-use std::process;
 
 /// Profiler.
 #[cfg(feature = "profiler")]
