@@ -270,7 +270,7 @@ fn process_repository<'a>(
 	// Include only the current directory if not running from the root repository
 	let mut include_path = config.git.include_paths.clone();
 	if let Some(mut path_diff) =
-		pathdiff::diff_paths(env::current_dir()?, repository.root_path()?)
+		pathdiff::diff_paths(repository.root_path()?, env::current_dir()?)
 	{
 		if args.workdir.is_none() &&
 			include_path.is_empty() &&
