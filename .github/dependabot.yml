@@ -56,10 +56,8 @@ updates:
           - "patch"
 
   # Maintain dependencies for Docker
-
   - package-ecosystem: docker
     directory: /
     schedule:
       interval: monthly
     open-pull-requests-limit: 10
-
