@@ -42,11 +42,6 @@ updates:
         update-types:
           - "patch"
 
-  - package-ecosystem: docker
-    directory: /
-    schedule:
-      interval: monthly
-
   - package-ecosystem: npm
     directory: /npm/git-cliff
     schedule:
@@ -59,3 +54,12 @@ updates:
       patch:
         update-types:
           - "patch"
+
+  # Maintain dependencies for Docker
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 10
+
