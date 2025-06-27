@@ -150,6 +150,7 @@ impl<'a> Changelog<'a> {
 						.filter_map(|line| {
 							let mut c = commit.clone();
 							c.message = line.to_string();
+							c.links.clear();
 							if c.message.is_empty() {
 								None
 							} else {
@@ -217,6 +218,7 @@ impl<'a> Changelog<'a> {
 					true
 				}
 			})
+			.map(|release| release.with_statistics())
 			.collect();
 		for skipped_tag in &skipped_tags {
 			if let Some(release_index) = self.releases.iter().position(|release| {
@@ -565,10 +567,12 @@ impl<'a> Changelog<'a> {
 					.calculate_next_version_with_config(&self.config.bump)?;
 				debug!("Bumping the version to {next_version}");
 				last_release.version = Some(next_version.to_string());
-				last_release.timestamp = SystemTime::now()
-					.duration_since(UNIX_EPOCH)?
-					.as_secs()
-					.try_into()?;
+				last_release.timestamp = Some(
+					SystemTime::now()
+						.duration_since(UNIX_EPOCH)?
+						.as_secs()
+						.try_into()?,
+				);
 				return Ok(Some(next_version));
 			}
 		}
@@ -689,8 +693,10 @@ mod test {
 	use regex::Regex;
 
 	use super::*;
+	use crate::commit::Signature;
 	use crate::config::{
-		Bump, ChangelogConfig, CommitParser, Remote, RemoteConfig, TextProcessor,
+		Bump, ChangelogConfig, CommitParser, LinkParser, Remote, RemoteConfig,
+		TextProcessor,
 	};
 
 	fn get_test_data() -> (Config, Vec<Release<'static>>) {
@@ -706,7 +712,22 @@ mod test {
 				### {{ group }}{% for group, commits in commits | group_by(attribute="scope") %}
 				#### {{ group }}{% for commit in commits %}
 				- {{ commit.message }}{% endfor %}
-				{% endfor %}{% endfor %}"#,
+				{% endfor %}{% endfor %}
+				### Commit Statistics
+
+				- {{ statistics.commit_count }} commit(s) contributed to the release.
+				- {{ statistics.commits_timespan | default(value=0) }} day(s) passed between the first and last commit.
+				- {{ statistics.conventional_commit_count }} commit(s) parsed as conventional.
+				- {{ statistics.links | length }} linked issue(s) detected in commits.
+				{%- if statistics.links | length > 0 %}
+					{%- for link in statistics.links %}
+						{{ "  " }}- [{{ link.text }}]({{ link.href }}) (referenced {{ link.count }} time(s))
+					{%- endfor %}
+				{%- endif %}
+				{%- if statistics.days_passed_since_last_release %}
+					- {{ statistics.days_passed_since_last_release }} day(s) passed between releases.
+				{%- endif %}
+				"#,
 				),
 				footer:         Some(String::from(
 					r#"-- total releases: {{ releases | length }} --"#,
@@ -878,7 +899,12 @@ mod test {
 				topo_order:               false,
 				topo_order_commits:       true,
 				sort_commits:             String::from("oldest"),
-				link_parsers:             [].to_vec(),
+				link_parsers:             vec![LinkParser {
+					pattern: Regex::new("#(\\d+)")
+						.expect("issue reference regex should be valid"),
+					href:    String::from("https://github.com/$1"),
+					text:    None,
+				}],
 				limit_commits:            None,
 				recurse_submodules:       None,
 				include_paths:            Vec::new(),
@@ -925,70 +951,147 @@ mod test {
 			message: None,
 			extra: None,
 			commits: vec![
-				Commit::new(
-					String::from("coffee"),
-					String::from("revert(app): skip this commit"),
-				),
-				Commit::new(
-					String::from("tea"),
-					String::from("feat(app): damn right"),
-				),
-				Commit::new(
-					String::from("0bc123"),
-					String::from("feat(app): add cool features"),
-				),
-				Commit::new(
-					String::from("000000"),
-					String::from("support unconventional commits"),
-				),
-				Commit::new(
-					String::from("0bc123"),
-					String::from("feat: support unscoped commits"),
-				),
-				Commit::new(
-					String::from("0werty"),
-					String::from("style(ui): make good stuff"),
-				),
-				Commit::new(
-					String::from("0w3rty"),
-					String::from("fix(ui): fix more stuff"),
-				),
-				Commit::new(
-					String::from("qw3rty"),
-					String::from("doc: update docs"),
-				),
-				Commit::new(
-					String::from("0bc123"),
-					String::from("docs: add some documentation"),
-				),
-				Commit::new(
-					String::from("0jkl12"),
-					String::from("chore(app): do nothing"),
-				),
-				Commit::new(
-					String::from("qwerty"),
-					String::from("chore: <preprocess>"),
-				),
-				Commit::new(
-					String::from("qwertz"),
-					String::from("feat!: support breaking commits"),
-				),
-				Commit::new(
-					String::from("qwert0"),
-					String::from("match(group): support regex-replace for groups"),
-				),
-				Commit::new(
-					String::from("coffee"),
-					String::from("revert(app): skip this commit"),
-				),
-				Commit::new(
-					String::from("footer"),
-					String::from("misc: use footer\n\nFooter: footer text"),
-				),
+				Commit {
+					id: String::from("coffee"),
+					message: String::from("revert(app): skip this commit"),
+					committer: Signature {
+						timestamp: 48704000,
+						..Default::default()
+					},
+					..Default::default()
+				},
+				Commit {
+					id: String::from("tea"),
+					message: String::from("feat(app): damn right"),
+					committer: Signature {
+						timestamp: 48790400,
+						..Default::default()
+					},
+					..Default::default()
+				},
+				Commit {
+					id: String::from("0bc123"),
+					message: String::from("feat(app): add cool features"),
+					committer: Signature {
+						timestamp: 48876800,
+						..Default::default()
+					},
+					..Default::default()
+				},
+				Commit {
+					id: String::from("000000"),
+					message: String::from("support unconventional commits"),
+					committer: Signature {
+						timestamp: 48963200,
+						..Default::default()
+					},
+					..Default::default()
+				},
+				Commit {
+					id: String::from("0bc123"),
+					message: String::from("feat: support unscoped commits"),
+					committer: Signature {
+						timestamp: 49049600,
+						..Default::default()
+					},
+					..Default::default()
+				},
+				Commit {
+					id: String::from("0werty"),
+					message: String::from("style(ui): make good stuff"),
+					committer: Signature {
+						timestamp: 49136000,
+						..Default::default()
+					},
+					..Default::default()
+				},
+				Commit {
+					id: String::from("0w3rty"),
+					message: String::from("fix(ui): fix more stuff"),
+					committer: Signature {
+						timestamp: 49222400,
+						..Default::default()
+					},
+					..Default::default()
+				},
+				Commit {
+					id: String::from("qw3rty"),
+					message: String::from("doc: update docs"),
+					committer: Signature {
+						timestamp: 49308800,
+						..Default::default()
+					},
+					..Default::default()
+				},
+				Commit {
+					id: String::from("0bc123"),
+					message: String::from("docs: add some documentation"),
+					committer: Signature {
+						timestamp: 49395200,
+						..Default::default()
+					},
+					..Default::default()
+				},
+				Commit {
+					id: String::from("0jkl12"),
+					message: String::from("chore(app): do nothing"),
+					committer: Signature {
+						timestamp: 49481600,
+						..Default::default()
+					},
+					..Default::default()
+				},
+				Commit {
+					id: String::from("qwerty"),
+					message: String::from("chore: <preprocess>"),
+					committer: Signature {
+						timestamp: 49568000,
+						..Default::default()
+					},
+					..Default::default()
+				},
+				Commit {
+					id: String::from("qwertz"),
+					message: String::from("feat!: support breaking commits"),
+					committer: Signature {
+						timestamp: 49654400,
+						..Default::default()
+					},
+					..Default::default()
+				},
+				Commit {
+					id: String::from("qwert0"),
+					message: String::from(
+						"match(group): support regex-replace for groups",
+					),
+					committer: Signature {
+						timestamp: 49740800,
+						..Default::default()
+					},
+					..Default::default()
+				},
+				Commit {
+					id: String::from("coffee"),
+					message: String::from("revert(app): skip this commit"),
+					committer: Signature {
+						timestamp: 49827200,
+						..Default::default()
+					},
+					..Default::default()
+				},
+				Commit {
+					id: String::from("footer"),
+					message: String::from("misc: use footer\n\nFooter: footer text"),
+					committer: Signature {
+						timestamp: 49913600,
+						..Default::default()
+					},
+					..Default::default()
+				},
 			],
 			commit_range: None,
 			commit_id: Some(String::from("0bc123")),
-			timestamp: 50000000,
+			timestamp: Some(50000000),
 			previous: None,
 			repository: Some(String::from("/root/repo")),
 			submodule_commits: HashMap::from([(
@@ -1017,6 +1120,7 @@ mod test {
 					),
 				],
 			)]),
+			statistics: None,
 			#[cfg(feature = "github")]
 			github: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],
@@ -1038,10 +1142,15 @@ mod test {
 			test_release.clone(),
 			Release {
 				version: Some(String::from("v3.0.0")),
-				commits: vec![Commit::new(
-					String::from("n0thin"),
-					String::from("feat(xyz): skip commit"),
-				)],
+				commits: vec![Commit {
+					id: String::from("n0thin"),
+					message: String::from("feat(xyz): skip commit"),
+					committer: Signature {
+						timestamp: 49913600,
+						..Default::default()
+					},
+					..Default::default()
+				}],
 				..Release::default()
 			},
 			Release {
@@ -1049,35 +1158,73 @@ mod test {
 				message: None,
 				extra: None,
 				commits: vec![
-					Commit::new(
-						String::from("abc123"),
-						String::from("feat(app): add xyz"),
-					),
-					Commit::new(
-						String::from("abc124"),
-						String::from("docs(app): document zyx"),
-					),
-					Commit::new(String::from("def789"), String::from("merge #4")),
-					Commit::new(
-						String::from("dev063"),
-						String::from("feat(app)!: merge #5"),
-					),
-					Commit::new(
-						String::from("qwerty"),
-						String::from("fix(app): fix abc"),
-					),
-					Commit::new(
-						String::from("hjkl12"),
-						String::from("chore(ui): do boring stuff"),
-					),
-					Commit::new(
-						String::from("coffee2"),
-						String::from("revert(app): skip this commit"),
-					),
+					Commit {
+						id: String::from("abc123"),
+						message: String::from("feat(app): add xyz"),
+						committer: Signature {
+							timestamp: 49395200,
+							..Default::default()
+						},
+						..Default::default()
+					},
+					Commit {
+						id: String::from("abc124"),
+						message: String::from("docs(app): document zyx"),
+						committer: Signature {
+							timestamp: 49481600,
+							..Default::default()
+						},
+						..Default::default()
+					},
+					Commit {
+						id: String::from("def789"),
+						message: String::from("merge #4"),
+						committer: Signature {
+							timestamp: 49568000,
+							..Default::default()
+						},
+						..Default::default()
+					},
+					Commit {
+						id: String::from("dev063"),
+						message: String::from("feat(app)!: merge #5"),
+						committer: Signature {
+							timestamp: 49654400,
+							..Default::default()
+						},
+						..Default::default()
+					},
+					Commit {
+						id: String::from("qwerty"),
+						message: String::from("fix(app): fix abc"),
+						committer: Signature {
+							timestamp: 49740800,
+							..Default::default()
+						},
+						..Default::default()
+					},
+					Commit {
+						id: String::from("hjkl12"),
+						message: String::from("chore(ui): do boring stuff"),
+						committer: Signature {
+							timestamp: 49827200,
+							..Default::default()
+						},
+						..Default::default()
+					},
+					Commit {
+						id: String::from("coffee2"),
+						message: String::from("revert(app): skip this commit"),
+						committer: Signature {
+							timestamp: 49913600,
+							..Default::default()
+						},
+						..Default::default()
+					},
 				],
 				commit_range: None,
 				commit_id: None,
-				timestamp: 1000,
+				timestamp: Some(1000),
 				previous: Some(Box::new(test_release)),
 				repository: Some(String::from("/root/repo")),
 				submodule_commits: HashMap::from([
@@ -1096,6 +1243,7 @@ mod test {
 						String::from("sub_two bump"),
 					)]),
 				]),
+				statistics: None,
 				#[cfg(feature = "github")]
 				github: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
@@ -1122,7 +1270,7 @@ mod test {
 		let (config, releases) = get_test_data();
 		let mut changelog = Changelog::new(releases, &config, None)?;
 		changelog.bump_version()?;
-		changelog.releases[0].timestamp = 0;
+		changelog.releases[0].timestamp = Some(0);
 		let mut out = Vec::new();
 		changelog.generate(&mut out)?;
 		assert_eq!(
@@ -1146,6 +1294,14 @@ mod test {
 
 			#### ui
 			- do exciting stuff
+
+			### Commit Statistics
+
+			- 4 commit(s) contributed to the release.
+			- 5 day(s) passed between the first and last commit.
+			- 4 commit(s) parsed as conventional.
+			- 0 linked issue(s) detected in commits.
+			- -578 day(s) passed between releases.
 
 			## Release [v1.0.0] - 1971-08-02 - (/root/repo)
 			(0bc123)
@@ -1189,6 +1345,13 @@ mod test {
 
 			#### ui
 			- make good stuff
+
+			### Commit Statistics
+
+			- 13 commit(s) contributed to the release.
+			- 13 day(s) passed between the first and last commit.
+			- 12 commit(s) parsed as conventional.
+			- 0 linked issue(s) detected in commits.
 			-- total releases: 2 --
 			"#
 			)
@@ -1214,34 +1377,49 @@ mod test {
 			parser.skip = Some(true);
 		}
 
-		releases[0].commits.push(Commit::new(
-			String::from("0bc123"),
-			String::from(
+		releases[0].commits.push(Commit {
+			id: String::from("0bc123"),
+			message: String::from(
 				"feat(app): add some more cool features
 feat(app): even more features
 feat(app): feature #3
 ",
 			),
-		));
-		releases[0].commits.push(Commit::new(
-			String::from("003934"),
-			String::from(
+			committer: Signature {
+				timestamp: 49827200,
+				..Default::default()
+			},
+			..Default::default()
+		});
+		releases[0].commits.push(Commit {
+			id: String::from("003934"),
+			message: String::from(
 				"feat: add awesome stuff
 fix(backend): fix awesome stuff
 style: make awesome stuff look better
 ",
 			),
-		));
-		releases[2].commits.push(Commit::new(
-			String::from("123abc"),
-			String::from(
+			committer: Signature {
+				timestamp: 49740800,
+				..Default::default()
+			},
+			..Default::default()
+		});
+		releases[2].commits.push(Commit {
+			id: String::from("123abc"),
+			message: String::from(
 				"chore(deps): bump some deps
 
 chore(deps): bump some more deps
 chore(deps): fix broken deps
 ",
 			),
-		));
+			committer: Signature {
+				timestamp: 49308800,
+				..Default::default()
+			},
+			..Default::default()
+		});
 		let changelog = Changelog::new(releases, &config, None)?;
 		let mut out = Vec::new();
 		changelog.generate(&mut out)?;
@@ -1274,6 +1452,15 @@ chore(deps): fix broken deps
 			### feat
 			#### app
 			- merge #5
+
+			### Commit Statistics
+
+			- 8 commit(s) contributed to the release.
+			- 6 day(s) passed between the first and last commit.
+			- 8 commit(s) parsed as conventional.
+			- 1 linked issue(s) detected in commits.
+			  - [#5](https://github.com/5) (referenced 1 time(s))
+			- -578 day(s) passed between releases.
 
 			## Release [v1.0.0] - 1971-08-02 - (/root/repo)
 			(0bc123)
@@ -1321,6 +1508,14 @@ chore(deps): fix broken deps
 
 			#### ui
 			- make good stuff
+
+			### Commit Statistics
+
+			- 18 commit(s) contributed to the release.
+			- 12 day(s) passed between the first and last commit.
+			- 17 commit(s) parsed as conventional.
+			- 1 linked issue(s) detected in commits.
+			  - [#3](https://github.com/3) (referenced 1 time(s))
 			-- total releases: 2 --
 			"#
 			)

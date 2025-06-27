@@ -204,10 +204,11 @@ mod test {
 			.collect(),
 			commit_range: None,
 			commit_id: None,
-			timestamp: 0,
+			timestamp: None,
 			previous: None,
 			repository: Some(String::from("/root/repo")),
 			submodule_commits: HashMap::new(),
+			statistics: None,
 			#[cfg(feature = "github")]
 			github: crate::remote::RemoteReleaseMetadata {
 				contributors: vec![],

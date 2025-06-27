@@ -314,10 +314,12 @@ fn process_repository<'a>(
 			}
 		} else {
 			releases[0].version = Some(tag.to_string());
-			releases[0].timestamp = SystemTime::now()
-				.duration_since(UNIX_EPOCH)?
-				.as_secs()
-				.try_into()?;
+			releases[0].timestamp = Some(
+				SystemTime::now()
+					.duration_since(UNIX_EPOCH)?
+					.as_secs()
+					.try_into()?,
+			);
 		}
 	}
 
@@ -337,14 +339,16 @@ fn process_repository<'a>(
 			release.message.clone_from(&tag.message);
 			release.timestamp = if args.tag.as_deref() == Some(tag.name.as_str()) {
 				match tag_timestamp {
-					Some(timestamp) => timestamp,
-					None => SystemTime::now()
-						.duration_since(UNIX_EPOCH)?
-						.as_secs()
-						.try_into()?,
+					Some(timestamp) => Some(timestamp),
+					None => Some(
+						SystemTime::now()
+							.duration_since(UNIX_EPOCH)?
+							.as_secs()
+							.try_into()?,
+					),
 				}
 			} else {
-				git_commit.time().seconds()
+				Some(git_commit.time().seconds())
 			};
 			if first_processed_tag.is_none() {
 				first_processed_tag = Some(tag);
@@ -402,10 +406,12 @@ fn process_repository<'a>(
 			let previous_release = Release {
 				commit_id: Some(commit_id.to_string()),
 				version: Some(tag.name.clone()),
-				timestamp: repository
-					.find_commit(commit_id)
-					.map(|v| v.time().seconds())
-					.unwrap_or_default(),
+				timestamp: Some(
+					repository
+						.find_commit(commit_id)
+						.map(|v| v.time().seconds())
+						.unwrap_or_default(),
+				),
 				..Default::default()
 			};
 			releases[0].previous = Some(Box::new(previous_release));
