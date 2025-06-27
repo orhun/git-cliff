@@ -73,7 +73,3 @@ topo_order = false
 # Order of commits in each group/release within the changelog.
 # Allowed values: newest, oldest
 sort_commits = "oldest"
-# An array of link parsers for extracting external references, and turning them into URLs, using regex.
-link_parsers = [
-    { pattern = "#(\\d+)", href = "https://github.com/orhun/git-cliff-readme-example/issues/$1"},
-]
