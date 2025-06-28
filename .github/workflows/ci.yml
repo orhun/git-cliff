@@ -23,15 +23,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --locked --verbose
+        run: cargo check --locked --verbose
       - name: Check without default features
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --locked --no-default-features --verbose
+        run: cargo check --locked --no-default-features --verbose
 
   typos:
     name: Typos
@@ -84,21 +78,15 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Install toolchain
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
       - name: Checkout
         uses: actions/checkout@v4
       - name: Check the lints
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --tests --verbose -- -D warnings
+        run: cargo clippy --tests --verbose -- -D warnings
       - name: Check the pedantic lints
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --all-targets --verbose -- -W clippy::pedantic
+        run: cargo clippy --all-targets --verbose -- -W clippy::pedantic
 
   rustfmt:
     name: Formatting
@@ -111,26 +99,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Check the formatting
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check --verbose
+        run: cargo fmt --all -- --check --verbose
 
   doctest:
     name: Doctests
     runs-on: ubuntu-22.04
     steps:
       - name: Install toolchain
-        uses: dtolnay/rust-toolchain@nightly
-        with:
-          components: rustfmt
+        uses: dtolnay/rust-toolchain@stable
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Check the formatting
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --doc
+      - name: Check the doc tests
+        run: cargo test --doc
 
   lychee:
     name: Links
@@ -151,10 +131,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install cargo-binstall
-        uses: taiki-e/install-action@cargo-binstall
       - name: Install cargo-msrv
-        run: cargo binstall -y cargo-msrv
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-msrv
       - name: Run cargo-msrv
         shell: bash
         run: |
