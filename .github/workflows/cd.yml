@@ -34,7 +34,6 @@ jobs:
           - {
               NAME: linux-x64-glibc,
               OS: ubuntu-22.04,
-              TOOLCHAIN: stable,
               TARGET: x86_64-unknown-linux-gnu,
               NPM_PUBLISH: true,
               PYPI_PUBLISH: true,
@@ -42,7 +41,6 @@ jobs:
           - {
               NAME: linux-x64-musl,
               OS: ubuntu-22.04,
-              TOOLCHAIN: stable,
               TARGET: x86_64-unknown-linux-musl,
               NPM_PUBLISH: false,
               PYPI_PUBLISH: true,
@@ -50,7 +48,6 @@ jobs:
           - {
               NAME: linux-x86-glibc,
               OS: ubuntu-22.04,
-              TOOLCHAIN: stable,
               TARGET: i686-unknown-linux-gnu,
               NPM_PUBLISH: false,
               PYPI_PUBLISH: false,
@@ -58,7 +55,6 @@ jobs:
           - {
               NAME: linux-x86-musl,
               OS: ubuntu-22.04,
-              TOOLCHAIN: stable,
               TARGET: i686-unknown-linux-musl,
               NPM_PUBLISH: false,
               PYPI_PUBLISH: true,
@@ -66,7 +62,6 @@ jobs:
           - {
               NAME: linux-arm64-glibc,
               OS: ubuntu-22.04,
-              TOOLCHAIN: stable,
               TARGET: aarch64-unknown-linux-gnu,
               NPM_PUBLISH: true,
               PYPI_PUBLISH: true,
@@ -74,7 +69,6 @@ jobs:
           - {
               NAME: linux-arm64-musl,
               OS: ubuntu-22.04,
-              TOOLCHAIN: stable,
               TARGET: aarch64-unknown-linux-musl,
               NPM_PUBLISH: false,
               PYPI_PUBLISH: true,
@@ -82,7 +76,6 @@ jobs:
           - {
               NAME: win32-x64-mingw,
               OS: windows-2022,
-              TOOLCHAIN: stable,
               TARGET: x86_64-pc-windows-gnu,
               NPM_PUBLISH: false,
               PYPI_PUBLISH: false,
@@ -90,7 +83,6 @@ jobs:
           - {
               NAME: win32-x64-msvc,
               OS: windows-2022,
-              TOOLCHAIN: stable,
               TARGET: x86_64-pc-windows-msvc,
               NPM_PUBLISH: true,
               PYPI_PUBLISH: true,
@@ -98,7 +90,6 @@ jobs:
           - {
               NAME: win32-x86-msvc,
               OS: windows-2022,
-              TOOLCHAIN: stable,
               TARGET: i686-pc-windows-msvc,
               NPM_PUBLISH: false,
               PYPI_PUBLISH: true,
@@ -106,7 +97,6 @@ jobs:
           - {
               NAME: win32-arm64-msvc,
               OS: windows-2022,
-              TOOLCHAIN: stable,
               TARGET: aarch64-pc-windows-msvc,
               NPM_PUBLISH: true,
               PYPI_PUBLISH: false,
@@ -114,7 +104,6 @@ jobs:
           - {
               NAME: darwin-x64,
               OS: macos-14,
-              TOOLCHAIN: stable,
               TARGET: x86_64-apple-darwin,
               NPM_PUBLISH: true,
               PYPI_PUBLISH: true,
@@ -122,7 +111,6 @@ jobs:
           - {
               NAME: darwin-arm64,
               OS: macos-14,
-              TOOLCHAIN: stable,
               TARGET: aarch64-apple-darwin,
               NPM_PUBLISH: true,
               PYPI_PUBLISH: true,
@@ -142,11 +130,9 @@ jobs:
               --allow-unauthenticated musl-tools
           fi
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: ${{ matrix.build.TOOLCHAIN }}
-          target: ${{ matrix.build.TARGET }}
-          override: true
+          targets: ${{ matrix.build.TARGET }}
       - name: Build (linux/macos)
         if: matrix.build.OS != 'windows-2022'
         uses: actions-rs/cargo@v1
