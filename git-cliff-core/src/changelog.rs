@@ -1376,6 +1376,14 @@ mod test {
 				r#"# Changelog
 
 			## Unreleased
+
+			### Commit Statistics
+
+			- 0 commit(s) contributed to the release.
+			- 0 day(s) passed between the first and last commit.
+			- 0 commit(s) parsed as conventional.
+			- 0 linked issue(s) detected in commits.
+			- -578 day(s) passed between releases.
 			-- total releases: 1 --
 			"#
 			)
