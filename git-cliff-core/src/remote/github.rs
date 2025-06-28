@@ -92,6 +92,13 @@ pub struct GitHubCommitAuthor {
 	pub login: Option<String>,
 }
 
+/// Author of the pull request.
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GitHubPullRequestUser {
+	/// Username.
+	pub login: Option<String>,
+}
+
 /// Label of the pull request.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -109,6 +116,8 @@ pub struct GitHubPullRequest {
 	pub title:            Option<String>,
 	/// SHA of the merge commit.
 	pub merge_commit_sha: Option<String>,
+	/// Author of the pull request.
+	pub user:             Option<GitHubPullRequestUser>,
 	/// Labels of the pull request.
 	pub labels:           Vec<PullRequestLabel>,
 }
@@ -128,6 +137,10 @@ impl RemotePullRequest for GitHubPullRequest {
 
 	fn merge_commit(&self) -> Option<String> {
 		self.merge_commit_sha.clone()
+	}
+
+	fn author_username(&self) -> Option<String> {
+		self.user.clone().and_then(|v| v.login)
 	}
 }
 
