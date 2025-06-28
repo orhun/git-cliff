@@ -195,28 +195,25 @@ impl<'a> Changelog<'a> {
 			.into_iter()
 			.rev()
 			.filter(|release| {
+				if let Some(version) = &release.version {
+					if skip_regex.is_some_and(|r| r.is_match(version)) {
+						skipped_tags.push(version.clone());
+						trace!("Skipping release: {}", version);
+						return false;
+					}
+				}
 				if release.commits.is_empty() {
 					if let Some(version) = release.version.clone() {
 						trace!("Release doesn't have any commits: {}", version);
 					}
 					match &release.previous {
 						Some(prev_release) if prev_release.commits.is_empty() => {
-							self.config.changelog.render_always
+							return self.config.changelog.render_always;
 						}
-						_ => false,
+						_ => return false,
 					}
-				} else if let Some(version) = &release.version {
-					!skip_regex.is_some_and(|r| {
-						let skip_tag = r.is_match(version);
-						if skip_tag {
-							skipped_tags.push(version.clone());
-							trace!("Skipping release: {}", version);
-						}
-						skip_tag
-					})
-				} else {
-					true
 				}
+				true
 			})
 			.map(|release| release.with_statistics())
 			.collect();
@@ -1268,6 +1265,7 @@ mod test {
 	#[test]
 	fn changelog_generator() -> Result<()> {
 		let (config, releases) = get_test_data();
+
 		let mut changelog = Changelog::new(releases, &config, None)?;
 		changelog.bump_version()?;
 		changelog.releases[0].timestamp = Some(0);
@@ -1358,6 +1356,41 @@ mod test {
 			.replace("			", ""),
 			str::from_utf8(&out).unwrap_or_default()
 		);
+
+		Ok(())
+	}
+
+	#[test]
+	fn changelog_generator_render_always() -> Result<()> {
+		let (mut config, mut releases) = get_test_data();
+		config.changelog.render_always = true;
+
+		releases[0].commits = Vec::new();
+		releases[2].commits = Vec::new();
+		releases[2].previous = Some(Box::new(releases[0].clone()));
+		let changelog = Changelog::new(releases, &config, None)?;
+		let mut out = Vec::new();
+		changelog.generate(&mut out)?;
+		assert_eq!(
+			String::from(
+				r#"# Changelog
+
+			## Unreleased
+
+			### Commit Statistics
+
+			- 0 commit(s) contributed to the release.
+			- 0 day(s) passed between the first and last commit.
+			- 0 commit(s) parsed as conventional.
+			- 0 linked issue(s) detected in commits.
+			- -578 day(s) passed between releases.
+			-- total releases: 1 --
+			"#
+			)
+			.replace("			", ""),
+			str::from_utf8(&out).unwrap_or_default()
+		);
+
 		Ok(())
 	}
 
@@ -1367,7 +1400,6 @@ mod test {
 		config.git.split_commits = true;
 		config.git.filter_unconventional = false;
 		config.git.protect_breaking_commits = true;
-
 		for parser in config
 			.git
 			.commit_parsers
@@ -1522,6 +1554,7 @@ chore(deps): fix broken deps
 			.replace("			", ""),
 			str::from_utf8(&out).unwrap_or_default()
 		);
+
 		Ok(())
 	}
 
