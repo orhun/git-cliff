@@ -111,10 +111,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Check the formatting
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check --verbose
+        run: cargo +nightly fmt --all -- --check --verbose
 
   doctest:
     name: Doctests
