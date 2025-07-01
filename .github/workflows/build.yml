@@ -94,8 +94,9 @@ jobs:
           sudo apt-get install -y --no-install-recommends --allow-unauthenticated \
             musl-tools
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: stable
           targets: ${{ matrix.target }}
       - name: Build
         run: cargo build --release --locked --target ${{ matrix.target }}
