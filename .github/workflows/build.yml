@@ -3,6 +3,10 @@ name: Build Check
 on:
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # checks that the build can run on all platforms
   # This is a copy of the publish-binaries job in cd.yml without any publishing steps.
@@ -108,6 +112,7 @@ jobs:
             fi
             cp "target/${{ matrix.target }}/release/${bin}" release/
           done
+          mkdir -p git-cliff-${{ env.RELEASE_VERSION }}
           mv release/ git-cliff-${{ env.RELEASE_VERSION }}/
       - name: Create release artifacts
         shell: bash
