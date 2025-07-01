@@ -1,0 +1,159 @@
+name: Build Check
+
+on:
+  pull_request:
+
+jobs:
+  # checks that the build can run on all platforms
+  # This is a copy of the publish-binaries job in cd.yml without any publishing steps.
+  build-binaries:
+    name: Build binaries
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x64-glibc
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            publish_npm: true
+            publish_pypi: true
+          - name: linux-x64-musl
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            publish_npm: false
+            publish_pypi: true
+            install_musl: true
+          - name: linux-x86-glibc
+            os: ubuntu-latest
+            target: i686-unknown-linux-gnu
+            publish_npm: false
+            publish_pypi: false
+          - name: linux-x86-musl
+            os: ubuntu-latest
+            target: i686-unknown-linux-musl
+            publish_npm: false
+            publish_pypi: true
+            install_musl: true
+          - name: linux-arm64-glibc
+            os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            publish_npm: true
+            publish_pypi: true
+          - name: linux-arm64-musl
+            os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+            publish_npm: false
+            publish_pypi: true
+            install_musl: true
+          - name: win32-x64-mingw
+            os: windows-latest
+            target: x86_64-pc-windows-gnu
+            publish_npm: false
+            publish_pypi: false
+          - name: win32-x64-msvc
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            publish_npm: true
+            publish_pypi: true
+          - name: win32-x86-msvc
+            os: windows-latest
+            target: i686-pc-windows-msvc
+            publish_npm: false
+            publish_pypi: true
+          - name: win32-arm64-msvc
+            os: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            publish_npm: true
+            publish_pypi: false
+          - name: darwin-x64
+            os: macos-13
+            target: x86_64-apple-darwin
+            publish_npm: true
+            publish_pypi: true
+          - name: darwin-arm64
+            os: macos-latest
+            target: aarch64-apple-darwin
+            publish_npm: true
+            publish_pypi: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set the release version
+        shell: bash
+        run: echo "RELEASE_VERSION=${GITHUB_REF:11}" >> $GITHUB_ENV
+      - name: Install Musl tools
+        if: matrix.install_musl
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends --allow-unauthenticated \
+            musl-tools
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - name: Build
+        run: cargo build --release --locked --target ${{ matrix.target }}
+      - name: Prepare release assets
+        shell: bash
+        run: |
+          mkdir -p release/{man,completions}
+          cp {LICENSE-MIT,LICENSE-APACHE,README.md,CHANGELOG.md} release/
+          OUT_DIR=release/completions/ cargo run --release --bin git-cliff-completions
+          OUT_DIR=release/man/ cargo run --release --bin git-cliff-mangen
+          for bin in 'git-cliff' 'git-cliff-completions' 'git-cliff-mangen'; do
+            if [ "${{ contains(matrix.os, 'windows') }}" = "true" ]; then
+              bin="${bin}.exe"
+            fi
+            cp "target/${{ matrix.target }}/release/${bin}" release/
+          done
+          mv release/ git-cliff-${{ env.RELEASE_VERSION }}/
+      - name: Create release artifacts
+        shell: bash
+        run: |
+          if [ "${{ contains(matrix.os, 'windows') }}" = "true" ]; then
+            7z a -tzip "git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.target }}.zip" \
+              git-cliff-${{ env.RELEASE_VERSION }}/
+          else
+            tar -czvf git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.target }}.tar.gz \
+              git-cliff-${{ env.RELEASE_VERSION }}/
+            shasum -a 512 git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.target }}.tar.gz \
+              > git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.target }}.tar.gz.sha512
+          fi
+      - name: Sign the release
+        if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'macos')
+        run: |
+          echo "${{ secrets.GPG_RELEASE_KEY }}" | base64 --decode > private.key
+          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --pinentry-mode=loopback \
+            --passphrase-fd 0 --import private.key
+          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --pinentry-mode=loopback \
+            --passphrase-fd 0 --detach-sign \
+            git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.target }}.tar.gz
+      - name: Build Python wheels (linux)
+        if: matrix.publish_pypi && startsWith(matrix.name, 'linux')
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: pypi
+          target: ${{ matrix.target }}
+          args: --release --sdist --out wheels
+          sccache: "true"
+          # https://github.com/PyO3/maturin-action/issues/245
+          manylinux: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '2_28' || 'auto' }}
+      - name: Build Python wheels (macos & windows)
+        if: matrix.publish_pypi && (contains(matrix.os, 'macos') || contains(matrix.os, 'windows'))
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: pypi
+          target: ${{ matrix.target }}
+          args: --release --sdist --out wheels
+          sccache: "true"
+      - name: Build Python wheels (musl)
+        if: matrix.publish_pypi && matrix.install_musl
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: pypi
+          target: ${{ matrix.target }}
+          args: --release --sdist --out wheels
+          sccache: "true"
+          manylinux: musllinux_1_2
