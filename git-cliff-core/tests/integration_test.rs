@@ -2,9 +2,7 @@ use std::collections::HashMap;
 use std::fmt::Write;
 
 use git_cliff_core::commit::{Commit, Range, Signature};
-use git_cliff_core::config::{
-	ChangelogConfig, CommitParser, GitConfig, LinkParser, TextProcessor,
-};
+use git_cliff_core::config::{ChangelogConfig, CommitParser, GitConfig, LinkParser, TextProcessor};
 use git_cliff_core::error::Result;
 use git_cliff_core::release::*;
 use git_cliff_core::template::Template;
@@ -13,10 +11,10 @@ use regex::Regex;
 
 #[test]
 fn generate_changelog() -> Result<()> {
-	let changelog_config = ChangelogConfig {
-		header:         Some(String::from("this is a changelog")),
-		body:           String::from(
-			r#"
+    let changelog_config = ChangelogConfig {
+        header: Some(String::from("this is a changelog")),
+        body: String::from(
+            r#"
 ## Release {{ version }} - <DATE>
 
 {{ commit_range.from }}..{{ commit_range.to }}
@@ -33,143 +31,143 @@ fn generate_changelog() -> Result<()> {
 {% endif -%}
 {% endfor -%}
 {% endfor %}"#,
-		),
-		footer:         Some(String::from("eoc - end of changelog")),
-		trim:           true,
-		render_always:  false,
-		postprocessors: [].to_vec(),
-		output:         None,
-	};
-	let git_config = GitConfig {
-		conventional_commits:     true,
-		require_conventional:     false,
-		filter_unconventional:    true,
-		split_commits:            false,
-		commit_preprocessors:     vec![TextProcessor {
-			pattern:         Regex::new(r"\(fixes (#[1-9]+)\)").unwrap(),
-			replace:         Some(String::from("[closes Issue${1}]")),
-			replace_command: None,
-		}],
-		commit_parsers:           vec![
-			CommitParser {
-				sha:           Some(String::from("coffee")),
-				message:       None,
-				body:          None,
-				footer:        None,
-				group:         Some(String::from("I love coffee")),
-				default_scope: None,
-				scope:         None,
-				skip:          None,
-				field:         None,
-				pattern:       None,
-			},
-			CommitParser {
-				sha:           None,
-				message:       Regex::new("^feat").ok(),
-				body:          None,
-				footer:        None,
-				group:         Some(String::from("shiny features")),
-				default_scope: None,
-				scope:         None,
-				skip:          None,
-				field:         None,
-				pattern:       None,
-			},
-			CommitParser {
-				sha:           None,
-				message:       Regex::new("^fix").ok(),
-				body:          None,
-				footer:        None,
-				group:         Some(String::from("fix bugs")),
-				default_scope: None,
-				scope:         None,
-				skip:          None,
-				field:         None,
-				pattern:       None,
-			},
-			CommitParser {
-				sha:           None,
-				message:       Regex::new("^test").ok(),
-				body:          None,
-				footer:        None,
-				group:         None,
-				default_scope: None,
-				scope:         Some(String::from("tests")),
-				skip:          None,
-				field:         None,
-				pattern:       None,
-			},
-			CommitParser {
-				sha:           None,
-				message:       None,
-				body:          None,
-				footer:        None,
-				group:         Some(String::from("docs")),
-				default_scope: None,
-				scope:         None,
-				skip:          None,
-				field:         Some(String::from("author.name")),
-				pattern:       Regex::new("John Doe").ok(),
-			},
-		],
-		protect_breaking_commits: false,
-		filter_commits:           true,
-		tag_pattern:              None,
-		skip_tags:                None,
-		ignore_tags:              None,
-		count_tags:               None,
-		use_branch_tags:          false,
-		topo_order:               false,
-		topo_order_commits:       true,
-		sort_commits:             String::from("oldest"),
-		link_parsers:             vec![
-			LinkParser {
-				pattern: Regex::new("#(\\d+)").unwrap(),
-				href:    String::from("https://github.com/$1"),
-				text:    None,
-			},
-			LinkParser {
-				pattern: Regex::new("https://github.com/(.*)").unwrap(),
-				href:    String::from("https://github.com/$1"),
-				text:    Some(String::from("$1")),
-			},
-		],
-		limit_commits:            None,
-		recurse_submodules:       None,
-		include_paths:            Vec::new(),
-		exclude_paths:            Vec::new(),
-	};
+        ),
+        footer: Some(String::from("eoc - end of changelog")),
+        trim: true,
+        render_always: false,
+        postprocessors: [].to_vec(),
+        output: None,
+    };
+    let git_config = GitConfig {
+        conventional_commits: true,
+        require_conventional: false,
+        filter_unconventional: true,
+        split_commits: false,
+        commit_preprocessors: vec![TextProcessor {
+            pattern: Regex::new(r"\(fixes (#[1-9]+)\)").unwrap(),
+            replace: Some(String::from("[closes Issue${1}]")),
+            replace_command: None,
+        }],
+        commit_parsers: vec![
+            CommitParser {
+                sha: Some(String::from("coffee")),
+                message: None,
+                body: None,
+                footer: None,
+                group: Some(String::from("I love coffee")),
+                default_scope: None,
+                scope: None,
+                skip: None,
+                field: None,
+                pattern: None,
+            },
+            CommitParser {
+                sha: None,
+                message: Regex::new("^feat").ok(),
+                body: None,
+                footer: None,
+                group: Some(String::from("shiny features")),
+                default_scope: None,
+                scope: None,
+                skip: None,
+                field: None,
+                pattern: None,
+            },
+            CommitParser {
+                sha: None,
+                message: Regex::new("^fix").ok(),
+                body: None,
+                footer: None,
+                group: Some(String::from("fix bugs")),
+                default_scope: None,
+                scope: None,
+                skip: None,
+                field: None,
+                pattern: None,
+            },
+            CommitParser {
+                sha: None,
+                message: Regex::new("^test").ok(),
+                body: None,
+                footer: None,
+                group: None,
+                default_scope: None,
+                scope: Some(String::from("tests")),
+                skip: None,
+                field: None,
+                pattern: None,
+            },
+            CommitParser {
+                sha: None,
+                message: None,
+                body: None,
+                footer: None,
+                group: Some(String::from("docs")),
+                default_scope: None,
+                scope: None,
+                skip: None,
+                field: Some(String::from("author.name")),
+                pattern: Regex::new("John Doe").ok(),
+            },
+        ],
+        protect_breaking_commits: false,
+        filter_commits: true,
+        tag_pattern: None,
+        skip_tags: None,
+        ignore_tags: None,
+        count_tags: None,
+        use_branch_tags: false,
+        topo_order: false,
+        topo_order_commits: true,
+        sort_commits: String::from("oldest"),
+        link_parsers: vec![
+            LinkParser {
+                pattern: Regex::new("#(\\d+)").unwrap(),
+                href: String::from("https://github.com/$1"),
+                text: None,
+            },
+            LinkParser {
+                pattern: Regex::new("https://github.com/(.*)").unwrap(),
+                href: String::from("https://github.com/$1"),
+                text: Some(String::from("$1")),
+            },
+        ],
+        limit_commits: None,
+        recurse_submodules: None,
+        include_paths: Vec::new(),
+        exclude_paths: Vec::new(),
+    };
 
-	let mut commit_with_author = Commit::new(
-		String::from("hjdfas32"),
-		String::from("docs(cool): testing author filtering"),
-	);
+    let mut commit_with_author = Commit::new(
+        String::from("hjdfas32"),
+        String::from("docs(cool): testing author filtering"),
+    );
 
-	commit_with_author.author = Signature {
-		name:      Some("John Doe".to_string()),
-		email:     None,
-		timestamp: 0x0,
-	};
+    commit_with_author.author = Signature {
+        name: Some("John Doe".to_string()),
+        email: None,
+        timestamp: 0x0,
+    };
 
-	let release_v1_commits = vec![
-		Commit::new(
-			String::from("0bc123"),
-			String::from("feat: add cool features"),
-		),
-		Commit::new(String::from("0werty"), String::from("fix: fix stuff")),
-		Commit::new(String::from("0w3rty"), String::from("fix: fix more stuff")),
-		Commit::new(String::from("0jkl12"), String::from("chore: do nothing")),
-	]
-	.into_iter()
-	.filter_map(|c| c.into_conventional().ok())
-	.collect::<Vec<Commit>>();
+    let release_v1_commits = vec![
+        Commit::new(
+            String::from("0bc123"),
+            String::from("feat: add cool features"),
+        ),
+        Commit::new(String::from("0werty"), String::from("fix: fix stuff")),
+        Commit::new(String::from("0w3rty"), String::from("fix: fix more stuff")),
+        Commit::new(String::from("0jkl12"), String::from("chore: do nothing")),
+    ]
+    .into_iter()
+    .filter_map(|c| c.into_conventional().ok())
+    .collect::<Vec<Commit>>();
 
-	let release_v1_commit_range = Range::new(
-		release_v1_commits.first().unwrap(),
-		release_v1_commits.last().unwrap(),
-	);
+    let release_v1_commit_range = Range::new(
+        release_v1_commits.first().unwrap(),
+        release_v1_commits.last().unwrap(),
+    );
 
-	let release_v2_commits = vec![
+    let release_v2_commits = vec![
 				Commit::new(
 					String::from("000abc"),
 					String::from("Add unconventional commit"),
@@ -210,97 +208,97 @@ fn generate_changelog() -> Result<()> {
 			.filter_map(|c| c.process(&git_config).ok())
 			.collect::<Vec<Commit>>();
 
-	let release_v2_commit_range = Range::new(
-		release_v2_commits.first().unwrap(),
-		release_v2_commits.last().unwrap(),
-	);
+    let release_v2_commit_range = Range::new(
+        release_v2_commits.first().unwrap(),
+        release_v2_commits.last().unwrap(),
+    );
 
-	let releases = vec![
-		Release {
-			version: Some(String::from("v2.0.0")),
-			message: None,
-			extra: None,
-			commits: release_v2_commits,
-			commit_range: Some(release_v2_commit_range),
-			commit_id: None,
-			timestamp: None,
-			previous: None,
-			repository: Some(String::from("/root/repo")),
-			submodule_commits: HashMap::new(),
-			statistics: None,
-			#[cfg(feature = "github")]
-			github: git_cliff_core::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "gitlab")]
-			gitlab: git_cliff_core::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "gitea")]
-			gitea: git_cliff_core::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "bitbucket")]
-			bitbucket: git_cliff_core::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-		},
-		Release {
-			version: Some(String::from("v1.0.0")),
-			message: None,
-			extra: None,
-			commits: release_v1_commits,
-			commit_range: Some(release_v1_commit_range),
-			commit_id: None,
-			timestamp: None,
-			previous: None,
-			repository: Some(String::from("/root/repo")),
-			submodule_commits: HashMap::new(),
-			statistics: None,
-			#[cfg(feature = "github")]
-			github: git_cliff_core::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "gitlab")]
-			gitlab: git_cliff_core::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "gitea")]
-			gitea: git_cliff_core::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-			#[cfg(feature = "bitbucket")]
-			bitbucket: git_cliff_core::remote::RemoteReleaseMetadata {
-				contributors: vec![],
-			},
-		},
-	];
+    let releases = vec![
+        Release {
+            version: Some(String::from("v2.0.0")),
+            message: None,
+            extra: None,
+            commits: release_v2_commits,
+            commit_range: Some(release_v2_commit_range),
+            commit_id: None,
+            timestamp: None,
+            previous: None,
+            repository: Some(String::from("/root/repo")),
+            submodule_commits: HashMap::new(),
+            statistics: None,
+            #[cfg(feature = "github")]
+            github: git_cliff_core::remote::RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "gitlab")]
+            gitlab: git_cliff_core::remote::RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "gitea")]
+            gitea: git_cliff_core::remote::RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "bitbucket")]
+            bitbucket: git_cliff_core::remote::RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+        },
+        Release {
+            version: Some(String::from("v1.0.0")),
+            message: None,
+            extra: None,
+            commits: release_v1_commits,
+            commit_range: Some(release_v1_commit_range),
+            commit_id: None,
+            timestamp: None,
+            previous: None,
+            repository: Some(String::from("/root/repo")),
+            submodule_commits: HashMap::new(),
+            statistics: None,
+            #[cfg(feature = "github")]
+            github: git_cliff_core::remote::RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "gitlab")]
+            gitlab: git_cliff_core::remote::RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "gitea")]
+            gitea: git_cliff_core::remote::RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "bitbucket")]
+            bitbucket: git_cliff_core::remote::RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+        },
+    ];
 
-	let out = &mut String::new();
-	let template = Template::new("test", changelog_config.body, false)?;
+    let out = &mut String::new();
+    let template = Template::new("test", changelog_config.body, false)?;
 
-	writeln!(out, "{}", changelog_config.header.unwrap()).unwrap();
-	let text_processors = [TextProcessor {
-		pattern:         Regex::new("<DATE>").unwrap(),
-		replace:         Some(String::from("2023")),
-		replace_command: None,
-	}];
-	for release in releases {
-		write!(
-			out,
-			"{}",
-			template.render(
-				&release,
-				Option::<HashMap<&str, String>>::None.as_ref(),
-				&text_processors
-			)?
-		)
-		.unwrap();
-	}
-	writeln!(out, "{}", changelog_config.footer.unwrap()).unwrap();
+    writeln!(out, "{}", changelog_config.header.unwrap()).unwrap();
+    let text_processors = [TextProcessor {
+        pattern: Regex::new("<DATE>").unwrap(),
+        replace: Some(String::from("2023")),
+        replace_command: None,
+    }];
+    for release in releases {
+        write!(
+            out,
+            "{}",
+            template.render(
+                &release,
+                Option::<HashMap<&str, String>>::None.as_ref(),
+                &text_processors
+            )?
+        )
+        .unwrap();
+    }
+    writeln!(out, "{}", changelog_config.footer.unwrap()).unwrap();
 
-	assert_eq!(
-		r#"this is a changelog
+    assert_eq!(
+        r#"this is a changelog
 
 ## Release v2.0.0 - 2023
 
@@ -338,8 +336,8 @@ abc123..hjdfas32
 - fix more stuff
 eoc - end of changelog
 "#,
-		out
-	);
+        out
+    );
 
-	Ok(())
+    Ok(())
 }
