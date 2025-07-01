@@ -127,15 +127,6 @@ jobs:
             shasum -a 512 git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.target }}.tar.gz \
               > git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.target }}.tar.gz.sha512
           fi
-      - name: Sign the release
-        if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'macos')
-        run: |
-          echo "${{ secrets.GPG_RELEASE_KEY }}" | base64 --decode > private.key
-          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --pinentry-mode=loopback \
-            --passphrase-fd 0 --import private.key
-          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --pinentry-mode=loopback \
-            --passphrase-fd 0 --detach-sign \
-            git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.target }}.tar.gz
       - name: Build Python wheels (linux)
         if: matrix.publish_pypi && startsWith(matrix.name, 'linux')
         uses: PyO3/maturin-action@v1
