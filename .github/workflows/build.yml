@@ -40,6 +40,7 @@ jobs:
             publish_npm: false
             publish_pypi: true
             install_musl: true
+            install_32_bit_tools: true
           - name: linux-arm64-glibc
             os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
