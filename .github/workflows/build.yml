@@ -33,6 +33,7 @@ jobs:
             target: i686-unknown-linux-gnu
             publish_npm: false
             publish_pypi: false
+            install_32_bit_tools: true
           - name: linux-x86-musl
             os: ubuntu-latest
             target: i686-unknown-linux-musl
@@ -93,6 +94,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends --allow-unauthenticated \
             musl-tools
+      - name: Install 32-bit tools
+        if: matrix.install_32_bit_tools
+        # TODO work out which of these are actually needed
+        # https://stackoverflow.com/questions/53496847/rust-compile-x86-library-on-x86-64-machine
+        # https://stackoverflow.com/questions/22355436/how-to-compile-32-bit-apps-on-64-bit-ubuntu
+        # CoPilot added libc6-dev-i386, so I'm not sure if it's needed
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends --allow-unauthenticated \
+            gcc-multilib g++-multilib libc6-dev-i386
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
