@@ -79,7 +79,7 @@ jobs:
         shell: bash
         run: echo "RELEASE_VERSION=${GITHUB_REF:11}" >> $GITHUB_ENV
       - name: Update apt
-        if: matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm'
+        if: startsWith(matrix.os, 'ubuntu-')
         run: sudo apt-get update
       - name: Install Musl tools
         if: endsWith(matrix.target, 'musl')
@@ -88,8 +88,8 @@ jobs:
         if: startsWith(matrix.target, 'i686-unknown-linux-')
         run: sudo apt-get install -yq --no-install-recommends --allow-unauthenticated gcc-multilib
       - name: Install Clang
+        # this target needs clang, instead of musl-gcc which is not compatible with ring (crypto library)
         if: matrix.target == 'i686-unknown-linux-musl'
-        shell: bash
         run: sudo apt-get install -yq --no-install-recommends --allow-unauthenticated clang-19 llvm-19
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
@@ -125,8 +125,8 @@ jobs:
             shasum -a 512 git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.target }}.tar.gz \
               > git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.target }}.tar.gz.sha512
           fi
-      - name: Build Python wheels (linux)
-        if: matrix.publish-pypi && startsWith(matrix.os, 'ubuntu-')
+      - name: Build Python wheels
+        if: matrix.publish-pypi
         uses: PyO3/maturin-action@v1
         with:
           working-directory: pypi
@@ -134,21 +134,4 @@ jobs:
           args: --release --sdist --out wheels
           sccache: "true"
           # https://github.com/PyO3/maturin-action/issues/245
-          manylinux: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '2_28' || 'auto' }}
-      - name: Build Python wheels (macos & windows)
-        if: matrix.publish-pypi && (startsWith(matrix.os, 'macos') || startsWith(matrix.os, 'windows'))
-        uses: PyO3/maturin-action@v1
-        with:
-          working-directory: pypi
-          target: ${{ matrix.target }}
-          args: --release --sdist --out wheels
-          sccache: "true"
-      - name: Build Python wheels (musl)
-        if: matrix.publish-pypi && endsWith(matrix.target, 'musl')
-        uses: PyO3/maturin-action@v1
-        with:
-          working-directory: pypi
-          target: ${{ matrix.target }}
-          args: --release --sdist --out wheels
-          sccache: "true"
-          manylinux: musllinux_1_2
+          manylinux: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '2_28' || endsWith(matrix.target, 'musl') && 'musllinux_1_2' || 'auto' }}
