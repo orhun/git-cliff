@@ -41,6 +41,9 @@ jobs:
             publish_pypi: true
             install_musl: true
             install_32_bit_tools: true
+            # https://github.com/briansmith/ring/blob/77f7d2045f19ab8bd1d9efa4c741d40c64518bcc/mk/cargo.sh#L124
+            extra_cmd: |
+              export CARGO_TARGET_I686_UNKNOWN_LINUX_MUSL_RUSTFLAGS="-Clink-self-contained=yes -Clinker=rust-lld"
           - name: linux-arm64-glibc
             os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
@@ -111,7 +114,9 @@ jobs:
           toolchain: stable
           targets: ${{ matrix.target }}
       - name: Build
-        run: cargo build --release --locked --target ${{ matrix.target }}
+        run: |
+          ${{ matrix.extra_cmd || '' }}
+          cargo build --release --locked --target ${{ matrix.target }}
       - name: Prepare release assets
         shell: bash
         run: |
