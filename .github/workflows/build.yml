@@ -41,9 +41,13 @@ jobs:
             publish_pypi: true
             install_musl: true
             install_32_bit_tools: true
-            # https://github.com/briansmith/ring/blob/77f7d2045f19ab8bd1d9efa4c741d40c64518bcc/mk/cargo.sh#L124
+            install_clang: true
             extra_cmd: |
+              # https://github.com/briansmith/ring/blob/77f7d2045f19ab8bd1d9efa4c741d40c64518bcc/mk/cargo.sh#L124
               export CARGO_TARGET_I686_UNKNOWN_LINUX_MUSL_RUSTFLAGS="-Clink-self-contained=yes -Clinker=rust-lld"
+              # https://github.com/briansmith/ring/blob/77f7d2045f19ab8bd1d9efa4c741d40c64518bcc/mk/cargo.sh#L288
+              export CC_i686_unknown_linux_musl="clang-19"
+              export AR_i686_unknown_linux_musl="llvm-ar-19"
           - name: linux-arm64-glibc
             os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
@@ -108,6 +112,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends --allow-unauthenticated \
             gcc-multilib g++-multilib libc6-dev-i386
+      - name: Install Clang
+        if: matrix.install_clang
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends --allow-unauthenticated \
+            clang-19 llvm-19
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
