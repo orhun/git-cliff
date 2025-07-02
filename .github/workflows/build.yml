@@ -42,6 +42,7 @@ jobs:
           - target: i686-unknown-linux-musl
             os: ubuntu-latest
             publish-pypi: true
+            cargo-env: RUSTFLAGS="-Clink-self-contained=yes -Clinker=rust-lld" CC=clang-19 AR=llvm-ar-19
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-24.04-arm
             publish-npm: true
@@ -88,18 +89,15 @@ jobs:
         run: sudo apt-get install -yq --no-install-recommends --allow-unauthenticated gcc-multilib
       - name: Install Clang
         if: matrix.target == 'i686-unknown-linux-musl'
-        run: |
-          sudo apt-get install -yq --no-install-recommends --allow-unauthenticated clang-19 llvm-19
-          echo "CARGO_TARGET_I686_UNKNOWN_LINUX_MUSL_RUSTFLAG=-Clink-self-contained=yes -Clinker=rust-lld" >> $GITHUB_ENV
-          echo "CC_i686_unknown_linux_musl=clang-19" >> $GITHUB_ENV
-          echo "AR_i686_unknown_linux_musl=llvm-ar-19" >> $GITHUB_ENV
+        shell: bash
+        run: sudo apt-get install -yq --no-install-recommends --allow-unauthenticated clang-19 llvm-19
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
           targets: ${{ matrix.target }}
       - name: Build
-        run: cargo build --release --locked --target ${{ matrix.target }}
+        run: ${{ matrix.cargo-env }} cargo build --release --locked --target ${{ matrix.target }}
       - name: Prepare release assets
         shell: bash
         run: |
