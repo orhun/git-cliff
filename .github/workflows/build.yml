@@ -16,117 +16,90 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - x86_64-unknown-linux-musl
+          - i686-unknown-linux-gnu
+          - i686-unknown-linux-musl
+          - aarch64-unknown-linux-gnu
+          - aarch64-unknown-linux-musl
+          - x86_64-pc-windows-gnu
+          - x86_64-pc-windows-msvc
+          - i686-pc-windows-msvc
+          - aarch64-pc-windows-msvc
+          - x86_64-apple-darwin
+          - aarch64-apple-darwin
         include:
-          - name: linux-x64-glibc
+          - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            publish_npm: true
-            publish_pypi: true
-          - name: linux-x64-musl
+            publish-npm: true
+            publish-pypi: true
+          - target: x86_64-unknown-linux-musl
             os: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            publish_npm: false
-            publish_pypi: true
-            install_musl: true
-          - name: linux-x86-glibc
+            publish-pypi: true
+          - target: i686-unknown-linux-gnu
             os: ubuntu-latest
-            target: i686-unknown-linux-gnu
-            publish_npm: false
-            publish_pypi: false
-            install_32_bit_tools: true
-          - name: linux-x86-musl
+          - target: i686-unknown-linux-musl
             os: ubuntu-latest
-            target: i686-unknown-linux-musl
-            publish_npm: false
-            publish_pypi: true
-            install_musl: true
-            install_32_bit_tools: true
-            install_clang: true
-            extra_cmd: |
-              # https://github.com/briansmith/ring/blob/77f7d2045f19ab8bd1d9efa4c741d40c64518bcc/mk/cargo.sh#L124
-              export CARGO_TARGET_I686_UNKNOWN_LINUX_MUSL_RUSTFLAGS="-Clink-self-contained=yes -Clinker=rust-lld"
-              # https://github.com/briansmith/ring/blob/77f7d2045f19ab8bd1d9efa4c741d40c64518bcc/mk/cargo.sh#L288
-              export CC_i686_unknown_linux_musl="clang-19"
-              export AR_i686_unknown_linux_musl="llvm-ar-19"
-          - name: linux-arm64-glibc
+            publish-pypi: true
+          - target: aarch64-unknown-linux-gnu
             os: ubuntu-24.04-arm
-            target: aarch64-unknown-linux-gnu
-            publish_npm: true
-            publish_pypi: true
-          - name: linux-arm64-musl
+            publish-npm: true
+            publish-pypi: true
+          - target: aarch64-unknown-linux-musl
             os: ubuntu-24.04-arm
-            target: aarch64-unknown-linux-musl
-            publish_npm: false
-            publish_pypi: true
-            install_musl: true
-          - name: win32-x64-mingw
+            publish-pypi: true
+          - target: x86_64-pc-windows-gnu
             os: windows-latest
-            target: x86_64-pc-windows-gnu
-            publish_npm: false
-            publish_pypi: false
-          - name: win32-x64-msvc
+            publish-npm: false
+            publish-pypi: false
+          - target: x86_64-pc-windows-msvc
             os: windows-latest
-            target: x86_64-pc-windows-msvc
-            publish_npm: true
-            publish_pypi: true
-          - name: win32-x86-msvc
+            publish-npm: true
+            publish-pypi: true
+          - target: i686-pc-windows-msvc
             os: windows-latest
-            target: i686-pc-windows-msvc
-            publish_npm: false
-            publish_pypi: true
-          - name: win32-arm64-msvc
+            publish-pypi: true
+          - target: aarch64-pc-windows-msvc
             os: windows-11-arm
-            target: aarch64-pc-windows-msvc
-            publish_npm: true
-            publish_pypi: false
-          - name: darwin-x64
+            publish-npm: true
+          - target: x86_64-apple-darwin
             os: macos-13
-            target: x86_64-apple-darwin
-            publish_npm: true
-            publish_pypi: true
-          - name: darwin-arm64
+            publish-npm: true
+            publish-pypi: true
+          - target: aarch64-apple-darwin
             os: macos-latest
-            target: aarch64-apple-darwin
-            publish_npm: true
-            publish_pypi: true
+            publish-npm: true
+            publish-pypi: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set the release version
         shell: bash
         run: echo "RELEASE_VERSION=${GITHUB_REF:11}" >> $GITHUB_ENV
+      - name: Update apt
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm'
+        run: sudo apt-get update
       - name: Install Musl tools
-        if: matrix.install_musl
-        shell: bash
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends --allow-unauthenticated \
-            musl-tools
+        if: endsWith(matrix.target, 'musl')
+        run: sudo apt-get install -yq --no-install-recommends --allow-unauthenticated musl-tools
       - name: Install 32-bit tools
-        if: matrix.install_32_bit_tools
-        # TODO work out which of these are actually needed
-        # https://stackoverflow.com/questions/53496847/rust-compile-x86-library-on-x86-64-machine
-        # https://stackoverflow.com/questions/22355436/how-to-compile-32-bit-apps-on-64-bit-ubuntu
-        # CoPilot added libc6-dev-i386, so I'm not sure if it's needed
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends --allow-unauthenticated \
-            gcc-multilib g++-multilib libc6-dev-i386
+        if: startsWith(matrix.target, 'i686-unknown-linux-')
+        run: sudo apt-get install -yq --no-install-recommends --allow-unauthenticated gcc-multilib
       - name: Install Clang
-        if: matrix.install_clang
+        if: matrix.target == 'i686-unknown-linux-musl'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends --allow-unauthenticated \
-            clang-19 llvm-19
+          sudo apt-get install -yq --no-install-recommends --allow-unauthenticated clang-19 llvm-19
+          echo "CARGO_TARGET_I686_UNKNOWN_LINUX_MUSL_RUSTFLAG=-Clink-self-contained=yes -Clinker=rust-lld" >> $GITHUB_ENV
+          echo "CC_i686_unknown_linux_musl=clang-19" >> $GITHUB_ENV
+          echo "AR_i686_unknown_linux_musl=llvm-ar-19" >> $GITHUB_ENV
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
           targets: ${{ matrix.target }}
       - name: Build
-        run: |
-          ${{ matrix.extra_cmd || '' }}
-          cargo build --release --locked --target ${{ matrix.target }}
+        run: cargo build --release --locked --target ${{ matrix.target }}
       - name: Prepare release assets
         shell: bash
         run: |
@@ -155,7 +128,7 @@ jobs:
               > git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.target }}.tar.gz.sha512
           fi
       - name: Build Python wheels (linux)
-        if: matrix.publish_pypi && startsWith(matrix.name, 'linux')
+        if: matrix.publish-pypi && startsWith(matrix.os, 'ubuntu-')
         uses: PyO3/maturin-action@v1
         with:
           working-directory: pypi
@@ -165,7 +138,7 @@ jobs:
           # https://github.com/PyO3/maturin-action/issues/245
           manylinux: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '2_28' || 'auto' }}
       - name: Build Python wheels (macos & windows)
-        if: matrix.publish_pypi && (contains(matrix.os, 'macos') || contains(matrix.os, 'windows'))
+        if: matrix.publish-pypi && (startsWith(matrix.os, 'macos') || startsWith(matrix.os, 'windows'))
         uses: PyO3/maturin-action@v1
         with:
           working-directory: pypi
@@ -173,7 +146,7 @@ jobs:
           args: --release --sdist --out wheels
           sccache: "true"
       - name: Build Python wheels (musl)
-        if: matrix.publish_pypi && matrix.install_musl
+        if: matrix.publish-pypi && endsWith(matrix.target, 'musl')
         uses: PyO3/maturin-action@v1
         with:
           working-directory: pypi
