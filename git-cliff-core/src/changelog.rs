@@ -135,33 +135,32 @@ impl<'a> Changelog<'a> {
 		Ok(())
 	}
 
+	fn flatten_commits(commits: &mut Vec<Commit<'a>>) -> Vec<Commit<'a>> {
+		let mut flattened_commits = Vec::new();
+		for commit in commits {
+			commit.message.lines().for_each(|line| {
+				let mut c = commit.clone();
+				c.message = line.to_string();
+				c.links.clear();
+				if !c.message.is_empty() {
+					flattened_commits.push(c)
+				};
+			})
+		}
+		flattened_commits
+	}
+
 	fn process_commit_list(
 		commits: &mut Vec<Commit<'a>>,
 		git_config: &GitConfig,
 	) -> Result<()> {
+		if git_config.split_commits {
+			*commits = Self::flatten_commits(commits);
+		}
+
 		*commits = commits
 			.iter()
 			.filter_map(|commit| Self::process_commit(commit, git_config))
-			.flat_map(|commit| {
-				if git_config.split_commits {
-					commit
-						.message
-						.lines()
-						.filter_map(|line| {
-							let mut c = commit.clone();
-							c.message = line.to_string();
-							c.links.clear();
-							if c.message.is_empty() {
-								None
-							} else {
-								Self::process_commit(&c, git_config)
-							}
-						})
-						.collect()
-				} else {
-					vec![commit]
-				}
-			})
 			.collect::<Vec<Commit>>();
 
 		if git_config.require_conventional {
@@ -1440,7 +1439,7 @@ style: make awesome stuff look better
 		releases[2].commits.push(Commit {
 			id: String::from("123abc"),
 			message: String::from(
-				"chore(deps): bump some deps
+				"merge(deps): bump some deps
 
 chore(deps): bump some more deps
 chore(deps): fix broken deps
@@ -1474,7 +1473,6 @@ chore(deps): fix broken deps
 			- document zyx
 
 			#### deps
-			- bump some deps
 			- bump some more deps
 			- fix broken deps
 
@@ -1487,9 +1485,9 @@ chore(deps): fix broken deps
 
 			### Commit Statistics
 
-			- 8 commit(s) contributed to the release.
+			- 7 commit(s) contributed to the release.
 			- 6 day(s) passed between the first and last commit.
-			- 8 commit(s) parsed as conventional.
+			- 7 commit(s) parsed as conventional.
 			- 1 linked issue(s) detected in commits.
 			  - [#5](https://github.com/5) (referenced 1 time(s))
 			- -578 day(s) passed between releases.
@@ -1536,6 +1534,8 @@ chore(deps): fix broken deps
 			#### other
 			- support unconventional commits
 			- this commit is preprocessed
+			- use footer
+			- footer text
 			- make awesome stuff look better
 
 			#### ui
@@ -1543,9 +1543,9 @@ chore(deps): fix broken deps
 
 			### Commit Statistics
 
-			- 18 commit(s) contributed to the release.
-			- 12 day(s) passed between the first and last commit.
-			- 17 commit(s) parsed as conventional.
+			- 20 commit(s) contributed to the release.
+			- 13 day(s) passed between the first and last commit.
+			- 19 commit(s) parsed as conventional.
 			- 1 linked issue(s) detected in commits.
 			  - [#3](https://github.com/3) (referenced 1 time(s))
 			-- total releases: 2 --
