@@ -9,4 +9,8 @@ If you are using Gentoo Linux, **git-cliff** can be installed from [gentoo-packa
 emerge git-cliff
 ```
 
-HINT: `git-cliff` is (currently) only available for: `~amd64`
+::note
+
+The package is (currently) only available for `amd64`(~) architecture.
+
+:::
