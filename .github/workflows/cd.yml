@@ -26,140 +26,93 @@ jobs:
   publish-binaries:
     name: Publish binaries
     needs: generate-changelog
-    runs-on: ${{ matrix.build.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        build:
-          - {
-              NAME: linux-x64-glibc,
-              OS: ubuntu-22.04,
-              TOOLCHAIN: stable,
-              TARGET: x86_64-unknown-linux-gnu,
-              NPM_PUBLISH: true,
-              PYPI_PUBLISH: true,
-            }
-          - {
-              NAME: linux-x64-musl,
-              OS: ubuntu-22.04,
-              TOOLCHAIN: stable,
-              TARGET: x86_64-unknown-linux-musl,
-              NPM_PUBLISH: false,
-              PYPI_PUBLISH: true,
-            }
-          - {
-              NAME: linux-x86-glibc,
-              OS: ubuntu-22.04,
-              TOOLCHAIN: stable,
-              TARGET: i686-unknown-linux-gnu,
-              NPM_PUBLISH: false,
-              PYPI_PUBLISH: false,
-            }
-          - {
-              NAME: linux-x86-musl,
-              OS: ubuntu-22.04,
-              TOOLCHAIN: stable,
-              TARGET: i686-unknown-linux-musl,
-              NPM_PUBLISH: false,
-              PYPI_PUBLISH: true,
-            }
-          - {
-              NAME: linux-arm64-glibc,
-              OS: ubuntu-22.04,
-              TOOLCHAIN: stable,
-              TARGET: aarch64-unknown-linux-gnu,
-              NPM_PUBLISH: true,
-              PYPI_PUBLISH: true,
-            }
-          - {
-              NAME: linux-arm64-musl,
-              OS: ubuntu-22.04,
-              TOOLCHAIN: stable,
-              TARGET: aarch64-unknown-linux-musl,
-              NPM_PUBLISH: false,
-              PYPI_PUBLISH: true,
-            }
-          - {
-              NAME: win32-x64-mingw,
-              OS: windows-2022,
-              TOOLCHAIN: stable,
-              TARGET: x86_64-pc-windows-gnu,
-              NPM_PUBLISH: false,
-              PYPI_PUBLISH: false,
-            }
-          - {
-              NAME: win32-x64-msvc,
-              OS: windows-2022,
-              TOOLCHAIN: stable,
-              TARGET: x86_64-pc-windows-msvc,
-              NPM_PUBLISH: true,
-              PYPI_PUBLISH: true,
-            }
-          - {
-              NAME: win32-x86-msvc,
-              OS: windows-2022,
-              TOOLCHAIN: stable,
-              TARGET: i686-pc-windows-msvc,
-              NPM_PUBLISH: false,
-              PYPI_PUBLISH: true,
-            }
-          - {
-              NAME: win32-arm64-msvc,
-              OS: windows-2022,
-              TOOLCHAIN: stable,
-              TARGET: aarch64-pc-windows-msvc,
-              NPM_PUBLISH: true,
-              PYPI_PUBLISH: false,
-            }
-          - {
-              NAME: darwin-x64,
-              OS: macos-14,
-              TOOLCHAIN: stable,
-              TARGET: x86_64-apple-darwin,
-              NPM_PUBLISH: true,
-              PYPI_PUBLISH: true,
-            }
-          - {
-              NAME: darwin-arm64,
-              OS: macos-14,
-              TOOLCHAIN: stable,
-              TARGET: aarch64-apple-darwin,
-              NPM_PUBLISH: true,
-              PYPI_PUBLISH: true,
-            }
+        include:
+          - name: linux-x64-glibc
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            publish_npm: true
+            publish_pypi: true
+          - name: linux-x64-musl
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            publish_npm: false
+            publish_pypi: true
+            install_musl: true
+          - name: linux-x86-glibc
+            os: ubuntu-latest
+            target: i686-unknown-linux-gnu
+            publish_npm: false
+            publish_pypi: false
+          - name: linux-x86-musl
+            os: ubuntu-latest
+            target: i686-unknown-linux-musl
+            publish_npm: false
+            publish_pypi: true
+            install_musl: true
+          - name: linux-arm64-glibc
+            os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            publish_npm: true
+            publish_pypi: true
+          - name: linux-arm64-musl
+            os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+            publish_npm: false
+            publish_pypi: true
+            install_musl: true
+          - name: win32-x64-mingw
+            os: windows-latest
+            target: x86_64-pc-windows-gnu
+            publish_npm: false
+            publish_pypi: false
+          - name: win32-x64-msvc
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            publish_npm: true
+            publish_pypi: true
+          - name: win32-x86-msvc
+            os: windows-latest
+            target: i686-pc-windows-msvc
+            publish_npm: false
+            publish_pypi: true
+          - name: win32-arm64-msvc
+            os: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            publish_npm: true
+            publish_pypi: false
+          - name: darwin-x64
+            os: macos-13
+            target: x86_64-apple-darwin
+            publish_npm: true
+            publish_pypi: true
+          - name: darwin-arm64
+            os: macos-latest
+            target: aarch64-apple-darwin
+            publish_npm: true
+            publish_pypi: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set the release version
         shell: bash
         run: echo "RELEASE_VERSION=${GITHUB_REF:11}" >> $GITHUB_ENV
-      - name: Install dependencies
+      - name: Install Musl tools
+        if: matrix.install_musl
         shell: bash
         run: |
-          if [[ "${{ matrix.build.NAME }}" = *"-musl" ]]; then
-            sudo apt-get update
-            sudo apt-get install -y --no-install-recommends \
-              --allow-unauthenticated musl-tools
-          fi
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends --allow-unauthenticated \
+            musl-tools
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: ${{ matrix.build.TOOLCHAIN }}
-          target: ${{ matrix.build.TARGET }}
-          override: true
-      - name: Build (linux/macos)
-        if: matrix.build.OS != 'windows-2022'
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: true
-          command: build
-          args: --release --locked --target ${{ matrix.build.TARGET }}
-      - name: Build (windows)
-        if: matrix.build.OS == 'windows-2022'
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --locked --target ${{ matrix.build.TARGET }} # --no-default-features
+          targets: ${{ matrix.target }}
+      - name: Build
+        run: cargo build --release --locked --target ${{ matrix.target }}
       - name: Prepare release assets
         shell: bash
         run: |
@@ -168,122 +121,119 @@ jobs:
           OUT_DIR=release/completions/ cargo run --release --bin git-cliff-completions
           OUT_DIR=release/man/ cargo run --release --bin git-cliff-mangen
           for bin in 'git-cliff' 'git-cliff-completions' 'git-cliff-mangen'; do
-            if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
+            if [ "${{ contains(matrix.os, 'windows') }}" = "true" ]; then
               bin="${bin}.exe"
             fi
-            cp "target/${{ matrix.build.TARGET }}/release/${bin}" release/
+            cp "target/${{ matrix.target }}/release/${bin}" release/
           done
           mv release/ git-cliff-${{ env.RELEASE_VERSION }}/
       - name: Create release artifacts
         shell: bash
         run: |
-          if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
-            7z a -tzip "git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}.zip" \
+          if [ "${{ contains(matrix.os, 'windows') }}" = "true" ]; then
+            7z a -tzip "git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.target }}.zip" \
               git-cliff-${{ env.RELEASE_VERSION }}/
           else
-            tar -czvf git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}.tar.gz \
+            tar -czvf git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.target }}.tar.gz \
               git-cliff-${{ env.RELEASE_VERSION }}/
-            shasum -a 512 git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}.tar.gz \
-              > git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}.tar.gz.sha512
+            shasum -a 512 git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.target }}.tar.gz \
+              > git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.target }}.tar.gz.sha512
           fi
       - name: Sign the release
-        if: matrix.build.OS == 'ubuntu-22.04' || matrix.build.OS == 'macos-14'
+        if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'macos')
         run: |
           echo "${{ secrets.GPG_RELEASE_KEY }}" | base64 --decode > private.key
           echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --pinentry-mode=loopback \
             --passphrase-fd 0 --import private.key
           echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --pinentry-mode=loopback \
             --passphrase-fd 0 --detach-sign \
-            git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}.tar.gz
+            git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.target }}.tar.gz
       - name: Publish to GitHub
         if: ${{ !contains(github.ref, '-') }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}*
+          file: git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.target }}*
           file_glob: true
           overwrite: true
           tag: ${{ github.ref }}
           release_name: "Release v${{ env.RELEASE_VERSION }}"
           body: "${{ needs.generate-changelog.outputs.release_body }}"
       - name: Publish to GitHub (pre-release)
-        if: ${{ contains(github.ref, '-') }}
+        if: contains(github.ref, '-')
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}*
+          file: git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.target }}*
           file_glob: true
           overwrite: true
           tag: ${{ github.ref }}
           release_name: "Pre-release v${{ env.RELEASE_VERSION }}"
           prerelease: true
       - name: Install node
-        if: matrix.build.NPM_PUBLISH == true
+        if: matrix.publish_npm
         uses: actions/setup-node@v4
         with:
           node-version: 18
           registry-url: "https://registry.npmjs.org"
       - name: Publish to NPM
-        if: matrix.build.NPM_PUBLISH == true
+        if: matrix.publish_npm
         shell: bash
         run: |
           cd npm
           bin="git-cliff"
-          node_os=$(echo "${{ matrix.build.NAME }}" | cut -d '-' -f1)
+          node_os=$(echo "${{ matrix.name }}" | cut -d '-' -f1)
           export node_os
-          node_arch=$(echo "${{ matrix.build.NAME }}" | cut -d '-' -f2)
+          node_arch=$(echo "${{ matrix.name }}" | cut -d '-' -f2)
           export node_arch
           export version="${{ env.RELEASE_VERSION }}"
-          if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
+          if [ "${{ contains(matrix.os, 'windows') }}" = "true" ]; then
             export node_pkg="${bin}-windows-${node_arch}"
           else
             export node_pkg="${bin}-${node_os}-${node_arch}"
           fi
           mkdir -p "${node_pkg}/bin"
           envsubst < package.json.tmpl > "${node_pkg}/package.json"
-          if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
+          if [ "${{ contains(matrix.os, 'windows') }}" = "true" ]; then
             bin="${bin}.exe"
           fi
-          cp "../target/${{ matrix.build.TARGET }}/release/${bin}" "${node_pkg}/bin"
+          cp "../target/${{ matrix.target }}/release/${bin}" "${node_pkg}/bin"
           cp ../README.md "${node_pkg}"
           cd "${node_pkg}"
           npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Build Python wheels (linux)
-        if: matrix.build.PYPI_PUBLISH == true && startsWith(matrix.build.NAME, 'linux')
+        if: matrix.publish_pypi && startsWith(matrix.name, 'linux')
         uses: PyO3/maturin-action@v1
         with:
           working-directory: pypi
-          target: ${{ matrix.build.TARGET }}
+          target: ${{ matrix.target }}
           args: --release --sdist --out wheels
           sccache: "true"
           # https://github.com/PyO3/maturin-action/issues/245
-          manylinux: ${{ matrix.build.TARGET == 'aarch64-unknown-linux-gnu' && '2_28' || 'auto' }}
+          manylinux: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '2_28' || 'auto' }}
       - name: Build Python wheels (macos & windows)
-        if: |
-          matrix.build.PYPI_PUBLISH == true &&
-          (startsWith(matrix.build.OS, 'macos') || startsWith(matrix.build.OS, 'windows'))
+        if: matrix.publish_pypi && (contains(matrix.os, 'macos') || contains(matrix.os, 'windows'))
         uses: PyO3/maturin-action@v1
         with:
           working-directory: pypi
-          target: ${{ matrix.build.TARGET }}
+          target: ${{ matrix.target }}
           args: --release --sdist --out wheels
           sccache: "true"
       - name: Build Python wheels (musl)
-        if: matrix.build.PYPI_PUBLISH == true && endsWith(matrix.build.OS, 'musl')
+        if: matrix.publish_pypi && matrix.install_musl
         uses: PyO3/maturin-action@v1
         with:
           working-directory: pypi
-          target: ${{ matrix.build.TARGET }}
+          target: ${{ matrix.target }}
           args: --release --sdist --out wheels
           sccache: "true"
           manylinux: musllinux_1_2
       - name: Upload Python wheels
         uses: actions/upload-artifact@v4
         with:
-          name: "wheels-${{ matrix.build.TARGET }}"
-          working-directory: pypi
+          name: "wheels-${{ matrix.target }}"
           path: pypi/wheels
 
   publish-npm:
