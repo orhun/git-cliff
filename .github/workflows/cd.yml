@@ -113,7 +113,7 @@ jobs:
             }
           - {
               NAME: darwin-x64,
-              OS: macos-14,
+              OS: macos-15,
               TOOLCHAIN: stable,
               TARGET: x86_64-apple-darwin,
               NPM_PUBLISH: true,
@@ -121,7 +121,7 @@ jobs:
             }
           - {
               NAME: darwin-arm64,
-              OS: macos-14,
+              OS: macos-15,
               TOOLCHAIN: stable,
               TARGET: aarch64-apple-darwin,
               NPM_PUBLISH: true,
@@ -187,7 +187,7 @@ jobs:
               > git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}.tar.gz.sha512
           fi
       - name: Sign the release
-        if: matrix.build.OS == 'ubuntu-22.04' || matrix.build.OS == 'macos-14'
+        if: matrix.build.OS == 'ubuntu-22.04' || matrix.build.OS == 'macos-15'
         run: |
           echo "${{ secrets.GPG_RELEASE_KEY }}" | base64 --decode > private.key
           echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --pinentry-mode=loopback \
