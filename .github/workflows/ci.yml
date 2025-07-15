@@ -231,7 +231,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Install Nix
-        uses: nixbuild/nix-quick-install-action@v32
+        uses: nixbuild/nix-quick-install-action@63ca48f939ee3b8d835f4126562537df0fee5b91 # v32
 
       - name: Restore and cache Nix store
         uses: nix-community/cache-nix-action@8351fb9f51c580c96c509987ebb99e38aed956ce # v5.2.1
