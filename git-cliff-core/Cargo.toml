@@ -77,12 +77,12 @@ time = "0.3.37"
 chrono = { version = "0.4.41", features = ["serde"] }
 
 [dependencies.git2]
-version = "0.20.0"
+version = "0.20.2"
 default-features = false
 optional = true
 
 [dependencies.config]
-version = "0.15.6"
+version = "0.15.13"
 default-features = false
 features = ["toml", "yaml"]
 
@@ -91,13 +91,13 @@ version = "0.12.7"
 features = ["serde"]
 
 [dependencies.rust-embed]
-version = "8.5.0"
+version = "8.7.2"
 features = ["debug-embed", "compression"]
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
 expect-test = "1.5.1"
-temp-dir = "0.1.14"
+temp-dir = "0.1.16"
 
 [package.metadata.docs.rs]
 all-features = true
