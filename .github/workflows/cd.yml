@@ -113,7 +113,7 @@ jobs:
             }
           - {
               NAME: darwin-x64,
-              OS: macos-14,
+              OS: macos-15,
               TOOLCHAIN: stable,
               TARGET: x86_64-apple-darwin,
               NPM_PUBLISH: true,
@@ -121,7 +121,7 @@ jobs:
             }
           - {
               NAME: darwin-arm64,
-              OS: macos-14,
+              OS: macos-15,
               TOOLCHAIN: stable,
               TARGET: aarch64-apple-darwin,
               NPM_PUBLISH: true,
@@ -187,7 +187,7 @@ jobs:
               > git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}.tar.gz.sha512
           fi
       - name: Sign the release
-        if: matrix.build.OS == 'ubuntu-22.04' || matrix.build.OS == 'macos-14'
+        if: matrix.build.OS == 'ubuntu-22.04' || matrix.build.OS == 'macos-15'
         run: |
           echo "${{ secrets.GPG_RELEASE_KEY }}" | base64 --decode > private.key
           echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --pinentry-mode=loopback \
@@ -257,8 +257,7 @@ jobs:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
           args: --release --sdist --out wheels
-          # https://github.com/PyO3/maturin-action/issues/348
-          sccache: "false"
+          sccache: "true"
           # https://github.com/PyO3/maturin-action/issues/245
           manylinux: ${{ matrix.build.TARGET == 'aarch64-unknown-linux-gnu' && '2_28' || 'auto' }}
       - name: Build Python wheels (macos & windows)
@@ -270,8 +269,7 @@ jobs:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
           args: --release --sdist --out wheels
-          # https://github.com/PyO3/maturin-action/issues/348
-          sccache: "false"
+          sccache: "true"
       - name: Build Python wheels (musl)
         if: matrix.build.PYPI_PUBLISH == true && endsWith(matrix.build.OS, 'musl')
         uses: PyO3/maturin-action@35be3186fc8e037e329f06b68dcd807d83dcc6dc # v1.49.2
@@ -279,8 +277,7 @@ jobs:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
           args: --release --sdist --out wheels
-          # https://github.com/PyO3/maturin-action/issues/348
-          sccache: "false"
+          sccache: "true"
           manylinux: musllinux_1_2
       - name: Upload Python wheels
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

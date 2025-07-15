@@ -1,35 +1,19 @@
 use std::collections::HashMap;
 
-use crate::commit::commits_to_conventional_commits;
+use next_version::{NextVersion, VersionUpdater};
+use semver::Version;
+use serde::{Deserialize, Serialize};
+use serde_json::value::Value;
+
+use crate::commit::{Commit, Range, commits_to_conventional_commits};
+use crate::config::{Bump, BumpType};
 use crate::error::Result;
-use crate::{
-	commit::{
-		Commit,
-		Range,
-	},
-	config::Bump,
-	config::BumpType,
-};
+use crate::statistics::Statistics;
 #[cfg(feature = "remote")]
 use crate::{
 	contributor::RemoteContributor,
-	remote::{
-		RemoteCommit,
-		RemotePullRequest,
-		RemoteReleaseMetadata,
-	},
+	remote::{RemoteCommit, RemotePullRequest, RemoteReleaseMetadata},
 };
-
-use next_version::{
-	NextVersion,
-	VersionUpdater,
-};
-use semver::Version;
-use serde::{
-	Deserialize,
-	Serialize,
-};
-use serde_json::value::Value;
 
 /// Representation of a release.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -46,7 +30,7 @@ pub struct Release<'a> {
 	#[serde(rename = "commit_id")]
 	pub commit_id:         Option<String>,
 	/// Timestamp of the release in seconds, from epoch.
-	pub timestamp:         i64,
+	pub timestamp:         Option<i64>,
 	/// Previous release.
 	pub previous:          Option<Box<Release<'a>>>,
 	/// Repository path.
@@ -59,6 +43,8 @@ pub struct Release<'a> {
 	/// Maps submodule path to a list of commits.
 	#[serde(rename = "submodule_commits")]
 	pub submodule_commits: HashMap<String, Vec<Commit<'a>>>,
+	/// Aggregated statistics computed from the release's commits.
+	pub statistics:        Option<Statistics>,
 	/// Arbitrary data to be used with the `--from-context` CLI option.
 	pub extra:             Option<Value>,
 	/// Contributors.
@@ -94,6 +80,16 @@ impl Release<'_> {
 	/// version.
 	pub fn calculate_next_version(&self) -> Result<String> {
 		self.calculate_next_version_with_config(&Bump::default())
+	}
+
+	/// Returns a new `Release` instance with aggregated statistics populated.
+	///
+	/// This method computes various statistics from the release data and sets
+	/// the `statistics` field. It does not modify the original release but
+	/// returns a new instance with the computed statistics included.
+	pub fn with_statistics(mut self) -> Self {
+		self.statistics = Some((&self).into());
+		self
 	}
 
 	/// Calculates the next version based on the commits.
@@ -195,8 +191,9 @@ impl Releases<'_> {
 
 #[cfg(test)]
 mod test {
-	use super::*;
 	use pretty_assertions::assert_eq;
+
+	use super::*;
 	#[test]
 	fn bump_version() -> Result<()> {
 		fn build_release<'a>(version: &str, commits: &'a [&str]) -> Release<'a> {
@@ -210,13 +207,14 @@ mod test {
 					.collect(),
 				commit_range: None,
 				commit_id: None,
-				timestamp: 0,
+				timestamp: None,
 				previous: Some(Box::new(Release {
 					version: Some(String::from(version)),
 					..Default::default()
 				})),
 				repository: Some(String::from("/root/repo")),
 				submodule_commits: HashMap::new(),
+				statistics: None,
 				#[cfg(feature = "github")]
 				github: crate::remote::RemoteReleaseMetadata {
 					contributors: vec![],
@@ -388,16 +386,32 @@ mod test {
 		Ok(())
 	}
 
+	#[test]
+	fn with_statistics() -> Result<()> {
+		let release = Release {
+			commits: vec![],
+			timestamp: Some(1649373910),
+			previous: Some(Box::new(Release {
+				timestamp: Some(1649201110),
+				..Default::default()
+			})),
+			repository: Some(String::from("/root/repo")),
+			..Default::default()
+		};
+
+		assert!(release.statistics.is_none());
+		let release = release.with_statistics();
+		assert!(release.statistics.is_some());
+
+		Ok(())
+	}
+
 	#[cfg(feature = "github")]
 	#[test]
 	fn update_github_metadata() -> Result<()> {
 		use crate::remote::github::{
-			GitHubCommit,
-			GitHubCommitAuthor,
-			GitHubCommitDetails,
-			GitHubCommitDetailsAuthor,
-			GitHubPullRequest,
-			PullRequestLabel,
+			GitHubCommit, GitHubCommitAuthor, GitHubCommitDetails,
+			GitHubCommitDetailsAuthor, GitHubPullRequest, PullRequestLabel,
 		};
 
 		let mut release = Release {
@@ -428,13 +442,14 @@ mod test {
 			],
 			commit_range: None,
 			commit_id: None,
-			timestamp: 0,
+			timestamp: None,
 			previous: Some(Box::new(Release {
 				version: Some(String::from("1.0.0")),
 				..Default::default()
 			})),
 			repository: Some(String::from("/root/repo")),
 			submodule_commits: HashMap::new(),
+			statistics: None,
 			github: RemoteReleaseMetadata {
 				contributors: vec![],
 			},
@@ -764,11 +779,7 @@ mod test {
 	#[cfg(feature = "gitlab")]
 	#[test]
 	fn update_gitlab_metadata() -> Result<()> {
-		use crate::remote::gitlab::{
-			GitLabCommit,
-			GitLabMergeRequest,
-			GitLabUser,
-		};
+		use crate::remote::gitlab::{GitLabCommit, GitLabMergeRequest, GitLabUser};
 
 		let mut release = Release {
 			version: None,
@@ -798,13 +809,14 @@ mod test {
 			],
 			commit_range: None,
 			commit_id: None,
-			timestamp: 0,
+			timestamp: None,
 			previous: Some(Box::new(Release {
 				version: Some(String::from("1.0.0")),
 				..Default::default()
 			})),
 			repository: Some(String::from("/root/repo")),
 			submodule_commits: HashMap::new(),
+			statistics: None,
 			#[cfg(feature = "github")]
 			github: RemoteReleaseMetadata {
 				contributors: vec![],
@@ -1156,10 +1168,7 @@ mod test {
 	#[test]
 	fn update_gitea_metadata() -> Result<()> {
 		use crate::remote::gitea::{
-			GiteaCommit,
-			GiteaCommitAuthor,
-			GiteaPullRequest,
-			PullRequestLabel,
+			GiteaCommit, GiteaCommitAuthor, GiteaPullRequest, PullRequestLabel,
 		};
 
 		let mut release = Release {
@@ -1190,13 +1199,14 @@ mod test {
 			],
 			commit_range: None,
 			commit_id: None,
-			timestamp: 0,
+			timestamp: None,
 			previous: Some(Box::new(Release {
 				version: Some(String::from("1.0.0")),
 				..Default::default()
 			})),
 			repository: Some(String::from("/root/repo")),
 			submodule_commits: HashMap::new(),
+			statistics: None,
 			#[cfg(feature = "github")]
 			github: RemoteReleaseMetadata {
 				contributors: vec![],
@@ -1516,9 +1526,7 @@ mod test {
 	#[test]
 	fn update_bitbucket_metadata() -> Result<()> {
 		use crate::remote::bitbucket::{
-			BitbucketCommit,
-			BitbucketCommitAuthor,
-			BitbucketPullRequest,
+			BitbucketCommit, BitbucketCommitAuthor, BitbucketPullRequest,
 			BitbucketPullRequestMergeCommit,
 		};
 
@@ -1550,13 +1558,14 @@ mod test {
 			],
 			commit_range: None,
 			commit_id: None,
-			timestamp: 0,
+			timestamp: None,
 			previous: Some(Box::new(Release {
 				version: Some(String::from("1.0.0")),
 				..Default::default()
 			})),
 			repository: Some(String::from("/root/repo")),
 			submodule_commits: HashMap::new(),
+			statistics: None,
 			#[cfg(feature = "github")]
 			github: RemoteReleaseMetadata {
 				contributors: vec![],

@@ -14,47 +14,27 @@ pub mod bitbucket;
 #[cfg(feature = "gitea")]
 pub mod gitea;
 
-use crate::config::Remote;
-use crate::contributor::RemoteContributor;
-use crate::error::{
-	Error,
-	Result,
-};
-use dyn_clone::DynClone;
-use futures::{
-	StreamExt,
-	future,
-	stream,
-};
-use http_cache_reqwest::{
-	CACacheManager,
-	Cache,
-	CacheMode,
-	HttpCache,
-	HttpCacheOptions,
-};
-use reqwest::Client;
-use reqwest::header::{
-	HeaderMap,
-	HeaderValue,
-};
-use reqwest_middleware::{
-	ClientBuilder,
-	ClientWithMiddleware,
-};
-use secrecy::ExposeSecret;
-use serde::de::DeserializeOwned;
-use serde::{
-	Deserialize,
-	Serialize,
-};
 use std::env;
 use std::fmt::Debug;
 use std::time::Duration;
-use time::{
-	OffsetDateTime,
-	format_description::well_known::Rfc3339,
+
+use dyn_clone::DynClone;
+use futures::{StreamExt, future, stream};
+use http_cache_reqwest::{
+	CACacheManager, Cache, CacheMode, HttpCache, HttpCacheOptions,
 };
+use reqwest::Client;
+use reqwest::header::{HeaderMap, HeaderValue};
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+use secrecy::ExposeSecret;
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
+use time::OffsetDateTime;
+use time::format_description::well_known::Rfc3339;
+
+use crate::config::Remote;
+use crate::contributor::RemoteContributor;
+use crate::error::{Error, Result};
 
 /// User agent for interacting with the GitHub API.
 ///
@@ -394,7 +374,7 @@ macro_rules! update_release_metadata {
 								// if current release is unreleased no need to filter
 								// commits or filter commits that are from
 								// newer releases
-								self.timestamp == 0 ||
+								self.timestamp == None ||
 									commit.timestamp() < release_commit_timestamp
 							})
 							.map(|v| v.username())

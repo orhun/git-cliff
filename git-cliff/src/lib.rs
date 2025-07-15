@@ -13,54 +13,22 @@ pub mod logger;
 #[macro_use]
 extern crate log;
 
-use args::{
-	BumpOption,
-	Opt,
-	Sort,
-	Strip,
-};
+use std::fs::{self, File};
+use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
+use std::{env, io};
+
+use args::{BumpOption, Opt, Sort, Strip};
 use clap::ValueEnum;
 use git_cliff_core::changelog::Changelog;
-use git_cliff_core::commit::{
-	Commit,
-	Range,
-};
-use git_cliff_core::config::{
-	CommitParser,
-	Config,
-};
-use git_cliff_core::embed::{
-	BuiltinConfig,
-	EmbeddedConfig,
-};
-use git_cliff_core::error::{
-	Error,
-	Result,
-};
+use git_cliff_core::commit::{Commit, Range};
+use git_cliff_core::config::{CommitParser, Config};
+use git_cliff_core::embed::{BuiltinConfig, EmbeddedConfig};
+use git_cliff_core::error::{Error, Result};
 use git_cliff_core::release::Release;
-use git_cliff_core::repo::{
-	Repository,
-	SubmoduleRange,
-};
-use git_cliff_core::{
-	DEFAULT_CONFIG,
-	IGNORE_FILE,
-};
+use git_cliff_core::repo::{Repository, SubmoduleRange};
+use git_cliff_core::{DEFAULT_CONFIG, IGNORE_FILE};
 use glob::Pattern;
-use std::env;
-use std::fs::{
-	self,
-	File,
-};
-use std::io;
-use std::path::{
-	Path,
-	PathBuf,
-};
-use std::time::{
-	SystemTime,
-	UNIX_EPOCH,
-};
 
 /// Checks for a new version on crates.io
 #[cfg(feature = "update-informer")]
@@ -300,12 +268,12 @@ fn process_repository<'a>(
 	let commit_range = determine_commit_range(args, config, repository)?;
 
 	// Include only the current directory if not running from the root repository
-	let mut include_path = args.include_path.clone();
+	let mut include_path = config.git.include_paths.clone();
 	if let Some(mut path_diff) =
-		pathdiff::diff_paths(env::current_dir()?, repository.root_path()?)
+		pathdiff::diff_paths(repository.root_path()?, env::current_dir()?)
 	{
 		if args.workdir.is_none() &&
-			include_path.is_none() &&
+			include_path.is_empty() &&
 			path_diff != Path::new("")
 		{
 			info!(
@@ -313,15 +281,17 @@ fn process_repository<'a>(
 				path_diff.display()
 			);
 			path_diff.extend(["**", "*"]);
-			include_path =
-				Some(vec![Pattern::new(path_diff.to_string_lossy().as_ref())?]);
+			include_path = vec![Pattern::new(path_diff.to_string_lossy().as_ref())?];
 		}
 	}
 
+	let include_path = (!include_path.is_empty()).then_some(include_path);
+	let exclude_path = (!config.git.exclude_paths.is_empty())
+		.then_some(config.git.exclude_paths.clone());
 	let mut commits = repository.commits(
 		commit_range.as_deref(),
 		include_path,
-		args.exclude_path.clone(),
+		exclude_path,
 		config.git.topo_order_commits,
 	)?;
 	if let Some(commit_limit_value) = config.git.limit_commits {
@@ -344,10 +314,12 @@ fn process_repository<'a>(
 			}
 		} else {
 			releases[0].version = Some(tag.to_string());
-			releases[0].timestamp = SystemTime::now()
-				.duration_since(UNIX_EPOCH)?
-				.as_secs()
-				.try_into()?;
+			releases[0].timestamp = Some(
+				SystemTime::now()
+					.duration_since(UNIX_EPOCH)?
+					.as_secs()
+					.try_into()?,
+			);
 		}
 	}
 
@@ -367,14 +339,16 @@ fn process_repository<'a>(
 			release.message.clone_from(&tag.message);
 			release.timestamp = if args.tag.as_deref() == Some(tag.name.as_str()) {
 				match tag_timestamp {
-					Some(timestamp) => timestamp,
-					None => SystemTime::now()
-						.duration_since(UNIX_EPOCH)?
-						.as_secs()
-						.try_into()?,
+					Some(timestamp) => Some(timestamp),
+					None => Some(
+						SystemTime::now()
+							.duration_since(UNIX_EPOCH)?
+							.as_secs()
+							.try_into()?,
+					),
 				}
 			} else {
-				git_commit.time().seconds()
+				Some(git_commit.time().seconds())
 			};
 			if first_processed_tag.is_none() {
 				first_processed_tag = Some(tag);
@@ -432,10 +406,12 @@ fn process_repository<'a>(
 			let previous_release = Release {
 				commit_id: Some(commit_id.to_string()),
 				version: Some(tag.name.clone()),
-				timestamp: repository
-					.find_commit(commit_id)
-					.map(|v| v.time().seconds())
-					.unwrap_or_default(),
+				timestamp: Some(
+					repository
+						.find_commit(commit_id)
+						.map(|v| v.time().seconds())
+						.unwrap_or_default(),
+				),
 				..Default::default()
 			};
 			releases[0].previous = Some(Box::new(previous_release));
@@ -583,10 +559,10 @@ pub fn run_with_changelog_modifier(
 		debug!("Using configuration file from: {url}");
 		#[cfg(feature = "remote")]
 		{
-			let contents = reqwest::blocking::get(url.clone())?
+			reqwest::blocking::get(url.clone())?
 				.error_for_status()?
-				.text()?;
-			Config::parse_from_str(&contents)?
+				.text()?
+				.parse()?
 		}
 		#[cfg(not(feature = "remote"))]
 		unreachable!(
@@ -596,9 +572,9 @@ pub fn run_with_changelog_modifier(
 		info!("Using built-in configuration file: {name}");
 		config
 	} else if path.exists() {
-		Config::parse(&path)?
+		Config::load(&path)?
 	} else if let Some(contents) = Config::read_from_manifest()? {
-		Config::parse_from_str(&contents)?
+		contents.parse()?
 	} else if let Some(discovered_path) =
 		env::current_dir()?.ancestors().find_map(|dir| {
 			let path = dir.join(DEFAULT_CONFIG);
@@ -608,7 +584,7 @@ pub fn run_with_changelog_modifier(
 			"Using configuration from parent directory: {}",
 			discovered_path.display()
 		);
-		Config::parse(&discovered_path)?
+		Config::load(&discovered_path)?
 	} else {
 		if !args.context {
 			warn!(
@@ -726,6 +702,18 @@ pub fn run_with_changelog_modifier(
 	}
 	if args.count_tags.is_some() {
 		config.git.count_tags.clone_from(&args.count_tags);
+	}
+	if let Some(include_path) = &args.include_path {
+		config
+			.git
+			.include_paths
+			.extend(include_path.iter().cloned());
+	}
+	if let Some(exclude_path) = &args.exclude_path {
+		config
+			.git
+			.exclude_paths
+			.extend(exclude_path.iter().cloned());
 	}
 
 	// Process commits and releases for the changelog.

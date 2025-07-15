@@ -121,6 +121,7 @@ jobs:
             command: v0.1.0..HEAD
           - fixtures-name: test-submodules-include-path
             command: --include-path submodule_two
+          - fixtures-name: test-submodules-include-path-config
           - fixtures-name: test-remote-config
             command: --config-url "https://github.com/orhun/git-cliff/blob/main/.github/fixtures/new-fixture-template/cliff.toml?raw=true"
           - fixtures-name: test-topo-order-commits
@@ -130,6 +131,8 @@ jobs:
             command: a140cef^..a9d4050 --ignore-tags "."
           - fixtures-name: test-override-scope
           - fixtures-name: test-regex-json-array
+          - fixtures-name: test-release-statistics
+            previous-release-timestamp: "2022-04-06 01:25:12"
 
     steps:
       - name: Checkout
@@ -140,3 +143,4 @@ jobs:
         with:
           fixtures-dir: .github/fixtures/${{ matrix.fixtures-name }}
           command: ${{ matrix.command }}
+          previous-release-timestamp: ${{ matrix.previous-release-timestamp }}

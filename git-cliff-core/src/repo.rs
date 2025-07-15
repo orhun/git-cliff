@@ -1,33 +1,19 @@
-use crate::config::Remote;
-use crate::error::{
-	Error,
-	Result,
-};
-use crate::tag::Tag;
+use std::io;
+use std::path::{Path, PathBuf};
+use std::result::Result as StdResult;
+
 use git2::{
-	BranchType,
-	Commit,
-	DescribeOptions,
-	Oid,
-	Repository as GitRepository,
-	Sort,
-	TreeWalkMode,
-	Worktree,
+	BranchType, Commit, DescribeOptions, Oid, Repository as GitRepository, Sort,
+	TreeWalkMode, Worktree,
 };
 use glob::Pattern;
 use indexmap::IndexMap;
-use lazy_regex::{
-	Lazy,
-	Regex,
-	lazy_regex,
-};
-use std::io;
-use std::path::{
-	Path,
-	PathBuf,
-};
-use std::result::Result as StdResult;
+use lazy_regex::{Lazy, Regex, lazy_regex};
 use url::Url;
+
+use crate::config::Remote;
+use crate::error::{Error, Result};
+use crate::tag::Tag;
 
 /// Regex for replacing the signature part of a tag message.
 static TAG_SIGNATURE_REGEX: Lazy<Regex> = lazy_regex!(
@@ -259,7 +245,7 @@ impl Repository {
 		match (include_patterns, exclude_patterns) {
 			(Some(include_pattern), Some(exclude_pattern)) => {
 				// check if the commit has any changed files that match any of the
-				// include patterns and non of the exclude patterns.
+				// include patterns and none of the exclude patterns.
 				changed_files.iter().any(|path| {
 					include_pattern
 						.iter()
@@ -623,15 +609,13 @@ fn ssh_path_segments(url: &str) -> Result<Remote> {
 
 #[cfg(test)]
 mod test {
+	use std::process::Command;
+	use std::{env, fs, str};
+
+	use temp_dir::TempDir;
+
 	use super::*;
 	use crate::commit::Commit as AppCommit;
-	use std::process::Command;
-	use std::str;
-	use std::{
-		env,
-		fs,
-	};
-	use temp_dir::TempDir;
 
 	fn get_last_commit_hash() -> Result<String> {
 		Ok(str::from_utf8(

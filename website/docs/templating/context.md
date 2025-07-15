@@ -76,6 +76,19 @@ following context is generated to use for templating:
       },
     ],
   },
+  "statistics": {
+    "commit_count": 1,
+    "commits_timespan": 0,
+    "conventional_commit_count": 1,
+    "links": [
+      {
+        "text": "#452",
+        "href": "https://github.com/orhun/git-cliff/issues/452",
+        "count": 1
+      }
+    ],
+    "days_passed_since_last_release": 0
+  },
   "previous": {
     "version": "previous release"
   }
@@ -176,6 +189,19 @@ If [`conventional_commits`](/docs/configuration/git#conventional_commits) is set
       "from": "(id of the first commit used for this release)",
       "to": "(id of the last commit used for this release)",
   },
+  "statistics": {
+    "commit_count": 1,
+    "commits_timespan": 0,
+    "conventional_commit_count": 0,
+    "links": [
+      {
+        "text": "#452",
+        "href": "https://github.com/orhun/git-cliff/issues/452",
+        "count": 1
+      }
+    ],
+    "days_passed_since_last_release": 0
+  },
   "previous": {
     "version": "previous release"
   }
@@ -187,3 +213,45 @@ If [`conventional_commits`](/docs/configuration/git#conventional_commits) is set
 See the [GitHub integration](/docs/integration/github) for the additional values you can use in the template.
 
 :::
+
+## Release statistics
+
+You can access various release-related metrics via the `statistics` variable. The following fields are available:
+
+- `commit_count`: Total number of commits in the release.
+- `commits_timespan`: Number of days between the first and last commit.
+- `conventional_commit_count`: Number of commits that follow the Conventional Commits spec.
+- `links`: A list of issues or links referenced in commit messages, each with text, href, and count.
+- `days_passed_since_last_release`: Days since the previous release, if available.
+
+You can use these fields in your templates like so:
+
+```jinja2
+- {{ statistics.commit_count }} commit(s) contributed to the release.
+- {{ statistics.commits_timespan | default(value=0) }} day(s) passed between the first and last commit.
+- {{ statistics.conventional_commit_count }} commit(s) parsed as conventional.
+- {{ statistics.links | length }} linked issue(s) detected in commits.
+{%- if statistics.links | length > 0 %}
+	{%- for link in statistics.links %}
+        {{ "  " }}- [{{ link.text }}]({{ link.href }}) (referenced {{ link.count }} time(s))
+	{%- endfor %}
+{%- endif %}
+{%- if statistics.days_passed_since_last_release %}
+	- {{ statistics.days_passed_since_last_release }} day(s) passed between releases.
+{%- endif %}
+```
+
+This results in the following output:
+
+<details>
+  <summary>Rendered Output</summary>
+
+### Commit Statistics
+
+- 2 commit(s) contributed to the release.
+- 0 day(s) passed between the first and last commit.
+- 2 commit(s) parsed as conventional.
+- 0 linked issue(s) detected in commits.
+- 1430 day(s) passed between releases.
+
+</details>

@@ -1,37 +1,13 @@
-use crate::config::{
-	CommitParser,
-	GitConfig,
-	LinkParser,
-	TextProcessor,
-};
-use crate::error::{
-	Error as AppError,
-	Result,
-};
-use git_conventional::{
-	Commit as ConventionalCommit,
-	Footer as ConventionalFooter,
-};
+use git_conventional::{Commit as ConventionalCommit, Footer as ConventionalFooter};
 #[cfg(feature = "repo")]
-use git2::{
-	Commit as GitCommit,
-	Signature as CommitSignature,
-};
-use lazy_regex::{
-	Lazy,
-	Regex,
-	lazy_regex,
-};
-use serde::ser::{
-	SerializeStruct,
-	Serializer,
-};
-use serde::{
-	Deserialize,
-	Deserializer,
-	Serialize,
-};
+use git2::{Commit as GitCommit, Signature as CommitSignature};
+use lazy_regex::{Lazy, Regex, lazy_regex};
+use serde::ser::{SerializeStruct, Serializer};
+use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::value::Value;
+
+use crate::config::{CommitParser, GitConfig, LinkParser, TextProcessor};
+use crate::error::{Error as AppError, Result};
 
 /// Regular expression for matching SHA1 and a following commit message
 /// separated by a whitespace.
@@ -249,7 +225,7 @@ impl Commit<'_> {
 			config.filter_commits,
 		)?;
 
-		commit = commit.parse_links(&config.link_parsers)?;
+		commit = commit.parse_links(&config.link_parsers);
 
 		Ok(commit)
 	}
@@ -428,7 +404,7 @@ impl Commit<'_> {
 	/// Sets the [`links`] of the commit.
 	///
 	/// [`links`]: Commit::links
-	pub fn parse_links(mut self, parsers: &[LinkParser]) -> Result<Self> {
+	pub fn parse_links(mut self, parsers: &[LinkParser]) -> Self {
 		for parser in parsers {
 			let regex = &parser.pattern;
 			let replace = &parser.href;
@@ -446,7 +422,7 @@ impl Commit<'_> {
 				});
 			}
 		}
-		Ok(self)
+		self
 	}
 
 	/// Returns an iterator over this commit's [`Footer`]s, if this is a
@@ -693,7 +669,7 @@ mod test {
 				href:    String::from("https://github.com/$1"),
 				text:    None,
 			},
-		])?;
+		]);
 		assert_eq!(
 			vec![
 				Link {
@@ -788,7 +764,7 @@ Refs: #123
 				href:    String::from("https://github.com/$1"),
 				text:    None,
 			},
-		])?;
+		]);
 
 		let parsed_commit = commit.clone().parse(
 			&[CommitParser {
@@ -852,7 +828,7 @@ Refs: #123
 				href:    String::from("https://github.com/$1"),
 				text:    None,
 			},
-		])?;
+		]);
 
 		let parsed_commit = commit.clone().parse(
 			&[CommitParser {

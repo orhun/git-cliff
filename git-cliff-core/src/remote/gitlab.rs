@@ -1,12 +1,9 @@
-use crate::config::Remote;
-use crate::error::*;
 use reqwest_middleware::ClientWithMiddleware;
-use serde::{
-	Deserialize,
-	Serialize,
-};
+use serde::{Deserialize, Serialize};
 
 use super::*;
+use crate::config::Remote;
+use crate::error::*;
 
 /// Log message to show while fetching data from GitLab.
 pub const START_FETCHING_MSG: &str = "Retrieving data from GitLab...";
@@ -320,8 +317,9 @@ impl GitLabClient {
 }
 #[cfg(test)]
 mod test {
-	use super::*;
 	use pretty_assertions::assert_eq;
+
+	use super::*;
 
 	#[test]
 	fn gitlab_remote_encodes_owner() {

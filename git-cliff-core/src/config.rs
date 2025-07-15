@@ -1,19 +1,15 @@
-use crate::command;
+use std::path::{Path, PathBuf};
+use std::str::FromStr;
+use std::{fmt, fs};
+
+use glob::Pattern;
+use regex::{Regex, RegexBuilder};
+use secrecy::SecretString;
+use serde::{Deserialize, Serialize};
+
 use crate::embed::EmbeddedConfig;
 use crate::error::Result;
-use regex::{
-	Regex,
-	RegexBuilder,
-};
-use secrecy::SecretString;
-use serde::{
-	Deserialize,
-	Serialize,
-};
-use std::fmt;
-use std::fs;
-use std::path::Path;
-use std::path::PathBuf;
+use crate::{command, error};
 
 /// Default initial tag.
 const DEFAULT_INITIAL_TAG: &str = "0.1.0";
@@ -138,6 +134,45 @@ pub struct GitConfig {
 	pub limit_commits:            Option<usize>,
 	/// Read submodule commits.
 	pub recurse_submodules:       Option<bool>,
+	/// Include related commits with changes at the specified paths.
+	#[serde(with = "serde_pattern", default)]
+	pub include_paths:            Vec<Pattern>,
+	/// Exclude unrelated commits with changes at the specified paths.
+	#[serde(with = "serde_pattern", default)]
+	pub exclude_paths:            Vec<Pattern>,
+}
+
+/// Serialize and deserialize implementation for [`glob::Pattern`].
+mod serde_pattern {
+	use glob::Pattern;
+	use serde::Deserialize;
+	use serde::de::Error;
+	use serde::ser::SerializeSeq;
+
+	pub fn serialize<S>(
+		patterns: &[Pattern],
+		serializer: S,
+	) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
+	{
+		let mut seq = serializer.serialize_seq(Some(patterns.len()))?;
+		for pattern in patterns {
+			seq.serialize_element(pattern.as_str())?;
+		}
+		seq.end()
+	}
+
+	pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<Pattern>, D::Error>
+	where
+		D: serde::Deserializer<'de>,
+	{
+		let patterns = Vec::<String>::deserialize(deserializer)?;
+		patterns
+			.into_iter()
+			.map(|pattern| pattern.parse().map_err(D::Error::custom))
+			.collect()
+	}
 }
 
 /// Remote configuration.
@@ -425,33 +460,14 @@ impl Config {
 		Ok(None)
 	}
 
-	/// Parses the config file from string and returns the values.
-	pub fn parse_from_str(contents: &str) -> Result<Config> {
-		// Adding sources one after another overwrites the previous values.
-		// Thus adding the default config initializes the config with default values.
-		let default_config_str = EmbeddedConfig::get_config()?;
-
-		Ok(config::Config::builder()
-			.add_source(config::File::from_str(
-				&default_config_str,
-				config::FileFormat::Toml,
-			))
-			.add_source(config::File::from_str(contents, config::FileFormat::Toml))
-			.add_source(
-				config::Environment::with_prefix("GIT_CLIFF").separator("__"),
-			)
-			.build()?
-			.try_deserialize()?)
-	}
-
 	/// Parses the config file and returns the values.
-	pub fn parse(path: &Path) -> Result<Config> {
+	pub fn load(path: &Path) -> Result<Config> {
 		if MANIFEST_INFO
 			.iter()
 			.any(|v| path.file_name() == v.path.file_name())
 		{
 			if let Some(contents) = Self::read_from_manifest()? {
-				return Self::parse_from_str(&contents);
+				return contents.parse();
 			}
 		}
 
@@ -472,13 +488,39 @@ impl Config {
 	}
 }
 
+impl FromStr for Config {
+	type Err = error::Error;
+
+	/// Parses the config file from string and returns the values.
+	fn from_str(contents: &str) -> Result<Self> {
+		// Adding sources one after another overwrites the previous values.
+		// Thus adding the default config initializes the config with default
+		// values.
+		let default_config_str = EmbeddedConfig::get_config()?;
+
+		Ok(config::Config::builder()
+			.add_source(config::File::from_str(
+				&default_config_str,
+				config::FileFormat::Toml,
+			))
+			.add_source(config::File::from_str(contents, config::FileFormat::Toml))
+			.add_source(
+				config::Environment::with_prefix("GIT_CLIFF").separator("__"),
+			)
+			.build()?
+			.try_deserialize()?)
+	}
+}
+
 #[cfg(test)]
 mod test {
-	use super::*;
-	use pretty_assertions::assert_eq;
 	use std::env;
+
+	use pretty_assertions::assert_eq;
+
+	use super::*;
 	#[test]
-	fn parse_config() -> Result<()> {
+	fn load() -> Result<()> {
 		let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 			.parent()
 			.expect("parent directory not found")
@@ -496,7 +538,7 @@ mod test {
 			env::set_var("GIT_CLIFF__GIT__IGNORE_TAGS", IGNORE_TAGS_VALUE);
 		};
 
-		let config = Config::parse(&path)?;
+		let config = Config::load(&path)?;
 
 		assert_eq!(Some(String::from(FOOTER_VALUE)), config.changelog.footer);
 		assert_eq!(

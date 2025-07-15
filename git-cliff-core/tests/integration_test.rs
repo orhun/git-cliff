@@ -1,22 +1,15 @@
-use git_cliff_core::commit::{
-	Commit,
-	Range,
-	Signature,
-};
+use std::collections::HashMap;
+use std::fmt::Write;
+
+use git_cliff_core::commit::{Commit, Range, Signature};
 use git_cliff_core::config::{
-	ChangelogConfig,
-	CommitParser,
-	GitConfig,
-	LinkParser,
-	TextProcessor,
+	ChangelogConfig, CommitParser, GitConfig, LinkParser, TextProcessor,
 };
 use git_cliff_core::error::Result;
 use git_cliff_core::release::*;
 use git_cliff_core::template::Template;
 use pretty_assertions::assert_eq;
 use regex::Regex;
-use std::collections::HashMap;
-use std::fmt::Write;
 
 #[test]
 fn generate_changelog() -> Result<()> {
@@ -143,6 +136,8 @@ fn generate_changelog() -> Result<()> {
 		],
 		limit_commits:            None,
 		recurse_submodules:       None,
+		include_paths:            Vec::new(),
+		exclude_paths:            Vec::new(),
 	};
 
 	let mut commit_with_author = Commit::new(
@@ -228,10 +223,11 @@ fn generate_changelog() -> Result<()> {
 			commits: release_v2_commits,
 			commit_range: Some(release_v2_commit_range),
 			commit_id: None,
-			timestamp: 0,
+			timestamp: None,
 			previous: None,
 			repository: Some(String::from("/root/repo")),
 			submodule_commits: HashMap::new(),
+			statistics: None,
 			#[cfg(feature = "github")]
 			github: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],
@@ -256,10 +252,11 @@ fn generate_changelog() -> Result<()> {
 			commits: release_v1_commits,
 			commit_range: Some(release_v1_commit_range),
 			commit_id: None,
-			timestamp: 0,
+			timestamp: None,
 			previous: None,
 			repository: Some(String::from("/root/repo")),
 			submodule_commits: HashMap::new(),
+			statistics: None,
 			#[cfg(feature = "github")]
 			github: git_cliff_core::remote::RemoteReleaseMetadata {
 				contributors: vec![],
