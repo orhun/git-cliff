@@ -40,7 +40,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Check typos
-        uses: crate-ci/typos@ebc6aac34e3692b3ce373e13f4145e8980875396 # master
+        uses: crate-ci/typos@d7e6241ebf2f59df88a9e53567d2fdc5141c2fd1 # master
 
   test:
     name: Test suite
