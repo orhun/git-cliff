@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Install toolchain
-        uses: dtolnay/rust-toolchain@b95584d8105b9ab200e15821fa671848cf2b7017 # nightly
+        uses: dtolnay/rust-toolchain@4305c38b25d97ef35a8ad1f985ccf2d2242004f2 # nightly
       - name: Checkout
         if: github.event_name != 'pull_request'
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -84,7 +84,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Install toolchain
-        uses: dtolnay/rust-toolchain@b95584d8105b9ab200e15821fa671848cf2b7017 # nightly
+        uses: dtolnay/rust-toolchain@4305c38b25d97ef35a8ad1f985ccf2d2242004f2 # nightly
         with:
           components: clippy
       - name: Checkout
@@ -105,7 +105,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Install toolchain
-        uses: dtolnay/rust-toolchain@b95584d8105b9ab200e15821fa671848cf2b7017 # nightly
+        uses: dtolnay/rust-toolchain@4305c38b25d97ef35a8ad1f985ccf2d2242004f2 # nightly
         with:
           components: rustfmt
       - name: Checkout
@@ -121,7 +121,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Install toolchain
-        uses: dtolnay/rust-toolchain@b95584d8105b9ab200e15821fa671848cf2b7017 # nightly
+        uses: dtolnay/rust-toolchain@4305c38b25d97ef35a8ad1f985ccf2d2242004f2 # nightly
         with:
           components: rustfmt
       - name: Checkout
