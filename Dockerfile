@@ -14,7 +14,7 @@ COPY . .
 RUN cargo build --release --locked --no-default-features --features github --features gitlab --features bitbucket
 RUN rm -f target/release/deps/git_cliff*
 
-FROM debian:bookworm-slim@sha256:e5865e6858dacc255bead044a7f2d0ad8c362433cfaa5acefb670c1edf54dfef as runner
+FROM debian:bookworm-slim@sha256:6ac2c08566499cc2415926653cf2ed7c3aedac445675a013cc09469c9e118fdd as runner
 
 # Everything inside this container will be explicitly mounted by the end user,
 # so we can sidestep some Git security restrictions. This app recommends
