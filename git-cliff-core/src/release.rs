@@ -566,6 +566,7 @@ mod test {
 					merge_commit_sha: Some(String::from(
 						"1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
 					)),
+					user:             None,
 					labels:           vec![PullRequestLabel {
 						name: String::from("rust"),
 					}],
@@ -576,6 +577,7 @@ mod test {
 					merge_commit_sha: Some(String::from(
 						"21f6aa587fcb772de13f2fde0e92697c51f84162",
 					)),
+					user:             None,
 					labels:           vec![PullRequestLabel {
 						name: String::from("rust"),
 					}],
@@ -586,6 +588,7 @@ mod test {
 					merge_commit_sha: Some(String::from(
 						"35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973",
 					)),
+					user:             None,
 					labels:           vec![PullRequestLabel {
 						name: String::from("deps"),
 					}],
@@ -596,6 +599,7 @@ mod test {
 					merge_commit_sha: Some(String::from(
 						"4d3ffe4753b923f4d7807c490e650e6624a12074",
 					)),
+					user:             None,
 					labels:           vec![PullRequestLabel {
 						name: String::from("deps"),
 					}],
@@ -606,6 +610,7 @@ mod test {
 					merge_commit_sha: Some(String::from(
 						"5a55e92e5a62dc5bf9872ffb2566959fad98bd05",
 					)),
+					user:             None,
 					labels:           vec![PullRequestLabel {
 						name: String::from("github"),
 					}],
