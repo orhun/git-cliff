@@ -34,6 +34,7 @@
 Learn how to use **git-cliff** from the [official documentation](https://git-cliff.org/docs).
 
 - [Installation](https://git-cliff.org/docs/installation/)
+- [Commit and PR Strategy](https://git-cliff.org/docs/usage/commit-and-pr-strategy)
 - [Usage](https://git-cliff.org/docs/usage/examples)
 - [Configuration](https://git-cliff.org/docs/configuration)
 - [Templating](https://git-cliff.org/docs/category/templating)
