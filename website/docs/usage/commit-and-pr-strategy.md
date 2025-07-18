@@ -6,8 +6,6 @@ sidebar_position: 3
 
 ## How should I write my commits?
 
-**git-cliff** can generate [changelog](https://en.wikipedia.org/wiki/Changelog) files from the [Git](https://git-scm.com/) history by utilizing [Conventional Commits](https://git-cliff.org/docs/configuration/git#conventional_commits) as well as regex-powered [custom parsers](https://git-cliff.org/docs/configuration/git#commit_parsers).
-
 We recommend using a [Git](https://git-scm.com/) history that follows the [Conventional Commits](https://git-cliff.org/docs/configuration/git#conventional_commits) specification as the primary strategy.
 This convention provides a widely adopted standard for categorizing and grouping commits in a meaningful and predictable way.
 
