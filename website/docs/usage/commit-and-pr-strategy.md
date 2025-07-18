@@ -6,7 +6,13 @@ sidebar_position: 3
 
 ## How should I write my commits?
 
-We recommend using a [Git][1] history that follows the [Conventional Commits][2] specification as the primary strategy.
+We recommend using a [Git][1] history that follows the [Conventional Commits][2] specification as the primary strategy. For example:
+
+```
+fix(parser): handle empty commit messages gracefully
+feat(cli): add support for --dry-run flag
+refactor(core)!: change internal API to use async/await
+```
 
 **git-cliff**’s [default configuration][3] is built around this convention, making it easy to generate clear, structured, and consistent [Changelog][4]s by grouping commits (e.g., `feat`, `fix`, `docs`). The most important prefixes you should have in mind are:
 
