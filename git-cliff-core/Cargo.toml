@@ -9,7 +9,7 @@ homepage = "https://github.com/orhun/git-cliff"
 repository = "https://github.com/orhun/git-cliff"
 keywords = ["changelog", "generator", "conventional", "commit"]
 edition = "2024"
-rust-version = "1.85.0"
+rust-version = "1.85.1"
 
 [features]
 default = ["repo"]
