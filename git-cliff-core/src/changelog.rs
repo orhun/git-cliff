@@ -265,7 +265,9 @@ impl<'a> Changelog<'a> {
 				.map(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
 				.unwrap_or(false)
 		{
-			debug!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
+			debug!(
+				"You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>"
+			);
 			let github_client =
 				GitHubClient::try_from(self.config.remote.github.clone())?;
 			info!(
@@ -324,7 +326,9 @@ impl<'a> Changelog<'a> {
 				.map(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
 				.unwrap_or(false)
 		{
-			debug!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
+			debug!(
+				"You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>"
+			);
 			let gitlab_client =
 				GitLabClient::try_from(self.config.remote.gitlab.clone())?;
 			info!(
@@ -391,7 +395,9 @@ impl<'a> Changelog<'a> {
 				.map(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
 				.unwrap_or(false)
 		{
-			debug!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
+			debug!(
+				"You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>"
+			);
 			let gitea_client =
 				GiteaClient::try_from(self.config.remote.gitea.clone())?;
 			info!(
@@ -447,7 +453,9 @@ impl<'a> Changelog<'a> {
 				.map(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
 				.unwrap_or(false)
 		{
-			debug!("You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>");
+			debug!(
+				"You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>"
+			);
 			let bitbucket_client =
 				BitbucketClient::try_from(self.config.remote.bitbucket.clone())?;
 			info!(
@@ -487,6 +495,7 @@ impl<'a> Changelog<'a> {
 	}
 
 	/// Adds remote data (e.g. GitHub commits) to the releases.
+	#[allow(unused_variables)]
 	pub fn add_remote_data(&mut self, range: Option<&str>) -> Result<()> {
 		debug!("Adding remote data...");
 		self.add_remote_context()?;
