@@ -82,9 +82,54 @@ pub struct ChangelogConfig {
 	pub output:         Option<PathBuf>,
 }
 
+/// Processing steps for the commits
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProcessingStep {
+	/// Split commits on newlines, treating each line as an individual commit.
+	SplitCommits,
+	/// An array of regex based parsers to modify commit messages prior to
+	/// further processing.
+	CommitPreprocessors,
+	/// Try to parse commits according to the conventional commits
+	/// specification.
+	IntoConventional,
+	/// An array of regex based parsers for extracting data from the commit
+	/// message.
+	CommitParsers,
+	/// An array of regex based parsers to extract links from the commit message
+	/// and add them to the commit's context.
+	LinkParsers,
+}
+
+/// Processing order for the changelog.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProcessingOrder {
+	/// The order in which the changelog should be processed.
+	pub order: Vec<ProcessingStep>,
+}
+
+impl Default for ProcessingOrder {
+	/// Returns the default processing order.
+	fn default() -> Self {
+		Self {
+			order: vec![
+				ProcessingStep::CommitPreprocessors,
+				ProcessingStep::SplitCommits,
+				ProcessingStep::IntoConventional,
+				ProcessingStep::CommitParsers,
+				ProcessingStep::LinkParsers,
+			],
+		}
+	}
+}
+
 /// Git configuration
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct GitConfig {
+	/// Defines the processing order of the commits.
+	#[serde(default)]
+	pub processing_order:      ProcessingOrder,
 	/// Parse commits according to the conventional commits specification.
 	pub conventional_commits:  bool,
 	/// Require all commits to be conventional.

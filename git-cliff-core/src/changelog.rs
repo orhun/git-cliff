@@ -3,7 +3,7 @@ use std::io::{Read, Write};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::commit::Commit;
-use crate::config::{Config, GitConfig};
+use crate::config::{Config, GitConfig, ProcessingStep};
 use crate::error::{Error, Result};
 use crate::release::{Release, Releases};
 #[cfg(feature = "bitbucket")]
@@ -87,25 +87,6 @@ impl<'a> Changelog<'a> {
 		Ok(())
 	}
 
-	/// Processes a single commit and returns/logs the result.
-	fn process_commit(
-		commit: &Commit<'a>,
-		git_config: &GitConfig,
-	) -> Option<Commit<'a>> {
-		match commit.process(git_config) {
-			Ok(commit) => Some(commit),
-			Err(e) => {
-				trace!(
-					"{} - {} ({})",
-					commit.id.chars().take(7).collect::<String>(),
-					e,
-					commit.message.lines().next().unwrap_or_default().trim()
-				);
-				None
-			}
-		}
-	}
-
 	/// Checks the commits and returns an error if any unconventional commits
 	/// are found.
 	fn check_conventional_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
@@ -135,40 +116,163 @@ impl<'a> Changelog<'a> {
 		Ok(())
 	}
 
+	/// Splits the commits by their message lines.
+	/// Returns a new vector of commits with each line as a separate commit.
+	fn apply_split_commits(commits: &mut Vec<Commit<'a>>) -> Vec<Commit<'a>> {
+		let mut split_commits = Vec::new();
+		for commit in commits {
+			commit.message.lines().for_each(|line| {
+				let mut c = commit.clone();
+				c.message = line.to_string();
+				c.links.clear();
+				if !c.message.is_empty() {
+					split_commits.push(c)
+				};
+			})
+		}
+		split_commits
+	}
+
+	/// Applies the commit parsers to the commits and returns the parsed
+	/// commits.
+	fn apply_commit_parsers(
+		commits: &mut Vec<Commit<'a>>,
+		git_config: &GitConfig,
+	) -> Vec<Commit<'a>> {
+		commits
+			.iter()
+			.filter_map(|commit| {
+				match commit.clone().parse(
+					&git_config.commit_parsers,
+					git_config.protect_breaking_commits,
+					git_config.filter_commits,
+				) {
+					Ok(commit) => Some(commit),
+					Err(e) => {
+						Self::on_step_err(commit.clone(), e);
+						None
+					}
+				}
+			})
+			.collect::<Vec<_>>()
+	}
+
+	/// Applies the commit preprocessors to the commits and returns the
+	/// preprocessed commits.
+	fn apply_commit_preprocessors(
+		commits: &mut Vec<Commit<'a>>,
+		git_config: &GitConfig,
+	) -> Vec<Commit<'a>> {
+		commits
+			.iter()
+			.filter_map(|commit| {
+				// Apply commit parsers
+				match commit.clone().preprocess(&git_config.commit_preprocessors) {
+					Ok(commit) => Some(commit),
+					Err(e) => {
+						Self::on_step_err(commit.clone(), e);
+						None
+					}
+				}
+			})
+			.collect::<Vec<_>>()
+	}
+
+	/// Converts the commits into conventional format if the configuration
+	/// requires it.
+	fn apply_into_conventional(
+		commits: &mut Vec<Commit<'a>>,
+		git_config: &GitConfig,
+	) -> Vec<Commit<'a>> {
+		commits
+			.iter()
+			.filter_map(|commit| {
+				let mut commit_into_conventional = Ok(commit.clone());
+				if git_config.conventional_commits {
+					if !git_config.require_conventional &&
+						git_config.filter_unconventional &&
+						!git_config.split_commits
+					{
+						commit_into_conventional =
+							commit.clone().into_conventional();
+					} else if let Ok(conv_commit) =
+						commit.clone().into_conventional()
+					{
+						commit_into_conventional = Ok(conv_commit);
+					};
+				};
+				match commit_into_conventional {
+					Ok(commit) => Some(commit),
+					Err(e) => {
+						Self::on_step_err(commit.clone(), e);
+						None
+					}
+				}
+			})
+			.collect::<Vec<_>>()
+	}
+
+	/// Applies the link parsers to the commits and returns the parsed commits.
+	fn apply_link_parsers(
+		commits: &mut Vec<Commit<'a>>,
+		git_config: &GitConfig,
+	) -> Vec<Commit<'a>> {
+		commits
+			.iter()
+			.map(|commit| commit.clone().parse_links(&git_config.link_parsers))
+			.collect::<Vec<_>>()
+	}
+
+	/// Processes the commit list based on the processing order defined in the
+	/// configuration.
 	fn process_commit_list(
 		commits: &mut Vec<Commit<'a>>,
 		git_config: &GitConfig,
 	) -> Result<()> {
-		*commits = commits
-			.iter()
-			.filter_map(|commit| Self::process_commit(commit, git_config))
-			.flat_map(|commit| {
-				if git_config.split_commits {
-					commit
-						.message
-						.lines()
-						.filter_map(|line| {
-							let mut c = commit.clone();
-							c.message = line.to_string();
-							c.links.clear();
-							if c.message.is_empty() {
-								None
-							} else {
-								Self::process_commit(&c, git_config)
-							}
-						})
-						.collect()
-				} else {
-					vec![commit]
+		for step in &git_config.processing_order.order {
+			match step {
+				ProcessingStep::CommitParsers => {
+					debug!("Applying commit parsers...");
+					*commits = Self::apply_commit_parsers(commits, git_config);
 				}
-			})
-			.collect::<Vec<Commit>>();
+				ProcessingStep::CommitPreprocessors => {
+					debug!("Applying commit preprocessors...");
+					*commits = Self::apply_commit_preprocessors(commits, git_config);
+				}
+				ProcessingStep::IntoConventional => {
+					debug!("Converting commits to conventional format...");
+					*commits = Self::apply_into_conventional(commits, git_config);
+				}
+				ProcessingStep::LinkParsers => {
+					debug!("Applying link parsers...");
+					*commits = Self::apply_link_parsers(commits, git_config);
+				}
+				ProcessingStep::SplitCommits => {
+					debug!("Splitting commits...");
+					if git_config.split_commits {
+						*commits = Self::apply_split_commits(commits);
+					} else {
+						debug!("Split commits is disabled, skipping...");
+					}
+				}
+			}
+		}
 
 		if git_config.require_conventional {
 			Self::check_conventional_commits(commits)?;
 		}
 
 		Ok(())
+	}
+
+	/// Logs the error of a failed step from a single commit.
+	fn on_step_err(commit: Commit<'a>, error: Error) {
+		trace!(
+			"{} - {} ({})",
+			commit.id.chars().take(7).collect::<String>(),
+			error,
+			commit.message.lines().next().unwrap_or_default().trim()
+		);
 	}
 
 	/// Processes the commits and omits the ones that doesn't match the
@@ -749,6 +853,7 @@ mod test {
 				output:         None,
 			},
 			git:       GitConfig {
+				processing_order:         Default::default(),
 				conventional_commits:     true,
 				require_conventional:     false,
 				filter_unconventional:    false,
@@ -1449,7 +1554,7 @@ style: make awesome stuff look better
 		releases[2].commits.push(Commit {
 			id: String::from("123abc"),
 			message: String::from(
-				"chore(deps): bump some deps
+				"merge(deps): bump some deps
 
 chore(deps): bump some more deps
 chore(deps): fix broken deps
@@ -1483,7 +1588,6 @@ chore(deps): fix broken deps
 			- document zyx
 
 			#### deps
-			- bump some deps
 			- bump some more deps
 			- fix broken deps
 
@@ -1496,9 +1600,9 @@ chore(deps): fix broken deps
 
 			### Commit Statistics
 
-			- 8 commit(s) contributed to the release.
+			- 7 commit(s) contributed to the release.
 			- 6 day(s) passed between the first and last commit.
-			- 8 commit(s) parsed as conventional.
+			- 7 commit(s) parsed as conventional.
 			- 1 linked issue(s) detected in commits.
 			  - [#5](https://github.com/5) (referenced 1 time(s))
 			- -578 day(s) passed between releases.
@@ -1545,6 +1649,8 @@ chore(deps): fix broken deps
 			#### other
 			- support unconventional commits
 			- this commit is preprocessed
+			- use footer
+			- footer text
 			- make awesome stuff look better
 
 			#### ui
@@ -1552,9 +1658,9 @@ chore(deps): fix broken deps
 
 			### Commit Statistics
 
-			- 18 commit(s) contributed to the release.
-			- 12 day(s) passed between the first and last commit.
-			- 17 commit(s) parsed as conventional.
+			- 20 commit(s) contributed to the release.
+			- 13 day(s) passed between the first and last commit.
+			- 19 commit(s) parsed as conventional.
 			- 1 linked issue(s) detected in commits.
 			  - [#3](https://github.com/3) (referenced 1 time(s))
 			-- total releases: 2 --
