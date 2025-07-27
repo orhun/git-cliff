@@ -176,7 +176,7 @@ Thanks to [@aspann](https://github.com/aspann) for packaging!
 
 <iframe width="100%" height="315" src="https://www.youtube.com/embed/oRva7UxGQDw?si=GZUdkxKZHjrzZ6OG" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-**git-cliff** now uses [spaces instead of tabs](github.com/orhun/git-cliff/issues/1184) throughout the codebase! This change made the code more consistent with the Rust community's conventions and improved readability.
+**git-cliff** now uses [spaces instead of tabs](https://github.com/orhun/git-cliff/issues/1184) throughout the codebase! This change made the code more consistent with the Rust community's conventions and improved readability.
 
 :::info[Fun Fact]
 
