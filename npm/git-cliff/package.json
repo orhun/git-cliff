@@ -77,7 +77,7 @@
   },
   "homepage": "https://github.com/orhun/git-cliff#readme",
   "dependencies": {
-    "execa": "^9.6.0"
+    "execa": "^8.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.11.0",
