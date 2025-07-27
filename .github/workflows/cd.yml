@@ -197,7 +197,7 @@ jobs:
             git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}.tar.gz
       - name: Publish to GitHub
         if: ${{ !contains(github.ref, '-') }}
-        uses: svenstaro/upload-release-action@04733e069f2d7f7f0b4aebc4fbdbce8613b03ccd # v2
+        uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13 # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}*
@@ -208,7 +208,7 @@ jobs:
           body: "${{ needs.generate-changelog.outputs.release_body }}"
       - name: Publish to GitHub (pre-release)
         if: ${{ contains(github.ref, '-') }}
-        uses: svenstaro/upload-release-action@04733e069f2d7f7f0b4aebc4fbdbce8613b03ccd # v2
+        uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13 # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}*
@@ -372,7 +372,7 @@ jobs:
             git-cliff-${{ env.RELEASE_VERSION }}.deb
       - name: Upload the release
         if: ${{ !contains(github.ref, '-') }}
-        uses: svenstaro/upload-release-action@04733e069f2d7f7f0b4aebc4fbdbce8613b03ccd # v2
+        uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13 # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: git-cliff-${{ env.RELEASE_VERSION }}.deb
@@ -381,7 +381,7 @@ jobs:
           body: "${{ needs.generate-changelog.outputs.release_body }}"
       - name: Upload the pre-release
         if: ${{ contains(github.ref, '-') }}
-        uses: svenstaro/upload-release-action@04733e069f2d7f7f0b4aebc4fbdbce8613b03ccd # v2
+        uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13 # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: git-cliff-${{ env.RELEASE_VERSION }}.deb
@@ -423,7 +423,7 @@ jobs:
             git-cliff-${{ env.RELEASE_VERSION }}.x86_64.rpm
       - name: Upload the release
         if: ${{ !contains(github.ref, '-') }}
-        uses: svenstaro/upload-release-action@04733e069f2d7f7f0b4aebc4fbdbce8613b03ccd # v2
+        uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13 # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: git-cliff-${{ env.RELEASE_VERSION }}.x86_64.rpm
@@ -432,7 +432,7 @@ jobs:
           body: "${{ needs.generate-changelog.outputs.release_body }}"
       - name: Upload the pre-release
         if: ${{ contains(github.ref, '-') }}
-        uses: svenstaro/upload-release-action@04733e069f2d7f7f0b4aebc4fbdbce8613b03ccd # v2
+        uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13 # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: git-cliff-${{ env.RELEASE_VERSION }}.x86_64.rpm
