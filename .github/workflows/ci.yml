@@ -107,6 +107,7 @@ jobs:
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@b95584d8105b9ab200e15821fa671848cf2b7017 # nightly
         with:
+          toolchain: nightly
           components: rustfmt
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
