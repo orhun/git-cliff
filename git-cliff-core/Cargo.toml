@@ -9,7 +9,7 @@ homepage = "https://github.com/orhun/git-cliff"
 repository = "https://github.com/orhun/git-cliff"
 keywords = ["changelog", "generator", "conventional", "commit"]
 edition = "2024"
-rust-version = "1.85.0"
+rust-version = "1.85.1"
 
 [features]
 default = ["repo"]
@@ -50,21 +50,21 @@ secrecy.workspace = true
 dirs.workspace = true
 lazy_static.workspace = true
 thiserror = "2.0.12"
-serde = { version = "1.0.217", features = ["derive"] }
-serde_json = "1.0.137"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.141"
 bincode = "2.0.1"
 serde_regex = "1.1.0"
 tera = "1.20.0"
-indexmap = { version = "2.7.1", optional = true }
-toml = "0.8.19"
+indexmap = { version = "2.10.0", optional = true }
+toml = "0.9.2"
 lazy-regex = "3.4.1"
 next_version = "0.2.24"
-semver = "1.0.25"
-document-features = { version = "0.2.10", optional = true }
+semver = "1.0.26"
+document-features = { version = "0.2.11", optional = true }
 reqwest = { workspace = true, optional = true }
 http-cache-reqwest = { version = "0.15.0", optional = true }
 reqwest-middleware = { version = "0.4.0", optional = true }
-tokio = { version = "1.43.0", features = [
+tokio = { version = "1.47.0", features = [
   "rt-multi-thread",
   "macros",
 ], optional = true }
@@ -77,12 +77,12 @@ time = "0.3.37"
 chrono = { version = "0.4.41", features = ["serde"] }
 
 [dependencies.git2]
-version = "0.20.0"
+version = "0.20.2"
 default-features = false
 optional = true
 
 [dependencies.config]
-version = "0.15.6"
+version = "0.15.13"
 default-features = false
 features = ["toml", "yaml"]
 
@@ -91,13 +91,13 @@ version = "0.12.7"
 features = ["serde"]
 
 [dependencies.rust-embed]
-version = "8.5.0"
+version = "8.7.2"
 features = ["debug-embed", "compression"]
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
 expect-test = "1.5.1"
-temp-dir = "0.1.14"
+temp-dir = "0.1.16"
 
 [package.metadata.docs.rs]
 all-features = true
