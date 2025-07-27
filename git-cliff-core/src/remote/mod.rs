@@ -18,6 +18,7 @@ use std::env;
 use std::fmt::Debug;
 use std::time::Duration;
 
+use cacache::RemoveOpts;
 use dyn_clone::DynClone;
 use futures::{StreamExt, future, stream};
 use http_cache_reqwest::{
@@ -143,13 +144,14 @@ impl Remote {
 			.with(Cache(HttpCache {
 				mode:    CacheMode::Default,
 				manager: CACacheManager {
-					path: dirs::cache_dir()
+					path:        dirs::cache_dir()
 						.ok_or_else(|| {
 							Error::DirsError(String::from(
 								"failed to find the user's cache directory",
 							))
 						})?
 						.join(env!("CARGO_PKG_NAME")),
+					remove_opts: RemoveOpts::new().remove_fully(false),
 				},
 				options: HttpCacheOptions::default(),
 			}))
