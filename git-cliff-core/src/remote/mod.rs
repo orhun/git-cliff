@@ -321,8 +321,8 @@ macro_rules! update_release_metadata {
                     {
                         let sha_short = Some(v.id().clone().chars().take(12).collect());
                         let pull_request = pull_requests.iter().find(|pr| {
-                            pr.merge_commit() == Some(v.id().clone()) ||
-                                pr.merge_commit() == sha_short
+                            pr.merge_commit() == Some(v.id().clone())
+                                || pr.merge_commit() == sha_short
                         });
                         commit.$remote.username = v.username();
                         commit.$remote.pr_number = pull_request.map(|v| v.number());
@@ -362,8 +362,8 @@ macro_rules! update_release_metadata {
                                 // if current release is unreleased no need to filter
                                 // commits or filter commits that are from
                                 // newer releases
-                                self.timestamp == None ||
-                                    commit.timestamp() < release_commit_timestamp
+                                self.timestamp == None
+                                    || commit.timestamp() < release_commit_timestamp
                             })
                             .map(|v| v.username())
                             .any(|login| login == v.username);

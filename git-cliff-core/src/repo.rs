@@ -241,8 +241,8 @@ impl Repository {
                 changed_files.iter().any(|path| {
                     include_pattern
                         .iter()
-                        .any(|pattern| pattern.matches_path(path)) &&
-                        !exclude_pattern
+                        .any(|pattern| pattern.matches_path(path))
+                        && !exclude_pattern
                             .iter()
                             .any(|pattern| pattern.matches_path(path))
                 })
@@ -415,8 +415,8 @@ impl Repository {
     fn should_include_tag(&self, head_commit: &Commit, tag_commit: &Commit) -> Result<bool> {
         Ok(self
             .inner
-            .graph_descendant_of(head_commit.id(), tag_commit.id())? ||
-            head_commit.id() == tag_commit.id())
+            .graph_descendant_of(head_commit.id(), tag_commit.id())?
+            || head_commit.id() == tag_commit.id())
     }
 
     /// Parses and returns a commit-tag map.
@@ -443,10 +443,13 @@ impl Repository {
                     continue;
                 }
 
-                tags.push((commit, Tag {
-                    name,
-                    message: None,
-                }));
+                tags.push((
+                    commit,
+                    Tag {
+                        name,
+                        message: None,
+                    },
+                ));
             } else if let Some(tag) = obj.as_tag() {
                 if let Some(commit) = tag
                     .target()
@@ -456,17 +459,28 @@ impl Repository {
                     if use_branch_tags && !self.should_include_tag(&head_commit, &commit)? {
                         continue;
                     }
-                    tags.push((commit, Tag {
-                        name: tag.name().map(String::from).unwrap_or(name),
-                        message: tag
-                            .message()
-                            .map(|msg| TAG_SIGNATURE_REGEX.replace(msg, "").trim().to_owned()),
-                    }));
+                    tags.push((
+                        commit,
+                        Tag {
+                            name: tag.name().map(String::from).unwrap_or(name),
+                            message: tag
+                                .message()
+                                .map(|msg| TAG_SIGNATURE_REGEX.replace(msg, "").trim().to_owned()),
+                        },
+                    ));
                 }
             }
         }
         if !topo_order {
-            tags.sort_by(|a, b| a.0.time().seconds().cmp(&b.0.time().seconds()));
+            tags.sort_by(|a, b| {
+                let time_cmp = a.0.time().seconds().cmp(&b.0.time().seconds());
+                if time_cmp == std::cmp::Ordering::Equal {
+                    // When commit times are equal, sort by semantic version
+                    semantic_version_compare(&a.1.name, &b.1.name)
+                } else {
+                    time_cmp
+                }
+            });
         }
         Ok(tags
             .into_iter()
@@ -507,6 +521,72 @@ impl Repository {
         Err(Error::RepoError(String::from(
             "no remotes configured or HEAD is detached",
         )))
+    }
+}
+
+/// Compares two version strings semantically.
+///
+/// This function attempts to parse version strings and compare them semantically
+/// rather than alphabetically. It handles common version formats like:
+/// - v1.2.3
+/// - 1.2.3
+/// - v1.2.3-alpha.1
+///
+/// If semantic parsing fails, it falls back to alphabetical comparison.
+fn semantic_version_compare(a: &str, b: &str) -> std::cmp::Ordering {
+    use std::cmp::Ordering;
+
+    // Helper function to extract version parts and pre-release info
+    let parse_version = |version: &str| -> Option<(Vec<u64>, Option<String>)> {
+        // Remove common prefixes like 'v' or 'version-'
+        let cleaned = version
+            .strip_prefix('v')
+            .or_else(|| version.strip_prefix("version-"))
+            .unwrap_or(version);
+
+        // Split by '-' to separate main version from pre-release
+        let parts: Vec<&str> = cleaned.split('-').collect();
+        let main_version = parts.first()?;
+        let pre_release = if parts.len() > 1 {
+            Some(parts[1..].join("-"))
+        } else {
+            None
+        };
+
+        let version_parts = main_version
+            .split('.')
+            .map(|part| part.parse::<u64>().ok())
+            .collect::<Option<Vec<u64>>>()?;
+
+        Some((version_parts, pre_release))
+    };
+
+    match (parse_version(a), parse_version(b)) {
+        (Some((parts_a, pre_a)), Some((parts_b, pre_b))) => {
+            // First compare the main version parts numerically
+            for (part_a, part_b) in parts_a.iter().zip(parts_b.iter()) {
+                match part_a.cmp(part_b) {
+                    Ordering::Equal => continue,
+                    other => return other,
+                }
+            }
+
+            // If main version parts are equal, compare lengths
+            match parts_a.len().cmp(&parts_b.len()) {
+                Ordering::Equal => {
+                    // If main versions are identical, compare pre-release
+                    match (pre_a, pre_b) {
+                        (None, None) => Ordering::Equal,
+                        (Some(_), None) => Ordering::Less, // pre-release < release
+                        (None, Some(_)) => Ordering::Greater, // release > pre-release
+                        (Some(pre_a), Some(pre_b)) => pre_a.cmp(&pre_b), // alphabetical for pre-release
+                    }
+                }
+                other => other,
+            }
+        }
+        // If semantic parsing fails for either version, fall back to alphabetical
+        _ => a.cmp(b),
     }
 }
 
@@ -805,6 +885,20 @@ mod test {
         (repo, temp_dir)
     }
 
+    fn create_tag(repo: &Repository, tag_name: &str, commit_id: Option<&str>) {
+        let mut args = vec!["tag", tag_name];
+        if let Some(id) = commit_id {
+            args.push(id);
+        }
+
+        let output = Command::new("git")
+            .args(&args)
+            .current_dir(&repo.path)
+            .output()
+            .expect("failed to execute git tag");
+        assert!(output.status.success(), "git tag failed {:?}", output);
+    }
+
     #[test]
     fn open_jujutsu_repo() {
         let (repo, _temp_dir) = create_temp_repo();
@@ -899,10 +993,13 @@ mod test {
             Repository::normalize_pattern(Pattern::new(input).expect("valid pattern"))
         };
 
-        let first_commit = create_commit_with_files(&repo, vec![
-            ("initial.txt", "initial content"),
-            ("dir/initial.txt", "initial content"),
-        ]);
+        let first_commit = create_commit_with_files(
+            &repo,
+            vec![
+                ("initial.txt", "initial content"),
+                ("dir/initial.txt", "initial content"),
+            ],
+        );
 
         {
             let retain =
@@ -910,12 +1007,15 @@ mod test {
             assert!(retain, "include: dir/");
         }
 
-        let commit = create_commit_with_files(&repo, vec![
-            ("file1.txt", "content1"),
-            ("file2.txt", "content2"),
-            ("dir/file3.txt", "content3"),
-            ("dir/subdir/file4.txt", "content4"),
-        ]);
+        let commit = create_commit_with_files(
+            &repo,
+            vec![
+                ("file1.txt", "content1"),
+                ("file2.txt", "content2"),
+                ("dir/file3.txt", "content3"),
+                ("dir/subdir/file4.txt", "content4"),
+            ],
+        );
 
         {
             let retain = repo.should_retain_commit(&commit, &None, &None);
@@ -975,5 +1075,128 @@ mod test {
                 repo.should_retain_commit(&commit, &None, &Some(vec![new_pattern("**/*.txt")]));
             assert!(!retain, "exclude: **/*.txt");
         }
+    }
+
+    /// Test the semantic version comparison function
+    #[test]
+    fn test_semantic_version_compare() {
+        use std::cmp::Ordering;
+
+        // Test basic semantic version comparison
+        assert_eq!(
+            semantic_version_compare("v0.9.0", "v0.10.0"),
+            Ordering::Less
+        );
+        assert_eq!(
+            semantic_version_compare("v0.10.0", "v0.9.0"),
+            Ordering::Greater
+        );
+        assert_eq!(
+            semantic_version_compare("v1.0.0", "v1.0.0"),
+            Ordering::Equal
+        );
+
+        // Test without 'v' prefix
+        assert_eq!(semantic_version_compare("0.9.0", "0.10.0"), Ordering::Less);
+        assert_eq!(semantic_version_compare("1.2.3", "1.2.4"), Ordering::Less);
+
+        // Test with pre-release versions
+        assert_eq!(
+            semantic_version_compare("v1.0.0-alpha.1", "v1.0.0-alpha.2"),
+            Ordering::Less
+        );
+
+        // Test different version lengths
+        assert_eq!(semantic_version_compare("v1.0", "v1.0.0"), Ordering::Less);
+        assert_eq!(
+            semantic_version_compare("v1.0.0", "v1.0"),
+            Ordering::Greater
+        );
+
+        // Test the specific case from the GitHub issue
+        assert_eq!(
+            semantic_version_compare("v0.9.0", "v0.10.0"),
+            Ordering::Less
+        );
+        assert_eq!(
+            semantic_version_compare("v0.10.0", "v0.11.0"),
+            Ordering::Less
+        );
+
+        // Test fallback to alphabetical for non-semantic versions
+        assert_eq!(semantic_version_compare("abc", "def"), Ordering::Less);
+    }
+
+    /// Test that reproduces and verifies the fix for the issue where tags with
+    /// double-digit version numbers are sorted alphabetically instead of semantically.
+    ///
+    /// This test simulates the scenario described in GitHub issue #1080 where v0.10.0
+    /// was incorrectly considered "less than" v0.9.0 due to alphabetical sorting.
+    #[test]
+    fn test_semantic_version_tag_sorting_issue() -> Result<()> {
+        let (repo, _temp_dir) = create_temp_repo();
+
+        // Create three separate commits to avoid tag conflicts
+        let commit1 = create_commit_with_files(&repo, vec![("file1.txt", "content1")]);
+        let commit1_id = commit1.id().to_string();
+
+        let commit2 = create_commit_with_files(&repo, vec![("file2.txt", "content2")]);
+        let commit2_id = commit2.id().to_string();
+
+        let commit3 = create_commit_with_files(&repo, vec![("file3.txt", "content3")]);
+        let commit3_id = commit3.id().to_string();
+
+        // Create tags that would be problematic when sorted alphabetically
+        // Tag them in reverse chronological order to test the sorting
+        create_tag(&repo, "v0.9.0", Some(&commit1_id)); // Oldest commit
+        create_tag(&repo, "v0.10.0", Some(&commit2_id)); // Middle commit
+        create_tag(&repo, "v0.11.0", Some(&commit3_id)); // Newest commit
+
+        // Get tags with time-based sorting (topo_order = false)
+        let tags = repo.tags(&None, false, false)?;
+
+        // Convert to vector to check ordering
+        let tag_names: Vec<String> = tags.values().map(|tag| tag.name.clone()).collect();
+
+        // With the fix, tags should be sorted semantically when commit times are equal
+        // Expected order: v0.9.0, v0.10.0, v0.11.0
+        let _expected_order = vec!["v0.9.0", "v0.10.0", "v0.11.0"];
+
+        // Find positions of our test tags
+        let v090_pos = tag_names.iter().position(|name| name == "v0.9.0");
+        let v0100_pos = tag_names.iter().position(|name| name == "v0.10.0");
+        let v0110_pos = tag_names.iter().position(|name| name == "v0.11.0");
+
+        assert!(v090_pos.is_some(), "v0.9.0 tag should be found");
+        assert!(v0100_pos.is_some(), "v0.10.0 tag should be found");
+        assert!(v0110_pos.is_some(), "v0.11.0 tag should be found");
+
+        let v090_pos = v090_pos.unwrap();
+        let v0100_pos = v0100_pos.unwrap();
+        let v0110_pos = v0110_pos.unwrap();
+
+        // Verify semantic ordering: v0.9.0 < v0.10.0 < v0.11.0
+        assert!(
+            v090_pos < v0100_pos,
+            "v0.9.0 (pos {}) should come before v0.10.0 (pos {}) in semantic order",
+            v090_pos,
+            v0100_pos
+        );
+        assert!(
+            v0100_pos < v0110_pos,
+            "v0.10.0 (pos {}) should come before v0.11.0 (pos {}) in semantic order",
+            v0100_pos,
+            v0110_pos
+        );
+
+        // The last tag should be v0.11.0 (semantically latest)
+        let last_tag = tags.last().expect("should have at least one tag");
+        assert_eq!(
+            last_tag.1.name, "v0.11.0",
+            "Last tag should be v0.11.0 (semantically latest), but got {}",
+            last_tag.1.name
+        );
+
+        Ok(())
     }
 }
