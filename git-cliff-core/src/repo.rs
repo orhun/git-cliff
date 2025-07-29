@@ -1149,7 +1149,7 @@ mod test {
 
         // With the fix, tags should be sorted semantically when commit times are equal
         // Expected order: v0.9.0, v0.10.0, v0.11.0
-        let _expected_order = vec!["v0.9.0", "v0.10.0", "v0.11.0"];
+        let _expected_order = ["v0.9.0", "v0.10.0", "v0.11.0"];
 
         // Find positions of our test tags
         let v090_pos = tag_names.iter().position(|name| name == "v0.9.0");
