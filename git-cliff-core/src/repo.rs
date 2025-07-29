@@ -1160,9 +1160,9 @@ mod test {
         assert!(v0100_pos.is_some(), "v0.10.0 tag should be found");
         assert!(v0110_pos.is_some(), "v0.11.0 tag should be found");
 
-        let v090_pos = v090_pos.unwrap();
-        let v0100_pos = v0100_pos.unwrap();
-        let v0110_pos = v0110_pos.unwrap();
+        let v090_pos = v090_pos.expect("Value v0.9.0 is expected");
+        let v0100_pos = v0100_pos.expect("Value 0.10.0 is expected");
+        let v0110_pos = v0110_pos.expect("Value 0.11.0 is expected");
 
         // Verify semantic ordering: v0.9.0 < v0.10.0 < v0.11.0
         assert!(
