@@ -212,8 +212,8 @@ impl<'a> Changelog<'a> {
                 release
                     .previous
                     .as_ref()
-                    .and_then(|release| release.version.as_ref())
-                    == Some(skipped_tag)
+                    .and_then(|release| release.version.as_ref()) ==
+                    Some(skipped_tag)
             }) {
                 if let Some(previous_release) = self.releases.get_mut(release_index + 1) {
                     previous_release.previous = None;
@@ -242,12 +242,10 @@ impl<'a> Changelog<'a> {
     #[cfg(feature = "github")]
     fn get_github_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::github;
-        if self.config.remote.github.is_custom
-            || self
-                .body_template
-                .contains_variable(github::TEMPLATE_VARIABLES)
-            || self
-                .footer_template
+        if self.config.remote.github.is_custom ||
+            self.body_template
+                .contains_variable(github::TEMPLATE_VARIABLES) ||
+            self.footer_template
                 .as_ref()
                 .map(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
                 .unwrap_or(false)
@@ -298,12 +296,10 @@ impl<'a> Changelog<'a> {
     #[cfg(feature = "gitlab")]
     fn get_gitlab_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::gitlab;
-        if self.config.remote.gitlab.is_custom
-            || self
-                .body_template
-                .contains_variable(gitlab::TEMPLATE_VARIABLES)
-            || self
-                .footer_template
+        if self.config.remote.gitlab.is_custom ||
+            self.body_template
+                .contains_variable(gitlab::TEMPLATE_VARIABLES) ||
+            self.footer_template
                 .as_ref()
                 .map(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
                 .unwrap_or(false)
@@ -361,12 +357,10 @@ impl<'a> Changelog<'a> {
     #[cfg(feature = "gitea")]
     fn get_gitea_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::gitea;
-        if self.config.remote.gitea.is_custom
-            || self
-                .body_template
-                .contains_variable(gitea::TEMPLATE_VARIABLES)
-            || self
-                .footer_template
+        if self.config.remote.gitea.is_custom ||
+            self.body_template
+                .contains_variable(gitea::TEMPLATE_VARIABLES) ||
+            self.footer_template
                 .as_ref()
                 .map(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
                 .unwrap_or(false)
@@ -420,12 +414,10 @@ impl<'a> Changelog<'a> {
         ref_name: Option<&str>,
     ) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::bitbucket;
-        if self.config.remote.bitbucket.is_custom
-            || self
-                .body_template
-                .contains_variable(bitbucket::TEMPLATE_VARIABLES)
-            || self
-                .footer_template
+        if self.config.remote.bitbucket.is_custom ||
+            self.body_template
+                .contains_variable(bitbucket::TEMPLATE_VARIABLES) ||
+            self.footer_template
                 .as_ref()
                 .map(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
                 .unwrap_or(false)
@@ -1049,29 +1041,24 @@ mod test {
             timestamp: Some(50000000),
             previous: None,
             repository: Some(String::from("/root/repo")),
-            submodule_commits: HashMap::from([(
-                String::from("submodule_one"),
-                vec![
-                    Commit::new(
-                        String::from("sub0jkl12"),
-                        String::from("chore(app): submodule_one do nothing"),
-                    ),
-                    Commit::new(
-                        String::from("subqwerty"),
-                        String::from("chore: submodule_one <preprocess>"),
-                    ),
-                    Commit::new(
-                        String::from("subqwertz"),
-                        String::from("feat!: submodule_one support breaking commits"),
-                    ),
-                    Commit::new(
-                        String::from("subqwert0"),
-                        String::from(
-                            "match(group): submodule_one support regex-replace for groups",
-                        ),
-                    ),
-                ],
-            )]),
+            submodule_commits: HashMap::from([(String::from("submodule_one"), vec![
+                Commit::new(
+                    String::from("sub0jkl12"),
+                    String::from("chore(app): submodule_one do nothing"),
+                ),
+                Commit::new(
+                    String::from("subqwerty"),
+                    String::from("chore: submodule_one <preprocess>"),
+                ),
+                Commit::new(
+                    String::from("subqwertz"),
+                    String::from("feat!: submodule_one support breaking commits"),
+                ),
+                Commit::new(
+                    String::from("subqwert0"),
+                    String::from("match(group): submodule_one support regex-replace for groups"),
+                ),
+            ])]),
             statistics: None,
             #[cfg(feature = "github")]
             github: crate::remote::RemoteReleaseMetadata {
@@ -1180,20 +1167,14 @@ mod test {
                 previous: Some(Box::new(test_release)),
                 repository: Some(String::from("/root/repo")),
                 submodule_commits: HashMap::from([
-                    (
-                        String::from("submodule_one"),
-                        vec![
-                            Commit::new(String::from("def349"), String::from("sub_one merge #4")),
-                            Commit::new(String::from("da8912"), String::from("sub_one merge #5")),
-                        ],
-                    ),
-                    (
-                        String::from("submodule_two"),
-                        vec![Commit::new(
-                            String::from("ab76ef"),
-                            String::from("sub_two bump"),
-                        )],
-                    ),
+                    (String::from("submodule_one"), vec![
+                        Commit::new(String::from("def349"), String::from("sub_one merge #4")),
+                        Commit::new(String::from("da8912"), String::from("sub_one merge #5")),
+                    ]),
+                    (String::from("submodule_two"), vec![Commit::new(
+                        String::from("ab76ef"),
+                        String::from("sub_two bump"),
+                    )]),
                 ]),
                 statistics: None,
                 #[cfg(feature = "github")]
