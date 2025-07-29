@@ -574,7 +574,7 @@ fn semantic_version_compare(a: &str, b: &str) -> std::cmp::Ordering {
                         (Some(_), None) => Ordering::Less, // pre-release < release
                         (None, Some(_)) => Ordering::Greater, // release > pre-release
                         (Some(pre_a), Some(pre_b)) => pre_a.cmp(&pre_b), /* alphabetical for
-                                                                          * pre-release */
+                                                             * pre-release */
                     }
                 }
                 other => other,
