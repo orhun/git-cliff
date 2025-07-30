@@ -1095,6 +1095,16 @@ mod test {
             Ordering::Less
         );
 
+        // Test pre-release vs release (lines 574-575)
+        assert_eq!(
+            semantic_version_compare("v1.0.0-alpha.1", "v1.0.0"),
+            Ordering::Less
+        );
+        assert_eq!(
+            semantic_version_compare("v1.0.0", "v1.0.0-beta.1"),
+            Ordering::Greater
+        );
+
         // Test different version lengths
         assert_eq!(semantic_version_compare("v1.0", "v1.0.0"), Ordering::Less);
         assert_eq!(
