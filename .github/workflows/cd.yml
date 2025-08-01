@@ -81,7 +81,7 @@ jobs:
             }
           - {
               NAME: win32-x64-mingw,
-              OS: windows-2022,
+              OS: windows-2025,
               TOOLCHAIN: stable,
               TARGET: x86_64-pc-windows-gnu,
               NPM_PUBLISH: false,
@@ -89,7 +89,7 @@ jobs:
             }
           - {
               NAME: win32-x64-msvc,
-              OS: windows-2022,
+              OS: windows-2025,
               TOOLCHAIN: stable,
               TARGET: x86_64-pc-windows-msvc,
               NPM_PUBLISH: true,
@@ -97,7 +97,7 @@ jobs:
             }
           - {
               NAME: win32-x86-msvc,
-              OS: windows-2022,
+              OS: windows-2025,
               TOOLCHAIN: stable,
               TARGET: i686-pc-windows-msvc,
               NPM_PUBLISH: false,
@@ -105,7 +105,7 @@ jobs:
             }
           - {
               NAME: win32-arm64-msvc,
-              OS: windows-2022,
+              OS: windows-2025,
               TOOLCHAIN: stable,
               TARGET: aarch64-pc-windows-msvc,
               NPM_PUBLISH: true,
@@ -148,14 +148,14 @@ jobs:
           target: ${{ matrix.build.TARGET }}
           override: true
       - name: Build (linux/macos)
-        if: matrix.build.OS != 'windows-2022'
+        if: matrix.build.OS != 'windows-2025'
         uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # v1.0.3
         with:
           use-cross: true
           command: build
           args: --release --locked --target ${{ matrix.build.TARGET }}
       - name: Build (windows)
-        if: matrix.build.OS == 'windows-2022'
+        if: matrix.build.OS == 'windows-2025'
         uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # v1.0.3
         with:
           command: build
@@ -168,7 +168,7 @@ jobs:
           OUT_DIR=release/completions/ cargo run --release --bin git-cliff-completions
           OUT_DIR=release/man/ cargo run --release --bin git-cliff-mangen
           for bin in 'git-cliff' 'git-cliff-completions' 'git-cliff-mangen'; do
-            if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
+            if [ "${{ matrix.build.OS }}" = "windows-2025" ]; then
               bin="${bin}.exe"
             fi
             cp "target/${{ matrix.build.TARGET }}/release/${bin}" release/
@@ -177,7 +177,7 @@ jobs:
       - name: Create release artifacts
         shell: bash
         run: |
-          if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
+          if [ "${{ matrix.build.OS }}" = "windows-2025" ]; then
             7z a -tzip "git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}.zip" \
               git-cliff-${{ env.RELEASE_VERSION }}/
           else
@@ -234,14 +234,14 @@ jobs:
           node_arch=$(echo "${{ matrix.build.NAME }}" | cut -d '-' -f2)
           export node_arch
           export version="${{ env.RELEASE_VERSION }}"
-          if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
+          if [ "${{ matrix.build.OS }}" = "windows-2025" ]; then
             export node_pkg="${bin}-windows-${node_arch}"
           else
             export node_pkg="${bin}-${node_os}-${node_arch}"
           fi
           mkdir -p "${node_pkg}/bin"
           envsubst < package.json.tmpl > "${node_pkg}/package.json"
-          if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
+          if [ "${{ matrix.build.OS }}" = "windows-2025" ]; then
             bin="${bin}.exe"
           fi
           cp "../target/${{ matrix.build.TARGET }}/release/${bin}" "${node_pkg}/bin"
