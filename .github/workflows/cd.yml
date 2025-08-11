@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Generate a changelog
-        uses: orhun/git-cliff-action@104a6cf3c9aa0fdfe4eab129f9c1900e1eb8f7fd # main
+        uses: orhun/git-cliff-action@98c93442bb05a455a77bee982867857ae748eeea # main
         id: git-cliff
         with:
           config: cliff.toml
