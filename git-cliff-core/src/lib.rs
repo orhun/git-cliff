@@ -8,8 +8,8 @@
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![warn(missing_docs, clippy::unwrap_used)]
 #![doc(
-	html_logo_url = "https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff.png",
-	html_favicon_url = "https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/favicon/favicon.ico"
+    html_logo_url = "https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff.png",
+    html_favicon_url = "https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/favicon/favicon.ico"
 )]
 
 /// Changelog generator.
@@ -35,6 +35,8 @@ pub mod remote;
 /// Git repository.
 #[cfg(feature = "repo")]
 pub mod repo;
+/// Release statistics.
+pub mod statistics;
 /// Git tag.
 pub mod tag;
 /// Template engine.

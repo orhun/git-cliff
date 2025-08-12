@@ -1,6 +1,6 @@
 ---
 slug: 2.8.0
-title: "What's new in 2.8.0? \U0001F195"
+title: "What's new in 2.8.0?"
 date: 2025-01-24T00:00:00.000Z
 authors: orhun
 tags:

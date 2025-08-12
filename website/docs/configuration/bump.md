@@ -38,7 +38,7 @@ When set, the version will be set to this value if no tags are found.
 
 Configures additional commit types that should increment the major or minor accordingly.
 
-They should be used rarely, only in the case you have a spacial case for incrementing versions.
+They should be used rarely, only in the case you have a special case for incrementing versions.
 
 Expects a valid regex pattern.
 

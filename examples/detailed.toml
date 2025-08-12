@@ -26,9 +26,11 @@ body = """
     ### {{ group | upper_first }}
     {% for commit in commits %}
         - {{ commit.message | split(pat="\n") | first | upper_first | trim }} ([{{ commit.id | truncate(length=7, end="") }}]({{ commit.id }}))\
-          {% for footer in commit.footers -%}
-            , {{ footer.token }}{{ footer.separator }}{{ footer.value }}\
-          {% endfor %}\
+          {% if commit.footers %}\
+            {% for footer in commit.footers -%}
+                , {{ footer.token }}{{ footer.separator }}{{ footer.value }}\
+            {% endfor %}\
+          {% endif %}\
     {% endfor %}
 {% endfor %}\n
 """

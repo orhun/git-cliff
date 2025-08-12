@@ -108,7 +108,7 @@ If you are using GitLab CI, you can use [`CI_PROJECT_URL`](https://docs.gitlab.c
 
 ### Commit authors
 
-For each commit, GitLab related values are added as a nested object (named `gitlab`) to the [template context](/docs/templating/context):
+For each commit, GitLab related values are added as a nested object (named `remote`) to the [template context](/docs/templating/context):
 
 ```json
 {

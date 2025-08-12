@@ -32,6 +32,8 @@ link_parsers = [
 ]
 limit_commits = 42
 recurse_submodules = false
+include_paths = ["src/", "doc/**/*.md"]
+exclude_paths = ["unrelated/"]
 ```
 
 ### conventional_commits
@@ -199,7 +201,7 @@ Examples:
     - `author.email`
     - `committer.email`
     - `committer.name`
-  - `body` is a special field which contains the body of a convetional commit, if applicable.
+  - `body` is a special field which contains the body of a conventional commit, if applicable.
   - Be aware that all fields are converted to JSON strings before they are parsed by the given regex, especially when dealing with arrays.
 
 ### protect_breaking_commits
@@ -275,6 +277,8 @@ Possible values:
 
 This can also be achieved by specifying the `--sort` command line argument.
 
+The default value is `oldest`.
+
 ### link_parsers
 
 An array of link parsers for extracting external references, and turning them into URLs, using regex.
@@ -286,7 +290,7 @@ Examples:
 - `{ pattern = "RFC(\\d+)", text = "ietf-rfc$1", href = "https://datatracker.ietf.org/doc/html/rfc$1"}`,
   - Extract mentions of IETF RFCs and generate URLs linking to them. It also rewrites the text as "ietf-rfc...".
 
-These extracted links can be used in the [template](/docs/templating/context) with `commits.links` variable.
+These extracted links can be used in the [template](/docs/templating/context) with `commit.links` variable.
 
 ### limit_commits
 
@@ -299,3 +303,18 @@ These extracted links can be used in the [template](/docs/templating/context) wi
 `recurse_submodules` is an _optional_ boolean value that indicates whether **git-cliff** should read and process commits of submodules.
 
 This only considers submodules at the toplevel (depth 1). These commits can then be accessed by the variable `submodule_commits` during [templating](/docs/templating/context).
+
+### include_paths
+
+`include_paths` is an _optional_ array of glob patterns. Only commits that modify files matching these patterns will be included in the generated changelog.
+
+When this value is set, the current working directory will **not** be included.
+
+### exclude_paths
+
+`exclude_paths` is an _optional_ array of glob patterns. Commits that **only** modify files matching these patterns will be excluded from the changelog.
+
+This setting takes priority over `include_paths`.
+
+- If a commit touches both included and excluded paths, it **will be included**.
+- If a commit **only** modifies files that match both `include_paths` and `exclude_paths`, it **will be excluded**.

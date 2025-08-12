@@ -117,18 +117,30 @@ jobs:
           - fixtures-name: test-require-conventional-negative
           - fixtures-name: test-require-conventional-skipped
           - fixtures-name: test-submodules
+          - fixtures-name: test-submodules-range
+            command: v0.1.0..HEAD
           - fixtures-name: test-submodules-include-path
             command: --include-path submodule_two
+          - fixtures-name: test-submodules-include-path-config
           - fixtures-name: test-remote-config
             command: --config-url "https://github.com/orhun/git-cliff/blob/main/.github/fixtures/new-fixture-template/cliff.toml?raw=true"
           - fixtures-name: test-topo-order-commits
+          - fixtures-name: test-commit-range
+          - fixtures-name: test-commit-range-with-sort-commits
+          - fixtures-name: test-commit-range-with-given-range
+            command: a140cef^..a9d4050 --ignore-tags "."
+          - fixtures-name: test-override-scope
+          - fixtures-name: test-regex-json-array
+          - fixtures-name: test-release-statistics
+            previous-release-timestamp: "2022-04-06 01:25:12"
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Run a fixtures test
         uses: ./.github/actions/run-fixtures-test
         with:
           fixtures-dir: .github/fixtures/${{ matrix.fixtures-name }}
           command: ${{ matrix.command }}
+          previous-release-timestamp: ${{ matrix.previous-release-timestamp }}

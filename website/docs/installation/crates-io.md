@@ -16,7 +16,7 @@ If you want to install the latest git version:
 cargo install --git https://github.com/orhun/git-cliff
 ```
 
-The minimum supported Rust version is `1.83.0`.
+The minimum supported Rust version is `1.85.1`.
 
 Also, **git-cliff** has the following feature flags which can be enabled via `--features` argument:
 
