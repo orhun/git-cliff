@@ -129,7 +129,7 @@ fn process_submodules(
         .clone()
         .and_then(|commit_id| repository.find_commit(&commit_id));
 
-    trace!("Processing submodule commits in {first_commit:?}..{last_commit:?}");
+    debug!("Processing submodule commits in {first_commit:?}..{last_commit:?}");
 
     // Query repository for submodule changes. For each submodule a
     // SubmoduleRange is created, describing the range of commits in the context
@@ -190,7 +190,7 @@ fn process_repository<'a>(
         let count = count_tags.is_none_or(|r| {
             let count_tag = r.is_match(name);
             if count_tag {
-                trace!("Counting release: {}", name);
+                debug!("Counting release: {}", name);
             }
             count_tag
         });
@@ -202,7 +202,7 @@ fn process_repository<'a>(
 
             let ignore_tag = r.is_match(name);
             if ignore_tag {
-                trace!("Ignoring release: {}", name);
+                debug!("Ignoring release: {}", name);
             }
             ignore_tag
         });
@@ -245,8 +245,8 @@ fn process_repository<'a>(
     }
 
     // Print debug information about configuration and arguments.
-    log::trace!("Arguments: {:#?}", args);
-    log::trace!("Config: {:#?}", config);
+    log::debug!("Arguments: {:#?}", args);
+    log::debug!("Config: {:#?}", config);
 
     // Parse commits.
     let commit_range = determine_commit_range(args, config, repository)?;
