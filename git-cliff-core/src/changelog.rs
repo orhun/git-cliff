@@ -88,12 +88,16 @@ impl<'a> Changelog<'a> {
         match commit.process(git_config) {
             Ok(commit) => Some(commit),
             Err(e) => {
-                log::trace!(
-                    "{} - {} ({})",
-                    commit.id.chars().take(7).collect::<String>(),
-                    e,
-                    commit.message.lines().next().unwrap_or_default().trim()
-                );
+                let short_id = commit.id.chars().take(7).collect::<String>();
+                let summary = commit.message.lines().next().unwrap_or_default().trim();
+                match &e {
+                    Error::ParseError(_) | Error::FieldError(_) => {
+                        log::warn!("{short_id} - {e} ({summary})");
+                    }
+                    _ => {
+                        log::trace!("{short_id} - {e} ({summary})");
+                    }
+                }
                 None
             }
         }
