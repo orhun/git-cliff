@@ -42,9 +42,6 @@ pub mod tag;
 /// Template engine.
 pub mod template;
 
-#[macro_use]
-extern crate log;
-
 /// Default configuration file.
 pub const DEFAULT_CONFIG: &str = "cliff.toml";
 /// Default output file.
