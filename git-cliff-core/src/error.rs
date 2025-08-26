@@ -33,7 +33,7 @@ pub enum Error {
     LoggerError(String),
     /// When commit's not follow the conventional commit structure we throw this
     /// error.
-    #[error("Cannot parse the commit: `{0}`")]
+    #[error("Commit did not match conventional format: `{0}`")]
     ParseError(#[from] git_conventional::Error),
     /// Error that may occur while grouping commits.
     #[error("Grouping error: `{0}`")]
