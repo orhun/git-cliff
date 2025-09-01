@@ -2,8 +2,10 @@ use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use log::{debug, trace};
+
 use crate::commit::Commit;
-use crate::config::{Config, GitConfig};
+use crate::config::{Config, GitConfig, ProcessingStep};
 use crate::error::{Error, Result};
 use crate::release::{Release, Releases};
 #[cfg(feature = "azure_devops")]
@@ -90,27 +92,6 @@ impl<'a> Changelog<'a> {
         Ok(())
     }
 
-    /// Processes a single commit and returns/logs the result.
-    fn process_commit(
-        commit: &Commit<'a>,
-        git_config: &GitConfig,
-        summary: &mut Summary,
-    ) -> Option<Commit<'a>> {
-        match commit.process(git_config) {
-            Ok(commit) => {
-                summary.record_ok();
-                Some(commit)
-            }
-            Err(e) => {
-                summary.record_err(&e);
-                let short_id = commit.id.chars().take(7).collect::<String>();
-                let summary = commit.message.lines().next().unwrap_or_default().trim();
-                log::trace!("{short_id} - {e} ({summary})");
-                None
-            }
-        }
-    }
-
     /// Checks the commits and returns an error if any unconventional commits
     /// are found.
     fn check_conventional_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
@@ -137,6 +118,125 @@ impl<'a> Changelog<'a> {
         }
 
         Ok(())
+    }
+
+    /// Splits the commits by their message lines.
+    /// Returns a new vector of commits with each line as a separate commit.
+    fn apply_split_commits(commits: &mut Vec<Commit<'a>>) -> Vec<Commit<'a>> {
+        let mut split_commits = Vec::new();
+        for commit in commits {
+            commit.message.lines().for_each(|line| {
+                let mut c = commit.clone();
+                c.message = line.to_string();
+                c.links.clear();
+                if !c.message.is_empty() {
+                    split_commits.push(c)
+                };
+            })
+        }
+        split_commits
+    }
+
+    /// Applies the commit parsers to the commits and returns the parsed
+    /// commits.
+    fn apply_commit_parsers(
+        commits: &mut Vec<Commit<'a>>,
+        git_config: &GitConfig,
+        summary: &mut Summary,
+    ) -> Vec<Commit<'a>> {
+        commits
+            .iter()
+            .filter_map(|commit| {
+                match commit.clone().parse(
+                    &git_config.commit_parsers,
+                    git_config.protect_breaking_commits,
+                    git_config.filter_commits,
+                ) {
+                    Ok(commit) => {
+                        summary.record_ok();
+                        Some(commit)
+                    }
+                    Err(e) => {
+                        summary.record_err(&e);
+                        Self::on_step_err(commit.clone(), e);
+                        None
+                    }
+                }
+            })
+            .collect::<Vec<_>>()
+    }
+
+    /// Applies the commit preprocessors to the commits and returns the
+    /// preprocessed commits.
+    fn apply_commit_preprocessors(
+        commits: &mut Vec<Commit<'a>>,
+        git_config: &GitConfig,
+        summary: &mut Summary,
+    ) -> Vec<Commit<'a>> {
+        commits
+            .iter()
+            .filter_map(|commit| {
+                // Apply commit parsers
+                match commit.clone().preprocess(&git_config.commit_preprocessors) {
+                    Ok(commit) => {
+                        summary.record_ok();
+                        Some(commit)
+                    }
+                    Err(e) => {
+                        summary.record_err(&e);
+                        Self::on_step_err(commit.clone(), e);
+                        None
+                    }
+                }
+            })
+            .collect::<Vec<_>>()
+    }
+
+    /// Converts the commits into conventional format if the configuration
+    /// requires it.
+    fn apply_into_conventional(
+        commits: &mut Vec<Commit<'a>>,
+        git_config: &GitConfig,
+        summary: &mut Summary,
+    ) -> Vec<Commit<'a>> {
+        commits
+            .iter()
+            .filter_map(|commit| {
+                let mut commit_into_conventional = Ok(commit.clone());
+                if git_config.conventional_commits {
+                    if !git_config.require_conventional
+                        && git_config.filter_unconventional
+                        && !git_config.split_commits
+                    {
+                        commit_into_conventional = commit.clone().into_conventional();
+                    } else if let Ok(conv_commit) = commit.clone().into_conventional() {
+                        commit_into_conventional = Ok(conv_commit);
+                    };
+                };
+                match commit_into_conventional {
+                    Ok(commit) => {
+                        summary.record_ok();
+                        Some(commit)
+                    }
+                    Err(e) => {
+                        summary.record_err(&e);
+                        Self::on_step_err(commit.clone(), e);
+                        None
+                    }
+                }
+            })
+            .collect::<Vec<_>>()
+    }
+
+    /// Applies the link parsers to the commits and returns the parsed commits.
+    fn apply_link_parsers(
+        commits: &mut Vec<Commit<'a>>,
+        git_config: &GitConfig,
+    ) -> Vec<Commit<'a>> {
+        commits
+            .iter()
+            .map(|commit| commit.clone().parse_links(&git_config.link_parsers))
+            .collect::<Vec<_>>()
     }
 
     /// Checks the commits and returns an error if any commits are not matched
@@ -168,32 +268,41 @@ impl<'a> Changelog<'a> {
         Ok(())
     }
 
+    /// Processes the commit list based on the processing order defined in the
+    /// configuration.
     fn process_commit_list(
         commits: &mut Vec<Commit<'a>>,
         git_config: &GitConfig,
         summary: &mut Summary,
     ) -> Result<()> {
-        let mut processed = Vec::new();
-        for commit in commits.iter() {
-            if let Some(commit) = Self::process_commit(commit, git_config, summary) {
-                if git_config.split_commits {
-                    for line in commit.message.lines() {
-                        let mut c = commit.clone();
-                        c.message = line.to_string();
-                        c.links.clear();
-                        if c.message.is_empty() {
-                            continue;
-                        }
-                        if let Some(c) = Self::process_commit(&c, git_config, summary) {
-                            processed.push(c);
-                        }
+        for step in &git_config.processing_order.order {
+            match step {
+                ProcessingStep::CommitParsers => {
+                    debug!("Applying commit parsers...");
+                    *commits = Self::apply_commit_parsers(commits, git_config, summary);
+                }
+                ProcessingStep::CommitPreprocessors => {
+                    debug!("Applying commit preprocessors...");
+                    *commits = Self::apply_commit_preprocessors(commits, git_config, summary);
+                }
+                ProcessingStep::IntoConventional => {
+                    debug!("Converting commits to conventional format...");
+                    *commits = Self::apply_into_conventional(commits, git_config, summary);
+                }
+                ProcessingStep::LinkParsers => {
+                    debug!("Applying link parsers...");
+                    *commits = Self::apply_link_parsers(commits, git_config);
+                }
+                ProcessingStep::SplitCommits => {
+                    debug!("Splitting commits...");
+                    if git_config.split_commits {
+                        *commits = Self::apply_split_commits(commits);
+                    } else {
+                        debug!("Split commits is disabled, skipping...");
                     }
-                } else {
-                    processed.push(commit);
                 }
             }
         }
-        *commits = processed;
 
         if git_config.require_conventional {
             Self::check_conventional_commits(commits)?;
@@ -204,6 +313,16 @@ impl<'a> Changelog<'a> {
         }
 
         Ok(())
+    }
+
+    /// Logs the error of a failed step from a single commit.
+    fn on_step_err(commit: Commit<'a>, error: Error) {
+        trace!(
+            "{} - {} ({})",
+            commit.id.chars().take(7).collect::<String>(),
+            error,
+            commit.message.lines().next().unwrap_or_default().trim()
+        );
     }
 
     /// Processes the commits and omits the ones that doesn't match the
@@ -278,8 +397,8 @@ impl<'a> Changelog<'a> {
                 release
                     .previous
                     .as_ref()
-                    .and_then(|release| release.version.as_ref()) ==
-                    Some(skipped_tag)
+                    .and_then(|release| release.version.as_ref())
+                    == Some(skipped_tag)
             }) {
                 if let Some(previous_release) = self.releases.get_mut(release_index + 1) {
                     previous_release.previous = None;
@@ -308,10 +427,12 @@ impl<'a> Changelog<'a> {
     #[cfg(feature = "github")]
     fn get_github_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::github;
-        if self.config.remote.github.is_custom ||
-            self.body_template
-                .contains_variable(github::TEMPLATE_VARIABLES) ||
-            self.footer_template
+        if self.config.remote.github.is_custom
+            || self
+                .body_template
+                .contains_variable(github::TEMPLATE_VARIABLES)
+            || self
+                .footer_template
                 .as_ref()
                 .is_some_and(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
         {
@@ -358,10 +479,12 @@ impl<'a> Changelog<'a> {
     #[cfg(feature = "gitlab")]
     fn get_gitlab_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::gitlab;
-        if self.config.remote.gitlab.is_custom ||
-            self.body_template
-                .contains_variable(gitlab::TEMPLATE_VARIABLES) ||
-            self.footer_template
+        if self.config.remote.gitlab.is_custom
+            || self
+                .body_template
+                .contains_variable(gitlab::TEMPLATE_VARIABLES)
+            || self
+                .footer_template
                 .as_ref()
                 .is_some_and(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
         {
@@ -415,10 +538,12 @@ impl<'a> Changelog<'a> {
     #[cfg(feature = "gitea")]
     fn get_gitea_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::gitea;
-        if self.config.remote.gitea.is_custom ||
-            self.body_template
-                .contains_variable(gitea::TEMPLATE_VARIABLES) ||
-            self.footer_template
+        if self.config.remote.gitea.is_custom
+            || self
+                .body_template
+                .contains_variable(gitea::TEMPLATE_VARIABLES)
+            || self
+                .footer_template
                 .as_ref()
                 .is_some_and(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
         {
@@ -468,10 +593,12 @@ impl<'a> Changelog<'a> {
         ref_name: Option<&str>,
     ) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::bitbucket;
-        if self.config.remote.bitbucket.is_custom ||
-            self.body_template
-                .contains_variable(bitbucket::TEMPLATE_VARIABLES) ||
-            self.footer_template
+        if self.config.remote.bitbucket.is_custom
+            || self
+                .body_template
+                .contains_variable(bitbucket::TEMPLATE_VARIABLES)
+            || self
+                .footer_template
                 .as_ref()
                 .is_some_and(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
         {
@@ -519,10 +646,12 @@ impl<'a> Changelog<'a> {
         ref_name: Option<&str>,
     ) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::azure_devops;
-        if self.config.remote.azure_devops.is_custom ||
-            self.body_template
-                .contains_variable(azure_devops::TEMPLATE_VARIABLES) ||
-            self.footer_template
+        if self.config.remote.azure_devops.is_custom
+            || self
+                .body_template
+                .contains_variable(azure_devops::TEMPLATE_VARIABLES)
+            || self
+                .footer_template
                 .as_ref()
                 .is_some_and(|v| v.contains_variable(azure_devops::TEMPLATE_VARIABLES))
         {
@@ -814,6 +943,7 @@ mod test {
                 output: None,
             },
             git: GitConfig {
+                processing_order: Default::default(),
                 conventional_commits: true,
                 require_conventional: false,
                 filter_unconventional: false,
@@ -1169,24 +1299,30 @@ mod test {
             timestamp: Some(50_000_000),
             previous: None,
             repository: Some(String::from("/root/repo")),
-            submodule_commits: HashMap::from([(String::from("submodule_one"), vec![
-                Commit::new(
-                    String::from("sub0jkl12"),
-                    String::from("chore(app): submodule_one do nothing"),
-                ),
-                Commit::new(
-                    String::from("subqwerty"),
-                    String::from("chore: submodule_one <preprocess>"),
-                ),
-                Commit::new(
-                    String::from("subqwertz"),
-                    String::from("feat!: submodule_one support breaking commits"),
-                ),
-                Commit::new(
-                    String::from("subqwert0"),
-                    String::from("match(group): submodule_one support regex-replace for groups"),
-                ),
-            ])]),
+            submodule_commits: HashMap::from([(
+                String::from("submodule_one"),
+                vec![
+                    Commit::new(
+                        String::from("sub0jkl12"),
+                        String::from("chore(app): submodule_one do nothing"),
+                    ),
+                    Commit::new(
+                        String::from("subqwerty"),
+                        String::from("chore: submodule_one <preprocess>"),
+                    ),
+                    Commit::new(
+                        String::from("subqwertz"),
+                        String::from("feat!: submodule_one support breaking commits"),
+                    ),
+                    Commit::new(
+                        String::from("subqwert0"),
+                        String::from(
+                            "match(group): submodule_one support regex-replace for \
+							 groups",
+                        ),
+                    ),
+                ],
+            )]),
             statistics: None,
             #[cfg(feature = "github")]
             github: crate::remote::RemoteReleaseMetadata {
@@ -1299,14 +1435,20 @@ mod test {
                 previous: Some(Box::new(test_release)),
                 repository: Some(String::from("/root/repo")),
                 submodule_commits: HashMap::from([
-                    (String::from("submodule_one"), vec![
-                        Commit::new(String::from("def349"), String::from("sub_one merge #4")),
-                        Commit::new(String::from("da8912"), String::from("sub_one merge #5")),
-                    ]),
-                    (String::from("submodule_two"), vec![Commit::new(
-                        String::from("ab76ef"),
-                        String::from("sub_two bump"),
-                    )]),
+                    (
+                        String::from("submodule_one"),
+                        vec![
+                            Commit::new(String::from("def349"), String::from("sub_one merge #4")),
+                            Commit::new(String::from("da8912"), String::from("sub_one merge #5")),
+                        ],
+                    ),
+                    (
+                        String::from("submodule_two"),
+                        vec![Commit::new(
+                            String::from("ab76ef"),
+                            String::from("sub_two bump"),
+                        )],
+                    ),
                 ]),
                 statistics: None,
                 #[cfg(feature = "github")]
@@ -1512,7 +1654,7 @@ style: make awesome stuff look better
         releases[2].commits.push(Commit {
             id: String::from("123abc"),
             message: String::from(
-                "chore(deps): bump some deps
+                "merge(deps): bump some deps
 
 chore(deps): bump some more deps
 chore(deps): fix broken deps
@@ -1546,7 +1688,6 @@ chore(deps): fix broken deps
 			- document zyx
 
 			#### deps
-			- bump some deps
 			- bump some more deps
 			- fix broken deps
 
@@ -1559,9 +1700,9 @@ chore(deps): fix broken deps
 
 			### Commit Statistics
 
-			- 8 commit(s) contributed to the release.
+			- 7 commit(s) contributed to the release.
 			- 6 day(s) passed between the first and last commit.
-			- 8 commit(s) parsed as conventional.
+			- 7 commit(s) parsed as conventional.
 			- 1 linked issue(s) detected in commits.
 			  - [#5](https://github.com/5) (referenced 1 time(s))
 			- -578 day(s) passed between releases.
@@ -1608,6 +1749,8 @@ chore(deps): fix broken deps
 			#### other
 			- support unconventional commits
 			- this commit is preprocessed
+			- use footer
+			- footer text
 			- make awesome stuff look better
 
 			#### ui
@@ -1615,9 +1758,9 @@ chore(deps): fix broken deps
 
 			### Commit Statistics
 
-			- 18 commit(s) contributed to the release.
-			- 12 day(s) passed between the first and last commit.
-			- 17 commit(s) parsed as conventional.
+			- 20 commit(s) contributed to the release.
+			- 13 day(s) passed between the first and last commit.
+			- 19 commit(s) parsed as conventional.
 			- 1 linked issue(s) detected in commits.
 			  - [#3](https://github.com/3) (referenced 1 time(s))
 			-- total releases: 2 --
