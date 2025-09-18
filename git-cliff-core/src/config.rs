@@ -1,3 +1,5 @@
+#[cfg(target_os = "macos")]
+use std::env;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::{fmt, fs};
@@ -468,6 +470,22 @@ impl Config {
             .add_source(config::Environment::with_prefix("GIT_CLIFF").separator("__"))
             .build()?
             .try_deserialize()?)
+    }
+
+    /// Find a special config path on macOS.
+    ///
+    /// The `dirs` crate ignores the `XDG_CONFIG_HOME` env var on macOS and only considers
+    /// `Library/Application Support` as the config dir, which is primarily used by GUI apps.
+    ///
+    /// This function determines the config path and honors the `XDG_CONFIG_HOME` env var.
+    /// If it is not set, it will fall back to `~/.config`
+    #[cfg(target_os = "macos")]
+    pub fn retrieve_xdg_config_on_macos() -> PathBuf {
+        let config_dir = env::var("XDG_CONFIG_HOME").map_or_else(
+            |_| dirs::home_dir().unwrap_or_default().join(".config"),
+            PathBuf::from,
+        );
+        config_dir.join("git-cliff")
     }
 }
 

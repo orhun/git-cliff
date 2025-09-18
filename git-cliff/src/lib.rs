@@ -525,11 +525,20 @@ pub fn run_with_changelog_modifier(
     // Set path for the configuration file.
     let mut path = args.config.clone();
     if !path.exists() {
-        if let Some(config_path) =
-            dirs::config_dir().map(|dir| dir.join(env!("CARGO_PKG_NAME")).join(DEFAULT_CONFIG))
+        for possible_path in [
+            #[cfg(target_os = "macos")]
+            Some(Config::retrieve_xdg_config_on_macos().join(DEFAULT_CONFIG)),
+            dirs::config_dir().map(|dir| dir.join(env!("CARGO_PKG_NAME")).join(DEFAULT_CONFIG)),
+        ]
+        .iter()
+        .filter_map(|v| v.as_ref())
         {
-            path = config_path;
+            if possible_path.exists() {
+                path = possible_path.to_path_buf();
+                break;
+            }
         }
+        debug!("Using configuration file from: {:?}", path);
     }
 
     // Parse the configuration file.
