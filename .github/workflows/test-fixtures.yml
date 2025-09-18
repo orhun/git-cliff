@@ -140,6 +140,8 @@ jobs:
 
       - name: Run a fixtures test
         uses: ./.github/actions/run-fixtures-test
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           fixtures-dir: .github/fixtures/${{ matrix.fixtures-name }}
           command: ${{ matrix.command }}
