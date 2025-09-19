@@ -490,7 +490,7 @@ impl Config {
 
     /// Find the path of the config file.
     ///
-    /// If the config file is not found in its standard locations, None is returned.
+    /// If the config file is not found in its standard locations, [`None`] is returned.
     pub fn retrieve_config_path() -> Option<PathBuf> {
         let mut path: Option<PathBuf> = None;
         for supported_path in [
