@@ -1,4 +1,3 @@
-use std::env;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::{fmt, fs};
@@ -482,7 +481,7 @@ impl Config {
     /// If it is not set, it will fall back to `~/.config`
     #[cfg(target_os = "macos")]
     pub fn retrieve_xdg_config_on_macos() -> PathBuf {
-        let config_dir = env::var("XDG_CONFIG_HOME").map_or_else(
+        let config_dir = std::env::var("XDG_CONFIG_HOME").map_or_else(
             |_| dirs::home_dir().unwrap_or_default().join(".config"),
             PathBuf::from,
         );
