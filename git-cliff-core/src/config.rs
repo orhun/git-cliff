@@ -1,4 +1,3 @@
-#[cfg(target_os = "macos")]
 use std::env;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -12,6 +11,8 @@ use serde::{Deserialize, Serialize};
 use crate::embed::EmbeddedConfig;
 use crate::error::Result;
 use crate::{command, error};
+
+use crate::DEFAULT_CONFIG;
 
 /// Default initial tag.
 const DEFAULT_INITIAL_TAG: &str = "0.1.0";
@@ -486,6 +487,28 @@ impl Config {
             PathBuf::from,
         );
         config_dir.join("git-cliff")
+    }
+
+    /// Find the path of the config file.
+    ///
+    /// If the config file is not found in its standard locations, None is returned.
+    pub fn retrieve_config_path() -> Option<PathBuf> {
+        let mut path: Option<PathBuf> = None;
+        for supported_path in [
+            #[cfg(target_os = "macos")]
+            Some(Config::retrieve_xdg_config_on_macos().join(DEFAULT_CONFIG)),
+            dirs::config_dir().map(|dir| dir.join("git-cliff").join(DEFAULT_CONFIG)),
+        ]
+        .iter()
+        .filter_map(|v| v.as_ref())
+        {
+            if supported_path.exists() {
+                path = Some(supported_path.to_path_buf());
+                debug!("Using configuration file from: {:?}", supported_path);
+                break;
+            }
+        }
+        path
     }
 }
 
