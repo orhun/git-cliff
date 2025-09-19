@@ -492,7 +492,6 @@ impl Config {
     ///
     /// If the config file is not found in its standard locations, [`None`] is returned.
     pub fn retrieve_config_path() -> Option<PathBuf> {
-        let mut path: Option<PathBuf> = None;
         for supported_path in [
             #[cfg(target_os = "macos")]
             Some(Config::retrieve_xdg_config_on_macos().join(DEFAULT_CONFIG)),
@@ -502,12 +501,11 @@ impl Config {
         .filter_map(|v| v.as_ref())
         {
             if supported_path.exists() {
-                path = Some(supported_path.to_path_buf());
                 debug!("Using configuration file from: {:?}", supported_path);
-                break;
+                return Some(supported_path.to_path_buf());
             }
         }
-        path
+        None
     }
 }
 
