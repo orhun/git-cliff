@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::embed::EmbeddedConfig;
 use crate::error::Result;
-use crate::{command, error};
+use crate::{DEFAULT_CONFIG, command, error};
 
 /// Default initial tag.
 const DEFAULT_INITIAL_TAG: &str = "0.1.0";
@@ -468,6 +468,42 @@ impl Config {
             .add_source(config::Environment::with_prefix("GIT_CLIFF").separator("__"))
             .build()?
             .try_deserialize()?)
+    }
+
+    /// Find a special config path on macOS.
+    ///
+    /// The `dirs` crate ignores the `XDG_CONFIG_HOME` env var on macOS and only considers
+    /// `Library/Application Support` as the config dir, which is primarily used by GUI apps.
+    ///
+    /// This function determines the config path and honors the `XDG_CONFIG_HOME` env var.
+    /// If it is not set, it will fall back to `~/.config`
+    #[cfg(target_os = "macos")]
+    pub fn retrieve_xdg_config_on_macos() -> PathBuf {
+        let config_dir = std::env::var("XDG_CONFIG_HOME").map_or_else(
+            |_| dirs::home_dir().unwrap_or_default().join(".config"),
+            PathBuf::from,
+        );
+        config_dir.join("git-cliff")
+    }
+
+    /// Find the path of the config file.
+    ///
+    /// If the config file is not found in its standard locations, [`None`] is returned.
+    pub fn retrieve_config_path() -> Option<PathBuf> {
+        for supported_path in [
+            #[cfg(target_os = "macos")]
+            Some(Config::retrieve_xdg_config_on_macos().join(DEFAULT_CONFIG)),
+            dirs::config_dir().map(|dir| dir.join("git-cliff").join(DEFAULT_CONFIG)),
+        ]
+        .iter()
+        .filter_map(|v| v.as_ref())
+        {
+            if supported_path.exists() {
+                debug!("Using configuration file from: {:?}", supported_path);
+                return Some(supported_path.to_path_buf());
+            }
+        }
+        None
     }
 }
 

@@ -525,9 +525,7 @@ pub fn run_with_changelog_modifier(
     // Set path for the configuration file.
     let mut path = args.config.clone();
     if !path.exists() {
-        if let Some(config_path) =
-            dirs::config_dir().map(|dir| dir.join(env!("CARGO_PKG_NAME")).join(DEFAULT_CONFIG))
-        {
+        if let Some(config_path) = Config::retrieve_config_path() {
             path = config_path;
         }
     }
