@@ -23,7 +23,9 @@ path = "src/bin/mangen.rs"
 
 [features]
 # check for new versions
-default = ["update-informer", "github", "gitlab", "gitea", "bitbucket"]
+default = ["update-informer", "integrations"]
+# enable all integrations
+integrations = ["github", "gitlab", "gitea", "bitbucket"]
 # inform about new releases
 update-informer = ["dep:update-informer"]
 # enable remote repository integration
