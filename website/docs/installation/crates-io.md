@@ -23,9 +23,10 @@ Also, **git-cliff** has the following feature flags which can be enabled via `--
 - `update-informer`: inform about the new releases of **git-cliff**
 - `github`: enables the [GitHub integration](/docs/integration/github)
 - `gitlab`: enables the [GitLab integration](/docs/integration/gitlab)
+- `gitea`: enables the [Gitea integration](/docs/integration/gitea)
 - `bitbucket`: enables the [Bitbucket integration](/docs/integration/bitbucket)
 
-All these features are enabled as default.
+All these features are enabled by default.
 
 To install without these features:
 
