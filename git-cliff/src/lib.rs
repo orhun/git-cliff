@@ -242,8 +242,8 @@ fn process_repository<'a>(
     }
 
     // Print debug information about configuration and arguments.
-    log::debug!("Arguments: {:#?}", args);
-    log::debug!("Config: {:#?}", config);
+    log::trace!("Arguments: {:#?}", args);
+    log::trace!("Config: {:#?}", config);
 
     // Parse commits.
     let commit_range = determine_commit_range(args, config, repository)?;

@@ -191,13 +191,13 @@ impl<'a> Changelog<'a> {
                 if let Some(version) = &release.version {
                     if skip_regex.is_some_and(|r| r.is_match(version)) {
                         skipped_tags.push(version.clone());
-                        log::info!("Skipping release: {}", version);
+                        log::debug!("Skipping release: {}", version);
                         return false;
                     }
                 }
                 if release.commits.is_empty() {
                     if let Some(version) = release.version.clone() {
-                        log::info!("Release doesn't have any commits: {}", version);
+                        log::debug!("Release doesn't have any commits: {}", version);
                     }
                     match &release.previous {
                         Some(prev_release) if prev_release.commits.is_empty() => {
@@ -253,7 +253,7 @@ impl<'a> Changelog<'a> {
                 .map(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
                 .unwrap_or(false)
         {
-            log::warn!("GitHub integration is an experimental feature! Functionality may change or break. Please report bugs at <https://git-cliff.org/issues>");
+            log::debug!("GitHub integration is an experimental feature! Functionality may change or break. Please report bugs at <https://git-cliff.org/issues>");
             let github_client = GitHubClient::try_from(self.config.remote.github.clone())?;
             log::info!(
                 "{} ({})",
@@ -305,7 +305,7 @@ impl<'a> Changelog<'a> {
                 .map(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
                 .unwrap_or(false)
         {
-            log::warn!("GitLab integration is an experimental feature! Functionality may change or break. Please report bugs at <https://git-cliff.org/issues>");
+            log::debug!("GitLab integration is an experimental feature! Functionality may change or break. Please report bugs at <https://git-cliff.org/issues>");
             let gitlab_client = GitLabClient::try_from(self.config.remote.gitlab.clone())?;
             log::info!(
                 "{} ({})",
@@ -364,7 +364,7 @@ impl<'a> Changelog<'a> {
                 .map(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
                 .unwrap_or(false)
         {
-            log::warn!("Gitea integration is an experimental feature! Functionality may change or break. Please report bugs at <https://git-cliff.org/issues>");
+            log::debug!("Gitea integration is an experimental feature! Functionality may change or break. Please report bugs at <https://git-cliff.org/issues>");
             let gitea_client = GiteaClient::try_from(self.config.remote.gitea.clone())?;
             log::info!(
                 "{} ({})",
@@ -419,7 +419,7 @@ impl<'a> Changelog<'a> {
                 .map(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
                 .unwrap_or(false)
         {
-            log::warn!("Bitbucket integration is an experimental feature! Functionality may change or break. Please report bugs at <https://git-cliff.org/issues>");
+            log::debug!("Bitbucket integration is an experimental feature! Functionality may change or break. Please report bugs at <https://git-cliff.org/issues>");
             let bitbucket_client = BitbucketClient::try_from(self.config.remote.bitbucket.clone())?;
             log::info!(
                 "{} ({})",
