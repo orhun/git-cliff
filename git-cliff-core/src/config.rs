@@ -499,7 +499,7 @@ impl Config {
         .filter_map(|v| v.as_ref())
         {
             if supported_path.exists() {
-                debug!("Using configuration file from: {:?}", supported_path);
+                log::debug!("Using configuration file from: {:?}", supported_path);
                 return Some(supported_path.to_path_buf());
             }
         }
