@@ -1,5 +1,41 @@
 [![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)
 
+## [2.10.1](https://github.com/orhun/git-cliff/compare/v2.10.0..v2.10.1) - 2025-09-21
+
+### ⛰️  Features
+
+- *(cli)* Honor XDG_CONFIG_HOME on macOS ([#1259](https://github.com/orhun/git-cliff/issues/1259)) - ([6b8f1dc](https://github.com/orhun/git-cliff/commit/6b8f1dc515ed18792128aeaecf6f483a47989165))
+- *(lib)* Add 'integrations' feature flag for enabling all integrations ([#1263](https://github.com/orhun/git-cliff/issues/1263)) - ([3b98d19](https://github.com/orhun/git-cliff/commit/3b98d19d25738f33be8c1f7ebb078987f97abc7f))
+
+### 🐛 Bug Fixes
+
+- *(config)* Link to tree link for first tag in keepachangelog template ([#1250](https://github.com/orhun/git-cliff/issues/1250)) - ([c0c4bf7](https://github.com/orhun/git-cliff/commit/c0c4bf71aaebb2d1ffa96edc117225b01b9a50d4))
+
+### 📚 Documentation
+
+- *(website)* Add a FAQ section for commit and PR strategies ([#1218](https://github.com/orhun/git-cliff/issues/1218)) - ([d822586](https://github.com/orhun/git-cliff/commit/d822586cc99d438136939f416d6e7eb1d6e27d36))
+- *(website)* Add missing gitea feature flag ([#1262](https://github.com/orhun/git-cliff/issues/1262)) - ([20295ac](https://github.com/orhun/git-cliff/commit/20295ac3409106c9a36f2fc0b866fdc30fb9d3a8))
+- *(website)* Add note about nested submodules - ([524f51f](https://github.com/orhun/git-cliff/commit/524f51fb60baf57b61b0df3ee56e8289fb50185f))
+- *(website)* Update git-cliff-action to v4 ([#1241](https://github.com/orhun/git-cliff/issues/1241)) - ([9857d86](https://github.com/orhun/git-cliff/commit/9857d8602129bd1a75144f5a55ba22876a6140a2))
+- *(website)* Add note about next version being checked - ([05eb192](https://github.com/orhun/git-cliff/commit/05eb1923aef586d7fabf14c9894af43da5124d76))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(cd)* Update windows runners to windows-2025 - ([3819a0b](https://github.com/orhun/git-cliff/commit/3819a0bafb1afba67ceee48bc64c5c2d15e9cf15))
+- *(examples)* Improve the GitHub templates ([#1249](https://github.com/orhun/git-cliff/issues/1249)) - ([c86647d](https://github.com/orhun/git-cliff/commit/c86647d173b2e3640bdd86c982e485cdb94e7130))
+- *(typescript)* Update execa to v9 ([#1228](https://github.com/orhun/git-cliff/issues/1228)) - ([44c8eec](https://github.com/orhun/git-cliff/commit/44c8eecc134ae33627619bad0d79bf9653442805))
+
+### ◀️ Revert
+
+- *(repo)* Use the correct order while diffing paths ([#1188](https://github.com/orhun/git-cliff/issues/1188)) ([#1257](https://github.com/orhun/git-cliff/issues/1257)) - ([fb61cb5](https://github.com/orhun/git-cliff/commit/fb61cb51aa3223eca231f172f655c75ea03255b0))
+
+## New Contributors ❤️
+
+* @tessus made their first contribution in [#1263](https://github.com/orhun/git-cliff/pull/1263)
+* @mrdomino made their first contribution in [#1250](https://github.com/orhun/git-cliff/pull/1250)
+* @Oakchris1955 made their first contribution in [#1253](https://github.com/orhun/git-cliff/pull/1253)
+* @codemountains made their first contribution in [#1241](https://github.com/orhun/git-cliff/pull/1241)
+
 ## [2.10.0](https://github.com/orhun/git-cliff/compare/v2.9.1..v2.10.0) - 2025-07-27
 
 ### ⛰️  Features
