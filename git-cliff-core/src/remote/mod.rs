@@ -190,15 +190,15 @@ pub trait RemoteClient {
         page: i32,
     ) -> Result<T> {
         let url = T::url(project_id, &self.api_url(), &self.remote(), ref_name, page);
-        debug!("Sending request to: {url}");
+        log::debug!("Sending request to: {url}");
         let response = self.client().get(&url).send().await?;
         let response_text = if response.status().is_success() {
             let text = response.text().await?;
-            trace!("Response: {:?}", text);
+            log::trace!("Response: {:?}", text);
             text
         } else {
             let text = response.text().await?;
-            error!("Request error: {}", text);
+            log::error!("Request error: {}", text);
             text
         };
         Ok(serde_json::from_str::<T>(&response_text)?)
@@ -212,15 +212,15 @@ pub trait RemoteClient {
         page: i32,
     ) -> Result<Vec<T>> {
         let url = T::url(project_id, &self.api_url(), &self.remote(), ref_name, page);
-        debug!("Sending request to: {url}");
+        log::debug!("Sending request to: {url}");
         let response = self.client().get(&url).send().await?;
         let response_text = if response.status().is_success() {
             let text = response.text().await?;
-            trace!("Response: {:?}", text);
+            log::trace!("Response: {:?}", text);
             text
         } else {
             let text = response.text().await?;
-            error!("Request error: {}", text);
+            log::error!("Request error: {}", text);
             text
         };
         let response = serde_json::from_str::<Vec<T>>(&response_text)?;
@@ -244,7 +244,7 @@ pub trait RemoteClient {
             .buffered(T::buffer_size())
             .take_while(|page| {
                 if let Err(e) = page {
-                    debug!("Error while fetching page: {:?}", e);
+                    log::debug!("Error while fetching page: {:?}", e);
                 }
                 future::ready(page.is_ok())
             })
@@ -275,7 +275,7 @@ pub trait RemoteClient {
                 let status = match page {
                     Ok(v) => !self.early_exit(v),
                     Err(e) => {
-                        debug!("Error while fetching page: {:?}", e);
+                        log::debug!("Error while fetching page: {:?}", e);
                         true
                     }
                 };

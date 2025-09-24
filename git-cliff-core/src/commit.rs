@@ -327,7 +327,7 @@ impl Commit<'_> {
                 match values {
                     Some(values) => {
                         if values.is_empty() {
-                            trace!("field '{field_name}' is present but empty");
+                            log::trace!("Field '{field_name}' is present but empty");
                         } else {
                             for value in values {
                                 regex_checks.push((pattern_regex, value));

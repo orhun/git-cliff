@@ -88,12 +88,16 @@ impl<'a> Changelog<'a> {
         match commit.process(git_config) {
             Ok(commit) => Some(commit),
             Err(e) => {
-                trace!(
-                    "{} - {} ({})",
-                    commit.id.chars().take(7).collect::<String>(),
-                    e,
-                    commit.message.lines().next().unwrap_or_default().trim()
-                );
+                let short_id = commit.id.chars().take(7).collect::<String>();
+                let summary = commit.message.lines().next().unwrap_or_default().trim();
+                match &e {
+                    Error::ParseError(_) | Error::FieldError(_) => {
+                        log::warn!("{short_id} - {e} ({summary})");
+                    }
+                    _ => {
+                        log::trace!("{short_id} - {e} ({summary})");
+                    }
+                }
                 None
             }
         }
@@ -102,12 +106,11 @@ impl<'a> Changelog<'a> {
     /// Checks the commits and returns an error if any unconventional commits
     /// are found.
     fn check_conventional_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
-        debug!("Verifying that all commits are conventional.");
+        log::debug!("Verifying that all commits are conventional");
         let mut unconventional_count = 0;
-
         commits.iter().for_each(|commit| {
             if commit.conv.is_none() {
-                error!(
+                log::error!(
                     "Commit {id} is not conventional:\n{message}",
                     id = &commit.id[..7],
                     message = commit
@@ -164,7 +167,7 @@ impl<'a> Changelog<'a> {
     /// Processes the commits and omits the ones that doesn't match the
     /// criteria set by configuration file.
     fn process_commits(&mut self) -> Result<()> {
-        debug!("Processing the commits...");
+        log::debug!("Processing the commits");
         for release in self.releases.iter_mut() {
             Self::process_commit_list(&mut release.commits, &self.config.git)?;
             for submodule_commits in release.submodule_commits.values_mut() {
@@ -176,7 +179,7 @@ impl<'a> Changelog<'a> {
 
     /// Processes the releases and filters them out based on the configuration.
     fn process_releases(&mut self) {
-        debug!("Processing {} release(s)...", self.releases.len());
+        log::debug!("Processing {} release(s)", self.releases.len());
         let skip_regex = self.config.git.skip_tags.as_ref();
         let mut skipped_tags = Vec::new();
         self.releases = self
@@ -188,13 +191,13 @@ impl<'a> Changelog<'a> {
                 if let Some(version) = &release.version {
                     if skip_regex.is_some_and(|r| r.is_match(version)) {
                         skipped_tags.push(version.clone());
-                        trace!("Skipping release: {}", version);
+                        log::debug!("Skipping release: {}", version);
                         return false;
                     }
                 }
                 if release.commits.is_empty() {
                     if let Some(version) = release.version.clone() {
-                        trace!("Release doesn't have any commits: {}", version);
+                        log::debug!("Release doesn't have any commits: {}", version);
                     }
                     match &release.previous {
                         Some(prev_release) if prev_release.commits.is_empty() => {
@@ -250,11 +253,8 @@ impl<'a> Changelog<'a> {
                 .map(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
                 .unwrap_or(false)
         {
-            debug!(
-                "You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>"
-            );
             let github_client = GitHubClient::try_from(self.config.remote.github.clone())?;
-            info!(
+            log::info!(
                 "{} ({})",
                 github::START_FETCHING_MSG,
                 self.config.remote.github
@@ -267,11 +267,11 @@ impl<'a> Changelog<'a> {
                         github_client.get_commits(ref_name),
                         github_client.get_pull_requests(ref_name),
                     )?;
-                    debug!("Number of GitHub commits: {}", commits.len());
-                    debug!("Number of GitHub pull requests: {}", pull_requests.len());
+                    log::debug!("Number of GitHub commits: {}", commits.len());
+                    log::debug!("Number of GitHub pull requests: {}", pull_requests.len());
                     Ok((commits, pull_requests))
                 });
-            info!("{}", github::FINISHED_FETCHING_MSG);
+            log::info!("{}", github::FINISHED_FETCHING_MSG);
             data
         } else {
             Ok((vec![], vec![]))
@@ -304,11 +304,8 @@ impl<'a> Changelog<'a> {
                 .map(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
                 .unwrap_or(false)
         {
-            debug!(
-                "You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>"
-            );
             let gitlab_client = GitLabClient::try_from(self.config.remote.gitlab.clone())?;
-            info!(
+            log::info!(
                 "{} ({})",
                 gitlab::START_FETCHING_MSG,
                 self.config.remote.gitlab
@@ -321,7 +318,7 @@ impl<'a> Changelog<'a> {
                     let project_id = match tokio::join!(gitlab_client.get_project(ref_name)) {
                         (Ok(project),) => project.id,
                         (Err(err),) => {
-                            error!("Failed to lookup project! {}", err);
+                            log::error!("Failed to lookup project! {}", err);
                             return Err(err);
                         }
                     };
@@ -330,11 +327,11 @@ impl<'a> Changelog<'a> {
                         gitlab_client.get_commits(project_id, ref_name),
                         gitlab_client.get_merge_requests(project_id, ref_name),
                     )?;
-                    debug!("Number of GitLab commits: {}", commits.len());
-                    debug!("Number of GitLab merge requests: {}", merge_requests.len());
+                    log::debug!("Number of GitLab commits: {}", commits.len());
+                    log::debug!("Number of GitLab merge requests: {}", merge_requests.len());
                     Ok((commits, merge_requests))
                 });
-            info!("{}", gitlab::FINISHED_FETCHING_MSG);
+            log::info!("{}", gitlab::FINISHED_FETCHING_MSG);
             data
         } else {
             Ok((vec![], vec![]))
@@ -365,11 +362,8 @@ impl<'a> Changelog<'a> {
                 .map(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
                 .unwrap_or(false)
         {
-            debug!(
-                "You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>"
-            );
             let gitea_client = GiteaClient::try_from(self.config.remote.gitea.clone())?;
-            info!(
+            log::info!(
                 "{} ({})",
                 gitea::START_FETCHING_MSG,
                 self.config.remote.gitea
@@ -382,11 +376,11 @@ impl<'a> Changelog<'a> {
                         gitea_client.get_commits(ref_name),
                         gitea_client.get_pull_requests(ref_name),
                     )?;
-                    debug!("Number of Gitea commits: {}", commits.len());
-                    debug!("Number of Gitea pull requests: {}", pull_requests.len());
+                    log::debug!("Number of Gitea commits: {}", commits.len());
+                    log::debug!("Number of Gitea pull requests: {}", pull_requests.len());
                     Ok((commits, pull_requests))
                 });
-            info!("{}", gitea::FINISHED_FETCHING_MSG);
+            log::info!("{}", gitea::FINISHED_FETCHING_MSG);
             data
         } else {
             Ok((vec![], vec![]))
@@ -422,11 +416,8 @@ impl<'a> Changelog<'a> {
                 .map(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
                 .unwrap_or(false)
         {
-            debug!(
-                "You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>"
-            );
             let bitbucket_client = BitbucketClient::try_from(self.config.remote.bitbucket.clone())?;
-            info!(
+            log::info!(
                 "{} ({})",
                 bitbucket::START_FETCHING_MSG,
                 self.config.remote.bitbucket
@@ -439,11 +430,11 @@ impl<'a> Changelog<'a> {
                         bitbucket_client.get_commits(ref_name),
                         bitbucket_client.get_pull_requests(ref_name)
                     )?;
-                    debug!("Number of Bitbucket commits: {}", commits.len());
-                    debug!("Number of Bitbucket pull requests: {}", pull_requests.len());
+                    log::debug!("Number of Bitbucket commits: {}", commits.len());
+                    log::debug!("Number of Bitbucket pull requests: {}", pull_requests.len());
                     Ok((commits, pull_requests))
                 });
-            info!("{}", bitbucket::FINISHED_FETCHING_MSG);
+            log::info!("{}", bitbucket::FINISHED_FETCHING_MSG);
             data
         } else {
             Ok((vec![], vec![]))
@@ -462,7 +453,7 @@ impl<'a> Changelog<'a> {
     /// Adds remote data (e.g. GitHub commits) to the releases.
     #[allow(unused_variables)]
     pub fn add_remote_data(&mut self, range: Option<&str>) -> Result<()> {
-        debug!("Adding remote data...");
+        log::debug!("Adding remote data");
         self.add_remote_context()?;
 
         // Determine the ref at which to fetch remote commits, based on the commit
@@ -524,7 +515,7 @@ impl<'a> Changelog<'a> {
             if last_release.version.is_none() {
                 let next_version =
                     last_release.calculate_next_version_with_config(&self.config.bump)?;
-                debug!("Bumping the version to {next_version}");
+                log::debug!("Bumping the version to {next_version}");
                 last_release.version = Some(next_version.to_string());
                 last_release.timestamp = Some(
                     SystemTime::now()
@@ -540,7 +531,7 @@ impl<'a> Changelog<'a> {
 
     /// Generates the changelog and writes it to the given output.
     pub fn generate<W: Write + ?Sized>(&self, out: &mut W) -> Result<()> {
-        debug!("Generating changelog...");
+        log::debug!("Generating changelog");
         let postprocessors = self.config.changelog.postprocessors.clone();
 
         if let Some(header_template) = &self.header_template {
@@ -603,7 +594,7 @@ impl<'a> Changelog<'a> {
 
     /// Generates a changelog and prepends it to the given changelog.
     pub fn prepend<W: Write + ?Sized>(&self, mut changelog: String, out: &mut W) -> Result<()> {
-        debug!("Generating changelog and prepending...");
+        log::debug!("Generating changelog and prepending");
         if let Some(header) = &self.config.changelog.header {
             changelog = changelog.replacen(header, "", 1);
         }
@@ -632,7 +623,7 @@ fn get_body_template(config: &Config, trim: bool) -> Result<Template> {
         "commit.bitbucket",
     ];
     if template.contains_variable(&deprecated_vars) {
-        warn!(
+        log::warn!(
             "Variables {deprecated_vars:?} are deprecated and will be removed in the future. Use \
              `commit.remote` instead."
         );

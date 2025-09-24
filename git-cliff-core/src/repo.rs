@@ -189,7 +189,7 @@ impl Repository {
                 // submodule updated
                 Some(format!("{}..{}", old_file_id, new_file_id))
             };
-            trace!("Release commit range for submodules: {:?}", range);
+            log::trace!("Release commit range for submodules: {:?}", range);
             delta.new_file().path().and_then(Path::to_str).zip(range)
         });
         // iterate through all path diffs and find corresponding submodule if
@@ -305,11 +305,11 @@ impl Repository {
                     cache_key,
                     v,
                 ) {
-                    error!("Failed to set cache for repo {:?}: {e}", self.path);
+                    log::error!("Failed to set cache for repo {:?}: {e}", self.path);
                 }
             }
             Err(e) => {
-                error!("Failed to serialize cache for repo {:?}: {e}", self.path);
+                log::error!("Failed to serialize cache for repo {:?}: {e}", self.path);
             }
         }
 
@@ -500,7 +500,7 @@ impl Repository {
                     .url()
                     .ok_or_else(|| Error::RepoError(String::from("failed to get the remote URL")))?
                     .to_string();
-                trace!("Upstream URL: {url}");
+                log::trace!("Upstream URL: {url}");
                 return find_remote(&url);
             }
         }
