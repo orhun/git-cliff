@@ -49,6 +49,11 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
     --from-context <PATH>          Generates changelog from a JSON context [env: GIT_CLIFF_CONTEXT=]
 -s, --strip <PART>                 Strips the given parts from the changelog [possible values: header, footer, all]
     --sort <SORT>                  Sets sorting of the commits inside sections [default: oldest] [possible values: oldest, newest]
+```
+
+## Remote Options
+
+```
     --github-token <TOKEN>         Sets the GitHub API token [env: GITHUB_TOKEN]
     --github-repo <OWNER/REPO>     Sets the GitHub repository [env: GITHUB_REPO=]
     --gitlab-token <TOKEN>         Sets the GitLab API token [env: GITLAB_TOKEN]

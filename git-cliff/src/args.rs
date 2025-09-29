@@ -253,12 +253,10 @@ pub struct Opt {
 		default_value_t = Sort::Oldest
 	)]
     pub sort: Sort,
-    /// Sets the commit range to process.
-    #[arg(value_name = "RANGE", help_heading = Some("ARGS"))]
-    pub range: Option<String>,
     /// Sets the GitHub API token.
     #[arg(
 		long,
+		help_heading = "REMOTE OPTIONS",
 		env = "GITHUB_TOKEN",
 		value_name = "TOKEN",
 		hide_env_values = true,
@@ -268,6 +266,7 @@ pub struct Opt {
     /// Sets the GitHub repository.
     #[arg(
 		long,
+		help_heading = "REMOTE OPTIONS",
 		env = "GITHUB_REPO",
 		value_parser = clap::value_parser!(RemoteValue),
 		value_name = "OWNER/REPO",
@@ -277,6 +276,7 @@ pub struct Opt {
     /// Sets the GitLab API token.
     #[arg(
 		long,
+		help_heading = "REMOTE OPTIONS",
 		env = "GITLAB_TOKEN",
 		value_name = "TOKEN",
 		hide_env_values = true,
@@ -286,6 +286,7 @@ pub struct Opt {
     /// Sets the GitLab repository.
     #[arg(
 		long,
+		help_heading = "REMOTE OPTIONS",
 		env = "GITLAB_REPO",
 		value_parser = clap::value_parser!(RemoteValue),
 		value_name = "OWNER/REPO",
@@ -295,6 +296,7 @@ pub struct Opt {
     /// Sets the Gitea API token.
     #[arg(
 		long,
+		help_heading = "REMOTE OPTIONS",
 		env = "GITEA_TOKEN",
 		value_name = "TOKEN",
 		hide_env_values = true,
@@ -304,6 +306,7 @@ pub struct Opt {
     /// Sets the Gitea repository.
     #[arg(
 		long,
+		help_heading = "REMOTE OPTIONS",
 		env = "GITEA_REPO",
 		value_parser = clap::value_parser!(RemoteValue),
 		value_name = "OWNER/REPO",
@@ -313,6 +316,7 @@ pub struct Opt {
     /// Sets the Bitbucket API token.
     #[arg(
 		long,
+		help_heading = "REMOTE OPTIONS",
 		env = "BITBUCKET_TOKEN",
 		value_name = "TOKEN",
 		hide_env_values = true,
@@ -322,12 +326,16 @@ pub struct Opt {
     /// Sets the Bitbucket repository.
     #[arg(
 		long,
+		help_heading = "REMOTE OPTIONS",
 		env = "BITBUCKET_REPO",
 		value_parser = clap::value_parser!(RemoteValue),
 		value_name = "OWNER/REPO",
 		hide = !cfg!(feature = "bitbucket"),
 	)]
     pub bitbucket_repo: Option<RemoteValue>,
+    /// Sets the commit range to process.
+    #[arg(value_name = "RANGE", help_heading = Some("ARGS"))]
+    pub range: Option<String>,
     /// Load TLS certificates from the native certificate store.
     #[arg(long, help_heading = Some("FLAGS"), hide = !cfg!(feature = "remote"))]
     pub use_native_tls: bool,
