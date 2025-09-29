@@ -253,9 +253,6 @@ pub struct Opt {
 		default_value_t = Sort::Oldest
 	)]
     pub sort: Sort,
-    /// Sets the commit range to process.
-    #[arg(value_name = "RANGE", help_heading = Some("ARGS"))]
-    pub range: Option<String>,
     /// Sets the GitHub API token.
     #[arg(
 		long,
@@ -336,6 +333,9 @@ pub struct Opt {
 		hide = !cfg!(feature = "bitbucket"),
 	)]
     pub bitbucket_repo: Option<RemoteValue>,
+    /// Sets the commit range to process.
+    #[arg(value_name = "RANGE", help_heading = Some("ARGS"))]
+    pub range: Option<String>,
     /// Load TLS certificates from the native certificate store.
     #[arg(long, help_heading = Some("FLAGS"), hide = !cfg!(feature = "remote"))]
     pub use_native_tls: bool,
