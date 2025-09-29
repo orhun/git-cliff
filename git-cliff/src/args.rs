@@ -258,83 +258,83 @@ pub struct Opt {
     pub range: Option<String>,
     /// Sets the GitHub API token.
     #[arg(
-  long,
-  help_heading = "REMOTE OPTIONS",
-  env = "GITHUB_TOKEN",
-  value_name = "TOKEN",
-  hide_env_values = true,
-  hide = !cfg!(feature = "github"),
- )]
+		long,
+		help_heading = "REMOTE OPTIONS",
+		env = "GITHUB_TOKEN",
+		value_name = "TOKEN",
+		hide_env_values = true,
+		hide = !cfg!(feature = "github"),
+	)]
     pub github_token: Option<SecretString>,
     /// Sets the GitHub repository.
     #[arg(
-  long,
-  help_heading = "REMOTE OPTIONS",
-  env = "GITHUB_REPO",
-  value_parser = clap::value_parser!(RemoteValue),
-  value_name = "OWNER/REPO",
-  hide = !cfg!(feature = "github"),
- )]
+		long,
+		help_heading = "REMOTE OPTIONS",
+		env = "GITHUB_REPO",
+		value_parser = clap::value_parser!(RemoteValue),
+		value_name = "OWNER/REPO",
+		hide = !cfg!(feature = "github"),
+	)]
     pub github_repo: Option<RemoteValue>,
     /// Sets the GitLab API token.
     #[arg(
-  long,
-  help_heading = "REMOTE OPTIONS",
-  env = "GITLAB_TOKEN",
-  value_name = "TOKEN",
-  hide_env_values = true,
-  hide = !cfg!(feature = "gitlab"),
- )]
+		long,
+		help_heading = "REMOTE OPTIONS",
+		env = "GITLAB_TOKEN",
+		value_name = "TOKEN",
+		hide_env_values = true,
+		hide = !cfg!(feature = "gitlab"),
+	)]
     pub gitlab_token: Option<SecretString>,
     /// Sets the GitLab repository.
     #[arg(
-  long,
-  help_heading = "REMOTE OPTIONS",
-  env = "GITLAB_REPO",
-  value_parser = clap::value_parser!(RemoteValue),
-  value_name = "OWNER/REPO",
-  hide = !cfg!(feature = "gitlab"),
- )]
+		long,
+		help_heading = "REMOTE OPTIONS",
+		env = "GITLAB_REPO",
+		value_parser = clap::value_parser!(RemoteValue),
+		value_name = "OWNER/REPO",
+		hide = !cfg!(feature = "gitlab"),
+	)]
     pub gitlab_repo: Option<RemoteValue>,
     /// Sets the Gitea API token.
     #[arg(
-  long,
-  help_heading = "REMOTE OPTIONS",
-  env = "GITEA_TOKEN",
-  value_name = "TOKEN",
-  hide_env_values = true,
-  hide = !cfg!(feature = "gitea"),
- )]
+		long,
+		help_heading = "REMOTE OPTIONS",
+		env = "GITEA_TOKEN",
+		value_name = "TOKEN",
+		hide_env_values = true,
+		hide = !cfg!(feature = "gitea"),
+	)]
     pub gitea_token: Option<SecretString>,
     /// Sets the Gitea repository.
     #[arg(
-  long,
-  help_heading = "REMOTE OPTIONS",
-  env = "GITEA_REPO",
-  value_parser = clap::value_parser!(RemoteValue),
-  value_name = "OWNER/REPO",
-  hide = !cfg!(feature = "gitea"),
- )]
+		long,
+		help_heading = "REMOTE OPTIONS",
+		env = "GITEA_REPO",
+		value_parser = clap::value_parser!(RemoteValue),
+		value_name = "OWNER/REPO",
+		hide = !cfg!(feature = "gitea"),
+	)]
     pub gitea_repo: Option<RemoteValue>,
     /// Sets the Bitbucket API token.
     #[arg(
-  long,
-  help_heading = "REMOTE OPTIONS",
-  env = "BITBUCKET_TOKEN",
-  value_name = "TOKEN",
-  hide_env_values = true,
-  hide = !cfg!(feature = "bitbucket"),
- )]
+		long,
+		help_heading = "REMOTE OPTIONS",
+		env = "BITBUCKET_TOKEN",
+		value_name = "TOKEN",
+		hide_env_values = true,
+		hide = !cfg!(feature = "bitbucket"),
+	)]
     pub bitbucket_token: Option<SecretString>,
     /// Sets the Bitbucket repository.
     #[arg(
-  long,
-  help_heading = "REMOTE OPTIONS",
-  env = "BITBUCKET_REPO",
-  value_parser = clap::value_parser!(RemoteValue),
-  value_name = "OWNER/REPO",
-  hide = !cfg!(feature = "bitbucket"),
- )]
+		long,
+		help_heading = "REMOTE OPTIONS",
+		env = "BITBUCKET_REPO",
+		value_parser = clap::value_parser!(RemoteValue),
+		value_name = "OWNER/REPO",
+		hide = !cfg!(feature = "bitbucket"),
+	)]
     pub bitbucket_repo: Option<RemoteValue>,
     /// Load TLS certificates from the native certificate store.
     #[arg(long, help_heading = Some("FLAGS"), hide = !cfg!(feature = "remote"))]
