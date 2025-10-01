@@ -464,30 +464,49 @@ impl<'a> Changelog<'a> {
             other => other,
         };
 
+        // If no specific ref is provided, use the current branch for remote API calls
+        let ref_name_for_remote = if ref_name.is_none() {
+            // Get current branch name
+            use std::process::Command;
+            let output = Command::new("git")
+                .args(&["rev-parse", "--abbrev-ref", "HEAD"])
+                .output();
+            
+            match output {
+                Ok(output) if output.status.success() => {
+                    let branch_name = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                    Some(branch_name)
+                }
+                _ => None
+            }
+        } else {
+            ref_name.map(|s| s.to_string())
+        };
+
         #[cfg(feature = "github")]
         let (github_commits, github_pull_requests) = if self.config.remote.github.is_set() {
-            self.get_github_metadata(ref_name)
+            self.get_github_metadata(ref_name_for_remote.as_deref())
                 .expect("Could not get github metadata")
         } else {
             (vec![], vec![])
         };
         #[cfg(feature = "gitlab")]
         let (gitlab_commits, gitlab_merge_request) = if self.config.remote.gitlab.is_set() {
-            self.get_gitlab_metadata(ref_name)
+            self.get_gitlab_metadata(ref_name_for_remote.as_deref())
                 .expect("Could not get gitlab metadata")
         } else {
             (vec![], vec![])
         };
         #[cfg(feature = "gitea")]
         let (gitea_commits, gitea_merge_request) = if self.config.remote.gitea.is_set() {
-            self.get_gitea_metadata(ref_name)
+            self.get_gitea_metadata(ref_name_for_remote.as_deref())
                 .expect("Could not get gitea metadata")
         } else {
             (vec![], vec![])
         };
         #[cfg(feature = "bitbucket")]
         let (bitbucket_commits, bitbucket_pull_request) = if self.config.remote.bitbucket.is_set() {
-            self.get_bitbucket_metadata(ref_name)
+            self.get_bitbucket_metadata(ref_name_for_remote.as_deref())
                 .expect("Could not get bitbucket metadata")
         } else {
             (vec![], vec![])
