@@ -84,7 +84,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache
 
       - name: Scan the image
-        uses: anchore/sbom-action@cee1b8e05ae5b2593a75e197229729eabaa9f8ec # v0.20.2
+        uses: anchore/sbom-action@f8bdd1d8ac5e901a77a92f111440fdb1b593736b # v0.20.6
         with:
           image: ghcr.io/${{ github.repository_owner }}/git-cliff/git-cliff
 
