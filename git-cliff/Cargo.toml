@@ -25,7 +25,7 @@ path = "src/bin/mangen.rs"
 # check for new versions
 default = ["update-informer", "integrations"]
 # enable all integrations
-integrations = ["github", "gitlab", "gitea", "bitbucket"]
+integrations = ["github", "gitlab", "gitea", "bitbucket", "azure_devops"]
 # inform about new releases
 update-informer = ["dep:update-informer"]
 # enable remote repository integration
@@ -38,6 +38,8 @@ gitlab = ["remote", "git-cliff-core/gitlab"]
 gitea = ["remote", "git-cliff-core/gitea"]
 # enable Bitbucket integration
 bitbucket = ["remote", "git-cliff-core/bitbucket"]
+# enable Azure DevOps integration
+azure_devops = ["remote", "git-cliff-core/azure_devops"]
 # performance profiler
 profiler = ["dep:pprof", "dep:rand", "profiler-flamegraph"]
 profiler-flamegraph = ["pprof/flamegraph"]

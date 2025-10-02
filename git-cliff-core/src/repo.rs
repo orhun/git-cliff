@@ -286,8 +286,8 @@ impl Repository {
                 changed_files.iter().any(|path| {
                     include_pattern
                         .iter()
-                        .any(|pattern| pattern.matches_path(path)) &&
-                        !exclude_pattern
+                        .any(|pattern| pattern.matches_path(path))
+                        && !exclude_pattern
                             .iter()
                             .any(|pattern| pattern.matches_path(path))
                 })
@@ -460,8 +460,8 @@ impl Repository {
     fn should_include_tag(&self, head_commit: &Commit, tag_commit: &Commit) -> Result<bool> {
         Ok(self
             .inner
-            .graph_descendant_of(head_commit.id(), tag_commit.id())? ||
-            head_commit.id() == tag_commit.id())
+            .graph_descendant_of(head_commit.id(), tag_commit.id())?
+            || head_commit.id() == tag_commit.id())
     }
 
     /// Parses and returns a commit-tag map.
@@ -488,10 +488,13 @@ impl Repository {
                     continue;
                 }
 
-                tags.push((commit, Tag {
-                    name,
-                    message: None,
-                }));
+                tags.push((
+                    commit,
+                    Tag {
+                        name,
+                        message: None,
+                    },
+                ));
             } else if let Some(tag) = obj.as_tag() {
                 if let Some(commit) = tag
                     .target()
@@ -501,12 +504,15 @@ impl Repository {
                     if use_branch_tags && !self.should_include_tag(&head_commit, &commit)? {
                         continue;
                     }
-                    tags.push((commit, Tag {
-                        name: tag.name().map(String::from).unwrap_or(name),
-                        message: tag
-                            .message()
-                            .map(|msg| TAG_SIGNATURE_REGEX.replace(msg, "").trim().to_owned()),
-                    }));
+                    tags.push((
+                        commit,
+                        Tag {
+                            name: tag.name().map(String::from).unwrap_or(name),
+                            message: tag
+                                .message()
+                                .map(|msg| TAG_SIGNATURE_REGEX.replace(msg, "").trim().to_owned()),
+                        },
+                    ));
                 }
             }
         }
@@ -1029,10 +1035,13 @@ mod test {
             Repository::normalize_pattern(Pattern::new(input).expect("valid pattern"))
         };
 
-        let first_commit = create_commit_with_files(&repo, vec![
-            ("initial.txt", "initial content"),
-            ("dir/initial.txt", "initial content"),
-        ]);
+        let first_commit = create_commit_with_files(
+            &repo,
+            vec![
+                ("initial.txt", "initial content"),
+                ("dir/initial.txt", "initial content"),
+            ],
+        );
 
         {
             let retain =
@@ -1040,12 +1049,15 @@ mod test {
             assert!(retain, "include: dir/");
         }
 
-        let commit = create_commit_with_files(&repo, vec![
-            ("file1.txt", "content1"),
-            ("file2.txt", "content2"),
-            ("dir/file3.txt", "content3"),
-            ("dir/subdir/file4.txt", "content4"),
-        ]);
+        let commit = create_commit_with_files(
+            &repo,
+            vec![
+                ("file1.txt", "content1"),
+                ("file2.txt", "content2"),
+                ("dir/file3.txt", "content3"),
+                ("dir/subdir/file4.txt", "content4"),
+            ],
+        );
 
         {
             let retain = repo.should_retain_commit(&commit, &None, &None);
