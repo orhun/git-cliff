@@ -242,6 +242,10 @@ fn generate_changelog() -> Result<()> {
             bitbucket: git_cliff_core::remote::RemoteReleaseMetadata {
                 contributors: vec![],
             },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: git_cliff_core::remote::RemoteReleaseMetadata {
+                contributors: vec![],
+            },
         },
         Release {
             version: Some(String::from("v1.0.0")),
@@ -269,6 +273,10 @@ fn generate_changelog() -> Result<()> {
             },
             #[cfg(feature = "bitbucket")]
             bitbucket: git_cliff_core::remote::RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: git_cliff_core::remote::RemoteReleaseMetadata {
                 contributors: vec![],
             },
         },

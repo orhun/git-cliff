@@ -14,6 +14,10 @@ pub mod bitbucket;
 #[cfg(feature = "gitea")]
 pub mod gitea;
 
+/// Azure DevOps client.
+#[cfg(feature = "azure_devops")]
+pub mod azure_devops;
+
 use std::env;
 use std::fmt::Debug;
 use std::time::Duration;
@@ -192,16 +196,24 @@ pub trait RemoteClient {
         let url = T::url(project_id, &self.api_url(), &self.remote(), ref_name, page);
         log::debug!("Sending request to: {url}");
         let response = self.client().get(&url).send().await?;
-        let response_text = if response.status().is_success() {
-            let text = response.text().await?;
-            log::trace!("Response: {:?}", text);
-            text
+        let status = response.status();
+        let response_text = response.text().await?;
+
+        if !status.is_success() {
+            log::error!("Request failed with status {}: {}", status, response_text);
         } else {
-            let text = response.text().await?;
-            log::error!("Request error: {}", text);
-            text
-        };
-        Ok(serde_json::from_str::<T>(&response_text)?)
+            log::trace!("Response: {:?}", response_text);
+        }
+
+        match serde_json::from_str::<T>(&response_text) {
+            Ok(result) => Ok(result),
+            Err(e) => {
+                log::error!("Failed to parse JSON response. Error: {}. First 500 chars of response: {}",
+                    e,
+                    response_text.chars().take(500).collect::<String>());
+                Err(e.into())
+            }
+        }
     }
 
     /// Retrieves a single page of entries.
@@ -321,8 +333,8 @@ macro_rules! update_release_metadata {
                     {
                         let sha_short = Some(v.id().clone().chars().take(12).collect());
                         let pull_request = pull_requests.iter().find(|pr| {
-                            pr.merge_commit() == Some(v.id().clone()) ||
-                                pr.merge_commit() == sha_short
+                            pr.merge_commit() == Some(v.id().clone())
+                                || pr.merge_commit() == sha_short
                         });
                         commit.$remote.username = v.username();
                         commit.$remote.pr_number = pull_request.map(|v| v.number());
@@ -362,8 +374,8 @@ macro_rules! update_release_metadata {
                                 // if current release is unreleased no need to filter
                                 // commits or filter commits that are from
                                 // newer releases
-                                self.timestamp == None ||
-                                    commit.timestamp() < release_commit_timestamp
+                                self.timestamp == None
+                                    || commit.timestamp() < release_commit_timestamp
                             })
                             .map(|v| v.username())
                             .any(|login| login == v.username);
