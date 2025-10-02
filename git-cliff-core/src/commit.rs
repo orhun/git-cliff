@@ -139,6 +139,10 @@ pub struct Commit<'a> {
     #[cfg(feature = "bitbucket")]
     #[deprecated(note = "Use `remote` field instead")]
     pub bitbucket: crate::contributor::RemoteContributor,
+    /// Azure DevOps metadata of the commit.
+    #[cfg(feature = "azure_devops")]
+    #[deprecated(note = "Use `remote` field instead")]
+    pub azure_devops: crate::contributor::RemoteContributor,
 
     /// Raw message of the normal commit, works as a placeholder for converting
     /// normal commit into conventional commit.
@@ -259,8 +263,8 @@ impl Commit<'_> {
     /// and the commit is breaking, or the parser's `skip` field is None or
     /// `false`. Returns `true` otherwise.
     fn skip_commit(&self, parser: &CommitParser, protect_breaking: bool) -> bool {
-        parser.skip.unwrap_or(false) &&
-            !(self.conv.as_ref().map(|c| c.breaking()).unwrap_or(false) && protect_breaking)
+        parser.skip.unwrap_or(false)
+            && !(self.conv.as_ref().map(|c| c.breaking()).unwrap_or(false) && protect_breaking)
     }
 
     /// Parses the commit using [`CommitParser`]s.

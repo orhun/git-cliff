@@ -59,6 +59,9 @@ pub struct Release<'a> {
     /// Contributors.
     #[cfg(feature = "bitbucket")]
     pub bitbucket: RemoteReleaseMetadata,
+    /// Contributors.
+    #[cfg(feature = "azure_devops")]
+    pub azure_devops: RemoteReleaseMetadata,
 }
 
 #[cfg(feature = "github")]
@@ -72,6 +75,9 @@ crate::update_release_metadata!(gitea, update_gitea_metadata);
 
 #[cfg(feature = "bitbucket")]
 crate::update_release_metadata!(bitbucket, update_bitbucket_metadata);
+
+#[cfg(feature = "azure_devops")]
+crate::update_release_metadata!(azure_devops, update_azure_devops_metadata);
 
 impl Release<'_> {
     /// Calculates the next version based on the commits.
@@ -222,6 +228,10 @@ mod test {
                 bitbucket: crate::remote::RemoteReleaseMetadata {
                     contributors: vec![],
                 },
+                #[cfg(feature = "azure_devops")]
+                azure_devops: crate::remote::RemoteReleaseMetadata {
+                    contributors: vec![],
+                },
             }
         }
 
@@ -231,22 +241,28 @@ mod test {
             ("1.0.0", "2.0.0", vec!["feat!: add xyz", "feat: zzz"]),
             ("1.0.0", "2.0.0", vec!["feat!: add xyz\n", "feat: zzz\n"]),
             ("2.0.0", "2.0.1", vec!["fix: something"]),
-            ("foo/1.0.0", "foo/1.1.0", vec![
-                "feat: add xyz",
-                "fix: fix xyz",
-            ]),
-            ("bar/1.0.0", "bar/2.0.0", vec![
-                "fix: add xyz",
-                "fix!: aaaaaa",
-            ]),
-            ("zzz-123/test/1.0.0", "zzz-123/test/1.0.1", vec![
-                "fix: aaaaaa",
-            ]),
+            (
+                "foo/1.0.0",
+                "foo/1.1.0",
+                vec!["feat: add xyz", "fix: fix xyz"],
+            ),
+            (
+                "bar/1.0.0",
+                "bar/2.0.0",
+                vec!["fix: add xyz", "fix!: aaaaaa"],
+            ),
+            (
+                "zzz-123/test/1.0.0",
+                "zzz-123/test/1.0.1",
+                vec!["fix: aaaaaa"],
+            ),
             ("v100.0.0", "v101.0.0", vec!["feat!: something"]),
             ("v1.0.0-alpha.1", "v1.0.0-alpha.2", vec!["fix: minor"]),
-            ("testing/v1.0.0-beta.1", "testing/v1.0.0-beta.2", vec![
-                "feat: nice",
-            ]),
+            (
+                "testing/v1.0.0-beta.1",
+                "testing/v1.0.0-beta.2",
+                vec!["feat: nice"],
+            ),
             ("tauri-v1.5.4", "tauri-v1.6.0", vec!["feat: something"]),
             (
                 "rocket/rocket-v4.0.0-rc.1",
@@ -448,6 +464,10 @@ mod test {
             },
             #[cfg(feature = "bitbucket")]
             bitbucket: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: RemoteReleaseMetadata {
                 contributors: vec![],
             },
         };
@@ -814,6 +834,10 @@ mod test {
             },
             #[cfg(feature = "bitbucket")]
             bitbucket: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: RemoteReleaseMetadata {
                 contributors: vec![],
             },
         };
@@ -1184,6 +1208,10 @@ mod test {
             bitbucket: RemoteReleaseMetadata {
                 contributors: vec![],
             },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
         };
         release.update_gitea_metadata(
             vec![
@@ -1523,6 +1551,10 @@ mod test {
             },
             #[cfg(feature = "bitbucket")]
             bitbucket: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: RemoteReleaseMetadata {
                 contributors: vec![],
             },
         };

@@ -6,6 +6,8 @@ use crate::commit::Commit;
 use crate::config::{Config, GitConfig};
 use crate::error::{Error, Result};
 use crate::release::{Release, Releases};
+#[cfg(feature = "azure_devops")]
+use crate::remote::azure_devops::AzureDevOpsClient;
 #[cfg(feature = "bitbucket")]
 use crate::remote::bitbucket::BitbucketClient;
 #[cfg(feature = "gitea")]
@@ -215,8 +217,8 @@ impl<'a> Changelog<'a> {
                 release
                     .previous
                     .as_ref()
-                    .and_then(|release| release.version.as_ref()) ==
-                    Some(skipped_tag)
+                    .and_then(|release| release.version.as_ref())
+                    == Some(skipped_tag)
             }) {
                 if let Some(previous_release) = self.releases.get_mut(release_index + 1) {
                     previous_release.previous = None;
@@ -245,10 +247,12 @@ impl<'a> Changelog<'a> {
     #[cfg(feature = "github")]
     fn get_github_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::github;
-        if self.config.remote.github.is_custom ||
-            self.body_template
-                .contains_variable(github::TEMPLATE_VARIABLES) ||
-            self.footer_template
+        if self.config.remote.github.is_custom
+            || self
+                .body_template
+                .contains_variable(github::TEMPLATE_VARIABLES)
+            || self
+                .footer_template
                 .as_ref()
                 .map(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
                 .unwrap_or(false)
@@ -296,10 +300,12 @@ impl<'a> Changelog<'a> {
     #[cfg(feature = "gitlab")]
     fn get_gitlab_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::gitlab;
-        if self.config.remote.gitlab.is_custom ||
-            self.body_template
-                .contains_variable(gitlab::TEMPLATE_VARIABLES) ||
-            self.footer_template
+        if self.config.remote.gitlab.is_custom
+            || self
+                .body_template
+                .contains_variable(gitlab::TEMPLATE_VARIABLES)
+            || self
+                .footer_template
                 .as_ref()
                 .map(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
                 .unwrap_or(false)
@@ -354,10 +360,12 @@ impl<'a> Changelog<'a> {
     #[cfg(feature = "gitea")]
     fn get_gitea_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::gitea;
-        if self.config.remote.gitea.is_custom ||
-            self.body_template
-                .contains_variable(gitea::TEMPLATE_VARIABLES) ||
-            self.footer_template
+        if self.config.remote.gitea.is_custom
+            || self
+                .body_template
+                .contains_variable(gitea::TEMPLATE_VARIABLES)
+            || self
+                .footer_template
                 .as_ref()
                 .map(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
                 .unwrap_or(false)
@@ -408,10 +416,12 @@ impl<'a> Changelog<'a> {
         ref_name: Option<&str>,
     ) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::bitbucket;
-        if self.config.remote.bitbucket.is_custom ||
-            self.body_template
-                .contains_variable(bitbucket::TEMPLATE_VARIABLES) ||
-            self.footer_template
+        if self.config.remote.bitbucket.is_custom
+            || self
+                .body_template
+                .contains_variable(bitbucket::TEMPLATE_VARIABLES)
+            || self
+                .footer_template
                 .as_ref()
                 .map(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
                 .unwrap_or(false)
@@ -435,6 +445,64 @@ impl<'a> Changelog<'a> {
                     Ok((commits, pull_requests))
                 });
             log::info!("{}", bitbucket::FINISHED_FETCHING_MSG);
+            data
+        } else {
+            Ok((vec![], vec![]))
+        }
+    }
+
+    /// Returns the Azure DevOps metadata needed for the changelog.
+    ///
+    /// This function creates a multithread async runtime for handling the
+    /// requests. The following are fetched from the Azure DevOps REST API:
+    ///
+    /// - Commits
+    /// - Pull requests
+    ///
+    /// Each of these are paginated requests so they are being run in parallel
+    /// for speedup.
+    ///
+    /// If no Azure DevOps related variable is used in the template then this
+    /// function returns empty vectors.
+    #[cfg(feature = "azure_devops")]
+    fn get_azure_devops_metadata(
+        &self,
+        ref_name: Option<&str>,
+    ) -> Result<crate::remote::RemoteMetadata> {
+        use crate::remote::azure_devops;
+        if self.config.remote.azure_devops.is_custom
+            || self
+                .body_template
+                .contains_variable(azure_devops::TEMPLATE_VARIABLES)
+            || self
+                .footer_template
+                .as_ref()
+                .map(|v| v.contains_variable(azure_devops::TEMPLATE_VARIABLES))
+                .unwrap_or(false)
+        {
+            let azure_devops_client =
+                AzureDevOpsClient::try_from(self.config.remote.azure_devops.clone())?;
+            log::info!(
+                "{} ({})",
+                azure_devops::START_FETCHING_MSG,
+                self.config.remote.azure_devops
+            );
+            let data = tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()?
+                .block_on(async {
+                    let (commits, pull_requests) = tokio::try_join!(
+                        azure_devops_client.get_commits(ref_name),
+                        azure_devops_client.get_pull_requests(ref_name)
+                    )?;
+                    log::debug!("Number of Azure DevOps commits: {}", commits.len());
+                    log::debug!(
+                        "Number of Azure DevOps pull requests: {}",
+                        pull_requests.len()
+                    );
+                    Ok((commits, pull_requests))
+                });
+            log::info!("{}", azure_devops::FINISHED_FETCHING_MSG);
             data
         } else {
             Ok((vec![], vec![]))
@@ -492,6 +560,14 @@ impl<'a> Changelog<'a> {
         } else {
             (vec![], vec![])
         };
+        #[cfg(feature = "azure_devops")]
+        let (azure_devops_commits, azure_devops_pull_request) =
+            if self.config.remote.azure_devops.is_set() {
+                self.get_azure_devops_metadata(ref_name)
+                    .expect("Could not get azure_devops metadata")
+            } else {
+                (vec![], vec![])
+            };
         #[cfg(feature = "remote")]
         for release in &mut self.releases {
             #[cfg(feature = "github")]
@@ -504,6 +580,11 @@ impl<'a> Changelog<'a> {
             release.update_bitbucket_metadata(
                 bitbucket_commits.clone(),
                 bitbucket_pull_request.clone(),
+            )?;
+            #[cfg(feature = "azure_devops")]
+            release.update_azure_devops_metadata(
+                azure_devops_commits.clone(),
+                azure_devops_pull_request.clone(),
             )?;
         }
         Ok(())
@@ -621,6 +702,7 @@ fn get_body_template(config: &Config, trim: bool) -> Result<Template> {
         "commit.gitea",
         "commit.gitlab",
         "commit.bitbucket",
+        "commit.azure_devops",
     ];
     if template.contains_variable(&deprecated_vars) {
         log::warn!(
@@ -883,6 +965,14 @@ mod test {
                     api_url: None,
                     native_tls: None,
                 },
+                azure_devops: Remote {
+                    owner: String::from("coolguy"),
+                    repo: String::from("awesome"),
+                    token: None,
+                    is_custom: false,
+                    api_url: None,
+                    native_tls: None,
+                },
             },
             bump: Bump::default(),
         };
@@ -1032,24 +1122,29 @@ mod test {
             timestamp: Some(50000000),
             previous: None,
             repository: Some(String::from("/root/repo")),
-            submodule_commits: HashMap::from([(String::from("submodule_one"), vec![
-                Commit::new(
-                    String::from("sub0jkl12"),
-                    String::from("chore(app): submodule_one do nothing"),
-                ),
-                Commit::new(
-                    String::from("subqwerty"),
-                    String::from("chore: submodule_one <preprocess>"),
-                ),
-                Commit::new(
-                    String::from("subqwertz"),
-                    String::from("feat!: submodule_one support breaking commits"),
-                ),
-                Commit::new(
-                    String::from("subqwert0"),
-                    String::from("match(group): submodule_one support regex-replace for groups"),
-                ),
-            ])]),
+            submodule_commits: HashMap::from([(
+                String::from("submodule_one"),
+                vec![
+                    Commit::new(
+                        String::from("sub0jkl12"),
+                        String::from("chore(app): submodule_one do nothing"),
+                    ),
+                    Commit::new(
+                        String::from("subqwerty"),
+                        String::from("chore: submodule_one <preprocess>"),
+                    ),
+                    Commit::new(
+                        String::from("subqwertz"),
+                        String::from("feat!: submodule_one support breaking commits"),
+                    ),
+                    Commit::new(
+                        String::from("subqwert0"),
+                        String::from(
+                            "match(group): submodule_one support regex-replace for groups",
+                        ),
+                    ),
+                ],
+            )]),
             statistics: None,
             #[cfg(feature = "github")]
             github: crate::remote::RemoteReleaseMetadata {
@@ -1065,6 +1160,10 @@ mod test {
             },
             #[cfg(feature = "bitbucket")]
             bitbucket: crate::remote::RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: crate::remote::RemoteReleaseMetadata {
                 contributors: vec![],
             },
         };
@@ -1158,14 +1257,20 @@ mod test {
                 previous: Some(Box::new(test_release)),
                 repository: Some(String::from("/root/repo")),
                 submodule_commits: HashMap::from([
-                    (String::from("submodule_one"), vec![
-                        Commit::new(String::from("def349"), String::from("sub_one merge #4")),
-                        Commit::new(String::from("da8912"), String::from("sub_one merge #5")),
-                    ]),
-                    (String::from("submodule_two"), vec![Commit::new(
-                        String::from("ab76ef"),
-                        String::from("sub_two bump"),
-                    )]),
+                    (
+                        String::from("submodule_one"),
+                        vec![
+                            Commit::new(String::from("def349"), String::from("sub_one merge #4")),
+                            Commit::new(String::from("da8912"), String::from("sub_one merge #5")),
+                        ],
+                    ),
+                    (
+                        String::from("submodule_two"),
+                        vec![Commit::new(
+                            String::from("ab76ef"),
+                            String::from("sub_two bump"),
+                        )],
+                    ),
                 ]),
                 statistics: None,
                 #[cfg(feature = "github")]
@@ -1182,6 +1287,10 @@ mod test {
                 },
                 #[cfg(feature = "bitbucket")]
                 bitbucket: crate::remote::RemoteReleaseMetadata {
+                    contributors: vec![],
+                },
+                #[cfg(feature = "azure_devops")]
+                azure_devops: crate::remote::RemoteReleaseMetadata {
                     contributors: vec![],
                 },
             },
