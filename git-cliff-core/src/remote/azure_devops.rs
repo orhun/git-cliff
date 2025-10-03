@@ -276,7 +276,8 @@ mod test {
     use pretty_assertions::assert_eq;
 
     use super::*;
-    use crate::remote::RemoteCommit;
+    use crate::config::Remote;
+    use crate::remote::{RemoteCommit, RemoteEntry, RemotePullRequest};
 
     #[test]
     fn timestamp() {
@@ -291,5 +292,218 @@ mod test {
         };
 
         assert_eq!(Some(1626610479), remote_commit.timestamp());
+    }
+
+    #[test]
+    fn commit_username() {
+        let commit = AzureDevOpsCommit {
+            commit_id: String::from("abc123"),
+            author: Some(AzureDevOpsCommitAuthor {
+                name: Some(String::from("test_user")),
+                email: Some(String::from("test@example.com")),
+                date: Some(String::from("2021-07-18T15:14:39+03:00")),
+            }),
+            committer: None,
+        };
+
+        assert_eq!(Some(String::from("test_user")), commit.username());
+        assert_eq!(String::from("abc123"), commit.id());
+    }
+
+    #[test]
+    fn commit_no_author() {
+        let commit = AzureDevOpsCommit {
+            commit_id: String::from("abc123"),
+            author: None,
+            committer: None,
+        };
+
+        assert_eq!(None, commit.username());
+        assert_eq!(None, commit.timestamp());
+    }
+
+    #[test]
+    fn pull_request_properties() {
+        let pr = AzureDevOpsPullRequest {
+            pull_request_id: 42,
+            title: Some(String::from("Test PR")),
+            status: String::from("completed"),
+            created_by: None,
+            last_merge_commit: Some(AzureDevOpsCommitRef {
+                commit_id: Some(String::from("merge123")),
+            }),
+            labels: vec![
+                AzureDevOpsPullRequestLabel {
+                    name: String::from("bug"),
+                },
+                AzureDevOpsPullRequestLabel {
+                    name: String::from("feature"),
+                },
+            ],
+        };
+
+        assert_eq!(42, pr.number());
+        assert_eq!(Some(String::from("Test PR")), pr.title());
+        assert_eq!(Some(String::from("merge123")), pr.merge_commit());
+        assert_eq!(vec![String::from("bug"), String::from("feature")], pr.labels());
+    }
+
+    #[test]
+    fn pull_request_no_merge_commit() {
+        let pr = AzureDevOpsPullRequest {
+            pull_request_id: 1,
+            title: None,
+            status: String::from("active"),
+            created_by: None,
+            last_merge_commit: None,
+            labels: vec![],
+        };
+
+        assert_eq!(None, pr.merge_commit());
+        assert_eq!(None, pr.title());
+        assert!(pr.labels().is_empty());
+    }
+
+    #[test]
+    fn commits_response_url() {
+        let remote = Remote {
+            owner: String::from("myorg/myproject"),
+            repo: String::from("myrepo"),
+            token: None,
+            is_custom: false,
+            api_url: None,
+            native_tls: None,
+        };
+
+        let url = AzureDevOpsCommitsResponse::url(
+            0,
+            "https://dev.azure.com",
+            &remote,
+            None,
+            0,
+        );
+
+        assert_eq!(
+            "https://dev.azure.com/myorg%2Fmyproject/_apis/git/repositories/myrepo/commits?api-version=7.1&$top=100&$skip=0",
+            url
+        );
+    }
+
+    #[test]
+    fn commits_response_url_with_tag() {
+        let remote = Remote {
+            owner: String::from("myorg/myproject"),
+            repo: String::from("myrepo"),
+            token: None,
+            is_custom: false,
+            api_url: None,
+            native_tls: None,
+        };
+
+        let url = AzureDevOpsCommitsResponse::url(
+            0,
+            "https://dev.azure.com",
+            &remote,
+            Some("v1.0.0"),
+            0,
+        );
+
+        assert!(url.contains("searchCriteria.itemVersion.versionType=tag"));
+        assert!(url.contains("searchCriteria.itemVersion.version=v1.0.0"));
+    }
+
+    #[test]
+    fn commits_response_url_pagination() {
+        let remote = Remote {
+            owner: String::from("org/proj"),
+            repo: String::from("repo"),
+            token: None,
+            is_custom: false,
+            api_url: None,
+            native_tls: None,
+        };
+
+        let url = AzureDevOpsCommitsResponse::url(
+            0,
+            "https://dev.azure.com",
+            &remote,
+            None,
+            2,
+        );
+
+        assert!(url.contains("$skip=200"));
+        assert!(url.contains("$top=100"));
+    }
+
+    #[test]
+    fn pull_requests_response_url() {
+        let remote = Remote {
+            owner: String::from("myorg/myproject"),
+            repo: String::from("myrepo"),
+            token: None,
+            is_custom: false,
+            api_url: None,
+            native_tls: None,
+        };
+
+        let url = AzureDevOpsPullRequestsResponse::url(
+            0,
+            "https://dev.azure.com",
+            &remote,
+            None,
+            0,
+        );
+
+        assert!(url.contains("pullrequests"));
+        assert!(url.contains("searchCriteria.status=completed"));
+        assert!(url.contains("$top=100"));
+        assert!(url.contains("$skip=0"));
+    }
+
+    #[test]
+    fn commits_response_early_exit() {
+        let empty_response = AzureDevOpsCommitsResponse {
+            value: vec![],
+            count: 0,
+        };
+        assert!(empty_response.early_exit());
+
+        let non_empty_response = AzureDevOpsCommitsResponse {
+            value: vec![AzureDevOpsCommit {
+                commit_id: String::from("abc"),
+                author: None,
+                committer: None,
+            }],
+            count: 1,
+        };
+        assert!(!non_empty_response.early_exit());
+    }
+
+    #[test]
+    fn pull_requests_response_early_exit() {
+        let empty_response = AzureDevOpsPullRequestsResponse {
+            value: vec![],
+            count: 0,
+        };
+        assert!(empty_response.early_exit());
+
+        let non_empty_response = AzureDevOpsPullRequestsResponse {
+            value: vec![AzureDevOpsPullRequest {
+                pull_request_id: 1,
+                title: None,
+                status: String::from("completed"),
+                created_by: None,
+                last_merge_commit: None,
+                labels: vec![],
+            }],
+            count: 1,
+        };
+        assert!(!non_empty_response.early_exit());
+    }
+
+    #[test]
+    fn buffer_sizes() {
+        assert_eq!(10, AzureDevOpsCommitsResponse::buffer_size());
+        assert_eq!(5, AzureDevOpsPullRequestsResponse::buffer_size());
     }
 }
