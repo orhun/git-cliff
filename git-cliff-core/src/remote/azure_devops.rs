@@ -166,7 +166,8 @@ impl RemoteEntry for AzureDevOpsPullRequestsResponse {
         // Azure DevOps format: owner should be "organization/project"
         // and repo is the repository name
         format!(
-            "{}/{}/_apis/git/repositories/{}/pullrequests?api-version=7.1&searchCriteria.status=completed&$top={}&$skip={}",
+            "{}/{}/_apis/git/repositories/{}/pullrequests?api-version=7.1&searchCriteria.\
+             status=completed&$top={}&$skip={}",
             api_url,
             urlencoding::encode(&remote.owner),
             urlencoding::encode(&remote.repo),
