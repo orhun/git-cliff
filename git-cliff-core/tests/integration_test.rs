@@ -167,7 +167,7 @@ fn generate_changelog() -> Result<()> {
         release_v1_commits.last().unwrap(),
     );
 
-    let release_v2_commits = vec![
+    let release_v2_commits = [
 				Commit::new(
 					String::from("000abc"),
 					String::from("Add unconventional commit"),

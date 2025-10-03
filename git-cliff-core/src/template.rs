@@ -317,15 +317,13 @@ mod test {
         assert_eq!(
             "\n\t\t## 1.0 - 2023\n\t\t\n\t\t### feat\n\t\t- Add xyz\n\t\t\n\t\t### fix\n\t\t- Fix \
              abc\n\t\t",
-            template.render(
-                &release,
-                Option::<HashMap<&str, String>>::None.as_ref(),
-                &[TextProcessor {
+            template.render(&release, Option::<HashMap<&str, String>>::None.as_ref(), &[
+                TextProcessor {
                     pattern: Regex::new("<DATE>").expect("failed to compile regex"),
                     replace: Some(String::from("2023")),
                     replace_command: None,
-                }],
-            )?
+                }
+            ],)?
         );
         template.variables.sort();
         assert_eq!(
@@ -354,11 +352,8 @@ mod test {
         let release = get_fake_release_data();
         assert_eq!(
             "\n##  1.0\n",
-            template.render(
-                &release,
-                Option::<HashMap<&str, String>>::None.as_ref(),
-                &[],
-            )?
+            template.render(&release, Option::<HashMap<&str, String>>::None.as_ref(), &[
+            ],)?
         );
         assert_eq!(vec![String::from("version"),], template.variables);
         Ok(())
@@ -369,11 +364,8 @@ mod test {
         let template = "{% set hello_variable = 'hello' %}{{ hello_variable | upper_first }}";
         let release = get_fake_release_data();
         let template = Template::new("test", template.to_string(), true)?;
-        let r = template.render(
-            &release,
-            Option::<HashMap<&str, String>>::None.as_ref(),
-            &[],
-        )?;
+        let r = template.render(&release, Option::<HashMap<&str, String>>::None.as_ref(), &[
+        ])?;
         assert_eq!("Hello", r);
         Ok(())
     }

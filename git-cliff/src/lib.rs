@@ -504,7 +504,7 @@ pub fn run_with_changelog_modifier(
             None => EmbeddedConfig::get_config()?,
         };
 
-        let config_path = if args.config == PathBuf::from(DEFAULT_CONFIG) {
+        let config_path = if args.config.as_path() == Path::new(DEFAULT_CONFIG) {
             PathBuf::from(DEFAULT_CONFIG)
         } else {
             args.config.clone()
@@ -762,14 +762,11 @@ pub fn run_with_changelog_modifier(
                 skip_list.extend(skip_commit.clone());
             }
             for sha1 in skip_list {
-                config.git.commit_parsers.insert(
-                    0,
-                    CommitParser {
-                        sha: Some(sha1.to_string()),
-                        skip: Some(true),
-                        ..Default::default()
-                    },
-                );
+                config.git.commit_parsers.insert(0, CommitParser {
+                    sha: Some(sha1.to_string()),
+                    skip: Some(true),
+                    ..Default::default()
+                });
             }
 
             // The commit range, used for determining the remote commits to include
