@@ -272,6 +272,7 @@ impl AzureDevOpsClient {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod test {
     use pretty_assertions::assert_eq;
 
@@ -486,5 +487,213 @@ mod test {
     fn buffer_sizes() {
         assert_eq!(10, AzureDevOpsCommitsResponse::buffer_size());
         assert_eq!(5, AzureDevOpsPullRequestsResponse::buffer_size());
+    }
+
+    #[test]
+    fn client_try_from_remote() {
+        let remote = Remote {
+            owner: String::from("myorg/myproject"),
+            repo: String::from("myrepo"),
+            token: None,
+            is_custom: false,
+            api_url: None,
+            native_tls: None,
+        };
+
+        let client = AzureDevOpsClient::try_from(remote.clone());
+        assert!(client.is_ok());
+
+        let client = client.unwrap();
+        assert_eq!(remote.owner, client.remote().owner);
+        assert_eq!(remote.repo, client.remote().repo);
+    }
+
+    #[test]
+    fn client_api_url() {
+        let remote = Remote {
+            owner: String::from("myorg/myproject"),
+            repo: String::from("myrepo"),
+            token: None,
+            is_custom: false,
+            api_url: None,
+            native_tls: None,
+        };
+
+        let client = AzureDevOpsClient::try_from(remote).unwrap();
+        assert_eq!("https://dev.azure.com", client.api_url());
+    }
+
+    #[test]
+    fn client_api_url_custom() {
+        let remote = Remote {
+            owner: String::from("myorg/myproject"),
+            repo: String::from("myrepo"),
+            token: None,
+            is_custom: false,
+            api_url: Some(String::from("https://custom.azure.com")),
+            native_tls: None,
+        };
+
+        let client = AzureDevOpsClient::try_from(remote).unwrap();
+        assert_eq!("https://custom.azure.com", client.api_url());
+    }
+
+    #[test]
+    fn commits_response_default() {
+        let response = AzureDevOpsCommitsResponse::default();
+        assert_eq!(0, response.count);
+        assert!(response.value.is_empty());
+    }
+
+    #[test]
+    fn pull_requests_response_default() {
+        let response = AzureDevOpsPullRequestsResponse::default();
+        assert_eq!(0, response.count);
+        assert!(response.value.is_empty());
+    }
+
+    #[test]
+    fn commit_default() {
+        let commit = AzureDevOpsCommit::default();
+        assert_eq!("", commit.commit_id);
+        assert_eq!(None, commit.author);
+        assert_eq!(None, commit.committer);
+    }
+
+    #[test]
+    fn pull_request_default() {
+        let pr = AzureDevOpsPullRequest::default();
+        assert_eq!(0, pr.pull_request_id);
+        assert_eq!(None, pr.title);
+        assert_eq!("", pr.status);
+    }
+
+    #[test]
+    fn author_default() {
+        let author = AzureDevOpsCommitAuthor::default();
+        assert_eq!(None, author.name);
+        assert_eq!(None, author.email);
+        assert_eq!(None, author.date);
+    }
+
+    #[test]
+    fn commit_ref_default() {
+        let commit_ref = AzureDevOpsCommitRef::default();
+        assert_eq!(None, commit_ref.commit_id);
+    }
+
+    #[test]
+    fn pull_request_with_commit_ref_no_commit_id() {
+        let pr = AzureDevOpsPullRequest {
+            pull_request_id: 1,
+            title: Some(String::from("test")),
+            status: String::from("completed"),
+            created_by: None,
+            last_merge_commit: Some(AzureDevOpsCommitRef { commit_id: None }),
+            labels: vec![],
+        };
+
+        assert_eq!(None, pr.merge_commit());
+    }
+
+    #[test]
+    fn template_variables() {
+        assert_eq!(4, TEMPLATE_VARIABLES.len());
+        assert!(TEMPLATE_VARIABLES.contains(&"azure_devops"));
+        assert!(TEMPLATE_VARIABLES.contains(&"commit.azure_devops"));
+        assert!(TEMPLATE_VARIABLES.contains(&"commit.remote"));
+        assert!(TEMPLATE_VARIABLES.contains(&"remote.azure_devops"));
+    }
+
+    #[test]
+    fn fetching_messages() {
+        assert!(START_FETCHING_MSG.contains("Azure DevOps"));
+        assert!(FINISHED_FETCHING_MSG.contains("Azure DevOps"));
+        assert!(START_FETCHING_MSG.starts_with("Retrieving"));
+        assert!(FINISHED_FETCHING_MSG.starts_with("Done"));
+    }
+
+    #[test]
+    fn max_page_size() {
+        assert_eq!(100, MAX_PAGE_SIZE);
+    }
+
+    #[test]
+    fn commit_serialization() {
+        let commit = AzureDevOpsCommit {
+            commit_id: String::from("abc123"),
+            author: Some(AzureDevOpsCommitAuthor {
+                name: Some(String::from("test")),
+                email: Some(String::from("test@example.com")),
+                date: Some(String::from("2021-07-18T15:14:39+03:00")),
+            }),
+            committer: None,
+        };
+
+        let json = serde_json::to_string(&commit).unwrap();
+        assert!(json.contains("abc123"));
+        assert!(json.contains("test@example.com"));
+
+        let deserialized: AzureDevOpsCommit = serde_json::from_str(&json).unwrap();
+        assert_eq!(commit, deserialized);
+    }
+
+    #[test]
+    fn pull_request_serialization() {
+        let pr = AzureDevOpsPullRequest {
+            pull_request_id: 42,
+            title: Some(String::from("Test PR")),
+            status: String::from("completed"),
+            created_by: None,
+            last_merge_commit: Some(AzureDevOpsCommitRef {
+                commit_id: Some(String::from("merge123")),
+            }),
+            labels: vec![AzureDevOpsPullRequestLabel {
+                name: String::from("bug"),
+            }],
+        };
+
+        let json = serde_json::to_string(&pr).unwrap();
+        assert!(json.contains("42"));
+        assert!(json.contains("Test PR"));
+        assert!(json.contains("merge123"));
+
+        let deserialized: AzureDevOpsPullRequest = serde_json::from_str(&json).unwrap();
+        assert_eq!(pr, deserialized);
+    }
+
+    #[test]
+    fn commits_response_serialization() {
+        let response = AzureDevOpsCommitsResponse {
+            value: vec![AzureDevOpsCommit {
+                commit_id: String::from("test123"),
+                author: None,
+                committer: None,
+            }],
+            count: 1,
+        };
+
+        let json = serde_json::to_string(&response).unwrap();
+        let deserialized: AzureDevOpsCommitsResponse = serde_json::from_str(&json).unwrap();
+        assert_eq!(response, deserialized);
+    }
+
+    #[test]
+    fn pull_requests_response_serialization() {
+        let response = AzureDevOpsPullRequestsResponse {
+            value: vec![AzureDevOpsPullRequest {
+                pull_request_id: 1,
+                title: None,
+                status: String::from("completed"),
+                created_by: None,
+                last_merge_commit: None,
+                labels: vec![],
+            }],
+            count: 1,
+        };
+
+        let json = serde_json::to_string(&response).unwrap();
+        let deserialized: AzureDevOpsPullRequestsResponse = serde_json::from_str(&json).unwrap();
+        assert_eq!(response, deserialized);
     }
 }
