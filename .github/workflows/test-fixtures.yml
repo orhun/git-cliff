@@ -29,6 +29,9 @@ jobs:
           - fixtures-name: test-bitbucket-integration
           - fixtures-name: test-bitbucket-integration-custom-range
             command: v1.0.0..v1.0.1
+          - fixtures-name: test-azure-devops-integration
+          - fixtures-name: test-azure-devops-integration-custom-range
+            command: v1.0.0..v1.0.1
           - fixtures-name: test-ignore-tags
           - fixtures-name: test-invert-ignore-tags
           - fixtures-name: test-topo-order
