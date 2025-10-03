@@ -76,8 +76,11 @@ impl RemoteEntry for AzureDevOpsCommitsResponse {
         );
 
         if let Some(ref_name) = ref_name {
+            // Azure DevOps needs versionType to distinguish between branch/tag/commit
+            // For git-cliff, ref_name is typically a tag, but could be a branch or commit
+            // We'll default to tag since that's most common with version ranges
             url.push_str(&format!(
-                "&searchCriteria.itemVersion.version={}",
+                "&searchCriteria.itemVersion.versionType=tag&searchCriteria.itemVersion.version={}",
                 urlencoding::encode(ref_name)
             ));
         }

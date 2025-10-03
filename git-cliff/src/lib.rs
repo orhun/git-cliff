@@ -644,6 +644,13 @@ pub fn run_with_changelog_modifier(
             .token
             .clone_from(&args.bitbucket_token);
     }
+    if args.azure_devops_token.is_some() {
+        config
+            .remote
+            .azure_devops
+            .token
+            .clone_from(&args.azure_devops_token);
+    }
     if let Some(ref remote) = args.github_repo {
         config.remote.github.owner = remote.0.owner.to_string();
         config.remote.github.repo = remote.0.repo.to_string();
@@ -663,6 +670,11 @@ pub fn run_with_changelog_modifier(
         config.remote.gitea.owner = remote.0.owner.to_string();
         config.remote.gitea.repo = remote.0.repo.to_string();
         config.remote.gitea.is_custom = true;
+    }
+    if let Some(ref remote) = args.azure_devops_repo {
+        config.remote.azure_devops.owner = remote.0.owner.to_string();
+        config.remote.azure_devops.repo = remote.0.repo.to_string();
+        config.remote.azure_devops.is_custom = true;
     }
     if args.no_exec {
         config
