@@ -345,7 +345,10 @@ mod test {
         assert_eq!(42, pr.number());
         assert_eq!(Some(String::from("Test PR")), pr.title());
         assert_eq!(Some(String::from("merge123")), pr.merge_commit());
-        assert_eq!(vec![String::from("bug"), String::from("feature")], pr.labels());
+        assert_eq!(
+            vec![String::from("bug"), String::from("feature")],
+            pr.labels()
+        );
     }
 
     #[test]
@@ -375,13 +378,7 @@ mod test {
             native_tls: None,
         };
 
-        let url = AzureDevOpsCommitsResponse::url(
-            0,
-            "https://dev.azure.com",
-            &remote,
-            None,
-            0,
-        );
+        let url = AzureDevOpsCommitsResponse::url(0, "https://dev.azure.com", &remote, None, 0);
 
         assert_eq!(
             "https://dev.azure.com/myorg%2Fmyproject/_apis/git/repositories/myrepo/commits?api-version=7.1&$top=100&$skip=0",
@@ -400,13 +397,8 @@ mod test {
             native_tls: None,
         };
 
-        let url = AzureDevOpsCommitsResponse::url(
-            0,
-            "https://dev.azure.com",
-            &remote,
-            Some("v1.0.0"),
-            0,
-        );
+        let url =
+            AzureDevOpsCommitsResponse::url(0, "https://dev.azure.com", &remote, Some("v1.0.0"), 0);
 
         assert!(url.contains("searchCriteria.itemVersion.versionType=tag"));
         assert!(url.contains("searchCriteria.itemVersion.version=v1.0.0"));
@@ -423,13 +415,7 @@ mod test {
             native_tls: None,
         };
 
-        let url = AzureDevOpsCommitsResponse::url(
-            0,
-            "https://dev.azure.com",
-            &remote,
-            None,
-            2,
-        );
+        let url = AzureDevOpsCommitsResponse::url(0, "https://dev.azure.com", &remote, None, 2);
 
         assert!(url.contains("$skip=200"));
         assert!(url.contains("$top=100"));
@@ -446,13 +432,8 @@ mod test {
             native_tls: None,
         };
 
-        let url = AzureDevOpsPullRequestsResponse::url(
-            0,
-            "https://dev.azure.com",
-            &remote,
-            None,
-            0,
-        );
+        let url =
+            AzureDevOpsPullRequestsResponse::url(0, "https://dev.azure.com", &remote, None, 0);
 
         assert!(url.contains("pullrequests"));
         assert!(url.contains("searchCriteria.status=completed"));
