@@ -196,7 +196,7 @@ This will result in:
 
 ## Azure DevOps Changelog
 
-If you would like to create a changelog that integrates with Azure DevOps, you can use the [`azure-devops-keepachangelog.toml`](https://github.com/orhun/git-cliff/tree/main/examples/azure-devops-keepachangelog.toml) example which follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format with Azure DevOps integration.
+If you would like to create a changelog that integrates with Azure DevOps, you can use the `azure-devops-keepachangelog.toml` example (available in the `examples` directory) which follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format with Azure DevOps integration.
 
 This will generate a changelog such as:
 
