@@ -96,9 +96,6 @@ pub enum Error {
     #[error("HTTP header error: `{0}`")]
     #[cfg(feature = "remote")]
     HttpHeaderError(#[from] reqwest::header::InvalidHeaderValue),
-    /// Error that may occur during handling pages.
-    #[error("Pagination error: `{0}`")]
-    PaginationError(String),
     /// The errors that may occur while parsing URLs.
     #[error("URL parse error: `{0}`")]
     UrlParseError(#[from] url::ParseError),

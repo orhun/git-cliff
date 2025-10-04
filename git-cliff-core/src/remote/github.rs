@@ -205,9 +205,6 @@ impl GitHubClient {
                         }
                     }
                     Err(e) => {
-                        if let Error::PaginationError(_) = e {
-                            break; // End of pages
-                        }
                         yield Err(e);
                         break;
                     }
@@ -241,9 +238,6 @@ impl GitHubClient {
                         }
                     }
                     Err(e) => {
-                        if let Error::PaginationError(_) = e {
-                            break; // End of pages
-                        }
                         yield Err(e);
                         break;
                     }
