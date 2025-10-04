@@ -189,9 +189,6 @@ impl GiteaClient {
                         }
                     }
                     Err(e) => {
-                        if let Error::PaginationError(_) = e {
-                            break;
-                        }
                         yield Err(e);
                         break;
                     }
@@ -225,9 +222,6 @@ impl GiteaClient {
                     }
                 }
                 Err(e) => {
-                    if let Error::PaginationError(_) = e {
-                        break;
-                    }
                     yield Err(e);
                     break;
                 }
