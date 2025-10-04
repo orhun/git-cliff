@@ -24,6 +24,7 @@ remote = [
   "dep:reqwest-middleware",
   "dep:tokio",
   "dep:futures",
+  "dep:async-stream",
 ]
 ## Enable integration with GitHub.
 ## You can turn this off if you don't use GitHub and don't want
@@ -69,6 +70,7 @@ tokio = { version = "1.47.0", features = [
   "macros",
 ], optional = true }
 futures = { version = "0.3.31", optional = true }
+async-stream = { version = "0.3.6", optional = true }
 url.workspace = true
 dyn-clone = "1.0.17"
 urlencoding = "2.1.3"
