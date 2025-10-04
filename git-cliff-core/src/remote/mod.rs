@@ -19,7 +19,6 @@ use std::fmt::Debug;
 use std::time::Duration;
 
 use dyn_clone::DynClone;
-use futures::Stream;
 use http_cache_reqwest::{CACacheManager, Cache, CacheMode, HttpCache, HttpCacheOptions};
 use reqwest::Client;
 use reqwest::header::{HeaderMap, HeaderValue};
@@ -178,14 +177,6 @@ pub trait RemoteClient {
         };
         Ok(serde_json::from_str::<T>(&response_text)?)
     }
-
-    /// Returns a stream of commits with buffered pagination.
-    fn commits_stream<'a>(&'a self) -> impl Stream<Item = Result<Box<dyn RemoteCommit>>> + 'a;
-
-    /// Returns a stream of pull requests with buffered pagination.
-    fn pull_requests_stream<'a>(
-        &'a self,
-    ) -> impl Stream<Item = Result<Box<dyn RemotePullRequest>>> + 'a;
 }
 
 /// Generates a function for updating the release metadata for a remote.
