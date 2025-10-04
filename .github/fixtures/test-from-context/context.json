@@ -52,6 +52,13 @@
           "pr_number": null,
           "pr_labels": [],
           "is_first_time": false
+        },
+        "azure_devops": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
         }
       }
     ],
@@ -106,6 +113,13 @@
             "pr_number": null,
             "pr_labels": [],
             "is_first_time": false
+          },
+          "azure_devops": {
+            "username": null,
+            "pr_title": null,
+            "pr_number": null,
+            "pr_labels": [],
+            "is_first_time": false
           }
         },
         {
@@ -153,6 +167,13 @@
             "pr_number": null,
             "pr_labels": [],
             "is_first_time": false
+          },
+          "azure_devops": {
+            "username": null,
+            "pr_title": null,
+            "pr_number": null,
+            "pr_labels": [],
+            "is_first_time": false
           }
         }
       ],
@@ -173,6 +194,9 @@
       },
       "bitbucket": {
         "contributors": []
+      },
+      "azure_devops": {
+        "contributors": []
       }
     },
     "repository": "/home/johndoe/repo/",
@@ -188,6 +212,9 @@
       "contributors": []
     },
     "bitbucket": {
+      "contributors": []
+    },
+    "azure_devops": {
       "contributors": []
     }
   },
@@ -239,6 +266,13 @@
           "is_first_time": false
         },
         "bitbucket": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "azure_devops": {
           "username": null,
           "pr_title": null,
           "pr_number": null,
@@ -298,6 +332,13 @@
           "pr_number": null,
           "pr_labels": [],
           "is_first_time": false
+        },
+        "azure_devops": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
         }
       }
     ],
@@ -352,6 +393,13 @@
             "pr_number": null,
             "pr_labels": [],
             "is_first_time": false
+          },
+          "azure_devops": {
+            "username": null,
+            "pr_title": null,
+            "pr_number": null,
+            "pr_labels": [],
+            "is_first_time": false
           }
         },
         {
@@ -394,6 +442,13 @@
             "is_first_time": false
           },
           "bitbucket": {
+            "username": null,
+            "pr_title": null,
+            "pr_number": null,
+            "pr_labels": [],
+            "is_first_time": false
+          },
+          "azure_devops": {
             "username": null,
             "pr_title": null,
             "pr_number": null,
@@ -446,6 +501,13 @@
             "pr_number": null,
             "pr_labels": [],
             "is_first_time": false
+          },
+          "azure_devops": {
+            "username": null,
+            "pr_title": null,
+            "pr_number": null,
+            "pr_labels": [],
+            "is_first_time": false
           }
         }
       ],
@@ -466,6 +528,9 @@
       },
       "bitbucket": {
         "contributors": []
+      },
+      "azure_devops": {
+        "contributors": []
       }
     },
     "extra": {
@@ -484,6 +549,9 @@
       "contributors": []
     },
     "bitbucket": {
+      "contributors": []
+    },
+    "azure_devops": {
       "contributors": []
     }
   },
@@ -540,6 +608,13 @@
           "pr_number": null,
           "pr_labels": [],
           "is_first_time": false
+        },
+        "azure_devops": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
         }
       },
       {
@@ -591,6 +666,13 @@
           "pr_number": null,
           "pr_labels": [],
           "is_first_time": false
+        },
+        "azure_devops": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
         }
       }
     ],
@@ -617,6 +699,9 @@
       },
       "bitbucket": {
         "contributors": []
+      },
+      "azure_devops": {
+        "contributors": []
       }
     },
     "repository": "/home/johndoe/repo/",
@@ -632,6 +717,9 @@
       "contributors": []
     },
     "bitbucket": {
+      "contributors": []
+    },
+    "azure_devops": {
       "contributors": []
     }
   }
