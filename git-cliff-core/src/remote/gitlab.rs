@@ -232,7 +232,7 @@ impl GitLabClient {
         )
     }
 
-    /// Fetches the GitLab API and returns the pull requests.
+    /// Looks up the project details.
     pub async fn get_project(&self) -> Result<GitLabProject> {
         let url = Self::project_url(&self.api_url(), &self.remote());
         self.get_json::<GitLabProject>(&url).await
