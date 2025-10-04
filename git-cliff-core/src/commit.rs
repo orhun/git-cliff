@@ -139,6 +139,10 @@ pub struct Commit<'a> {
     #[cfg(feature = "bitbucket")]
     #[deprecated(note = "Use `remote` field instead")]
     pub bitbucket: crate::contributor::RemoteContributor,
+    /// Azure DevOps metadata of the commit.
+    #[cfg(feature = "azure_devops")]
+    #[deprecated(note = "Use `remote` field instead")]
+    pub azure_devops: crate::contributor::RemoteContributor,
 
     /// Raw message of the normal commit, works as a placeholder for converting
     /// normal commit into conventional commit.

@@ -59,6 +59,9 @@ pub struct Release<'a> {
     /// Contributors.
     #[cfg(feature = "bitbucket")]
     pub bitbucket: RemoteReleaseMetadata,
+    /// Contributors.
+    #[cfg(feature = "azure_devops")]
+    pub azure_devops: RemoteReleaseMetadata,
 }
 
 #[cfg(feature = "github")]
@@ -72,6 +75,9 @@ crate::update_release_metadata!(gitea, update_gitea_metadata);
 
 #[cfg(feature = "bitbucket")]
 crate::update_release_metadata!(bitbucket, update_bitbucket_metadata);
+
+#[cfg(feature = "azure_devops")]
+crate::update_release_metadata!(azure_devops, update_azure_devops_metadata);
 
 impl Release<'_> {
     /// Calculates the next version based on the commits.
@@ -220,6 +226,10 @@ mod test {
                 },
                 #[cfg(feature = "bitbucket")]
                 bitbucket: crate::remote::RemoteReleaseMetadata {
+                    contributors: vec![],
+                },
+                #[cfg(feature = "azure_devops")]
+                azure_devops: crate::remote::RemoteReleaseMetadata {
                     contributors: vec![],
                 },
             }
@@ -448,6 +458,10 @@ mod test {
             },
             #[cfg(feature = "bitbucket")]
             bitbucket: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: RemoteReleaseMetadata {
                 contributors: vec![],
             },
         };
@@ -814,6 +828,10 @@ mod test {
             },
             #[cfg(feature = "bitbucket")]
             bitbucket: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: RemoteReleaseMetadata {
                 contributors: vec![],
             },
         };
@@ -1184,6 +1202,10 @@ mod test {
             bitbucket: RemoteReleaseMetadata {
                 contributors: vec![],
             },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
         };
         release.update_gitea_metadata(
             vec![
@@ -1525,6 +1547,10 @@ mod test {
             bitbucket: RemoteReleaseMetadata {
                 contributors: vec![],
             },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
         };
         release.update_bitbucket_metadata(
             vec![
@@ -1757,6 +1783,319 @@ mod test {
             ],
         };
         assert_eq!(expected_metadata, release.bitbucket);
+
+        Ok(())
+    }
+
+    #[cfg(feature = "azure_devops")]
+    #[test]
+    fn update_azure_devops_metadata() -> Result<()> {
+        use crate::remote::azure_devops::{
+            AzureDevOpsCommit, AzureDevOpsCommitAuthor, AzureDevOpsCommitRef,
+            AzureDevOpsPullRequest,
+        };
+
+        let mut release = Release {
+            version: None,
+            message: None,
+            extra: None,
+            commits: vec![
+                Commit::from(String::from(
+                    "1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add azure devops integration",
+                )),
+                Commit::from(String::from(
+                    "21f6aa587fcb772de13f2fde0e92697c51f84162 fix azure devops integration",
+                )),
+                Commit::from(String::from(
+                    "35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973 update metadata",
+                )),
+                Commit::from(String::from(
+                    "4d3ffe4753b923f4d7807c490e650e6624a12074 do some stuff",
+                )),
+                Commit::from(String::from(
+                    "5a55e92e5a62dc5bf9872ffb2566959fad98bd05 alright",
+                )),
+                Commit::from(String::from(
+                    "6c34967147560ea09658776d4901709139b4ad66 should be fine",
+                )),
+            ],
+            commit_range: None,
+            commit_id: None,
+            timestamp: None,
+            previous: Some(Box::new(Release {
+                version: Some(String::from("1.0.0")),
+                ..Default::default()
+            })),
+            repository: Some(String::from("/root/repo")),
+            submodule_commits: HashMap::new(),
+            statistics: None,
+            #[cfg(feature = "github")]
+            github: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "gitlab")]
+            gitlab: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "gitea")]
+            gitea: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "bitbucket")]
+            bitbucket: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+        };
+        release.update_azure_devops_metadata(
+            vec![
+                AzureDevOpsCommit {
+                    commit_id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+                    author: Some(AzureDevOpsCommitAuthor {
+                        name: Some(String::from("orhun")),
+                        email: Some(String::from("orhun@example.com")),
+                        date: Some(String::from("2021-07-18T15:14:39+03:00")),
+                    }),
+                    committer: None,
+                },
+                AzureDevOpsCommit {
+                    commit_id: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
+                    author: Some(AzureDevOpsCommitAuthor {
+                        name: Some(String::from("orhun")),
+                        email: Some(String::from("orhun@example.com")),
+                        date: Some(String::from("2021-07-18T15:12:19+03:00")),
+                    }),
+                    committer: None,
+                },
+                AzureDevOpsCommit {
+                    commit_id: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
+                    author: Some(AzureDevOpsCommitAuthor {
+                        name: Some(String::from("nuhro")),
+                        email: Some(String::from("nuhro@example.com")),
+                        date: Some(String::from("2021-07-18T15:07:23+03:00")),
+                    }),
+                    committer: None,
+                },
+                AzureDevOpsCommit {
+                    commit_id: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
+                    author: Some(AzureDevOpsCommitAuthor {
+                        name: Some(String::from("awesome_contributor")),
+                        email: Some(String::from("awesome@example.com")),
+                        date: Some(String::from("2021-07-18T15:05:10+03:00")),
+                    }),
+                    committer: None,
+                },
+                AzureDevOpsCommit {
+                    commit_id: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
+                    author: Some(AzureDevOpsCommitAuthor {
+                        name: Some(String::from("orhun")),
+                        email: Some(String::from("orhun@example.com")),
+                        date: Some(String::from("2021-07-18T15:03:30+03:00")),
+                    }),
+                    committer: None,
+                },
+                AzureDevOpsCommit {
+                    commit_id: String::from("6c34967147560ea09658776d4901709139b4ad66"),
+                    author: Some(AzureDevOpsCommitAuthor {
+                        name: Some(String::from("someone")),
+                        email: Some(String::from("someone@example.com")),
+                        date: Some(String::from("2021-07-18T15:00:38+03:00")),
+                    }),
+                    committer: None,
+                },
+                AzureDevOpsCommit {
+                    commit_id: String::from("0c34967147560e809658776d4901709139b4ad68"),
+                    author: Some(AzureDevOpsCommitAuthor {
+                        name: Some(String::from("idk")),
+                        email: Some(String::from("idk@example.com")),
+                        date: Some(String::from("2021-07-18T15:00:01+03:00")),
+                    }),
+                    committer: None,
+                },
+                AzureDevOpsCommit {
+                    commit_id: String::from("kk34967147560e809658776d4901709139b4ad68"),
+                    author: Some(AzureDevOpsCommitAuthor {
+                        name: Some(String::from("orhun")),
+                        email: Some(String::from("orhun@example.com")),
+                        date: Some(String::from("2021-07-14T21:25:24+03:00")),
+                    }),
+                    committer: None,
+                },
+            ]
+            .into_iter()
+            .map(|v| Box::new(v) as Box<dyn RemoteCommit>)
+            .collect(),
+            vec![Box::new(AzureDevOpsPullRequest {
+                pull_request_id: 42,
+                title: Some(String::from("1")),
+                status: String::from("completed"),
+                created_by: None,
+                last_merge_commit: Some(AzureDevOpsCommitRef {
+                    commit_id: Some(String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071")),
+                }),
+                labels: vec![],
+            })],
+        )?;
+        #[allow(deprecated)]
+        let expected_commits = vec![
+            Commit {
+                id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+                message: String::from("add azure devops integration"),
+                azure_devops: RemoteContributor {
+                    username: Some(String::from("orhun")),
+                    pr_title: Some(String::from("1")),
+                    pr_number: Some(42),
+                    pr_labels: vec![],
+                    is_first_time: false,
+                },
+                remote: Some(RemoteContributor {
+                    username: Some(String::from("orhun")),
+                    pr_title: Some(String::from("1")),
+                    pr_number: Some(42),
+                    pr_labels: vec![],
+                    is_first_time: false,
+                }),
+                ..Default::default()
+            },
+            Commit {
+                id: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
+                message: String::from("fix azure devops integration"),
+                azure_devops: RemoteContributor {
+                    username: Some(String::from("orhun")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: false,
+                },
+                remote: Some(RemoteContributor {
+                    username: Some(String::from("orhun")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: false,
+                }),
+                ..Default::default()
+            },
+            Commit {
+                id: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
+                message: String::from("update metadata"),
+                azure_devops: RemoteContributor {
+                    username: Some(String::from("nuhro")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: false,
+                },
+                remote: Some(RemoteContributor {
+                    username: Some(String::from("nuhro")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: false,
+                }),
+                ..Default::default()
+            },
+            Commit {
+                id: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
+                message: String::from("do some stuff"),
+                azure_devops: RemoteContributor {
+                    username: Some(String::from("awesome_contributor")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: false,
+                },
+                remote: Some(RemoteContributor {
+                    username: Some(String::from("awesome_contributor")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: false,
+                }),
+                ..Default::default()
+            },
+            Commit {
+                id: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
+                message: String::from("alright"),
+                azure_devops: RemoteContributor {
+                    username: Some(String::from("orhun")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: false,
+                },
+                remote: Some(RemoteContributor {
+                    username: Some(String::from("orhun")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: false,
+                }),
+                ..Default::default()
+            },
+            Commit {
+                id: String::from("6c34967147560ea09658776d4901709139b4ad66"),
+                message: String::from("should be fine"),
+                azure_devops: RemoteContributor {
+                    username: Some(String::from("someone")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: false,
+                },
+                remote: Some(RemoteContributor {
+                    username: Some(String::from("someone")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: false,
+                }),
+                ..Default::default()
+            },
+        ];
+        assert_eq!(expected_commits, release.commits);
+
+        release
+            .azure_devops
+            .contributors
+            .sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+
+        let expected_metadata = RemoteReleaseMetadata {
+            contributors: vec![
+                RemoteContributor {
+                    username: Some(String::from("nuhro")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: true,
+                },
+                RemoteContributor {
+                    username: Some(String::from("awesome_contributor")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: true,
+                },
+                RemoteContributor {
+                    username: Some(String::from("someone")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: true,
+                },
+                RemoteContributor {
+                    username: Some(String::from("orhun")),
+                    pr_title: Some(String::from("1")),
+                    pr_number: Some(42),
+                    pr_labels: vec![],
+                    is_first_time: false,
+                },
+            ],
+        };
+        assert_eq!(expected_metadata, release.azure_devops);
 
         Ok(())
     }
