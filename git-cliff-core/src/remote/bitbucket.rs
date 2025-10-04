@@ -149,14 +149,63 @@ impl RemoteClient for BitbucketClient {
     fn client(&self) -> ClientWithMiddleware {
         self.client.clone()
     }
+}
 
-    fn commits_stream<'a>(&'a self) -> impl Stream<Item = Result<Box<dyn RemoteCommit>>> + 'a {
+impl BitbucketClient {
+    /// Constructs the URL for Bitbucket commits API.
+    fn commits_url(api_url: &str, remote: &Remote, ref_name: Option<&str>, page: i32) -> String {
+        let mut url = format!(
+            "{}/{}/{}/commits?pagelen={MAX_PAGE_SIZE}&page={page}",
+            api_url, remote.owner, remote.repo
+        );
+
+        if let Some(ref_name) = ref_name {
+            url.push_str(&format!("&include={}", ref_name));
+        }
+
+        url
+    }
+
+    /// Constructs the URL for Bitbucket pull requests API.
+    fn pull_requests_url(api_url: &str, remote: &Remote, page: i32) -> String {
+        format!(
+            "{}/{}/{}/pullrequests?&pagelen={BITBUCKET_MAX_PAGE_PRS}&page={page}&state=MERGED",
+            api_url, remote.owner, remote.repo
+        )
+    }
+
+    /// Fetches the complete list of commits.
+    /// This is inefficient for large repositories; consider using
+    /// `get_commit_stream` instead.
+    pub async fn get_commits(&self, ref_name: Option<&str>) -> Result<Vec<Box<dyn RemoteCommit>>> {
+        use futures::TryStreamExt;
+
+        self.get_commit_stream(ref_name).try_collect().await
+    }
+
+    /// Fetches the complete list of pull requests.
+    /// This is inefficient for large repositories; consider using
+    /// `get_pull_request_stream` instead.
+    pub async fn get_pull_requests(&self) -> Result<Vec<Box<dyn RemotePullRequest>>> {
+        use futures::TryStreamExt;
+
+        self.get_pull_request_stream().try_collect().await
+    }
+
+    fn get_commit_stream<'a>(
+        &'a self,
+        ref_name: Option<&str>,
+    ) -> impl Stream<Item = Result<Box<dyn RemoteCommit>>> + 'a {
+        let ref_name = ref_name.map(|s| s.to_string());
         async_stream! {
-            let page_stream = stream::iter(0..)
-                .map(|page| async move {
-                    let commit_page = page + 1;
-                    let url = Self::commits_url(&self.api_url(), &self.remote().owner, &self.remote().repo, commit_page);
-                    self.get_json::<BitbucketPagination<BitbucketCommit>>(&url).await
+            // The BitBucket API uses 1-based indexing for pages.
+            let page_stream = stream::iter(1..)
+                .map(|page| {
+                    let ref_name = ref_name.clone();
+                    async move {
+                        let url = Self::commits_url(&self.api_url(), &self.remote(), ref_name.as_deref(), page);
+                        self.get_json::<BitbucketPagination<BitbucketCommit>>(&url).await
+                    }
                 })
                 .buffered(10);
 
@@ -182,14 +231,14 @@ impl RemoteClient for BitbucketClient {
         }
     }
 
-    fn pull_requests_stream<'a>(
+    fn get_pull_request_stream<'a>(
         &'a self,
     ) -> impl Stream<Item = Result<Box<dyn RemotePullRequest>>> + 'a {
         async_stream! {
-            let page_stream = stream::iter(0..)
+            // The BitBucket API uses 1-based indexing for pages.
+            let page_stream = stream::iter(1..)
                 .map(|page| async move {
-                    let pr_page = page + 1;
-                    let url = Self::pull_requests_url(&self.api_url(), &self.remote().owner, &self.remote().repo, pr_page);
+                    let url = Self::pull_requests_url(&self.api_url(), &self.remote(), page);
                     self.get_json::<BitbucketPagination<BitbucketPullRequest>>(&url).await
                 })
                 .buffered(5);
@@ -214,41 +263,6 @@ impl RemoteClient for BitbucketClient {
                 }
             }
         }
-    }
-}
-
-impl BitbucketClient {
-    /// Constructs the URL for Bitbucket commits API.
-    fn commits_url(api_url: &str, owner: &str, repo: &str, page: i32) -> String {
-        format!(
-            "{}/{}/{}/commits?pagelen={MAX_PAGE_SIZE}&page={page}",
-            api_url, owner, repo
-        )
-    }
-
-    /// Constructs the URL for Bitbucket pull requests API.
-    fn pull_requests_url(api_url: &str, owner: &str, repo: &str, page: i32) -> String {
-        format!(
-            "{}/{}/{}/pullrequests?pagelen={BITBUCKET_MAX_PAGE_PRS}&page={page}&state=MERGED",
-            api_url, owner, repo
-        )
-    }
-
-    /// Fetches the Bitbucket API and returns the commits.
-    pub async fn get_commits(&self, _ref_name: Option<&str>) -> Result<Vec<Box<dyn RemoteCommit>>> {
-        use futures::TryStreamExt;
-
-        self.commits_stream().try_collect().await
-    }
-
-    /// Fetches the Bitbucket API and returns the pull requests.
-    pub async fn get_pull_requests(
-        &self,
-        _ref_name: Option<&str>,
-    ) -> Result<Vec<Box<dyn RemotePullRequest>>> {
-        use futures::TryStreamExt;
-
-        self.pull_requests_stream().try_collect().await
     }
 }
 

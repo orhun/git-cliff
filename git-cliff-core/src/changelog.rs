@@ -265,7 +265,7 @@ impl<'a> Changelog<'a> {
                 .block_on(async {
                     let (commits, pull_requests) = tokio::try_join!(
                         github_client.get_commits(ref_name),
-                        github_client.get_pull_requests(ref_name),
+                        github_client.get_pull_requests(),
                     )?;
                     log::debug!("Number of GitHub commits: {}", commits.len());
                     log::debug!("Number of GitHub pull requests: {}", pull_requests.len());
@@ -315,7 +315,7 @@ impl<'a> Changelog<'a> {
                 .build()?
                 .block_on(async {
                     // Map repo/owner to gitlab id
-                    let project_id = match tokio::join!(gitlab_client.get_project(ref_name)) {
+                    let project_id = match tokio::join!(gitlab_client.get_project()) {
                         (Ok(project),) => project.id,
                         (Err(err),) => {
                             log::error!("Failed to lookup project! {}", err);
@@ -325,7 +325,7 @@ impl<'a> Changelog<'a> {
                     let (commits, merge_requests) = tokio::try_join!(
                         // Send id to these functions
                         gitlab_client.get_commits(project_id, ref_name),
-                        gitlab_client.get_merge_requests(project_id, ref_name),
+                        gitlab_client.get_pull_requests(project_id),
                     )?;
                     log::debug!("Number of GitLab commits: {}", commits.len());
                     log::debug!("Number of GitLab merge requests: {}", merge_requests.len());
@@ -374,7 +374,7 @@ impl<'a> Changelog<'a> {
                 .block_on(async {
                     let (commits, pull_requests) = tokio::try_join!(
                         gitea_client.get_commits(ref_name),
-                        gitea_client.get_pull_requests(ref_name),
+                        gitea_client.get_pull_requests(),
                     )?;
                     log::debug!("Number of Gitea commits: {}", commits.len());
                     log::debug!("Number of Gitea pull requests: {}", pull_requests.len());
@@ -428,7 +428,7 @@ impl<'a> Changelog<'a> {
                 .block_on(async {
                     let (commits, pull_requests) = tokio::try_join!(
                         bitbucket_client.get_commits(ref_name),
-                        bitbucket_client.get_pull_requests(ref_name)
+                        bitbucket_client.get_pull_requests()
                     )?;
                     log::debug!("Number of Bitbucket commits: {}", commits.len());
                     log::debug!("Number of Bitbucket pull requests: {}", pull_requests.len());
