@@ -80,5 +80,5 @@ We recommend using **squash merges** for integrating PRs into the main branch. T
 [3]: https://github.com/orhun/git-cliff/blob/main/config/cliff.toml
 [5]: https://semver.org/
 [6]: https://git-cliff.org/docs/configuration/remote
-[7]: http://localhost:3000/docs/tips-and-tricks#use-github-pr-labels-as-groups
+[7]: https://git-cliff.org/docs/tips-and-tricks#use-github-pr-labels-as-groups
 [8]: https://en.wikipedia.org/wiki/Fork_and_pull_model
