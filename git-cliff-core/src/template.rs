@@ -213,6 +213,10 @@ mod test {
             bitbucket: crate::remote::RemoteReleaseMetadata {
                 contributors: vec![],
             },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: crate::remote::RemoteReleaseMetadata {
+                contributors: vec![],
+            },
         }
     }
 
