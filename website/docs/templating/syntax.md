@@ -20,3 +20,6 @@ See the [Tera Documentation](https://keats.github.io/tera/docs/#templates) for m
 Custom built-in filters that **git-cliff** uses:
 
 - `upper_first`: Converts the first character of a string to uppercase.
+- `find_regex`: Finds all occurrences of a regex pattern in a string.
+- `replace_regex`: Replaces all occurrences of a regex pattern with a string.
+- `split_regex`: Splits a string by a regex pattern.
