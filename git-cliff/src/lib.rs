@@ -517,6 +517,7 @@ pub fn run_with_changelog_modifier(
         if let Some(changelog) = args.prepend {
             args.prepend = Some(workdir.join(changelog));
         }
+        args.include_path = Some(vec![Pattern::new(workdir.to_string_lossy().as_ref())?])
     }
 
     // Set path for the configuration file.
@@ -720,11 +721,14 @@ pub fn run_with_changelog_modifier(
                 skip_list.extend(skip_commit.clone());
             }
             for sha1 in skip_list {
-                config.git.commit_parsers.insert(0, CommitParser {
-                    sha: Some(sha1.to_string()),
-                    skip: Some(true),
-                    ..Default::default()
-                });
+                config.git.commit_parsers.insert(
+                    0,
+                    CommitParser {
+                        sha: Some(sha1.to_string()),
+                        skip: Some(true),
+                        ..Default::default()
+                    },
+                );
             }
 
             // Process the repository.
