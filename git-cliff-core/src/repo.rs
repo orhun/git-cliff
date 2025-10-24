@@ -45,16 +45,27 @@ pub struct SubmoduleRange {
 }
 
 impl Repository {
-    /// Initializes (opens) the repository.
-    pub fn init(path: PathBuf) -> Result<Self> {
+    /// Attempts to discover a repository starting from the given path by
+    /// traversing up through its parent directories. This is particularly useful
+    /// when the repository path is not explicitly provided (e.g., no `--repository` argument)
+    ///
+    /// The function first looks for a Git repository along the path hierarchy
+    /// using `GitRepository::discover`. If no Git repository is found, it then
+    /// checks for a Jujutsu repository layout (`.jj/repo/store/git`) in the
+    /// current directory and its parents, opening it as a bare repository if found.
+    pub fn discover(path: PathBuf) -> Result<Self> {
         if path.exists() {
             let inner = GitRepository::discover(&path).or_else(|err| {
-                let jujutsu_path = path.join(".jj").join("repo").join("store").join("git");
-                if jujutsu_path.exists() {
-                    GitRepository::open_bare(&jujutsu_path)
-                } else {
-                    Err(err)
+                // Fallback: look for a Jujutsu repository in this directory and parents.
+                let mut current = Some(path.as_path());
+                while let Some(path) = current {
+                    let jujutsu_path = path.join(".jj").join("repo").join("store").join("git");
+                    if jujutsu_path.exists() {
+                        return GitRepository::open_bare(&jujutsu_path);
+                    }
+                    current = path.parent();
                 }
+                Err(err)
             })?;
             let changed_files_cache_path = inner
                 .path()
@@ -195,11 +206,15 @@ impl Repository {
         // iterate through all path diffs and find corresponding submodule if
         // possible
         let submodule_range = before_and_after_deltas.filter_map(|(path, range)| {
+            // NOTE:
+            // libgit2 recommends using `git_submodule_open`, whereas `git_repository_discover` is used here.
+            // Since it seems to be working fine for now, we don't think we should change this.
+            // Just leaving this message as a reminder.
             let repository = self
                 .inner
                 .find_submodule(path)
                 .ok()
-                .and_then(|submodule| Self::init(submodule.path().into()).ok());
+                .and_then(|submodule| Self::discover(submodule.path().into()).ok());
             repository.map(|repository| SubmoduleRange { repository, range })
         });
         Ok(submodule_range.collect())
@@ -625,7 +640,7 @@ mod test {
     }
 
     fn get_repository() -> Result<Repository> {
-        Repository::init(
+        Repository::discover(
             PathBuf::from(env!("CARGO_MANIFEST_DIR"))
                 .parent()
                 .expect("parent directory not found")
@@ -779,7 +794,8 @@ mod test {
             .expect("failed to execute git init");
         assert!(output.status.success(), "git init failed {:?}", output);
 
-        let repo = Repository::init(temp_dir.path().to_path_buf()).expect("failed to init repo");
+        let repo =
+            Repository::discover(temp_dir.path().to_path_buf()).expect("failed to init repo");
         let output = Command::new("git")
             .args(["config", "user.email", "test@gmail.com"])
             .current_dir(temp_dir.path())
@@ -823,7 +839,7 @@ mod test {
         fs::rename(working_copy.join(".git"), store.join("git")).expect("failed to move git repo");
 
         // Open repo from working copy, that contains the .jj directory
-        let repo = Repository::init(working_copy).expect("failed to init repo");
+        let repo = Repository::discover(working_copy).expect("failed to init repo");
 
         // macOS canonical path for temp directories is in /private
         // libgit2 forces the path to be canonical regardless of what we pass in
@@ -848,7 +864,7 @@ mod test {
 
         let path = temp_dir.path().to_path_buf();
 
-        let result = Repository::init(path.clone());
+        let result = Repository::discover(path.clone());
 
         assert!(result.is_err());
         if let Err(error) = result {

@@ -743,7 +743,7 @@ pub fn run_with_changelog_modifier(
             }
 
             // Process the repository.
-            let repository = Repository::init(repository)?;
+            let repository = Repository::discover(repository)?;
 
             // The commit range, used for determining the remote commits to include
             // in the changelog, doesn't make sense if multiple repositories are
