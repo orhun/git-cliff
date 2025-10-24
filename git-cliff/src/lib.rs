@@ -278,7 +278,7 @@ fn process_repository<'a>(
             } else {
                 fs::canonicalize(&path)?
             };
-            Pattern::new(path.to_string_lossy().as_ref()).map_err(|e| Error::from(e))
+            Pattern::new(path.to_string_lossy().as_ref()).map_err(Error::from)
         })
         .collect::<Result<Vec<_>>>()?;
     // Handles exclude paths.
@@ -298,13 +298,26 @@ fn process_repository<'a>(
             } else {
                 fs::canonicalize(&path)?
             };
-            Pattern::new(path.to_string_lossy().as_ref()).map_err(|e| Error::from(e))
+            Pattern::new(path.to_string_lossy().as_ref()).map_err(Error::from)
         })
         .collect::<Result<Vec<_>>>()?;
     // Include only the current directory if not running from the root repository.
+    //
+    // NOTE:
+    // The conditions for including the current directory when not running from the root repository
+    // have grown quite complex. This may warrant additional documentation to explain the behavior.
+    //
+    // Current logic triggers when all of the following are true:
+    // - `cwd` is a child of the repository root but not the root itself
+    // - `args.repository` is either None or empty
+    // - `args.workdir` is None
+    // - `include_path` is currently empty
+    //
+    // Additionally, if `include_path` is already explicitly set, it might be preferable to append
+    // the current directory rather than overwrite it.
     if cwd.starts_with(&repository.root_path()?) &&
         cwd != repository.root_path()? &&
-        args.repository.as_ref().map_or(true, |r| r.is_empty()) &&
+        args.repository.as_ref().is_none_or(|r| r.is_empty()) &&
         args.workdir.is_none() &&
         include_path.is_empty()
     {
