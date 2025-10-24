@@ -268,7 +268,7 @@ impl Repository {
     /// - Absolute patterns under the root are stripped to be relative.
     /// - Absolute patterns outside the root are skipped (returns None).
     /// - Relative patterns are returned as-is.
-    /// Returns `None` if the conversion fails.
+    /// - Returns `None` if the conversion fails.
     fn relativize_pattern(pattern: Pattern, root: Option<PathBuf>) -> Option<Pattern> {
         let path = PathBuf::from(pattern.as_str());
         let rel_path = match root {
