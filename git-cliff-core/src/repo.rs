@@ -650,7 +650,7 @@ fn ssh_path_segments(url: &str) -> Result<Remote> {
 #[cfg(test)]
 mod test {
     use std::process::Command;
-    use std::{env, fs, str};
+    use std::{env, fs, io, str};
 
     use temp_dir::TempDir;
 
@@ -876,7 +876,21 @@ mod test {
     }
 
     #[test]
-    fn open_jujutsu_repo() {
+    fn repository_path_not_found() {
+        let path = PathBuf::from("/this/path/should/not/exist/123456789");
+        let result = Repository::discover(path.clone());
+        assert!(result.is_err());
+        match result {
+            Err(Error::IoError(err)) => {
+                assert_eq!(err.kind(), io::ErrorKind::NotFound);
+                assert!(err.to_string().contains("repository path not found"));
+            }
+            _ => panic!("expected IoError(NotFound)"),
+        }
+    }
+
+    #[test]
+    fn discover_jujutsu_repo() {
         let (repo, _temp_dir) = create_temp_repo();
         // working copy is the directory that contains the .git directory:
         let working_copy = repo.path;
@@ -930,6 +944,75 @@ mod test {
         }
     }
 
+    #[test]
+    fn repository_path_not_exist() {
+        let path = PathBuf::from("/this/path/should/not/exist/123456789");
+        let result = Repository::open(path.clone());
+        assert!(result.is_err());
+        match result {
+            Err(Error::IoError(err)) => {
+                assert_eq!(err.kind(), io::ErrorKind::NotFound);
+                assert!(err.to_string().contains("repository path not found"));
+            }
+            _ => panic!("expected IoError(NotFound)"),
+        }
+    }
+
+    #[test]
+    fn open_jujutsu_repo() {
+        let (repo, _temp_dir) = create_temp_repo();
+        // working copy is the directory that contains the .git directory:
+        let working_copy = repo.path;
+
+        // Make the Git repository bare and set HEAD
+        std::process::Command::new("git")
+            .args(["config", "core.bare", "true"])
+            .current_dir(&working_copy)
+            .status()
+            .expect("failed to make git repo non-bare");
+        // Move the Git repo into jj
+        let store = working_copy.join(".jj").join("repo").join("store");
+        fs::create_dir_all(&store).expect("failed to create dir");
+        fs::rename(working_copy.join(".git"), store.join("git")).expect("failed to move git repo");
+
+        // Open repo from working copy, that contains the .jj directory
+        let repo = Repository::open(working_copy).expect("failed to init repo");
+
+        // macOS canonical path for temp directories is in /private
+        // libgit2 forces the path to be canonical regardless of what we pass in
+        if repo.inner.path().starts_with("/private") {
+            assert_eq!(
+                repo.inner.path().strip_prefix("/private"),
+                store.join("git").strip_prefix("/"),
+                "open git repo in .jj/repo/store/"
+            );
+        } else {
+            assert_eq!(
+                repo.inner.path(),
+                store.join("git"),
+                "open git repo in .jj/repo/store/"
+            );
+        }
+    }
+
+    #[test]
+    fn propagate_error_if_no_repo_exist() {
+        let temp_dir = TempDir::with_prefix("git-cliff-").expect("failed to create temp dir");
+
+        let path = temp_dir.path().to_path_buf();
+
+        let result = Repository::open(path.clone());
+
+        assert!(result.is_err());
+        if let Err(error) = result {
+            assert!(
+                format!("{error:?}").contains(
+                    format!("could not find repository at '{}'", path.display()).as_str()
+                )
+            )
+        }
+    }
+
     fn create_commit_with_files<'a>(
         repo: &'a Repository,
         files: Vec<(&'a str, &'a str)>,
@@ -966,7 +1049,13 @@ mod test {
         let (repo, _temp_dir) = create_temp_repo();
 
         let new_pattern = |input: &str| {
-            Repository::normalize_pattern(Pattern::new(input).expect("valid pattern"))
+            Repository::normalize_pattern(
+                Repository::relativize_pattern(
+                    Pattern::new(input).expect("valid pattern"),
+                    Some(repo.root_path().expect("valid root path")),
+                )
+                .expect("relativize_pattern should always succeed"),
+            )
         };
 
         let first_commit = create_commit_with_files(&repo, vec![
