@@ -54,34 +54,67 @@ impl Repository {
     /// checks for a Jujutsu repository layout (`.jj/repo/store/git`) in the
     /// current directory and its parents, opening it as a bare repository if found.
     pub fn discover(path: PathBuf) -> Result<Self> {
-        if path.exists() {
-            let inner = GitRepository::discover(&path).or_else(|err| {
-                // Fallback: look for a Jujutsu repository in this directory and parents.
-                let mut current = Some(path.as_path());
-                while let Some(path) = current {
-                    let jujutsu_path = path.join(".jj").join("repo").join("store").join("git");
-                    if jujutsu_path.exists() {
-                        return GitRepository::open_bare(&jujutsu_path);
-                    }
-                    current = path.parent();
-                }
-                Err(err)
-            })?;
-            let changed_files_cache_path = inner
-                .path()
-                .join(env!("CARGO_PKG_NAME"))
-                .join(CHANGED_FILES_CACHE);
-            Ok(Self {
-                inner,
-                path,
-                changed_files_cache_path,
-            })
-        } else {
-            Err(Error::IoError(io::Error::new(
+        if !path.exists() {
+            return Err(Error::IoError(io::Error::new(
                 io::ErrorKind::NotFound,
-                "repository path not found",
-            )))
+                format!("repository path not found: {}", path.display()),
+            )));
         }
+        let inner = GitRepository::discover(&path).or_else(|err| {
+            // Fallback: look for a Jujutsu repository in this directory and parents.
+            let mut current = Some(path.as_path());
+            while let Some(path) = current {
+                let jujutsu_path = path.join(".jj").join("repo").join("store").join("git");
+                if jujutsu_path.exists() {
+                    return GitRepository::open_bare(&jujutsu_path);
+                }
+                current = path.parent();
+            }
+            Err(err)
+        })?;
+        let changed_files_cache_path = inner
+            .path()
+            .join(env!("CARGO_PKG_NAME"))
+            .join(CHANGED_FILES_CACHE);
+        Ok(Self {
+            inner,
+            path,
+            changed_files_cache_path,
+        })
+    }
+
+    /// Attempts to open an already-existing repository at the given path.
+    ///
+    /// The function tries to open the repository as a normal or bare Git repository
+    /// located exactly at `path`. If the path does not contain a valid Git repository,
+    /// it falls back to checking for a Jujutsu repository layout (`.jj/repo/store/git`)
+    /// **only in the specified directory**. Parent directories are **not** searched.
+    pub fn open(path: PathBuf) -> Result<Self> {
+        if !path.exists() {
+            return Err(Error::IoError(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("repository path not found: {}", path.display()),
+            )));
+        }
+        // Try opening as normal/bare repository.
+        let inner = GitRepository::open(&path).or_else(|err| {
+            // Fallback: look for a Jujutsu repository in this directory.
+            let jujutsu_path = path.join(".jj").join("repo").join("store").join("git");
+            if jujutsu_path.exists() {
+                GitRepository::open_bare(&jujutsu_path)
+            } else {
+                Err(err)
+            }
+        })?;
+        let changed_files_cache_path = inner
+            .path()
+            .join(env!("CARGO_PKG_NAME"))
+            .join(CHANGED_FILES_CACHE);
+        Ok(Self {
+            inner,
+            path,
+            changed_files_cache_path,
+        })
     }
 
     /// Returns the path of the repository.
