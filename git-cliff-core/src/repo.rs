@@ -190,42 +190,14 @@ impl Repository {
             let include_patterns = include_path.map(|patterns| {
                 patterns
                     .into_iter()
-                    // Convert include path patterns to be relative to the repository root.
-                    .filter_map(|p| {
-                        let path = PathBuf::from(p.as_str());
-                        let rel_path = match self.root_path().ok() {
-                            Some(root) if path.is_absolute() => {
-                                if path.starts_with(&root) {
-                                    path.strip_prefix(root).unwrap().to_path_buf()
-                                } else {
-                                    return None;
-                                }
-                            }
-                            _ => path,
-                        };
-                        Pattern::new(rel_path.to_string_lossy().as_ref()).ok()
-                    })
+                    .filter_map(|p| Self::relativize_pattern(p, self.root_path().ok()))
                     .map(Self::normalize_pattern)
                     .collect()
             });
             let exclude_patterns = exclude_path.map(|patterns| {
                 patterns
                     .into_iter()
-                    // Convert include path patterns to be relative to the repository root.
-                    .filter_map(|p| {
-                        let path = PathBuf::from(p.as_str());
-                        let rel_path = match self.root_path().ok() {
-                            Some(root) if path.is_absolute() => {
-                                if path.starts_with(&root) {
-                                    path.strip_prefix(root).unwrap().to_path_buf()
-                                } else {
-                                    return None;
-                                }
-                            }
-                            _ => path,
-                        };
-                        Pattern::new(rel_path.to_string_lossy().as_ref()).ok()
-                    })
+                    .filter_map(|p| Self::relativize_pattern(p, self.root_path().ok()))
                     .map(Self::normalize_pattern)
                     .collect()
             });
@@ -291,21 +263,32 @@ impl Repository {
         Ok(submodule_range.collect())
     }
 
+    /// Converts a `Pattern` to a normalized `Pattern` relative to the repository root.
+    ///
+    /// - Absolute patterns under the root are stripped to be relative.
+    /// - Absolute patterns outside the root are skipped (returns None).
+    /// - Relative patterns are returned as-is.
+    /// Returns `None` if the conversion fails.
+    fn relativize_pattern(pattern: Pattern, root: Option<PathBuf>) -> Option<Pattern> {
+        let path = PathBuf::from(pattern.as_str());
+        let rel_path = match root {
+            Some(root) if path.is_absolute() => match path.strip_prefix(root) {
+                Ok(stripped) => stripped.to_path_buf(),
+                Err(_) => return None,
+            },
+            _ => path,
+        };
+        Pattern::new(rel_path.to_string_lossy().as_ref()).ok()
+    }
+
     /// Normalizes the glob pattern to match the git diff paths.
     ///
-    /// It removes the leading `./` and adds `**` to the end if the pattern is a
-    /// directory.
+    /// - Adds `**` to the end if the pattern is a directory.
     fn normalize_pattern(pattern: Pattern) -> Pattern {
-        let star_added = match pattern.as_str().chars().last() {
+        match pattern.as_str().chars().last() {
             Some('/' | '\\') => Pattern::new(&format!("{pattern}**"))
                 .expect("failed to add '**' to the end of glob"),
             _ => pattern,
-        };
-        match star_added.as_str().strip_prefix("./") {
-            Some(stripped) => {
-                Pattern::new(stripped).expect("failed to remove leading ./ from glob")
-            }
-            None => star_added,
         }
     }
 
@@ -1007,11 +990,6 @@ mod test {
         {
             let retain = repo.should_retain_commit(&commit, &None, &None);
             assert!(retain, "no include/exclude patterns");
-        }
-
-        {
-            let retain = repo.should_retain_commit(&commit, &Some(vec![new_pattern("./")]), &None);
-            assert!(retain, "include: ./");
         }
 
         {

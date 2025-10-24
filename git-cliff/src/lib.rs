@@ -304,7 +304,7 @@ fn process_repository<'a>(
     // Include only the current directory if not running from the root repository.
     if cwd.starts_with(&repository.root_path()?) &&
         cwd != repository.root_path()? &&
-        args.repository.as_ref().map_or(false, |r| !r.is_empty()) &&
+        args.repository.as_ref().map_or(true, |r| r.is_empty()) &&
         args.workdir.is_none() &&
         include_path.is_empty()
     {
