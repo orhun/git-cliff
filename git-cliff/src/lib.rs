@@ -715,13 +715,24 @@ pub fn run_with_changelog_modifier(
         changelog
     } else {
         // Process the repositories.
-        let repositories = args.repository.clone().unwrap_or(vec![env::current_dir()?]);
+        let repositories: Vec<Repository> = if let Some(paths) = &args.repository {
+            paths
+                .iter()
+                .map(|p| {
+                    let abs_path = fs::canonicalize(p)?;
+                    Repository::open(abs_path)
+                })
+                .collect::<Result<Vec<_>>>()?
+        } else {
+            let cwd = env::current_dir()?;
+            vec![Repository::discover(cwd)?]
+        };
         let mut releases = Vec::<Release>::new();
         let mut commit_range = None;
         for repository in repositories {
             // Skip commits
             let mut skip_list = Vec::new();
-            let ignore_file = repository.join(IGNORE_FILE);
+            let ignore_file = repository.root_path()?.join(IGNORE_FILE);
             if ignore_file.exists() {
                 let contents = fs::read_to_string(ignore_file)?;
                 let commits = contents
@@ -741,9 +752,6 @@ pub fn run_with_changelog_modifier(
                     ..Default::default()
                 });
             }
-
-            // Process the repository.
-            let repository = Repository::discover(repository)?;
 
             // The commit range, used for determining the remote commits to include
             // in the changelog, doesn't make sense if multiple repositories are
