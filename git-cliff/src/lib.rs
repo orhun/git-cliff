@@ -720,11 +720,14 @@ pub fn run_with_changelog_modifier(
                 skip_list.extend(skip_commit.clone());
             }
             for sha1 in skip_list {
-                config.git.commit_parsers.insert(0, CommitParser {
-                    sha: Some(sha1.to_string()),
-                    skip: Some(true),
-                    ..Default::default()
-                });
+                config.git.commit_parsers.insert(
+                    0,
+                    CommitParser {
+                        sha: Some(sha1.to_string()),
+                        skip: Some(true),
+                        ..Default::default()
+                    },
+                );
             }
 
             // Process the repository.
@@ -795,5 +798,11 @@ pub fn run_with_changelog_modifier(
         changelog.generate(&mut out)?;
     }
 
+    Ok(())
+}
+
+pub fn dump_context_schema(path: &Path) -> Result<()> {
+    let schema_json = Changelog::context_schema()?;
+    fs::write(path, schema_json)?;
     Ok(())
 }

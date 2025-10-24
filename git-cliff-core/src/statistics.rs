@@ -1,13 +1,14 @@
 use std::collections::HashMap;
 
 use chrono::{TimeZone, Utc};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::release::Release;
 
 /// Aggregated information about how many times a specific link appeared in
 /// commit messages.
-#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct LinkCount {
     /// Text of the link.
@@ -19,7 +20,7 @@ pub struct LinkCount {
 }
 
 /// Aggregated statistics about commits in the release.
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct Statistics {
     /// The total number of commits included in the release.
     pub commit_count: usize,

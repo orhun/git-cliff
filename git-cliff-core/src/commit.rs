@@ -2,6 +2,7 @@ use git_conventional::{Commit as ConventionalCommit, Footer as ConventionalFoote
 #[cfg(feature = "repo")]
 use git2::{Commit as GitCommit, Signature as CommitSignature};
 use lazy_regex::{Lazy, Regex, lazy_regex};
+use schemars::JsonSchema;
 use serde::ser::{SerializeStruct, Serializer};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::value::Value;
@@ -14,7 +15,7 @@ use crate::error::{Error as AppError, Result};
 static SHA1_REGEX: Lazy<Regex> = lazy_regex!(r#"^\b([a-f0-9]{40})\b (.*)$"#);
 
 /// Object representing a link
-#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize, JsonSchema)]
 #[serde(rename_all(serialize = "camelCase"))]
 pub struct Link {
     /// Text of the link.
@@ -24,7 +25,7 @@ pub struct Link {
 }
 
 /// A conventional commit footer.
-#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize, JsonSchema)]
 struct Footer<'a> {
     /// Token of the footer.
     ///
@@ -53,7 +54,7 @@ impl<'a> From<&'a ConventionalFooter<'a>> for Footer<'a> {
 }
 
 /// Commit signature that indicates authorship.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize, JsonSchema)]
 pub struct Signature {
     /// Name on the signature.
     pub name: Option<String>,
@@ -75,7 +76,7 @@ impl<'a> From<CommitSignature<'a>> for Signature {
 }
 
 /// Commit range (from..to)
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct Range {
     /// Full commit SHA the range starts at
     from: String,
@@ -94,7 +95,7 @@ impl Range {
 }
 
 /// Common commit object that is parsed from a repository.
-#[derive(Debug, Default, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Default, Clone, PartialEq, Deserialize, JsonSchema)]
 #[serde(rename_all(serialize = "camelCase"))]
 pub struct Commit<'a> {
     /// Commit ID.
@@ -259,8 +260,8 @@ impl Commit<'_> {
     /// and the commit is breaking, or the parser's `skip` field is None or
     /// `false`. Returns `true` otherwise.
     fn skip_commit(&self, parser: &CommitParser, protect_breaking: bool) -> bool {
-        parser.skip.unwrap_or(false) &&
-            !(self.conv.as_ref().map(|c| c.breaking()).unwrap_or(false) && protect_breaking)
+        parser.skip.unwrap_or(false)
+            && !(self.conv.as_ref().map(|c| c.breaking()).unwrap_or(false) && protect_breaking)
     }
 
     /// Parses the commit using [`CommitParser`]s.

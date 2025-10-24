@@ -1006,7 +1006,7 @@ dependencies = [
  "dyn-clone",
  "expect-test",
  "futures",
- "git-conventional",
+ "git-conventional 0.12.9 (git+https://github.com/greenhat616/git-conventional)",
  "git2",
  "glob",
  "http-cache-reqwest",
@@ -1020,6 +1020,7 @@ dependencies = [
  "reqwest",
  "reqwest-middleware",
  "rust-embed",
+ "schemars",
  "secrecy",
  "semver",
  "serde",
@@ -1041,6 +1042,16 @@ version = "0.12.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f6a949b7fcc81df22526032dcddb006e78c8575e47b0e7ba57d9960570a57bc4"
 dependencies = [
+ "unicase",
+ "winnow",
+]
+
+[[package]]
+name = "git-conventional"
+version = "0.12.9"
+source = "git+https://github.com/greenhat616/git-conventional#af796e07661317c82a495b9ad4b5d7134f09a4d9"
+dependencies = [
+ "schemars",
  "serde",
  "unicase",
  "winnow",
@@ -1830,7 +1841,7 @@ version = "0.2.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2af0742157c04cea78f8643de0d0785a29d53c4dd08d985bc542cdd4d2ec9830"
 dependencies = [
- "git-conventional",
+ "git-conventional 0.12.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex",
  "semver",
 ]
@@ -2270,6 +2281,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "ref-cast"
+version = "1.0.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f354300ae66f76f1c85c5f84693f0ce81d747e2c3f21a45fef496d89c960bf7d"
+dependencies = [
+ "ref-cast-impl",
+]
+
+[[package]]
+name = "ref-cast-impl"
+version = "1.0.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b7186006dcb21920990093f30e3dea63b7d6e977bf1256be20c3563a5db070da"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.106",
+]
+
+[[package]]
 name = "reflink-copy"
 version = "0.1.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2551,6 +2582,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "schemars"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "82d20c4491bc164fa2f6c5d44565947a52ad80b9505d8e36f8d54c27c739fcd0"
+dependencies = [
+ "dyn-clone",
+ "ref-cast",
+ "schemars_derive",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "schemars_derive"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "33d020396d1d138dc19f1165df7545479dcd58d93810dc5d646a16e55abefa80"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "serde_derive_internals",
+ "syn 2.0.106",
+]
+
+[[package]]
 name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2619,6 +2675,17 @@ name = "serde_derive"
 version = "1.0.221"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6185cf75117e20e62b1ff867b9518577271e58abe0037c40bb4794969355ab0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.106",
+]
+
+[[package]]
+name = "serde_derive_internals"
+version = "0.29.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "18d26a20a969b9e3fdf2fc2d9f21eda6c40e2de84c9408bb5d3b05d499aae711"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -32,6 +32,11 @@ fn main() -> Result<()> {
         _profiler_guard = Some(());
     }
 
+    if let Some(path) = args.dump_context_schema {
+        git_cliff::dump_context_schema(&path)?;
+        return Ok(());
+    }
+
     // Run git-cliff
     let exit_code = match git_cliff::run(args) {
         Ok(()) => 0,
