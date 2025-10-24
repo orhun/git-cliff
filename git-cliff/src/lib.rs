@@ -253,7 +253,7 @@ fn process_repository<'a>(
     //
     // - If the path is already absolute, leave it as is.
     // - If the path does not contain any `.` or `..` components, leave it as is.
-    // - Otherwise, join it with `cwd` to get an absolute path.
+    // - Otherwise, convert it into an absolute path.
     //
     // Note:
     // Even relative paths without `.` or `..` are valid, but to support repositories
