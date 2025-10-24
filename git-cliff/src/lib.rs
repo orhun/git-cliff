@@ -156,19 +156,6 @@ fn process_submodules(
     Ok(())
 }
 
-fn relative_subdirectory_path(current_dir: &Path, repository_root: &Path) -> Option<PathBuf> {
-    if !current_dir.starts_with(repository_root) {
-        return None;
-    }
-    pathdiff::diff_paths(current_dir, repository_root).and_then(|relative| {
-        if relative.as_os_str().is_empty() {
-            None
-        } else {
-            Some(relative)
-        }
-    })
-}
-
 /// Processes the tags and commits for creating release entries for the
 /// changelog.
 ///
@@ -263,17 +250,15 @@ fn process_repository<'a>(
 
     // Include only the current directory if not running from the root repository
     let mut include_path = config.git.include_paths.clone();
-    if args.workdir.is_none() && include_path.is_empty() {
-        let current_dir = env::current_dir()?;
-        let repository_root = repository.root_path()?;
-        if let Some(mut relative_path) = relative_subdirectory_path(&current_dir, &repository_root)
-        {
+    if let Some(mut path_diff) = pathdiff::diff_paths(env::current_dir()?, repository.root_path()?)
+    {
+        if args.workdir.is_none() && include_path.is_empty() && path_diff != Path::new("") {
             log::info!(
                 "Including changes from the current directory: {:?}",
-                relative_path.display()
+                path_diff.display()
             );
-            relative_path.extend(["**", "*"]);
-            include_path = vec![Pattern::new(relative_path.to_string_lossy().as_ref())?];
+            path_diff.extend(["**", "*"]);
+            include_path = vec![Pattern::new(path_diff.to_string_lossy().as_ref())?];
         }
     }
 
@@ -819,41 +804,4 @@ pub fn run_with_changelog_modifier(
     }
 
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use std::path::PathBuf;
-
-    use super::relative_subdirectory_path;
-
-    #[test]
-    fn detects_relative_subdirectory_when_inside_repository() {
-        let repository_root = PathBuf::from("repo");
-        let current_dir = repository_root.join("apps").join("mobile");
-        let expected = PathBuf::from("apps").join("mobile");
-        assert_eq!(
-            relative_subdirectory_path(&current_dir, &repository_root),
-            Some(expected)
-        );
-    }
-
-    #[test]
-    fn returns_none_when_at_repository_root() {
-        let repository_root = PathBuf::from("repo");
-        assert_eq!(
-            relative_subdirectory_path(&repository_root, &repository_root),
-            None
-        );
-    }
-
-    #[test]
-    fn returns_none_when_outside_repository() {
-        let repository_root = PathBuf::from("repo");
-        let current_dir = PathBuf::from("other");
-        assert_eq!(
-            relative_subdirectory_path(&current_dir, &repository_root),
-            None
-        );
-    }
 }
