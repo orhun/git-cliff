@@ -187,10 +187,48 @@ impl Repository {
             .filter_map(|id| self.inner.find_commit(id).ok())
             .collect();
         if include_path.is_some() || exclude_path.is_some() {
-            let include_patterns = include_path
-                .map(|patterns| patterns.into_iter().map(Self::normalize_pattern).collect());
-            let exclude_patterns = exclude_path
-                .map(|patterns| patterns.into_iter().map(Self::normalize_pattern).collect());
+            let include_patterns = include_path.map(|patterns| {
+                patterns
+                    .into_iter()
+                    // Convert include path patterns to be relative to the repository root.
+                    .filter_map(|p| {
+                        let path = PathBuf::from(p.as_str());
+                        let rel_path = match self.root_path().ok() {
+                            Some(root) if path.is_absolute() => {
+                                if path.starts_with(&root) {
+                                    path.strip_prefix(root).unwrap().to_path_buf()
+                                } else {
+                                    return None;
+                                }
+                            }
+                            _ => path,
+                        };
+                        Pattern::new(rel_path.to_string_lossy().as_ref()).ok()
+                    })
+                    .map(Self::normalize_pattern)
+                    .collect()
+            });
+            let exclude_patterns = exclude_path.map(|patterns| {
+                patterns
+                    .into_iter()
+                    // Convert include path patterns to be relative to the repository root.
+                    .filter_map(|p| {
+                        let path = PathBuf::from(p.as_str());
+                        let rel_path = match self.root_path().ok() {
+                            Some(root) if path.is_absolute() => {
+                                if path.starts_with(&root) {
+                                    path.strip_prefix(root).unwrap().to_path_buf()
+                                } else {
+                                    return None;
+                                }
+                            }
+                            _ => path,
+                        };
+                        Pattern::new(rel_path.to_string_lossy().as_ref()).ok()
+                    })
+                    .map(Self::normalize_pattern)
+                    .collect()
+            });
             commits.retain(|commit| {
                 self.should_retain_commit(commit, &include_patterns, &exclude_patterns)
             });

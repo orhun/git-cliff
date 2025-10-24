@@ -11,7 +11,7 @@ pub mod args;
 pub mod logger;
 
 use std::fs::{self, File};
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, io};
 
@@ -248,23 +248,74 @@ fn process_repository<'a>(
     // Parse commits.
     let commit_range = determine_commit_range(args, config, repository)?;
 
-    // Include only the current directory if not running from the root repository
-    let mut include_path = config.git.include_paths.clone();
-    if let Some(mut path_diff) = pathdiff::diff_paths(env::current_dir()?, repository.root_path()?)
-    {
-        if args.workdir.is_none() && include_path.is_empty() && path_diff != Path::new("") {
+    // Convert relative paths containing `.` or `..` to absolute paths based on the current
+    // working directory.
+    //
+    // - If the path is already absolute, leave it as is.
+    // - If the path does not contain any `.` or `..` components, leave it as is.
+    // - Otherwise, join it with `cwd` to get an absolute path.
+    //
+    // Note:
+    // Even relative paths without `.` or `..` are valid, but to support repositories
+    // that do not have the actual working files (e.g., bare or worktree repositories),
+    // we follow this rule. If you want the path to be treated as relative, you must
+    // explicitly use `./` or similar notation.
+    let cwd = env::current_dir()?;
+    // Handles include paths.
+    let mut include_path: Vec<Pattern> = config
+        .git
+        .include_paths
+        .clone()
+        .iter()
+        .map(|pattern| {
+            let path = PathBuf::from(pattern.as_str());
+            let path = if path.is_absolute() ||
+                !path
+                    .components()
+                    .any(|c| matches!(c, Component::CurDir | Component::ParentDir))
+            {
+                path.clone()
+            } else {
+                fs::canonicalize(&path)?
+            };
+            Pattern::new(path.to_string_lossy().as_ref()).map_err(|e| Error::from(e))
+        })
+        .collect::<Result<Vec<_>>>()?;
+    // Handles exclude paths.
+    let exclude_path: Vec<Pattern> = config
+        .git
+        .exclude_paths
+        .clone()
+        .iter()
+        .map(|pattern| {
+            let path = PathBuf::from(pattern.as_str());
+            let path = if path.is_absolute() ||
+                !path
+                    .components()
+                    .any(|c| matches!(c, Component::CurDir | Component::ParentDir))
+            {
+                path.clone()
+            } else {
+                fs::canonicalize(&path)?
+            };
+            Pattern::new(path.to_string_lossy().as_ref()).map_err(|e| Error::from(e))
+        })
+        .collect::<Result<Vec<_>>>()?;
+    // Include only the current directory if not running from the root repository.
+    if cwd.starts_with(&repository.root_path()?) {
+        if args.workdir.is_none() && include_path.is_empty() {
             log::info!(
                 "Including changes from the current directory: {:?}",
-                path_diff.display()
+                cwd.display()
             );
-            path_diff.extend(["**", "*"]);
-            include_path = vec![Pattern::new(path_diff.to_string_lossy().as_ref())?];
+            let mut path = cwd.clone();
+            path.extend(["**", "*"]);
+            include_path = vec![Pattern::new(path.to_string_lossy().as_ref())?];
         }
     }
 
     let include_path = (!include_path.is_empty()).then_some(include_path);
-    let exclude_path =
-        (!config.git.exclude_paths.is_empty()).then_some(config.git.exclude_paths.clone());
+    let exclude_path = (!exclude_path.is_empty()).then_some(exclude_path);
     let mut commits = repository.commits(
         commit_range.as_deref(),
         include_path,
