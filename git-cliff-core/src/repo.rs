@@ -207,9 +207,9 @@ impl Repository {
         // possible
         let submodule_range = before_and_after_deltas.filter_map(|(path, range)| {
             // NOTE:
-            // libgit2 recommends using `git_submodule_open`, whereas `git_repository_discover` is used here.
-            // Since it seems to be working fine for now, we don't think we should change this.
-            // Just leaving this message as a reminder.
+            // libgit2 recommends using `git_submodule_open`, whereas `git_repository_discover` is
+            // used here. Since it seems to be working fine for now, we don't think we
+            // should change this. Just leaving this message as a reminder.
             let repository = self
                 .inner
                 .find_submodule(path)
