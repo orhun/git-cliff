@@ -302,16 +302,19 @@ fn process_repository<'a>(
         })
         .collect::<Result<Vec<_>>>()?;
     // Include only the current directory if not running from the root repository.
-    if cwd.starts_with(&repository.root_path()?) {
-        if args.workdir.is_none() && include_path.is_empty() {
-            log::info!(
-                "Including changes from the current directory: {:?}",
-                cwd.display()
-            );
-            let mut path = cwd.clone();
-            path.extend(["**", "*"]);
-            include_path = vec![Pattern::new(path.to_string_lossy().as_ref())?];
-        }
+    if cwd.starts_with(&repository.root_path()?) &&
+        cwd != repository.root_path()? &&
+        args.repository.as_ref().map_or(false, |r| !r.is_empty()) &&
+        args.workdir.is_none() &&
+        include_path.is_empty()
+    {
+        log::info!(
+            "Including changes from the current directory: {:?}",
+            cwd.display()
+        );
+        let mut path = cwd.clone();
+        path.extend(["**", "*"]);
+        include_path = vec![Pattern::new(path.to_string_lossy().as_ref())?];
     }
 
     let include_path = (!include_path.is_empty()).then_some(include_path);
