@@ -1,5 +1,5 @@
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::{self, Path, PathBuf};
 use std::result::Result as StdResult;
 
 use git2::{
@@ -255,12 +255,19 @@ impl Repository {
 
     /// Normalizes the glob pattern to match the git diff paths.
     ///
-    /// - Adds `**` to the end if the pattern is a directory.
+    /// It removes the leading `./` and adds `**` to the end if the pattern is a
+    /// directory.
     fn normalize_pattern(pattern: Pattern) -> Pattern {
-        match pattern.as_str().chars().last() {
-            Some('/' | '\\') => Pattern::new(&format!("{pattern}**"))
-                .expect("failed to add '**' to the end of glob"),
-            _ => pattern,
+        let star_added = if pattern.as_str().ends_with(path::MAIN_SEPARATOR) {
+            Pattern::new(&format!("{pattern}**")).expect("failed to add '**' to the end of glob")
+        } else {
+            pattern
+        };
+        match star_added.as_str().strip_prefix("./") {
+            Some(stripped) => {
+                Pattern::new(stripped).expect("failed to remove leading ./ from glob")
+            }
+            None => star_added,
         }
     }
 
@@ -1045,6 +1052,11 @@ mod test {
         {
             let retain = repo.should_retain_commit(&commit, &None, &None);
             assert!(retain, "no include/exclude patterns");
+        }
+
+        {
+            let retain = repo.should_retain_commit(&commit, &Some(vec![new_pattern("./")]), &None);
+            assert!(retain, "include: ./");
         }
 
         {

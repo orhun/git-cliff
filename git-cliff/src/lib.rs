@@ -11,7 +11,7 @@ pub mod args;
 pub mod logger;
 
 use std::fs::{self, File};
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, io};
 
@@ -156,53 +156,6 @@ fn process_submodules(
     Ok(())
 }
 
-/// Normalizes and filters include/exclude path patterns for the repository.
-///
-/// This function performs two main tasks:
-/// 1. Converts relative paths containing `.` or `..` components into absolute paths.
-/// 2. Filters out absolute paths that do not belong to the current repository.
-///
-/// Path normalization rules:
-/// - If the path is already absolute, it is left unchanged.
-/// - If the path does not contain any `.` or `..` components, it is left unchanged.
-/// - Otherwise, the path is canonicalized into an absolute one.
-///
-/// After normalization, only absolute paths are checked against the repository root:
-/// - If the absolute path resides within the repository, it is kept as a valid pattern.
-/// - Otherwise, it is excluded from the final list.
-///
-/// Note:
-/// Even simple relative paths without `.` or `..` are valid. However, to maintain
-/// consistent behavior in repositories without working directories (e.g., bare or
-/// worktree repositories), this normalization rule is applied universally.  
-/// To explicitly keep a path relative, prefix it with `./` or similar notation.
-fn build_patterns(repository: &Repository, patterns: &[Pattern]) -> Vec<Pattern> {
-    patterns
-        .iter()
-        .filter_map(|pattern| {
-            let mut path = PathBuf::from(pattern.as_str());
-            // Canonicalize only when relative path contains `.` or `..`
-            if !path.is_absolute() &&
-                path.components()
-                    .any(|c| matches!(c, Component::CurDir | Component::ParentDir))
-            {
-                path = fs::canonicalize(&path).ok()?;
-            }
-            // For absolute paths, ensure they belong to the repository
-            if let Ok(root) = repository.root_path() {
-                if path.is_absolute() {
-                    if let Ok(stripped) = path.strip_prefix(root) {
-                        path = stripped.to_path_buf();
-                    } else {
-                        return None;
-                    }
-                }
-            }
-            Pattern::new(path.to_string_lossy().as_ref()).ok()
-        })
-        .collect()
-}
-
 /// Processes the tags and commits for creating release entries for the
 /// changelog.
 ///
@@ -295,10 +248,6 @@ fn process_repository<'a>(
     // Parse commits.
     let commit_range = determine_commit_range(args, config, repository)?;
 
-    // Normalize include/exclude patterns.
-    let cwd = env::current_dir()?;
-    let mut include_path = build_patterns(repository, &config.git.include_paths);
-    let exclude_path = build_patterns(repository, &config.git.exclude_paths);
     // Include only the current directory if not running from the root repository.
     //
     // NOTE:
@@ -312,7 +261,8 @@ fn process_repository<'a>(
     // - `include_path` is currently empty
     //
     // Additionally, if `include_path` is already explicitly set, it might be preferable to append
-    // the current directory rather than overwrite it.
+    let cwd = env::current_dir()?;
+    let mut include_path = config.git.include_paths.clone();
     if cwd.starts_with(&repository.root_path()?) &&
         cwd != repository.root_path()? &&
         args.repository.as_ref().is_none_or(|r| r.is_empty()) &&
@@ -325,11 +275,16 @@ fn process_repository<'a>(
         );
         let mut path = cwd.clone();
         path.extend(["**", "*"]);
-        include_path = vec![Pattern::new(path.to_string_lossy().as_ref())?];
+        if let Ok(root) = repository.root_path() {
+            if let Ok(stripped) = path.strip_prefix(root) {
+                include_path = vec![Pattern::new(stripped.to_string_lossy().as_ref())?];
+            }
+        }
     }
 
     let include_path = (!include_path.is_empty()).then_some(include_path);
-    let exclude_path = (!exclude_path.is_empty()).then_some(exclude_path);
+    let exclude_path =
+        (!config.git.exclude_paths.is_empty()).then_some(config.git.exclude_paths.clone());
     let mut commits = repository.commits(
         commit_range.as_deref(),
         include_path,
