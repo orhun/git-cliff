@@ -156,6 +156,53 @@ fn process_submodules(
     Ok(())
 }
 
+/// Normalizes and filters include/exclude path patterns for the repository.
+///
+/// This function performs two main tasks:
+/// 1. Converts relative paths containing `.` or `..` components into absolute paths.
+/// 2. Filters out absolute paths that do not belong to the current repository.
+///
+/// Path normalization rules:
+/// - If the path is already absolute, it is left unchanged.
+/// - If the path does not contain any `.` or `..` components, it is left unchanged.
+/// - Otherwise, the path is canonicalized into an absolute one.
+///
+/// After normalization, only absolute paths are checked against the repository root:
+/// - If the absolute path resides within the repository, it is kept as a valid pattern.
+/// - Otherwise, it is excluded from the final list.
+///
+/// Note:
+/// Even simple relative paths without `.` or `..` are valid. However, to maintain
+/// consistent behavior in repositories without working directories (e.g., bare or
+/// worktree repositories), this normalization rule is applied universally.  
+/// To explicitly keep a path relative, prefix it with `./` or similar notation.
+fn build_patterns(repository: &Repository, patterns: &[Pattern]) -> Vec<Pattern> {
+    patterns
+        .iter()
+        .filter_map(|pattern| {
+            let mut path = PathBuf::from(pattern.as_str());
+            // Canonicalize only when relative path contains `.` or `..`
+            if !path.is_absolute() &&
+                path.components()
+                    .any(|c| matches!(c, Component::CurDir | Component::ParentDir))
+            {
+                path = fs::canonicalize(&path).ok()?;
+            }
+            // For absolute paths, ensure they belong to the repository
+            if let Ok(root) = repository.root_path() {
+                if path.is_absolute() {
+                    if let Ok(stripped) = path.strip_prefix(root) {
+                        path = stripped.to_path_buf();
+                    } else {
+                        return None;
+                    }
+                }
+            }
+            Pattern::new(path.to_string_lossy().as_ref()).ok()
+        })
+        .collect()
+}
+
 /// Processes the tags and commits for creating release entries for the
 /// changelog.
 ///
@@ -248,59 +295,10 @@ fn process_repository<'a>(
     // Parse commits.
     let commit_range = determine_commit_range(args, config, repository)?;
 
-    // Convert relative paths containing `.` or `..` to absolute paths based on the current
-    // working directory.
-    //
-    // - If the path is already absolute, leave it as is.
-    // - If the path does not contain any `.` or `..` components, leave it as is.
-    // - Otherwise, convert it into an absolute path.
-    //
-    // Note:
-    // Even relative paths without `.` or `..` are valid, but to support repositories
-    // that do not have the actual working files (e.g., bare or worktree repositories),
-    // we follow this rule. If you want the path to be treated as relative, you must
-    // explicitly use `./` or similar notation.
+    // Normalize include/exclude patterns.
     let cwd = env::current_dir()?;
-    // Handles include paths.
-    let mut include_path: Vec<Pattern> = config
-        .git
-        .include_paths
-        .clone()
-        .iter()
-        .map(|pattern| {
-            let path = PathBuf::from(pattern.as_str());
-            let path = if path.is_absolute() ||
-                !path
-                    .components()
-                    .any(|c| matches!(c, Component::CurDir | Component::ParentDir))
-            {
-                path.clone()
-            } else {
-                fs::canonicalize(&path)?
-            };
-            Pattern::new(path.to_string_lossy().as_ref()).map_err(Error::from)
-        })
-        .collect::<Result<Vec<_>>>()?;
-    // Handles exclude paths.
-    let exclude_path: Vec<Pattern> = config
-        .git
-        .exclude_paths
-        .clone()
-        .iter()
-        .map(|pattern| {
-            let path = PathBuf::from(pattern.as_str());
-            let path = if path.is_absolute() ||
-                !path
-                    .components()
-                    .any(|c| matches!(c, Component::CurDir | Component::ParentDir))
-            {
-                path.clone()
-            } else {
-                fs::canonicalize(&path)?
-            };
-            Pattern::new(path.to_string_lossy().as_ref()).map_err(Error::from)
-        })
-        .collect::<Result<Vec<_>>>()?;
+    let mut include_path = build_patterns(repository, &config.git.include_paths);
+    let exclude_path = build_patterns(repository, &config.git.exclude_paths);
     // Include only the current directory if not running from the root repository.
     //
     // NOTE:

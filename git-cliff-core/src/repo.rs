@@ -187,20 +187,10 @@ impl Repository {
             .filter_map(|id| self.inner.find_commit(id).ok())
             .collect();
         if include_path.is_some() || exclude_path.is_some() {
-            let include_patterns = include_path.map(|patterns| {
-                patterns
-                    .into_iter()
-                    .filter_map(|p| Self::relativize_pattern(p, self.root_path().ok()))
-                    .map(Self::normalize_pattern)
-                    .collect()
-            });
-            let exclude_patterns = exclude_path.map(|patterns| {
-                patterns
-                    .into_iter()
-                    .filter_map(|p| Self::relativize_pattern(p, self.root_path().ok()))
-                    .map(Self::normalize_pattern)
-                    .collect()
-            });
+            let include_patterns = include_path
+                .map(|patterns| patterns.into_iter().map(Self::normalize_pattern).collect());
+            let exclude_patterns = exclude_path
+                .map(|patterns| patterns.into_iter().map(Self::normalize_pattern).collect());
             commits.retain(|commit| {
                 self.should_retain_commit(commit, &include_patterns, &exclude_patterns)
             });
@@ -261,24 +251,6 @@ impl Repository {
             repository.map(|repository| SubmoduleRange { repository, range })
         });
         Ok(submodule_range.collect())
-    }
-
-    /// Converts a `Pattern` to a normalized `Pattern` relative to the repository root.
-    ///
-    /// - Absolute patterns under the root are stripped to be relative.
-    /// - Absolute patterns outside the root are skipped (returns None).
-    /// - Relative patterns are returned as-is.
-    /// - Returns `None` if the conversion fails.
-    fn relativize_pattern(pattern: Pattern, root: Option<PathBuf>) -> Option<Pattern> {
-        let path = PathBuf::from(pattern.as_str());
-        let rel_path = match root {
-            Some(root) if path.is_absolute() => match path.strip_prefix(root) {
-                Ok(stripped) => stripped.to_path_buf(),
-                Err(_) => return None,
-            },
-            _ => path,
-        };
-        Pattern::new(rel_path.to_string_lossy().as_ref()).ok()
     }
 
     /// Normalizes the glob pattern to match the git diff paths.
@@ -1049,13 +1021,7 @@ mod test {
         let (repo, _temp_dir) = create_temp_repo();
 
         let new_pattern = |input: &str| {
-            Repository::normalize_pattern(
-                Repository::relativize_pattern(
-                    Pattern::new(input).expect("valid pattern"),
-                    Some(repo.root_path().expect("valid root path")),
-                )
-                .expect("relativize_pattern should always succeed"),
-            )
+            Repository::normalize_pattern(Pattern::new(input).expect("valid pattern"))
         };
 
         let first_commit = create_commit_with_files(&repo, vec![
