@@ -143,7 +143,6 @@ jobs:
             -v
             --max-concurrency 1
             --no-progress
-            --delay 1
             --retry-count 3
             --retry-wait-time 2
             --timeout 15
