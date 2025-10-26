@@ -1,0 +1,5 @@
+# Treat Cloudflare 403 as acceptable for human-facing sites
+accept = [200, 203, 206, 301, 302, 307, 308, 403]
+
+# Optionally skip the npm website entirely (keeps other links strict)
+#exclude = ["^https://www\\.npmjs\\.com/"]
