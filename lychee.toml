@@ -1,5 +1,21 @@
-# Treat Cloudflare 403 as acceptable for human-facing sites
+# Treat Cloudflare 403 as acceptable for human-facing sites.
+# See: https://github.com/orgs/community/discussions/174098
 accept = [200, 203, 206, 301, 302, 307, 308, 403]
 
-# Optionally skip the npm website entirely (keeps other links strict)
-#exclude = ["^https://www\\.npmjs\\.com/"]
+# Maximum number of concurrent checks
+max_concurrency = 1
+
+# Disable the interactive progress bar
+no_progress = true
+
+# Wait time in seconds before retrying failed requests
+retry_wait_time = 5
+
+# Timeout in seconds for each request
+timeout = 15
+
+# Enable caching to speed up subsequent checks
+cache = true
+
+# Maximum age for cached requests
+max_cache_age = "1d"
