@@ -260,21 +260,20 @@ fn process_repository<'a>(
     // - `args.workdir` is None
     // - `include_path` is currently empty
     //
-    // Additionally, if `include_path` is already explicitly set, it might be preferable to append
+    // Additionally, if `include_path` is already explicitly set, it might be preferable to append.
     let cwd = env::current_dir()?;
     let mut include_path = config.git.include_paths.clone();
-    if cwd.starts_with(&repository.root_path()?) &&
-        cwd != repository.root_path()? &&
-        args.repository.as_ref().is_none_or(|r| r.is_empty()) &&
-        args.workdir.is_none() &&
-        include_path.is_empty()
-    {
-        let mut path = cwd.clone();
-        path.extend(["**", "*"]);
-        if let Ok(root) = repository.root_path() {
+    if let Ok(root) = repository.root_path() {
+        if cwd.starts_with(&root) &&
+            cwd != root &&
+            args.repository.as_ref().is_none_or(|r| r.is_empty()) &&
+            args.workdir.is_none() &&
+            include_path.is_empty()
+        {
+            let path = cwd.join("**").join("*");
             if let Ok(stripped) = path.strip_prefix(root) {
                 log::info!(
-                    "Including changes from the current directory: {:?}",
+                    "Including changes from the current directory: {}",
                     cwd.display()
                 );
                 include_path = vec![Pattern::new(stripped.to_string_lossy().as_ref())?];
