@@ -269,14 +269,14 @@ fn process_repository<'a>(
         args.workdir.is_none() &&
         include_path.is_empty()
     {
-        log::info!(
-            "Including changes from the current directory: {:?}",
-            cwd.display()
-        );
         let mut path = cwd.clone();
         path.extend(["**", "*"]);
         if let Ok(root) = repository.root_path() {
             if let Ok(stripped) = path.strip_prefix(root) {
+                log::info!(
+                    "Including changes from the current directory: {:?}",
+                    cwd.display()
+                );
                 include_path = vec![Pattern::new(stripped.to_string_lossy().as_ref())?];
             }
         }
