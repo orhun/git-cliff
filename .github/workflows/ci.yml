@@ -139,7 +139,17 @@ jobs:
       - name: Check the links
         uses: lycheeverse/lychee-action@82202e5e9c2f4ef1a55a3d02563e1cb6041e5332 # v2.4.1
         with:
-          args: -v --max-concurrency 1 *.md website/docs/* website/blog/*
+          args: >
+            -v
+            --max-concurrency 1
+            --no-progress
+            --delay 1
+            --retry-count 3
+            --retry-wait-time 2
+            --timeout 15
+            --cache
+            --max-cache-age 1d
+            *.md website/docs/* website/blog/*
           fail: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
