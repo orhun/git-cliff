@@ -261,9 +261,8 @@ fn process_repository<'a>(
     // - `include_path` is currently empty
     //
     // Additionally, if `include_path` is already explicitly set, it might be preferable to append.
-    let cwd = env::current_dir()?;
     let mut include_path = config.git.include_paths.clone();
-    if let Ok(root) = repository.root_path() {
+    if let (Ok(cwd), Ok(root)) = (env::current_dir(), repository.root_path()) {
         if cwd.starts_with(&root) &&
             cwd != root &&
             args.repository.as_ref().is_none_or(|r| r.is_empty()) &&
