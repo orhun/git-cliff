@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
 use next_version::{NextVersion, VersionUpdater};
+use schemars::JsonSchema;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use serde_json::value::Value;
-use schemars::JsonSchema;
 
 use crate::commit::{Commit, Range, commits_to_conventional_commits};
 use crate::config::{Bump, BumpType};
