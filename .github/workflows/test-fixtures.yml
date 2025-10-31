@@ -136,6 +136,7 @@ jobs:
           - fixtures-name: test-regex-json-array
           - fixtures-name: test-release-statistics
             previous-release-timestamp: "2022-04-06 01:25:12"
+          - fixtures-name: test-fail-on-unmatched-commit
 
     steps:
       - name: Checkout

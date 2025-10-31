@@ -110,6 +110,8 @@ pub struct GitConfig {
     pub link_parsers: Vec<LinkParser>,
     /// Exclude commits that are not matched by any commit parser.
     pub filter_commits: bool,
+    /// Fail on a commit that is not matched by any commit parser.
+    pub fail_on_unmatched_commit: bool,
     /// Regex to select git tags that represent releases.
     #[serde(with = "serde_regex", default)]
     pub tag_pattern: Option<Regex>,

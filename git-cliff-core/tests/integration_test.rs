@@ -112,6 +112,7 @@ fn generate_changelog() -> Result<()> {
         ],
         protect_breaking_commits: false,
         filter_commits: true,
+        fail_on_unmatched_commit: false,
         tag_pattern: None,
         skip_tags: None,
         ignore_tags: None,
