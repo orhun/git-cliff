@@ -45,37 +45,49 @@ pub struct SubmoduleRange {
 }
 
 impl Repository {
-    /// Attempts to discover a repository starting from the given path by
-    /// traversing up through its parent directories. This is particularly useful
-    /// when the repository path is not explicitly provided (e.g., no `--repository` argument)
+    /// Opens a repository from the given path.
     ///
-    /// The function first looks for a Git repository along the path hierarchy
-    /// using `GitRepository::discover`. If no Git repository is found, it then
-    /// checks for a Jujutsu repository layout (`.jj/repo/store/git`) in the
-    /// current directory and its parents, opening it as a bare repository if found.
-    pub fn discover(path: PathBuf) -> Result<Self> {
+    /// If `search_parents` is true, it will traverse up through parent
+    /// directories to find a repository.
+    fn open(path: PathBuf, search_parents: bool) -> Result<Self> {
         if !path.exists() {
             return Err(Error::IoError(io::Error::new(
                 io::ErrorKind::NotFound,
                 format!("repository path not found: {}", path.display()),
             )));
         }
-        let inner = GitRepository::discover(&path).or_else(|err| {
-            // Fallback: look for a Jujutsu repository in this directory and parents.
-            let mut current = Some(path.as_path());
-            while let Some(path) = current {
-                let jujutsu_path = path.join(".jj").join("repo").join("store").join("git");
-                if jujutsu_path.exists() {
-                    return GitRepository::open_bare(&jujutsu_path);
+
+        let inner = GitRepository::open(&path)
+            .or_else(|err| {
+                // Optionally search for a Jujutsu repository layout
+                let mut current = Some(path.as_path());
+                while let Some(dir) = current {
+                    let jujutsu_path = dir.join(".jj/repo/store/git");
+                    if jujutsu_path.exists() {
+                        return GitRepository::open_bare(&jujutsu_path);
+                    }
+                    // Only continue searching if enabled
+                    if !search_parents {
+                        break;
+                    }
+                    current = dir.parent();
                 }
-                current = path.parent();
-            }
-            Err(err)
-        })?;
+                Err(err)
+            })
+            // If still not found, try discover if traversal is enabled
+            .or_else(|err| {
+                if search_parents {
+                    GitRepository::discover(&path)
+                } else {
+                    Err(err)
+                }
+            })?;
+
         let changed_files_cache_path = inner
             .path()
             .join(env!("CARGO_PKG_NAME"))
             .join(CHANGED_FILES_CACHE);
+
         Ok(Self {
             inner,
             path,
@@ -83,38 +95,23 @@ impl Repository {
         })
     }
 
+    /// Discover a repository from the given path by traversing up through
+    /// parent directories.
+    ///
+    /// It first looks for a Git repository using [`GitRepository::discover`].
+    /// If no Git repository is found, it checks for a Jujutsu repository layout
+    /// (`.jj/repo/store/git`) in this directory and its parents.
+    pub fn discover(path: PathBuf) -> Result<Self> {
+        Self::open(path, true)
+    }
+
     /// Attempts to open an already-existing repository at the given path.
     ///
-    /// The function tries to open the repository as a normal or bare Git repository
-    /// located exactly at `path`. If the path does not contain a valid Git repository,
-    /// it falls back to checking for a Jujutsu repository layout (`.jj/repo/store/git`)
-    /// **only in the specified directory**. Parent directories are **not** searched.
-    pub fn open(path: PathBuf) -> Result<Self> {
-        if !path.exists() {
-            return Err(Error::IoError(io::Error::new(
-                io::ErrorKind::NotFound,
-                format!("repository path not found: {}", path.display()),
-            )));
-        }
-        // Try opening as normal/bare repository.
-        let inner = GitRepository::open(&path).or_else(|err| {
-            // Fallback: look for a Jujutsu repository in this directory.
-            let jujutsu_path = path.join(".jj").join("repo").join("store").join("git");
-            if jujutsu_path.exists() {
-                GitRepository::open_bare(&jujutsu_path)
-            } else {
-                Err(err)
-            }
-        })?;
-        let changed_files_cache_path = inner
-            .path()
-            .join(env!("CARGO_PKG_NAME"))
-            .join(CHANGED_FILES_CACHE);
-        Ok(Self {
-            inner,
-            path,
-            changed_files_cache_path,
-        })
+    /// It tries to open the repository as a normal or bare Git repository located
+    /// exactly at `path`. If that fails, it falls back to checking for a Jujutsu
+    /// repository layout (`.jj/repo/store/git`) **only in the specified directory**.
+    pub fn init(path: PathBuf) -> Result<Self> {
+        Self::open(path, false)
     }
 
     /// Returns the path of the repository.
@@ -289,8 +286,8 @@ impl Repository {
                 changed_files.iter().any(|path| {
                     include_pattern
                         .iter()
-                        .any(|pattern| pattern.matches_path(path)) &&
-                        !exclude_pattern
+                        .any(|pattern| pattern.matches_path(path))
+                        && !exclude_pattern
                             .iter()
                             .any(|pattern| pattern.matches_path(path))
                 })
@@ -463,8 +460,8 @@ impl Repository {
     fn should_include_tag(&self, head_commit: &Commit, tag_commit: &Commit) -> Result<bool> {
         Ok(self
             .inner
-            .graph_descendant_of(head_commit.id(), tag_commit.id())? ||
-            head_commit.id() == tag_commit.id())
+            .graph_descendant_of(head_commit.id(), tag_commit.id())?
+            || head_commit.id() == tag_commit.id())
     }
 
     /// Parses and returns a commit-tag map.
@@ -491,10 +488,13 @@ impl Repository {
                     continue;
                 }
 
-                tags.push((commit, Tag {
-                    name,
-                    message: None,
-                }));
+                tags.push((
+                    commit,
+                    Tag {
+                        name,
+                        message: None,
+                    },
+                ));
             } else if let Some(tag) = obj.as_tag() {
                 if let Some(commit) = tag
                     .target()
@@ -504,12 +504,15 @@ impl Repository {
                     if use_branch_tags && !self.should_include_tag(&head_commit, &commit)? {
                         continue;
                     }
-                    tags.push((commit, Tag {
-                        name: tag.name().map(String::from).unwrap_or(name),
-                        message: tag
-                            .message()
-                            .map(|msg| TAG_SIGNATURE_REGEX.replace(msg, "").trim().to_owned()),
-                    }));
+                    tags.push((
+                        commit,
+                        Tag {
+                            name: tag.name().map(String::from).unwrap_or(name),
+                            message: tag
+                                .message()
+                                .map(|msg| TAG_SIGNATURE_REGEX.replace(msg, "").trim().to_owned()),
+                        },
+                    ));
                 }
             }
         }
@@ -924,9 +927,9 @@ mod test {
     }
 
     #[test]
-    fn repository_path_not_exist() {
+    fn repository_path_does_not_exist() {
         let path = PathBuf::from("/this/path/should/not/exist/123456789");
-        let result = Repository::open(path.clone());
+        let result = Repository::init(path.clone());
         assert!(result.is_err());
         match result {
             Err(Error::IoError(err)) => {
@@ -944,18 +947,19 @@ mod test {
         let working_copy = repo.path;
 
         // Make the Git repository bare and set HEAD
-        std::process::Command::new("git")
+        Command::new("git")
             .args(["config", "core.bare", "true"])
             .current_dir(&working_copy)
             .status()
             .expect("failed to make git repo non-bare");
+
         // Move the Git repo into jj
         let store = working_copy.join(".jj").join("repo").join("store");
         fs::create_dir_all(&store).expect("failed to create dir");
         fs::rename(working_copy.join(".git"), store.join("git")).expect("failed to move git repo");
 
         // Open repo from working copy, that contains the .jj directory
-        let repo = Repository::open(working_copy).expect("failed to init repo");
+        let repo = Repository::init(working_copy).expect("failed to init repo");
 
         // macOS canonical path for temp directories is in /private
         // libgit2 forces the path to be canonical regardless of what we pass in
@@ -980,7 +984,7 @@ mod test {
 
         let path = temp_dir.path().to_path_buf();
 
-        let result = Repository::open(path.clone());
+        let result = Repository::init(path.clone());
 
         assert!(result.is_err());
         if let Err(error) = result {
@@ -1031,10 +1035,13 @@ mod test {
             Repository::normalize_pattern(Pattern::new(input).expect("valid pattern"))
         };
 
-        let first_commit = create_commit_with_files(&repo, vec![
-            ("initial.txt", "initial content"),
-            ("dir/initial.txt", "initial content"),
-        ]);
+        let first_commit = create_commit_with_files(
+            &repo,
+            vec![
+                ("initial.txt", "initial content"),
+                ("dir/initial.txt", "initial content"),
+            ],
+        );
 
         {
             let retain =
@@ -1042,12 +1049,15 @@ mod test {
             assert!(retain, "include: dir/");
         }
 
-        let commit = create_commit_with_files(&repo, vec![
-            ("file1.txt", "content1"),
-            ("file2.txt", "content2"),
-            ("dir/file3.txt", "content3"),
-            ("dir/subdir/file4.txt", "content4"),
-        ]);
+        let commit = create_commit_with_files(
+            &repo,
+            vec![
+                ("file1.txt", "content1"),
+                ("file2.txt", "content2"),
+                ("dir/file3.txt", "content3"),
+                ("dir/subdir/file4.txt", "content4"),
+            ],
+        );
 
         {
             let retain = repo.should_retain_commit(&commit, &None, &None);
