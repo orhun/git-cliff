@@ -248,17 +248,36 @@ fn process_repository<'a>(
     // Parse commits.
     let commit_range = determine_commit_range(args, config, repository)?;
 
-    // Include only the current directory if not running from the root repository
+    // Include only the current directory if not running from the root repository.
+    //
+    // NOTE:
+    // The conditions for including the current directory when not running from the root repository
+    // have grown quite complex. This may warrant additional documentation to explain the behavior.
+    //
+    // Current logic triggers when all of the following are true:
+    // - `cwd` is a child of the repository root but not the root itself
+    // - `args.repository` is either None or empty
+    // - `args.workdir` is None
+    // - `include_path` is currently empty
+    //
+    // Additionally, if `include_path` is already explicitly set, it might be preferable to append.
+    let cwd = env::current_dir()?;
     let mut include_path = config.git.include_paths.clone();
-    if let Some(mut path_diff) = pathdiff::diff_paths(env::current_dir()?, repository.root_path()?)
-    {
-        if args.workdir.is_none() && include_path.is_empty() && path_diff != Path::new("") {
-            log::info!(
-                "Including changes from the current directory: {:?}",
-                path_diff.display()
-            );
-            path_diff.extend(["**", "*"]);
-            include_path = vec![Pattern::new(path_diff.to_string_lossy().as_ref())?];
+    if let Ok(root) = repository.root_path() {
+        if cwd.starts_with(&root) &&
+            cwd != root &&
+            args.repository.as_ref().is_none_or(|r| r.is_empty()) &&
+            args.workdir.is_none() &&
+            include_path.is_empty()
+        {
+            let path = cwd.join("**").join("*");
+            if let Ok(stripped) = path.strip_prefix(root) {
+                log::info!(
+                    "Including changes from the current directory: {}",
+                    cwd.display()
+                );
+                include_path = vec![Pattern::new(stripped.to_string_lossy().as_ref())?];
+            }
         }
     }
 
@@ -700,13 +719,24 @@ pub fn run_with_changelog_modifier(
         changelog
     } else {
         // Process the repositories.
-        let repositories = args.repository.clone().unwrap_or(vec![env::current_dir()?]);
+        let repositories: Vec<Repository> = if let Some(paths) = &args.repository {
+            paths
+                .iter()
+                .map(|p| {
+                    let abs_path = fs::canonicalize(p)?;
+                    Repository::init(abs_path)
+                })
+                .collect::<Result<Vec<_>>>()?
+        } else {
+            let cwd = env::current_dir()?;
+            vec![Repository::discover(cwd)?]
+        };
         let mut releases = Vec::<Release>::new();
         let mut commit_range = None;
         for repository in repositories {
             // Skip commits
             let mut skip_list = Vec::new();
-            let ignore_file = repository.join(IGNORE_FILE);
+            let ignore_file = repository.root_path()?.join(IGNORE_FILE);
             if ignore_file.exists() {
                 let contents = fs::read_to_string(ignore_file)?;
                 let commits = contents
@@ -726,9 +756,6 @@ pub fn run_with_changelog_modifier(
                     ..Default::default()
                 });
             }
-
-            // Process the repository.
-            let repository = Repository::init(repository)?;
 
             // The commit range, used for determining the remote commits to include
             // in the changelog, doesn't make sense if multiple repositories are
