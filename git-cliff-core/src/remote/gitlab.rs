@@ -32,7 +32,7 @@ pub struct GitLabProject {
     /// Project created at
     pub created_at: String,
     /// Default branch eg (main/master)
-    pub default_branch: String,
+    pub default_branch: Option<String>,
 }
 
 impl RemoteEntry for GitLabProject {
