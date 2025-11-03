@@ -264,11 +264,11 @@ fn process_repository<'a>(
     let cwd = env::current_dir()?;
     let mut include_path = config.git.include_paths.clone();
     if let Ok(root) = repository.root_path() {
-        if cwd.starts_with(&root)
-            && cwd != root
-            && args.repository.as_ref().is_none_or(|r| r.is_empty())
-            && args.workdir.is_none()
-            && include_path.is_empty()
+        if cwd.starts_with(&root) &&
+            cwd != root &&
+            args.repository.as_ref().is_none_or(|r| r.is_empty()) &&
+            args.workdir.is_none() &&
+            include_path.is_empty()
         {
             let path = cwd.join("**").join("*");
             if let Ok(stripped) = path.strip_prefix(root) {
@@ -750,14 +750,11 @@ pub fn run_with_changelog_modifier(
                 skip_list.extend(skip_commit.clone());
             }
             for sha1 in skip_list {
-                config.git.commit_parsers.insert(
-                    0,
-                    CommitParser {
-                        sha: Some(sha1.to_string()),
-                        skip: Some(true),
-                        ..Default::default()
-                    },
-                );
+                config.git.commit_parsers.insert(0, CommitParser {
+                    sha: Some(sha1.to_string()),
+                    skip: Some(true),
+                    ..Default::default()
+                });
             }
 
             // The commit range, used for determining the remote commits to include
