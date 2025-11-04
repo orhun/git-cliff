@@ -163,7 +163,7 @@ pub fn init_config(name: Option<String>, config_path: PathBuf) -> Result<()> {
         None => EmbeddedConfig::get_config()?,
     };
 
-    let config_path = if *config_path == *DEFAULT_CONFIG {
+    let config_path = if config_path == PathBuf::from(DEFAULT_CONFIG) {
         PathBuf::from(DEFAULT_CONFIG)
     } else {
         config_path.clone()
