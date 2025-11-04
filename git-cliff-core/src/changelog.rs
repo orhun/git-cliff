@@ -483,7 +483,7 @@ impl<'a> Changelog<'a> {
                 .block_on(async {
                     let (commits, pull_requests) = tokio::try_join!(
                         azure_devops_client.get_commits(ref_name),
-                        azure_devops_client.get_pull_requests(ref_name)
+                        azure_devops_client.get_pull_requests()
                     )?;
                     log::debug!("Number of Azure DevOps commits: {}", commits.len());
                     log::debug!(

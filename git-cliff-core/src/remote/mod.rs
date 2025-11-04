@@ -175,20 +175,11 @@ pub trait RemoteClient {
             log::trace!("Response: {:?}", text);
             text
         } else {
-            log::trace!("Response: {:?}", response_text);
-        }
-
-        match serde_json::from_str::<T>(&response_text) {
-            Ok(result) => Ok(result),
-            Err(e) => {
-                log::error!(
-                    "Failed to parse JSON response. Error: {}. First 500 chars of response: {}",
-                    e,
-                    response_text.chars().take(500).collect::<String>()
-                );
-                Err(e.into())
-            }
-        }
+            let text = response.text().await?;
+            log::error!("Request error: {}", text);
+            text
+        };
+        Ok(serde_json::from_str::<T>(&response_text)?)
     }
 }
 

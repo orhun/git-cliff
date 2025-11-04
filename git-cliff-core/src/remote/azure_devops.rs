@@ -1,3 +1,5 @@
+use async_stream::stream as async_stream;
+use futures::{Stream, StreamExt, stream};
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{Deserialize, Serialize};
 
@@ -59,42 +61,6 @@ pub struct AzureDevOpsCommitsResponse {
     pub value: Vec<AzureDevOpsCommit>,
     /// Number of commits in the response.
     pub count: i64,
-}
-
-impl RemoteEntry for AzureDevOpsCommitsResponse {
-    fn url(_id: i64, api_url: &str, remote: &Remote, ref_name: Option<&str>, page: i32) -> String {
-        let skip = page * MAX_PAGE_SIZE as i32;
-        // Azure DevOps format: owner should be "organization/project"
-        // and repo is the repository name
-        let mut url = format!(
-            "{}/{}/_apis/git/repositories/{}/commits?api-version=7.1&$top={}&$skip={}",
-            api_url,
-            urlencoding::encode(&remote.owner),
-            urlencoding::encode(&remote.repo),
-            MAX_PAGE_SIZE,
-            skip
-        );
-
-        if let Some(ref_name) = ref_name {
-            // Azure DevOps needs versionType to distinguish between branch/tag/commit
-            // For git-cliff, ref_name is typically a tag, but could be a branch or commit
-            // We'll default to tag since that's most common with version ranges
-            url.push_str(&format!(
-                "&searchCriteria.itemVersion.versionType=tag&searchCriteria.itemVersion.version={}",
-                urlencoding::encode(ref_name)
-            ));
-        }
-
-        url
-    }
-
-    fn buffer_size() -> usize {
-        10
-    }
-
-    fn early_exit(&self) -> bool {
-        self.value.is_empty()
-    }
 }
 
 /// Author/Committer of the commit.
@@ -160,31 +126,6 @@ pub struct AzureDevOpsPullRequestsResponse {
     pub count: i64,
 }
 
-impl RemoteEntry for AzureDevOpsPullRequestsResponse {
-    fn url(_id: i64, api_url: &str, remote: &Remote, _ref_name: Option<&str>, page: i32) -> String {
-        let skip = page * MAX_PAGE_SIZE as i32;
-        // Azure DevOps format: owner should be "organization/project"
-        // and repo is the repository name
-        format!(
-            "{}/{}/_apis/git/repositories/{}/pullrequests?api-version=7.1&searchCriteria.\
-             status=completed&$top={}&$skip={}",
-            api_url,
-            urlencoding::encode(&remote.owner),
-            urlencoding::encode(&remote.repo),
-            MAX_PAGE_SIZE,
-            skip
-        )
-    }
-
-    fn buffer_size() -> usize {
-        5
-    }
-
-    fn early_exit(&self) -> bool {
-        self.value.is_empty()
-    }
-}
-
 /// Label of the pull request.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AzureDevOpsPullRequestLabel {
@@ -245,29 +186,127 @@ impl RemoteClient for AzureDevOpsClient {
 }
 
 impl AzureDevOpsClient {
-    /// Fetches the Azure DevOps API and returns the commits.
-    pub async fn get_commits(&self, ref_name: Option<&str>) -> Result<Vec<Box<dyn RemoteCommit>>> {
-        Ok(self
-            .fetch_with_early_exit::<AzureDevOpsCommitsResponse>(0, ref_name)
-            .await?
-            .into_iter()
-            .flat_map(|v| v.value)
-            .map(|v| Box::new(v) as Box<dyn RemoteCommit>)
-            .collect())
+    /// Constructs the URL for Azure DevOps commits API.
+    fn commits_url(api_url: &str, remote: &Remote, ref_name: Option<&str>, page: i32) -> String {
+        let skip = page * MAX_PAGE_SIZE as i32;
+        let mut url = format!(
+            "{}/{}/_apis/git/repositories/{}/commits?api-version=7.1&$top={}&$skip={}",
+            api_url,
+            urlencoding::encode(&remote.owner),
+            urlencoding::encode(&remote.repo),
+            MAX_PAGE_SIZE,
+            skip
+        );
+
+        if let Some(ref_name) = ref_name {
+            url.push_str(&format!(
+                "&searchCriteria.itemVersion.versionType=tag&searchCriteria.itemVersion.version={}",
+                urlencoding::encode(ref_name)
+            ));
+        }
+
+        url
     }
 
-    /// Fetches the Azure DevOps API and returns the pull requests.
-    pub async fn get_pull_requests(
-        &self,
+    /// Constructs the URL for Azure DevOps pull requests API.
+    fn pull_requests_url(api_url: &str, remote: &Remote, page: i32) -> String {
+        let skip = page * MAX_PAGE_SIZE as i32;
+        format!(
+            "{}/{}/_apis/git/repositories/{}/pullrequests?api-version=7.1&searchCriteria.\
+             status=completed&$top={}&$skip={}",
+            api_url,
+            urlencoding::encode(&remote.owner),
+            urlencoding::encode(&remote.repo),
+            MAX_PAGE_SIZE,
+            skip
+        )
+    }
+
+    /// Fetches the complete list of commits.
+    /// This is inefficient for large repositories; consider using
+    /// `get_commit_stream` instead.
+    pub async fn get_commits(&self, ref_name: Option<&str>) -> Result<Vec<Box<dyn RemoteCommit>>> {
+        use futures::TryStreamExt;
+        self.get_commit_stream(ref_name).try_collect().await
+    }
+
+    /// Fetches the complete list of pull requests.
+    /// This is inefficient for large repositories; consider using
+    /// `get_pull_request_stream` instead.
+    pub async fn get_pull_requests(&self) -> Result<Vec<Box<dyn RemotePullRequest>>> {
+        use futures::TryStreamExt;
+        self.get_pull_request_stream().try_collect().await
+    }
+
+    fn get_commit_stream<'a>(
+        &'a self,
         ref_name: Option<&str>,
-    ) -> Result<Vec<Box<dyn RemotePullRequest>>> {
-        Ok(self
-            .fetch_with_early_exit::<AzureDevOpsPullRequestsResponse>(0, ref_name)
-            .await?
-            .into_iter()
-            .flat_map(|v| v.value)
-            .map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
-            .collect())
+    ) -> impl Stream<Item = Result<Box<dyn RemoteCommit>>> + 'a {
+        let ref_name = ref_name.map(|s| s.to_string());
+        async_stream! {
+            let page_stream = stream::iter(0..)
+                .map(|page| {
+                    let ref_name = ref_name.clone();
+                    async move {
+                        let url = Self::commits_url(&self.api_url(), &self.remote(), ref_name.as_deref(), page);
+                        self.get_json::<AzureDevOpsCommitsResponse>(&url).await
+                    }
+                })
+                .buffered(10);
+
+            let mut page_stream = Box::pin(page_stream);
+
+            while let Some(page_result) = page_stream.next().await {
+                match page_result {
+                    Ok(response) => {
+                        if response.value.is_empty() {
+                            break;
+                        }
+
+                        for commit in response.value {
+                            yield Ok(Box::new(commit) as Box<dyn RemoteCommit>);
+                        }
+                    }
+                    Err(e) => {
+                        yield Err(e);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    fn get_pull_request_stream<'a>(
+        &'a self,
+    ) -> impl Stream<Item = Result<Box<dyn RemotePullRequest>>> + 'a {
+        async_stream! {
+            let page_stream = stream::iter(0..)
+                .map(|page| async move {
+                    let url = Self::pull_requests_url(&self.api_url(), &self.remote(), page);
+                    self.get_json::<AzureDevOpsPullRequestsResponse>(&url).await
+                })
+                .buffered(5);
+
+            let mut page_stream = Box::pin(page_stream);
+
+            while let Some(page_result) = page_stream.next().await {
+                match page_result {
+                    Ok(response) => {
+                        if response.value.is_empty() {
+                            break;
+                        }
+
+                        for pr in response.value {
+                            yield Ok(Box::new(pr) as Box<dyn RemotePullRequest>);
+                        }
+                    }
+                    Err(e) => {
+                        yield Err(e);
+                        break;
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -278,7 +317,7 @@ mod test {
 
     use super::*;
     use crate::config::Remote;
-    use crate::remote::{RemoteCommit, RemoteEntry, RemotePullRequest};
+    use crate::remote::{RemoteCommit, RemotePullRequest};
 
     #[test]
     fn timestamp() {
@@ -369,7 +408,7 @@ mod test {
     }
 
     #[test]
-    fn commits_response_url() {
+    fn commits_url() {
         let remote = Remote {
             owner: String::from("myorg/myproject"),
             repo: String::from("myrepo"),
@@ -379,7 +418,7 @@ mod test {
             native_tls: None,
         };
 
-        let url = AzureDevOpsCommitsResponse::url(0, "https://dev.azure.com", &remote, None, 0);
+        let url = AzureDevOpsClient::commits_url("https://dev.azure.com", &remote, None, 0);
 
         assert_eq!(
             "https://dev.azure.com/myorg%2Fmyproject/_apis/git/repositories/myrepo/commits?api-version=7.1&$top=100&$skip=0",
@@ -388,7 +427,7 @@ mod test {
     }
 
     #[test]
-    fn commits_response_url_with_tag() {
+    fn commits_url_with_tag() {
         let remote = Remote {
             owner: String::from("myorg/myproject"),
             repo: String::from("myrepo"),
@@ -399,14 +438,14 @@ mod test {
         };
 
         let url =
-            AzureDevOpsCommitsResponse::url(0, "https://dev.azure.com", &remote, Some("v1.0.0"), 0);
+            AzureDevOpsClient::commits_url("https://dev.azure.com", &remote, Some("v1.0.0"), 0);
 
         assert!(url.contains("searchCriteria.itemVersion.versionType=tag"));
         assert!(url.contains("searchCriteria.itemVersion.version=v1.0.0"));
     }
 
     #[test]
-    fn commits_response_url_pagination() {
+    fn commits_url_pagination() {
         let remote = Remote {
             owner: String::from("org/proj"),
             repo: String::from("repo"),
@@ -416,14 +455,14 @@ mod test {
             native_tls: None,
         };
 
-        let url = AzureDevOpsCommitsResponse::url(0, "https://dev.azure.com", &remote, None, 2);
+        let url = AzureDevOpsClient::commits_url("https://dev.azure.com", &remote, None, 2);
 
         assert!(url.contains("$skip=200"));
         assert!(url.contains("$top=100"));
     }
 
     #[test]
-    fn pull_requests_response_url() {
+    fn pull_requests_url() {
         let remote = Remote {
             owner: String::from("myorg/myproject"),
             repo: String::from("myrepo"),
@@ -433,60 +472,12 @@ mod test {
             native_tls: None,
         };
 
-        let url =
-            AzureDevOpsPullRequestsResponse::url(0, "https://dev.azure.com", &remote, None, 0);
+        let url = AzureDevOpsClient::pull_requests_url("https://dev.azure.com", &remote, 0);
 
         assert!(url.contains("pullrequests"));
         assert!(url.contains("searchCriteria.status=completed"));
         assert!(url.contains("$top=100"));
         assert!(url.contains("$skip=0"));
-    }
-
-    #[test]
-    fn commits_response_early_exit() {
-        let empty_response = AzureDevOpsCommitsResponse {
-            value: vec![],
-            count: 0,
-        };
-        assert!(empty_response.early_exit());
-
-        let non_empty_response = AzureDevOpsCommitsResponse {
-            value: vec![AzureDevOpsCommit {
-                commit_id: String::from("abc"),
-                author: None,
-                committer: None,
-            }],
-            count: 1,
-        };
-        assert!(!non_empty_response.early_exit());
-    }
-
-    #[test]
-    fn pull_requests_response_early_exit() {
-        let empty_response = AzureDevOpsPullRequestsResponse {
-            value: vec![],
-            count: 0,
-        };
-        assert!(empty_response.early_exit());
-
-        let non_empty_response = AzureDevOpsPullRequestsResponse {
-            value: vec![AzureDevOpsPullRequest {
-                pull_request_id: 1,
-                title: None,
-                status: String::from("completed"),
-                created_by: None,
-                last_merge_commit: None,
-                labels: vec![],
-            }],
-            count: 1,
-        };
-        assert!(!non_empty_response.early_exit());
-    }
-
-    #[test]
-    fn buffer_sizes() {
-        assert_eq!(10, AzureDevOpsCommitsResponse::buffer_size());
-        assert_eq!(5, AzureDevOpsPullRequestsResponse::buffer_size());
     }
 
     #[test]
