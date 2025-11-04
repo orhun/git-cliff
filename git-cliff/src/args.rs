@@ -31,7 +31,7 @@ const STYLES: Styles = Styles::styled()
     .placeholder(AnsiColor::Green.on_default());
 
 /// Command-line arguments to parse.
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Clone)]
 #[command(
     version,
     author = clap::crate_authors!("\n"),

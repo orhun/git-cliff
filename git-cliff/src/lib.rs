@@ -29,7 +29,7 @@ use glob::Pattern;
 
 /// Checks for a new version on crates.io
 #[cfg(feature = "update-informer")]
-fn check_new_version() {
+pub fn check_new_version() {
     use update_informer::Check;
     let pkg_name = env!("CARGO_PKG_NAME");
     let pkg_version = env!("CARGO_PKG_VERSION");
@@ -156,6 +156,30 @@ fn process_submodules(
     Ok(())
 }
 
+/// Initializes the configuration file.
+pub fn init_config(name: Option<String>, config_path: PathBuf) -> Result<()> {
+    let contents = match name {
+        Some(ref name) => BuiltinConfig::get_config(name.to_string())?,
+        None => EmbeddedConfig::get_config()?,
+    };
+
+    let config_path = if config_path == *DEFAULT_CONFIG {
+        PathBuf::from(DEFAULT_CONFIG)
+    } else {
+        config_path.clone()
+    };
+
+    log::info!(
+        "Saving the configuration file{} to {:?}",
+        name.map(|v| format!(" ({v})")).unwrap_or_default(),
+        config_path
+    );
+
+    fs::write(config_path, contents)?;
+
+    Ok(())
+}
+
 /// Processes the tags and commits for creating release entries for the
 /// changelog.
 ///
@@ -264,11 +288,11 @@ fn process_repository<'a>(
     let cwd = env::current_dir()?;
     let mut include_path = config.git.include_paths.clone();
     if let Ok(root) = repository.root_path() {
-        if cwd.starts_with(&root) &&
-            cwd != root &&
-            args.repository.as_ref().is_none_or(|r| r.is_empty()) &&
-            args.workdir.is_none() &&
-            include_path.is_empty()
+        if cwd.starts_with(&root)
+            && cwd != root
+            && args.repository.as_ref().is_none_or(|r| r.is_empty())
+            && args.workdir.is_none()
+            && include_path.is_empty()
         {
             let path = cwd.join("**").join("*");
             if let Ok(stripped) = path.strip_prefix(root) {
@@ -462,7 +486,7 @@ fn process_repository<'a>(
 ///     Ok(())
 /// }
 /// ```
-pub fn run(args: Opt) -> Result<()> {
+pub fn run(args: Opt) -> Result<Changelog<'static>> {
     run_with_changelog_modifier(args, |_| Ok(()))
 }
 
@@ -492,33 +516,7 @@ pub fn run(args: Opt) -> Result<()> {
 pub fn run_with_changelog_modifier(
     mut args: Opt,
     changelog_modifier: impl FnOnce(&mut Changelog) -> Result<()>,
-) -> Result<()> {
-    // Check if there is a new version available.
-    #[cfg(feature = "update-informer")]
-    check_new_version();
-
-    // Create the configuration file if init flag is given.
-    if let Some(init_config) = args.init {
-        let contents = match init_config {
-            Some(ref name) => BuiltinConfig::get_config(name.to_string())?,
-            None => EmbeddedConfig::get_config()?,
-        };
-
-        let config_path = if args.config.as_path() == Path::new(DEFAULT_CONFIG) {
-            PathBuf::from(DEFAULT_CONFIG)
-        } else {
-            args.config.clone()
-        };
-
-        log::info!(
-            "Saving the configuration file{} to {:?}",
-            init_config.map(|v| format!(" ({v})")).unwrap_or_default(),
-            config_path
-        );
-        fs::write(config_path, contents)?;
-        return Ok(());
-    }
-
+) -> Result<Changelog<'static>> {
     // Retrieve the built-in configuration.
     let builtin_config = BuiltinConfig::parse(args.config.to_string_lossy().to_string());
 
@@ -726,7 +724,7 @@ pub fn run_with_changelog_modifier(
         } else {
             Box::new(File::open(context_path)?)
         };
-        let mut changelog = Changelog::from_context(&mut input, &config)?;
+        let mut changelog = Changelog::from_context(&mut input, config)?;
         changelog.add_remote_context()?;
         changelog
     } else {
@@ -762,11 +760,14 @@ pub fn run_with_changelog_modifier(
                 skip_list.extend(skip_commit.clone());
             }
             for sha1 in skip_list {
-                config.git.commit_parsers.insert(0, CommitParser {
-                    sha: Some(sha1.to_string()),
-                    skip: Some(true),
-                    ..Default::default()
-                });
+                config.git.commit_parsers.insert(
+                    0,
+                    CommitParser {
+                        sha: Some(sha1.to_string()),
+                        skip: Some(true),
+                        ..Default::default()
+                    },
+                );
             }
 
             // The commit range, used for determining the remote commits to include
@@ -781,20 +782,23 @@ pub fn run_with_changelog_modifier(
                 &args,
             )?);
         }
-        Changelog::new(releases, &config, commit_range.as_deref())?
+        Changelog::new(releases, config.clone(), commit_range.as_deref())?
     };
     changelog_modifier(&mut changelog)?;
 
-    // Print the result.
-    let mut out: Box<dyn io::Write> = if let Some(path) = &output {
-        if path == Path::new("-") {
-            Box::new(io::stdout())
-        } else {
-            Box::new(io::BufWriter::new(File::create(path)?))
-        }
-    } else {
-        Box::new(io::stdout())
-    };
+    Ok(changelog)
+}
+
+/// Writes the changelog to a file.
+pub fn write_changelog<W: io::Write>(
+    args: &Opt,
+    mut changelog: Changelog<'_>,
+    mut out: W,
+) -> Result<()> {
+    let output = args
+        .output
+        .clone()
+        .or(changelog.config.changelog.output.clone());
     if args.bump.is_some() || args.bumped_version {
         let next_version = if let Some(next_version) = changelog.bump_version()? {
             next_version
@@ -804,11 +808,11 @@ pub fn run_with_changelog_modifier(
             log::warn!("There is nothing to bump");
             last_version
         } else if changelog.releases.is_empty() {
-            config.bump.get_initial_tag()
+            changelog.config.bump.get_initial_tag()
         } else {
             return Ok(());
         };
-        if let Some(tag_pattern) = &config.git.tag_pattern {
+        if let Some(tag_pattern) = &changelog.config.git.tag_pattern {
             if !tag_pattern.is_match(&next_version) {
                 return Err(Error::ChangelogError(format!(
                     "Next version ({}) does not match the tag pattern: {}",

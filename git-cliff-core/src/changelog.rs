@@ -23,20 +23,17 @@ use crate::template::Template;
 pub struct Changelog<'a> {
     /// Releases that the changelog will contain.
     pub releases: Vec<Release<'a>>,
+    /// Configuration used for generating the changelog.
+    pub config: Config,
     header_template: Option<Template>,
     body_template: Template,
     footer_template: Option<Template>,
-    config: &'a Config,
     additional_context: HashMap<String, serde_json::Value>,
 }
 
 impl<'a> Changelog<'a> {
     /// Constructs a new instance.
-    pub fn new(
-        releases: Vec<Release<'a>>,
-        config: &'a Config,
-        range: Option<&str>,
-    ) -> Result<Self> {
+    pub fn new(releases: Vec<Release<'a>>, config: Config, range: Option<&str>) -> Result<Self> {
         let mut changelog = Changelog::build(releases, config)?;
         changelog.add_remote_data(range)?;
         changelog.process_commits()?;
@@ -45,7 +42,7 @@ impl<'a> Changelog<'a> {
     }
 
     /// Builds a changelog from releases and config.
-    fn build(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
+    fn build(releases: Vec<Release<'a>>, config: Config) -> Result<Self> {
         let trim = config.changelog.trim;
         Ok(Self {
             releases,
@@ -53,7 +50,7 @@ impl<'a> Changelog<'a> {
                 Some(header) => Some(Template::new("header", header.to_string(), trim)?),
                 None => None,
             },
-            body_template: get_body_template(config, trim)?,
+            body_template: get_body_template(&config, trim)?,
             footer_template: match &config.changelog.footer {
                 Some(footer) => Some(Template::new("footer", footer.to_string(), trim)?),
                 None => None,
@@ -64,7 +61,7 @@ impl<'a> Changelog<'a> {
     }
 
     /// Constructs an instance from a serialized context object.
-    pub fn from_context<R: Read>(input: &mut R, config: &'a Config) -> Result<Self> {
+    pub fn from_context<R: Read>(input: &mut R, config: Config) -> Result<Self> {
         Changelog::build(serde_json::from_reader(input)?, config)
     }
 
@@ -1281,7 +1278,7 @@ mod test {
     fn changelog_generator() -> Result<()> {
         let (config, releases) = get_test_data();
 
-        let mut changelog = Changelog::new(releases, &config, None)?;
+        let mut changelog = Changelog::new(releases, config, None)?;
         changelog.bump_version()?;
         changelog.releases[0].timestamp = Some(0);
         let mut out = Vec::new();
@@ -1383,7 +1380,7 @@ mod test {
         releases[0].commits = Vec::new();
         releases[2].commits = Vec::new();
         releases[2].previous = Some(Box::new(releases[0].clone()));
-        let changelog = Changelog::new(releases, &config, None)?;
+        let changelog = Changelog::new(releases, config, None)?;
         let mut out = Vec::new();
         changelog.generate(&mut out)?;
         assert_eq!(
@@ -1467,7 +1464,7 @@ chore(deps): fix broken deps
             },
             ..Default::default()
         });
-        let changelog = Changelog::new(releases, &config, None)?;
+        let changelog = Changelog::new(releases, config, None)?;
         let mut out = Vec::new();
         changelog.generate(&mut out)?;
         assert_eq!(
@@ -1587,7 +1584,7 @@ chore(deps): fix broken deps
 				- {{ commit.message }}{% endfor %}
 				{% endfor %}{% endfor %}"#
             .to_string();
-        let mut changelog = Changelog::new(releases, &config, None)?;
+        let mut changelog = Changelog::new(releases, config, None)?;
         changelog.add_context("custom_field", "Hello")?;
         let mut out = Vec::new();
         changelog.generate(&mut out)?;
