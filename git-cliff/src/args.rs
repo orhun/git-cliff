@@ -232,6 +232,14 @@ pub struct Opt {
     /// Disables the external command execution.
     #[arg(long, help_heading = Some("FLAGS"))]
     pub no_exec: bool,
+    #[arg(long,
+        global = true,
+        value_name = "PATH",
+        value_parser = Opt::parse_dir,
+        help = "Dump the context schema to a file"
+    )]
+    /// Dumps the context schema to a file.
+    pub dump_context_schema: Option<PathBuf>,
     /// Prints changelog context as JSON.
     #[arg(short = 'x', long, help_heading = Some("FLAGS"))]
     pub context: bool,

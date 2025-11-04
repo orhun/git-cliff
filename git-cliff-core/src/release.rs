@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use next_version::{NextVersion, VersionUpdater};
+use schemars::JsonSchema;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use serde_json::value::Value;
@@ -16,7 +17,7 @@ use crate::{
 };
 
 /// Representation of a release.
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all(serialize = "camelCase"))]
 pub struct Release<'a> {
     /// Release version, git tag.

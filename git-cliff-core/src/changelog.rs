@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use schemars::JsonSchema;
+
 use crate::commit::Commit;
 use crate::config::{Config, GitConfig};
 use crate::error::{Error, Result};
@@ -611,6 +613,18 @@ impl<'a> Changelog<'a> {
         .as_json()?;
         writeln!(out, "{output}")?;
         Ok(())
+    }
+
+    /// Returns the context json schema for the releases.
+    pub fn context_schema() -> Result<String> {
+        use schemars::schema_for;
+        #[derive(JsonSchema)]
+        #[repr(transparent)]
+        /// Context for the changelog.
+        struct Context<'a>(Vec<Release<'a>>);
+        let schema = schema_for!(Context);
+        let schema_json = serde_json::to_string_pretty(&schema)?;
+        Ok(schema_json)
     }
 }
 

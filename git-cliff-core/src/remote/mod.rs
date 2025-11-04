@@ -23,6 +23,7 @@ use http_cache_reqwest::{CACacheManager, Cache, CacheMode, HttpCache, HttpCacheO
 use reqwest::Client;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+use schemars::JsonSchema;
 use secrecy::ExposeSecret;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -83,7 +84,7 @@ dyn_clone::clone_trait_object!(RemotePullRequest);
 pub type RemoteMetadata = (Vec<Box<dyn RemoteCommit>>, Vec<Box<dyn RemotePullRequest>>);
 
 /// Metadata of a remote release.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize, JsonSchema)]
 pub struct RemoteReleaseMetadata {
     /// Contributors.
     pub contributors: Vec<RemoteContributor>,

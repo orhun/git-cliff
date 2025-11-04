@@ -54,8 +54,6 @@ pub fn run(command: &str, input: Option<String>, envs: Vec<(&str, &str)>) -> Res
 
 #[cfg(test)]
 mod test {
-    use super::*;
-
     #[test]
     #[cfg(target_family = "unix")]
     fn run_os_command() -> Result<()> {

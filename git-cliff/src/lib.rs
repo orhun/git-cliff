@@ -824,3 +824,9 @@ pub fn run_with_changelog_modifier(
 
     Ok(())
 }
+
+pub fn dump_context_schema(path: &Path) -> Result<()> {
+    let schema_json = Changelog::context_schema()?;
+    fs::write(path, schema_json)?;
+    Ok(())
+}

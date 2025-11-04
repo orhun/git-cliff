@@ -1,9 +1,10 @@
 use std::hash::{Hash, Hasher};
 
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 /// Representation of a remote contributor.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize, JsonSchema)]
 pub struct RemoteContributor {
     /// Username.
     pub username: Option<String>,
