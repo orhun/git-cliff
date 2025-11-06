@@ -536,6 +536,7 @@ pub fn run_with_changelog_modifier(
         if let Some(changelog) = args.prepend {
             args.prepend = Some(workdir.join(changelog));
         }
+        args.include_path = Some(vec![Pattern::new(workdir.to_string_lossy().as_ref())?])
     }
 
     // Set path for the configuration file.
