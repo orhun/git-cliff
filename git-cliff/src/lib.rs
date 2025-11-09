@@ -157,16 +157,16 @@ fn process_submodules(
 }
 
 /// Initializes the configuration file.
-pub fn init_config(name: Option<String>, config_path: PathBuf) -> Result<()> {
+pub fn init_config(name: Option<&str>, config_path: &Path) -> Result<()> {
     let contents = match name {
-        Some(ref name) => BuiltinConfig::get_config(name.to_string())?,
+        Some(name) => BuiltinConfig::get_config(name.to_string())?,
         None => EmbeddedConfig::get_config()?,
     };
 
-    let config_path = if config_path == PathBuf::from(DEFAULT_CONFIG) {
+    let config_path = if config_path == Path::new(DEFAULT_CONFIG) {
         PathBuf::from(DEFAULT_CONFIG)
     } else {
-        config_path.clone()
+        config_path.to_path_buf()
     };
 
     log::info!(
@@ -779,7 +779,7 @@ pub fn run_with_changelog_modifier(
                 &args,
             )?);
         }
-        Changelog::new(releases, config.clone(), commit_range.as_deref())?
+        Changelog::new(releases, config, commit_range.as_deref())?
     };
     changelog_modifier(&mut changelog)?;
 
