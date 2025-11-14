@@ -486,7 +486,7 @@ fn process_repository<'a>(
 ///     Ok(())
 /// }
 /// ```
-pub fn run(args: Opt) -> Result<Changelog<'static>> {
+pub fn run<'a>(args: Opt) -> Result<Changelog<'a>> {
     run_with_changelog_modifier(args, |_| Ok(()))
 }
 
@@ -513,10 +513,10 @@ pub fn run(args: Opt) -> Result<Changelog<'static>> {
 ///     Ok(())
 /// }
 /// ```
-pub fn run_with_changelog_modifier(
+pub fn run_with_changelog_modifier<'a>(
     mut args: Opt,
     changelog_modifier: impl FnOnce(&mut Changelog) -> Result<()>,
-) -> Result<Changelog<'static>> {
+) -> Result<Changelog<'a>> {
     // Retrieve the built-in configuration.
     let builtin_config = BuiltinConfig::parse(args.config.to_string_lossy().to_string());
 
