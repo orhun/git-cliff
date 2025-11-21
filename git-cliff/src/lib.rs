@@ -29,7 +29,7 @@ use glob::Pattern;
 
 /// Checks for a new version on crates.io
 #[cfg(feature = "update-informer")]
-fn check_new_version() {
+pub fn check_new_version() {
     use update_informer::Check;
     let pkg_name = env!("CARGO_PKG_NAME");
     let pkg_version = env!("CARGO_PKG_VERSION");
@@ -153,6 +153,30 @@ fn process_submodules(
             release.submodule_commits.insert(submodule_path, commits);
         }
     }
+    Ok(())
+}
+
+/// Initializes the configuration file.
+pub fn init_config(name: Option<&str>, config_path: &Path) -> Result<()> {
+    let contents = match name {
+        Some(name) => BuiltinConfig::get_config(name.to_string())?,
+        None => EmbeddedConfig::get_config()?,
+    };
+
+    let config_path = if config_path == Path::new(DEFAULT_CONFIG) {
+        PathBuf::from(DEFAULT_CONFIG)
+    } else {
+        config_path.to_path_buf()
+    };
+
+    log::info!(
+        "Saving the configuration file{} to {:?}",
+        name.map(|v| format!(" ({v})")).unwrap_or_default(),
+        config_path
+    );
+
+    fs::write(config_path, contents)?;
+
     Ok(())
 }
 
@@ -462,7 +486,7 @@ fn process_repository<'a>(
 ///     Ok(())
 /// }
 /// ```
-pub fn run(args: Opt) -> Result<()> {
+pub fn run<'a>(args: Opt) -> Result<Changelog<'a>> {
     run_with_changelog_modifier(args, |_| Ok(()))
 }
 
@@ -489,36 +513,10 @@ pub fn run(args: Opt) -> Result<()> {
 ///     Ok(())
 /// }
 /// ```
-pub fn run_with_changelog_modifier(
+pub fn run_with_changelog_modifier<'a>(
     mut args: Opt,
     changelog_modifier: impl FnOnce(&mut Changelog) -> Result<()>,
-) -> Result<()> {
-    // Check if there is a new version available.
-    #[cfg(feature = "update-informer")]
-    check_new_version();
-
-    // Create the configuration file if init flag is given.
-    if let Some(init_config) = args.init {
-        let contents = match init_config {
-            Some(ref name) => BuiltinConfig::get_config(name.to_string())?,
-            None => EmbeddedConfig::get_config()?,
-        };
-
-        let config_path = if args.config.as_path() == Path::new(DEFAULT_CONFIG) {
-            PathBuf::from(DEFAULT_CONFIG)
-        } else {
-            args.config.clone()
-        };
-
-        log::info!(
-            "Saving the configuration file{} to {:?}",
-            init_config.map(|v| format!(" ({v})")).unwrap_or_default(),
-            config_path
-        );
-        fs::write(config_path, contents)?;
-        return Ok(());
-    }
-
+) -> Result<Changelog<'a>> {
     // Retrieve the built-in configuration.
     let builtin_config = BuiltinConfig::parse(args.config.to_string_lossy().to_string());
 
@@ -726,7 +724,7 @@ pub fn run_with_changelog_modifier(
         } else {
             Box::new(File::open(context_path)?)
         };
-        let mut changelog = Changelog::from_context(&mut input, &config)?;
+        let mut changelog = Changelog::from_context(&mut input, config)?;
         changelog.add_remote_context()?;
         changelog
     } else {
@@ -781,20 +779,23 @@ pub fn run_with_changelog_modifier(
                 &args,
             )?);
         }
-        Changelog::new(releases, &config, commit_range.as_deref())?
+        Changelog::new(releases, config, commit_range.as_deref())?
     };
     changelog_modifier(&mut changelog)?;
 
-    // Print the result.
-    let mut out: Box<dyn io::Write> = if let Some(path) = &output {
-        if path == Path::new("-") {
-            Box::new(io::stdout())
-        } else {
-            Box::new(io::BufWriter::new(File::create(path)?))
-        }
-    } else {
-        Box::new(io::stdout())
-    };
+    Ok(changelog)
+}
+
+/// Writes the changelog to a file.
+pub fn write_changelog<W: io::Write>(
+    args: &Opt,
+    mut changelog: Changelog<'_>,
+    mut out: W,
+) -> Result<()> {
+    let output = args
+        .output
+        .clone()
+        .or(changelog.config.changelog.output.clone());
     if args.bump.is_some() || args.bumped_version {
         let next_version = if let Some(next_version) = changelog.bump_version()? {
             next_version
@@ -804,11 +805,11 @@ pub fn run_with_changelog_modifier(
             log::warn!("There is nothing to bump");
             last_version
         } else if changelog.releases.is_empty() {
-            config.bump.get_initial_tag()
+            changelog.config.bump.get_initial_tag()
         } else {
             return Ok(());
         };
-        if let Some(tag_pattern) = &config.git.tag_pattern {
+        if let Some(tag_pattern) = &changelog.config.git.tag_pattern {
             if !tag_pattern.is_match(&next_version) {
                 return Err(Error::ChangelogError(format!(
                     "Next version ({}) does not match the tag pattern: {}",
