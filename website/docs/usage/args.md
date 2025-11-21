@@ -54,14 +54,16 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
 ## Remote Options
 
 ```
-    --github-token <TOKEN>         Sets the GitHub API token [env: GITHUB_TOKEN]
-    --github-repo <OWNER/REPO>     Sets the GitHub repository [env: GITHUB_REPO=]
-    --gitlab-token <TOKEN>         Sets the GitLab API token [env: GITLAB_TOKEN]
-    --gitlab-repo <OWNER/REPO>     Sets the GitLab repository [env: GITLAB_REPO=]
-    --gitea-token <TOKEN>          Sets the Gitea API token [env: GITEA_TOKEN]
-    --gitea-repo <OWNER/REPO>      Sets the Gitea repository [env: GITEA_REPO=]
-    --bitbucket-token <TOKEN>      Sets the Bitbucket API token [env: BITBUCKET_TOKEN]
-    --bitbucket-repo <OWNER/REPO>  Sets the Bitbucket repository [env: BITBUCKET_REPO=]
+    --github-token <TOKEN>            Sets the GitHub API token [env: GITHUB_TOKEN]
+    --github-repo <OWNER/REPO>        Sets the GitHub repository [env: GITHUB_REPO=]
+    --gitlab-token <TOKEN>            Sets the GitLab API token [env: GITLAB_TOKEN]
+    --gitlab-repo <OWNER/REPO>        Sets the GitLab repository [env: GITLAB_REPO=]
+    --gitea-token <TOKEN>             Sets the Gitea API token [env: GITEA_TOKEN]
+    --gitea-repo <OWNER/REPO>         Sets the Gitea repository [env: GITEA_REPO=]
+    --bitbucket-token <TOKEN>         Sets the Bitbucket API token [env: BITBUCKET_TOKEN]
+    --bitbucket-repo <OWNER/REPO>     Sets the Bitbucket repository [env: BITBUCKET_REPO=]
+    --azure-devops-token <TOKEN>      Sets the Azure DevOps API token [env: AZURE_DEVOPS_TOKEN]
+    --azure-devops-repo <OWNER/REPO>  Sets the Azure DevOps repository [env: AZURE_DEVOPS_REPO=]
 ```
 
 ## Args
