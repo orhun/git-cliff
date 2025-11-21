@@ -42,6 +42,10 @@ bitbucket = ["remote"]
 ## You can turn this off if you don't use Gitea and don't want
 ## to make network requests to the Gitea API.
 gitea = ["remote"]
+## Enable integration with Azure DevOps.
+## You can turn this off if you don't use Azure DevOps and don't want
+## to make network requests to the Azure DevOps API.
+azure_devops = ["remote"]
 
 [dependencies]
 glob.workspace = true

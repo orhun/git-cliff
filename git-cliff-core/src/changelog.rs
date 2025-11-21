@@ -6,6 +6,8 @@ use crate::commit::Commit;
 use crate::config::{Config, GitConfig};
 use crate::error::{Error, Result};
 use crate::release::{Release, Releases};
+#[cfg(feature = "azure_devops")]
+use crate::remote::azure_devops::AzureDevOpsClient;
 #[cfg(feature = "bitbucket")]
 use crate::remote::bitbucket::BitbucketClient;
 #[cfg(feature = "gitea")]
@@ -441,6 +443,62 @@ impl<'a> Changelog<'a> {
         }
     }
 
+    /// Returns the Azure DevOps metadata needed for the changelog.
+    ///
+    /// This function creates a multithread async runtime for handling the
+    /// requests. The following are fetched from the Azure DevOps REST API:
+    ///
+    /// - Commits
+    /// - Pull requests
+    ///
+    /// Each of these are paginated requests so they are being run in parallel
+    /// for speedup.
+    ///
+    /// If no Azure DevOps related variable is used in the template then this
+    /// function returns empty vectors.
+    #[cfg(feature = "azure_devops")]
+    fn get_azure_devops_metadata(
+        &self,
+        ref_name: Option<&str>,
+    ) -> Result<crate::remote::RemoteMetadata> {
+        use crate::remote::azure_devops;
+        if self.config.remote.azure_devops.is_custom ||
+            self.body_template
+                .contains_variable(azure_devops::TEMPLATE_VARIABLES) ||
+            self.footer_template
+                .as_ref()
+                .map(|v| v.contains_variable(azure_devops::TEMPLATE_VARIABLES))
+                .unwrap_or(false)
+        {
+            let azure_devops_client =
+                AzureDevOpsClient::try_from(self.config.remote.azure_devops.clone())?;
+            log::info!(
+                "{} ({})",
+                azure_devops::START_FETCHING_MSG,
+                self.config.remote.azure_devops
+            );
+            let data = tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()?
+                .block_on(async {
+                    let (commits, pull_requests) = tokio::try_join!(
+                        azure_devops_client.get_commits(ref_name),
+                        azure_devops_client.get_pull_requests()
+                    )?;
+                    log::debug!("Number of Azure DevOps commits: {}", commits.len());
+                    log::debug!(
+                        "Number of Azure DevOps pull requests: {}",
+                        pull_requests.len()
+                    );
+                    Ok((commits, pull_requests))
+                });
+            log::info!("{}", azure_devops::FINISHED_FETCHING_MSG);
+            data
+        } else {
+            Ok((vec![], vec![]))
+        }
+    }
+
     /// Adds information about the remote to the template context.
     pub fn add_remote_context(&mut self) -> Result<()> {
         self.additional_context.insert(
@@ -492,6 +550,14 @@ impl<'a> Changelog<'a> {
         } else {
             (vec![], vec![])
         };
+        #[cfg(feature = "azure_devops")]
+        let (azure_devops_commits, azure_devops_pull_request) =
+            if self.config.remote.azure_devops.is_set() {
+                self.get_azure_devops_metadata(ref_name)
+                    .expect("Could not get azure_devops metadata")
+            } else {
+                (vec![], vec![])
+            };
         #[cfg(feature = "remote")]
         for release in &mut self.releases {
             #[cfg(feature = "github")]
@@ -504,6 +570,11 @@ impl<'a> Changelog<'a> {
             release.update_bitbucket_metadata(
                 bitbucket_commits.clone(),
                 bitbucket_pull_request.clone(),
+            )?;
+            #[cfg(feature = "azure_devops")]
+            release.update_azure_devops_metadata(
+                azure_devops_commits.clone(),
+                azure_devops_pull_request.clone(),
             )?;
         }
         Ok(())
@@ -621,6 +692,7 @@ fn get_body_template(config: &Config, trim: bool) -> Result<Template> {
         "commit.gitea",
         "commit.gitlab",
         "commit.bitbucket",
+        "commit.azure_devops",
     ];
     if template.contains_variable(&deprecated_vars) {
         log::warn!(
@@ -883,6 +955,14 @@ mod test {
                     api_url: None,
                     native_tls: None,
                 },
+                azure_devops: Remote {
+                    owner: String::from("coolguy"),
+                    repo: String::from("awesome"),
+                    token: None,
+                    is_custom: false,
+                    api_url: None,
+                    native_tls: None,
+                },
             },
             bump: Bump::default(),
         };
@@ -1067,6 +1147,10 @@ mod test {
             bitbucket: crate::remote::RemoteReleaseMetadata {
                 contributors: vec![],
             },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: crate::remote::RemoteReleaseMetadata {
+                contributors: vec![],
+            },
         };
         let releases = vec![
             test_release.clone(),
@@ -1182,6 +1266,10 @@ mod test {
                 },
                 #[cfg(feature = "bitbucket")]
                 bitbucket: crate::remote::RemoteReleaseMetadata {
+                    contributors: vec![],
+                },
+                #[cfg(feature = "azure_devops")]
+                azure_devops: crate::remote::RemoteReleaseMetadata {
                     contributors: vec![],
                 },
             },

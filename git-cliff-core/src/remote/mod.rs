@@ -14,6 +14,10 @@ pub mod bitbucket;
 #[cfg(feature = "gitea")]
 pub mod gitea;
 
+/// Azure DevOps client.
+#[cfg(feature = "azure_devops")]
+pub mod azure_devops;
+
 use std::env;
 use std::fmt::Debug;
 use std::time::Duration;
