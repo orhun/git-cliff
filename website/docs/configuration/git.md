@@ -19,6 +19,7 @@ commit_parsers = [
 ]
 protect_breaking_commits = false
 filter_commits = false
+fail_on_unmatched_commit = false
 tag_pattern = "v[0-9].*"
 
 skip_tags = "v0.1.0-beta.1"
@@ -212,6 +213,16 @@ due to any commit parser.
 ### filter_commits
 
 If set to `true`, commits that are not matched by [`commit_parsers`](#commit_parsers) are filtered out.
+
+### fail_on_unmatched_commit
+
+If set to `true`, git-cliff will fail (return a non-zero exit code) when any commit included in the changelog is not matched by any of the configured `commit_parsers`.
+
+This option is useful to enforce that all commits are classified and prevents silently omitting unknown commit types from release notes.
+
+:::note
+Commits that are explicitly skipped by a parser (for example `{ message = "^revert", skip = true }`) are not considered unmatched.
+:::
 
 ### tag_pattern
 
