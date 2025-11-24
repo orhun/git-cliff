@@ -130,6 +130,35 @@ impl<'a> Changelog<'a> {
         Ok(())
     }
 
+    /// Checks the commits and returns an error if any commits are not matched
+    /// by any commit parser.
+    fn check_unmatched_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
+        log::debug!("Verifying that no commits are unmatched by commit parsers");
+        let mut unmatched_count = 0;
+        commits.iter().for_each(|commit| {
+            let is_unmatched = commit.group.is_none();
+            if is_unmatched {
+                log::error!(
+                    "Commit {id} was not matched by any commit parser:\n{message}",
+                    id = &commit.id[..7],
+                    message = commit
+                        .message
+                        .lines()
+                        .map(|line| { format!("    | {}", line.trim()) })
+                        .collect::<Vec<String>>()
+                        .join("\n")
+                );
+                unmatched_count += 1;
+            }
+        });
+
+        if unmatched_count > 0 {
+            return Err(Error::UnmatchedCommitsError(unmatched_count));
+        }
+
+        Ok(())
+    }
+
     fn process_commit_list(commits: &mut Vec<Commit<'a>>, git_config: &GitConfig) -> Result<()> {
         *commits = commits
             .iter()
@@ -158,6 +187,10 @@ impl<'a> Changelog<'a> {
 
         if git_config.require_conventional {
             Self::check_conventional_commits(commits)?;
+        }
+
+        if git_config.fail_on_unmatched_commit {
+            Self::check_unmatched_commits(commits)?;
         }
 
         Ok(())
@@ -901,6 +934,7 @@ mod test {
                 ],
                 protect_breaking_commits: false,
                 filter_commits: false,
+                fail_on_unmatched_commit: false,
                 tag_pattern: None,
                 skip_tags: Regex::new("v3.*").ok(),
                 ignore_tags: None,
