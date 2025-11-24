@@ -10,10 +10,11 @@ pub mod args;
 /// Custom logger implementation.
 pub mod logger;
 
+use std::env;
 use std::fs::{self, File};
+use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::{env, io};
 
 use args::{BumpOption, Opt, Sort, Strip};
 use clap::ValueEnum;
@@ -818,7 +819,11 @@ pub fn write_changelog<W: io::Write>(
             }
         }
         if args.bumped_version {
-            writeln!(out, "{next_version}")?;
+            if config.changelog.output.is_none() {
+                writeln!(out, "{next_version}")?;
+            } else {
+                writeln!(io::stdout(), "{next_version}")?;
+            }
             return Ok(());
         }
     }
