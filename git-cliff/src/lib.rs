@@ -820,7 +820,7 @@ pub fn write_changelog<W: io::Write>(
             }
         }
         if args.bumped_version {
-            if config.changelog.output.is_none() {
+            if changelog.config.changelog.output.is_none() {
                 writeln!(out, "{next_version}")?;
             } else {
                 writeln!(io::stdout(), "{next_version}")?;
