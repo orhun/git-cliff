@@ -1,5 +1,56 @@
 [![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)
 
+## [2.11.0](https://github.com/orhun/git-cliff/compare/v2.10.1..v2.11.0) - 2025-12-14
+
+### ⛰️  Features
+
+- *(changelog)* Support failing on unmatched commits ([#1298](https://github.com/orhun/git-cliff/issues/1298)) - ([a22a1a3](https://github.com/orhun/git-cliff/commit/a22a1a39975eb28af5a640266e8abb7c464b1c8d))
+- *(integration)* Add support for azure devops ([#1283](https://github.com/orhun/git-cliff/issues/1283)) - ([ef65be6](https://github.com/orhun/git-cliff/commit/ef65be6cfb024e99086f10ef7d533014dee3af33))
+- *(repo)* Improve repository/directory path resolution ([#1290](https://github.com/orhun/git-cliff/issues/1290)) - ([7b1825b](https://github.com/orhun/git-cliff/commit/7b1825bd7a10a10bee5b538337cce41edbe1880c))
+- *(template)* Add split_regex, replace_regex, find_regex filters ([#1287](https://github.com/orhun/git-cliff/issues/1287)) - ([8270084](https://github.com/orhun/git-cliff/commit/8270084ccd35e09a63d79132ad291b192f89e893))
+
+### 🐛 Bug Fixes
+
+- *(args)* Set the include-path if workdir is set ([#1293](https://github.com/orhun/git-cliff/issues/1293)) - ([50b8312](https://github.com/orhun/git-cliff/commit/50b8312adcf03992a2e9eb334c4c604450110d91))
+- *(bump)* Write bumped version to stdout even when output config is set ([#1307](https://github.com/orhun/git-cliff/issues/1307)) - ([314ff57](https://github.com/orhun/git-cliff/commit/314ff57d9138da86027164b7cbeb7045c6f550f7))
+- *(remote)* Use optional default branch for GitLab ([#1305](https://github.com/orhun/git-cliff/issues/1305)) - ([d3cb938](https://github.com/orhun/git-cliff/commit/d3cb93861037e722f10194b77a70d83489fabd02))
+- *(repo)* Always discover repositories - ([b4db79f](https://github.com/orhun/git-cliff/commit/b4db79f01a3e65fde5e9a9caf5d17a0a7a8fdac6))
+- *(workdir)* Use the correct glob value for include-path - ([0fbc625](https://github.com/orhun/git-cliff/commit/0fbc625616baecc14cfacb9d690f746448f39fec))
+
+### 🚜 Refactor
+
+- *(core)* Improve the generation API ([#1306](https://github.com/orhun/git-cliff/issues/1306)) - ([1e80739](https://github.com/orhun/git-cliff/commit/1e807398bd7d031cfb9df3054cdccba9817605ea))
+- *(remote)* Expose commits and PRs as streams ([#1272](https://github.com/orhun/git-cliff/issues/1272)) - ([b82221a](https://github.com/orhun/git-cliff/commit/b82221abd1981b6ecce8ab428fede8165ebb4246))
+
+### 📚 Documentation
+
+- *(config)* Fix comment for topo_order_commits ([#1314](https://github.com/orhun/git-cliff/issues/1314)) - ([c8aad00](https://github.com/orhun/git-cliff/commit/c8aad006c5f42df4659eb21a5feb7cf71a25c3e5))
+- *(installation)* Mention the side-bar ([#1226](https://github.com/orhun/git-cliff/issues/1226)) - ([16ca78e](https://github.com/orhun/git-cliff/commit/16ca78e82e28f404d2dc95d57b837c46cb760512))
+- *(website)* Add highlights for 2.11.0 ([#1316](https://github.com/orhun/git-cliff/issues/1316)) - ([5af715d](https://github.com/orhun/git-cliff/commit/5af715d3c0a0a907eaa35814a4a939936e9fc4b2))
+- *(website)* Fix styling in installation page - ([58c4cfb](https://github.com/orhun/git-cliff/commit/58c4cfbf0a5aaf497b33c225ec6987fcf0a8eeb8))
+- *(website)* Use the correct link for Github PR labels as groups ([#1285](https://github.com/orhun/git-cliff/issues/1285)) - ([85cc05d](https://github.com/orhun/git-cliff/commit/85cc05dda8a3b96864cbb62ca648275a1323e2fc))
+
+### 🎨 Styling
+
+- *(args)* Group remote-related CLI arguments under REMOTE OPTIONS heading ([#1271](https://github.com/orhun/git-cliff/issues/1271)) - ([0b6af12](https://github.com/orhun/git-cliff/commit/0b6af122bb8d39f000591a4a700f8c011ac1827d))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(ci)* Stabilize lychee link checking in CI ([#1295](https://github.com/orhun/git-cliff/issues/1295)) - ([7ed1db0](https://github.com/orhun/git-cliff/commit/7ed1db0527211c9be2f54425498f823c503482c2))
+- *(logging)* Increase log verbosity ([#1244](https://github.com/orhun/git-cliff/issues/1244)) - ([ee9f742](https://github.com/orhun/git-cliff/commit/ee9f7428958d2b602f0c82749f8ed8da7214fac8))
+- *(npm)* Update git-cliff to v2.10.1 ([#1265](https://github.com/orhun/git-cliff/issues/1265)) - ([3da8f26](https://github.com/orhun/git-cliff/commit/3da8f2678b872569a2875e1ca05707bc26124c78))
+
+## New Contributors ❤️
+
+* @Lewiscowles1986 made their first contribution in [#1226](https://github.com/orhun/git-cliff/pull/1226)
+* @OpenSauce made their first contribution in [#1314](https://github.com/orhun/git-cliff/pull/1314)
+* @amd989 made their first contribution in [#1283](https://github.com/orhun/git-cliff/pull/1283)
+* @asweet-confluent made their first contribution in [#1272](https://github.com/orhun/git-cliff/pull/1272)
+* @linus-skold made their first contribution in [#1287](https://github.com/orhun/git-cliff/pull/1287)
+* @simoncdn made their first contribution in [#1305](https://github.com/orhun/git-cliff/pull/1305)
+* @haidaraM made their first contribution in [#1285](https://github.com/orhun/git-cliff/pull/1285)
+* @ritoban23 made their first contribution in [#1271](https://github.com/orhun/git-cliff/pull/1271)
+
 ## [2.10.1](https://github.com/orhun/git-cliff/compare/v2.10.0..v2.10.1) - 2025-09-21
 
 ### ⛰️  Features
