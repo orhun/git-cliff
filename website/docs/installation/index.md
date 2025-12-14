@@ -1,9 +1,10 @@
 ---
 sidebar_position: 2
 ---
+
 # Installation
 
-Please see the side-bar to navigate to a specific installation mechanism. This page has information about the packaging status from repo-ology.
+Please see the side-bar to navigate to a specific installation mechanism. This page has information about the packaging status from repology.
 
 <details>
   <summary>Packaging status</summary>
