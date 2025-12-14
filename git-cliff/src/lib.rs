@@ -535,6 +535,7 @@ pub fn run_with_changelog_modifier<'a>(
         if let Some(changelog) = args.prepend {
             args.prepend = Some(workdir.join(changelog));
         }
+        args.include_path = Some(vec![Pattern::new(workdir.to_string_lossy().as_ref())?])
     }
 
     // Set path for the configuration file.
@@ -819,7 +820,7 @@ pub fn write_changelog<W: io::Write>(
             }
         }
         if args.bumped_version {
-            if config.changelog.output.is_none() {
+            if changelog.config.changelog.output.is_none() {
                 writeln!(out, "{next_version}")?;
             } else {
                 writeln!(io::stdout(), "{next_version}")?;
