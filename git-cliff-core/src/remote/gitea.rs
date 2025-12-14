@@ -1,3 +1,5 @@
+use async_stream::stream as async_stream;
+use futures::{Stream, StreamExt, stream};
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{Deserialize, Serialize};
 
@@ -36,29 +38,6 @@ impl RemoteCommit for GiteaCommit {
 
     fn timestamp(&self) -> Option<i64> {
         Some(self.convert_to_unix_timestamp(self.created.clone().as_str()))
-    }
-}
-
-impl RemoteEntry for GiteaCommit {
-    fn url(_id: i64, api_url: &str, remote: &Remote, ref_name: Option<&str>, page: i32) -> String {
-        let mut url = format!(
-            "{}/api/v1/repos/{}/{}/commits?limit={MAX_PAGE_SIZE}&page={page}",
-            api_url, remote.owner, remote.repo
-        );
-
-        if let Some(ref_name) = ref_name {
-            url.push_str(&format!("&sha={}", ref_name));
-        }
-
-        url
-    }
-
-    fn buffer_size() -> usize {
-        10
-    }
-
-    fn early_exit(&self) -> bool {
-        false
     }
 }
 
@@ -108,23 +87,6 @@ impl RemotePullRequest for GiteaPullRequest {
     }
 }
 
-impl RemoteEntry for GiteaPullRequest {
-    fn url(_id: i64, api_url: &str, remote: &Remote, _ref_name: Option<&str>, page: i32) -> String {
-        format!(
-            "{}/api/v1/repos/{}/{}/pulls?limit={MAX_PAGE_SIZE}&page={page}&state=closed",
-            api_url, remote.owner, remote.repo
-        )
-    }
-
-    fn buffer_size() -> usize {
-        5
-    }
-
-    fn early_exit(&self) -> bool {
-        false
-    }
-}
-
 /// HTTP client for handling Gitea REST API requests.
 #[derive(Debug, Clone)]
 pub struct GiteaClient {
@@ -159,27 +121,113 @@ impl RemoteClient for GiteaClient {
 }
 
 impl GiteaClient {
-    /// Fetches the Gitea API and returns the commits.
-    pub async fn get_commits(&self, ref_name: Option<&str>) -> Result<Vec<Box<dyn RemoteCommit>>> {
-        Ok(self
-            .fetch::<GiteaCommit>(0, ref_name)
-            .await?
-            .into_iter()
-            .map(|v| Box::new(v) as Box<dyn RemoteCommit>)
-            .collect())
+    /// Constructs the URL for Gitea commits API.
+    fn commits_url(api_url: &str, remote: &Remote, ref_name: Option<&str>, page: i32) -> String {
+        let mut url = format!(
+            "{}/api/v1/repos/{}/{}/commits?limit={MAX_PAGE_SIZE}&page={page}",
+            api_url, remote.owner, remote.repo
+        );
+
+        if let Some(ref_name) = ref_name {
+            url.push_str(&format!("&sha={}", ref_name));
+        }
+
+        url
     }
 
-    /// Fetches the Gitea API and returns the pull requests.
-    pub async fn get_pull_requests(
-        &self,
+    /// Constructs the URL for Gitea pull requests API.
+    fn pull_requests_url(api_url: &str, remote: &Remote, page: i32) -> String {
+        format!(
+            "{}/api/v1/repos/{}/{}/pulls?limit={MAX_PAGE_SIZE}&page={page}&state=closed",
+            api_url, remote.owner, remote.repo
+        )
+    }
+
+    /// Fetches the complete list of commits.
+    /// This is inefficient for large repositories; consider using
+    /// `get_commit_stream` instead.
+    pub async fn get_commits(&self, ref_name: Option<&str>) -> Result<Vec<Box<dyn RemoteCommit>>> {
+        use futures::TryStreamExt;
+        self.get_commit_stream(ref_name).try_collect().await
+    }
+
+    /// Fetches the complete list of pull requests.
+    /// This is inefficient for large repositories; consider using
+    /// `get_pull_request_stream` instead.
+    pub async fn get_pull_requests(&self) -> Result<Vec<Box<dyn RemotePullRequest>>> {
+        use futures::TryStreamExt;
+        self.get_pull_request_stream().try_collect().await
+    }
+
+    fn get_commit_stream<'a>(
+        &'a self,
         ref_name: Option<&str>,
-    ) -> Result<Vec<Box<dyn RemotePullRequest>>> {
-        Ok(self
-            .fetch::<GiteaPullRequest>(0, ref_name)
-            .await?
-            .into_iter()
-            .map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
-            .collect())
+    ) -> impl Stream<Item = Result<Box<dyn RemoteCommit>>> + 'a {
+        let ref_name = ref_name.map(|s| s.to_string());
+        async_stream! {
+            let page_stream = stream::iter(0..)
+                .map(|page| {
+                    let ref_name = ref_name.clone();
+                    async move {
+                        let url = Self::commits_url(&self.api_url(), &self.remote(), ref_name.as_deref(), page);
+                        self.get_json::<Vec<GiteaCommit>>(&url).await
+                    }
+                })
+                .buffered(10);
+
+            let mut page_stream = Box::pin(page_stream);
+
+            while let Some(page_result) = page_stream.next().await {
+                match page_result {
+                    Ok(commits) => {
+                        if commits.is_empty() {
+                            break;
+                        }
+
+                        for commit in commits {
+                            yield Ok(Box::new(commit) as Box<dyn RemoteCommit>);
+                        }
+                    }
+                    Err(e) => {
+                        yield Err(e);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    fn get_pull_request_stream<'a>(
+        &'a self,
+    ) -> impl Stream<Item = Result<Box<dyn RemotePullRequest>>> + 'a {
+        async_stream! {
+        let page_stream = stream::iter(0..)
+            .map(|page| async move {
+                let url = Self::pull_requests_url(&self.api_url(), &self.remote(), page);
+                self.get_json::<Vec<GiteaPullRequest>>(&url).await
+            })
+            .buffered(5);
+
+        let mut page_stream = Box::pin(page_stream);
+
+        while let Some(page_result) = page_stream.next().await {
+            match page_result {
+                Ok(prs) => {
+                    if prs.is_empty() {
+                        break;
+                    }
+
+                    for pr in prs {
+                        yield Ok(Box::new(pr) as Box<dyn RemotePullRequest>);
+                    }
+                }
+                Err(e) => {
+                    yield Err(e);
+                    break;
+                }
+            }
+        }
+            }
     }
 }
 

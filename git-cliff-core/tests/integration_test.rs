@@ -112,6 +112,7 @@ fn generate_changelog() -> Result<()> {
         ],
         protect_breaking_commits: false,
         filter_commits: true,
+        fail_on_unmatched_commit: false,
         tag_pattern: None,
         skip_tags: None,
         ignore_tags: None,
@@ -167,7 +168,7 @@ fn generate_changelog() -> Result<()> {
         release_v1_commits.last().unwrap(),
     );
 
-    let release_v2_commits = vec![
+    let release_v2_commits = [
 				Commit::new(
 					String::from("000abc"),
 					String::from("Add unconventional commit"),
@@ -242,6 +243,10 @@ fn generate_changelog() -> Result<()> {
             bitbucket: git_cliff_core::remote::RemoteReleaseMetadata {
                 contributors: vec![],
             },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: git_cliff_core::remote::RemoteReleaseMetadata {
+                contributors: vec![],
+            },
         },
         Release {
             version: Some(String::from("v1.0.0")),
@@ -269,6 +274,10 @@ fn generate_changelog() -> Result<()> {
             },
             #[cfg(feature = "bitbucket")]
             bitbucket: git_cliff_core::remote::RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: git_cliff_core::remote::RemoteReleaseMetadata {
                 contributors: vec![],
             },
         },

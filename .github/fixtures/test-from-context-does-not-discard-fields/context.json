@@ -73,6 +73,13 @@
           "pr_labels": [],
           "is_first_time": false
         },
+        "azure_devops": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
         "raw_message": "feat(web): feature 1, breaking change in footer\n\nBody feature 1\n\nBREAKING CHANGE: breaking change description feature 1\nSigned-off-by: user1 <user1@example.com>\nReviewed-by: user2"
       },
       {
@@ -127,6 +134,13 @@
           "is_first_time": false
         },
         "bitbucket": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "azure_devops": {
           "username": null,
           "pr_title": null,
           "pr_number": null,
@@ -193,6 +207,13 @@
           "pr_labels": [],
           "is_first_time": false
         },
+        "azure_devops": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
         "raw_message": "feat!: feature 3, use default scope = app\n\nBody feature 2\n\nSigned-off-by: user3 <user3@example.com>"
       },
       {
@@ -253,6 +274,13 @@
           "pr_labels": [],
           "is_first_time": false
         },
+        "azure_devops": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
         "raw_message": "fix(scope): fix 1, use scope as group\n\nBody fix 1\n\nFix: #1"
       },
       {
@@ -300,6 +328,13 @@
           "is_first_time": false
         },
         "bitbucket": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
+        "azure_devops": {
           "username": null,
           "pr_title": null,
           "pr_number": null,
@@ -372,6 +407,13 @@
           "pr_labels": [],
           "is_first_time": false
         },
+        "azure_devops": {
+          "username": null,
+          "pr_title": null,
+          "pr_number": null,
+          "pr_labels": [],
+          "is_first_time": false
+        },
         "raw_message": "fix(front-end): fix 3 and 4, no body but footer\n\nFix: #3\nFix: #4"
       }
     ],
@@ -399,6 +441,9 @@
       },
       "bitbucket": {
         "contributors": []
+      },
+      "azure_devops": {
+        "contributors": []
       }
     },
     "repository": "/path/to/repository",
@@ -415,6 +460,9 @@
       "contributors": []
     },
     "bitbucket": {
+      "contributors": []
+    },
+    "azure_devops": {
       "contributors": []
     }
   }

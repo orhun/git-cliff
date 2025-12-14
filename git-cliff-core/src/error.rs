@@ -96,9 +96,6 @@ pub enum Error {
     #[error("HTTP header error: `{0}`")]
     #[cfg(feature = "remote")]
     HttpHeaderError(#[from] reqwest::header::InvalidHeaderValue),
-    /// Error that may occur during handling pages.
-    #[error("Pagination error: `{0}`")]
-    PaginationError(String),
     /// The errors that may occur while parsing URLs.
     #[error("URL parse error: `{0}`")]
     UrlParseError(#[from] url::ParseError),
@@ -115,6 +112,10 @@ pub enum Error {
     /// See `require_conventional` option for more information.
     #[error("Requiring all commits be conventional but found {0} unconventional commits.")]
     UnconventionalCommitsError(i32),
+    /// Error raised when commits are not matched by any commit parser and the
+    /// [`GitConfig::fail_on_unmatched_commit`] option is enabled.
+    #[error("Found {0} unmatched commit(s)")]
+    UnmatchedCommitsError(i32),
 }
 
 /// Result type of the core library.

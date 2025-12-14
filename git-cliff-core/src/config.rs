@@ -110,6 +110,8 @@ pub struct GitConfig {
     pub link_parsers: Vec<LinkParser>,
     /// Exclude commits that are not matched by any commit parser.
     pub filter_commits: bool,
+    /// Fail on a commit that is not matched by any commit parser.
+    pub fail_on_unmatched_commit: bool,
     /// Regex to select git tags that represent releases.
     #[serde(with = "serde_regex", default)]
     pub tag_pattern: Option<Regex>,
@@ -187,6 +189,9 @@ pub struct RemoteConfig {
     /// Bitbucket remote.
     #[serde(default)]
     pub bitbucket: Remote,
+    /// Azure DevOps remote.
+    #[serde(default)]
+    pub azure_devops: Remote,
 }
 
 impl RemoteConfig {
@@ -206,6 +211,10 @@ impl RemoteConfig {
         }
         #[cfg(feature = "bitbucket")]
         if self.bitbucket.is_set() {
+            return true;
+        }
+        #[cfg(feature = "azure_devops")]
+        if self.azure_devops.is_set() {
             return true;
         }
         false
@@ -228,6 +237,10 @@ impl RemoteConfig {
         #[cfg(feature = "bitbucket")]
         {
             self.bitbucket.native_tls = Some(true);
+        }
+        #[cfg(feature = "azure_devops")]
+        {
+            self.azure_devops.native_tls = Some(true);
         }
     }
 }

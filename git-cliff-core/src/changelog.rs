@@ -6,6 +6,8 @@ use crate::commit::Commit;
 use crate::config::{Config, GitConfig};
 use crate::error::{Error, Result};
 use crate::release::{Release, Releases};
+#[cfg(feature = "azure_devops")]
+use crate::remote::azure_devops::AzureDevOpsClient;
 #[cfg(feature = "bitbucket")]
 use crate::remote::bitbucket::BitbucketClient;
 #[cfg(feature = "gitea")]
@@ -21,20 +23,17 @@ use crate::template::Template;
 pub struct Changelog<'a> {
     /// Releases that the changelog will contain.
     pub releases: Vec<Release<'a>>,
+    /// Configuration used for generating the changelog.
+    pub config: Config,
     header_template: Option<Template>,
     body_template: Template,
     footer_template: Option<Template>,
-    config: &'a Config,
     additional_context: HashMap<String, serde_json::Value>,
 }
 
 impl<'a> Changelog<'a> {
     /// Constructs a new instance.
-    pub fn new(
-        releases: Vec<Release<'a>>,
-        config: &'a Config,
-        range: Option<&str>,
-    ) -> Result<Self> {
+    pub fn new(releases: Vec<Release<'a>>, config: Config, range: Option<&str>) -> Result<Self> {
         let mut changelog = Changelog::build(releases, config)?;
         changelog.add_remote_data(range)?;
         changelog.process_commits()?;
@@ -43,7 +42,7 @@ impl<'a> Changelog<'a> {
     }
 
     /// Builds a changelog from releases and config.
-    fn build(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
+    fn build(releases: Vec<Release<'a>>, config: Config) -> Result<Self> {
         let trim = config.changelog.trim;
         Ok(Self {
             releases,
@@ -51,7 +50,7 @@ impl<'a> Changelog<'a> {
                 Some(header) => Some(Template::new("header", header.to_string(), trim)?),
                 None => None,
             },
-            body_template: get_body_template(config, trim)?,
+            body_template: get_body_template(&config, trim)?,
             footer_template: match &config.changelog.footer {
                 Some(footer) => Some(Template::new("footer", footer.to_string(), trim)?),
                 None => None,
@@ -62,7 +61,7 @@ impl<'a> Changelog<'a> {
     }
 
     /// Constructs an instance from a serialized context object.
-    pub fn from_context<R: Read>(input: &mut R, config: &'a Config) -> Result<Self> {
+    pub fn from_context<R: Read>(input: &mut R, config: Config) -> Result<Self> {
         Changelog::build(serde_json::from_reader(input)?, config)
     }
 
@@ -131,6 +130,35 @@ impl<'a> Changelog<'a> {
         Ok(())
     }
 
+    /// Checks the commits and returns an error if any commits are not matched
+    /// by any commit parser.
+    fn check_unmatched_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
+        log::debug!("Verifying that no commits are unmatched by commit parsers");
+        let mut unmatched_count = 0;
+        commits.iter().for_each(|commit| {
+            let is_unmatched = commit.group.is_none();
+            if is_unmatched {
+                log::error!(
+                    "Commit {id} was not matched by any commit parser:\n{message}",
+                    id = &commit.id[..7],
+                    message = commit
+                        .message
+                        .lines()
+                        .map(|line| { format!("    | {}", line.trim()) })
+                        .collect::<Vec<String>>()
+                        .join("\n")
+                );
+                unmatched_count += 1;
+            }
+        });
+
+        if unmatched_count > 0 {
+            return Err(Error::UnmatchedCommitsError(unmatched_count));
+        }
+
+        Ok(())
+    }
+
     fn process_commit_list(commits: &mut Vec<Commit<'a>>, git_config: &GitConfig) -> Result<()> {
         *commits = commits
             .iter()
@@ -159,6 +187,10 @@ impl<'a> Changelog<'a> {
 
         if git_config.require_conventional {
             Self::check_conventional_commits(commits)?;
+        }
+
+        if git_config.fail_on_unmatched_commit {
+            Self::check_unmatched_commits(commits)?;
         }
 
         Ok(())
@@ -265,7 +297,7 @@ impl<'a> Changelog<'a> {
                 .block_on(async {
                     let (commits, pull_requests) = tokio::try_join!(
                         github_client.get_commits(ref_name),
-                        github_client.get_pull_requests(ref_name),
+                        github_client.get_pull_requests(),
                     )?;
                     log::debug!("Number of GitHub commits: {}", commits.len());
                     log::debug!("Number of GitHub pull requests: {}", pull_requests.len());
@@ -315,7 +347,7 @@ impl<'a> Changelog<'a> {
                 .build()?
                 .block_on(async {
                     // Map repo/owner to gitlab id
-                    let project_id = match tokio::join!(gitlab_client.get_project(ref_name)) {
+                    let project_id = match tokio::join!(gitlab_client.get_project()) {
                         (Ok(project),) => project.id,
                         (Err(err),) => {
                             log::error!("Failed to lookup project! {}", err);
@@ -325,7 +357,7 @@ impl<'a> Changelog<'a> {
                     let (commits, merge_requests) = tokio::try_join!(
                         // Send id to these functions
                         gitlab_client.get_commits(project_id, ref_name),
-                        gitlab_client.get_merge_requests(project_id, ref_name),
+                        gitlab_client.get_pull_requests(project_id),
                     )?;
                     log::debug!("Number of GitLab commits: {}", commits.len());
                     log::debug!("Number of GitLab merge requests: {}", merge_requests.len());
@@ -374,7 +406,7 @@ impl<'a> Changelog<'a> {
                 .block_on(async {
                     let (commits, pull_requests) = tokio::try_join!(
                         gitea_client.get_commits(ref_name),
-                        gitea_client.get_pull_requests(ref_name),
+                        gitea_client.get_pull_requests(),
                     )?;
                     log::debug!("Number of Gitea commits: {}", commits.len());
                     log::debug!("Number of Gitea pull requests: {}", pull_requests.len());
@@ -428,13 +460,69 @@ impl<'a> Changelog<'a> {
                 .block_on(async {
                     let (commits, pull_requests) = tokio::try_join!(
                         bitbucket_client.get_commits(ref_name),
-                        bitbucket_client.get_pull_requests(ref_name)
+                        bitbucket_client.get_pull_requests()
                     )?;
                     log::debug!("Number of Bitbucket commits: {}", commits.len());
                     log::debug!("Number of Bitbucket pull requests: {}", pull_requests.len());
                     Ok((commits, pull_requests))
                 });
             log::info!("{}", bitbucket::FINISHED_FETCHING_MSG);
+            data
+        } else {
+            Ok((vec![], vec![]))
+        }
+    }
+
+    /// Returns the Azure DevOps metadata needed for the changelog.
+    ///
+    /// This function creates a multithread async runtime for handling the
+    /// requests. The following are fetched from the Azure DevOps REST API:
+    ///
+    /// - Commits
+    /// - Pull requests
+    ///
+    /// Each of these are paginated requests so they are being run in parallel
+    /// for speedup.
+    ///
+    /// If no Azure DevOps related variable is used in the template then this
+    /// function returns empty vectors.
+    #[cfg(feature = "azure_devops")]
+    fn get_azure_devops_metadata(
+        &self,
+        ref_name: Option<&str>,
+    ) -> Result<crate::remote::RemoteMetadata> {
+        use crate::remote::azure_devops;
+        if self.config.remote.azure_devops.is_custom ||
+            self.body_template
+                .contains_variable(azure_devops::TEMPLATE_VARIABLES) ||
+            self.footer_template
+                .as_ref()
+                .map(|v| v.contains_variable(azure_devops::TEMPLATE_VARIABLES))
+                .unwrap_or(false)
+        {
+            let azure_devops_client =
+                AzureDevOpsClient::try_from(self.config.remote.azure_devops.clone())?;
+            log::info!(
+                "{} ({})",
+                azure_devops::START_FETCHING_MSG,
+                self.config.remote.azure_devops
+            );
+            let data = tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()?
+                .block_on(async {
+                    let (commits, pull_requests) = tokio::try_join!(
+                        azure_devops_client.get_commits(ref_name),
+                        azure_devops_client.get_pull_requests()
+                    )?;
+                    log::debug!("Number of Azure DevOps commits: {}", commits.len());
+                    log::debug!(
+                        "Number of Azure DevOps pull requests: {}",
+                        pull_requests.len()
+                    );
+                    Ok((commits, pull_requests))
+                });
+            log::info!("{}", azure_devops::FINISHED_FETCHING_MSG);
             data
         } else {
             Ok((vec![], vec![]))
@@ -492,6 +580,14 @@ impl<'a> Changelog<'a> {
         } else {
             (vec![], vec![])
         };
+        #[cfg(feature = "azure_devops")]
+        let (azure_devops_commits, azure_devops_pull_request) =
+            if self.config.remote.azure_devops.is_set() {
+                self.get_azure_devops_metadata(ref_name)
+                    .expect("Could not get azure_devops metadata")
+            } else {
+                (vec![], vec![])
+            };
         #[cfg(feature = "remote")]
         for release in &mut self.releases {
             #[cfg(feature = "github")]
@@ -504,6 +600,11 @@ impl<'a> Changelog<'a> {
             release.update_bitbucket_metadata(
                 bitbucket_commits.clone(),
                 bitbucket_pull_request.clone(),
+            )?;
+            #[cfg(feature = "azure_devops")]
+            release.update_azure_devops_metadata(
+                azure_devops_commits.clone(),
+                azure_devops_pull_request.clone(),
             )?;
         }
         Ok(())
@@ -621,6 +722,7 @@ fn get_body_template(config: &Config, trim: bool) -> Result<Template> {
         "commit.gitea",
         "commit.gitlab",
         "commit.bitbucket",
+        "commit.azure_devops",
     ];
     if template.contains_variable(&deprecated_vars) {
         log::warn!(
@@ -832,6 +934,7 @@ mod test {
                 ],
                 protect_breaking_commits: false,
                 filter_commits: false,
+                fail_on_unmatched_commit: false,
                 tag_pattern: None,
                 skip_tags: Regex::new("v3.*").ok(),
                 ignore_tags: None,
@@ -876,6 +979,14 @@ mod test {
                     native_tls: None,
                 },
                 bitbucket: Remote {
+                    owner: String::from("coolguy"),
+                    repo: String::from("awesome"),
+                    token: None,
+                    is_custom: false,
+                    api_url: None,
+                    native_tls: None,
+                },
+                azure_devops: Remote {
                     owner: String::from("coolguy"),
                     repo: String::from("awesome"),
                     token: None,
@@ -1067,6 +1178,10 @@ mod test {
             bitbucket: crate::remote::RemoteReleaseMetadata {
                 contributors: vec![],
             },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: crate::remote::RemoteReleaseMetadata {
+                contributors: vec![],
+            },
         };
         let releases = vec![
             test_release.clone(),
@@ -1184,6 +1299,10 @@ mod test {
                 bitbucket: crate::remote::RemoteReleaseMetadata {
                     contributors: vec![],
                 },
+                #[cfg(feature = "azure_devops")]
+                azure_devops: crate::remote::RemoteReleaseMetadata {
+                    contributors: vec![],
+                },
             },
         ];
         (config, releases)
@@ -1193,7 +1312,7 @@ mod test {
     fn changelog_generator() -> Result<()> {
         let (config, releases) = get_test_data();
 
-        let mut changelog = Changelog::new(releases, &config, None)?;
+        let mut changelog = Changelog::new(releases, config, None)?;
         changelog.bump_version()?;
         changelog.releases[0].timestamp = Some(0);
         let mut out = Vec::new();
@@ -1295,7 +1414,7 @@ mod test {
         releases[0].commits = Vec::new();
         releases[2].commits = Vec::new();
         releases[2].previous = Some(Box::new(releases[0].clone()));
-        let changelog = Changelog::new(releases, &config, None)?;
+        let changelog = Changelog::new(releases, config, None)?;
         let mut out = Vec::new();
         changelog.generate(&mut out)?;
         assert_eq!(
@@ -1379,7 +1498,7 @@ chore(deps): fix broken deps
             },
             ..Default::default()
         });
-        let changelog = Changelog::new(releases, &config, None)?;
+        let changelog = Changelog::new(releases, config, None)?;
         let mut out = Vec::new();
         changelog.generate(&mut out)?;
         assert_eq!(
@@ -1499,7 +1618,7 @@ chore(deps): fix broken deps
 				- {{ commit.message }}{% endfor %}
 				{% endfor %}{% endfor %}"#
             .to_string();
-        let mut changelog = Changelog::new(releases, &config, None)?;
+        let mut changelog = Changelog::new(releases, config, None)?;
         changelog.add_context("custom_field", "Hello")?;
         let mut out = Vec::new();
         changelog.generate(&mut out)?;

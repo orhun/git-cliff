@@ -24,6 +24,7 @@ remote = [
   "dep:reqwest-middleware",
   "dep:tokio",
   "dep:futures",
+  "dep:async-stream",
 ]
 ## Enable integration with GitHub.
 ## You can turn this off if you don't use GitHub and don't want
@@ -41,6 +42,10 @@ bitbucket = ["remote"]
 ## You can turn this off if you don't use Gitea and don't want
 ## to make network requests to the Gitea API.
 gitea = ["remote"]
+## Enable integration with Azure DevOps.
+## You can turn this off if you don't use Azure DevOps and don't want
+## to make network requests to the Azure DevOps API.
+azure_devops = ["remote"]
 
 [dependencies]
 glob.workspace = true
@@ -69,6 +74,7 @@ tokio = { version = "1.47.0", features = [
   "macros",
 ], optional = true }
 futures = { version = "0.3.31", optional = true }
+async-stream = { version = "0.3.6", optional = true }
 url.workspace = true
 dyn-clone = "1.0.17"
 urlencoding = "2.1.3"

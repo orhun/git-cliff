@@ -77,13 +77,15 @@ commit_parsers = [
 ]
 # Exclude commits that are not matched by any commit parser.
 filter_commits = false
+# Fail on a commit that is not matched by any commit parser.
+fail_on_unmatched_commit = false
 # An array of link parsers for extracting external references, and turning them into URLs, using regex.
 link_parsers = []
 # Include only the tags that belong to the current branch.
 use_branch_tags = false
 # Order releases topologically instead of chronologically.
 topo_order = false
-# Order releases topologically instead of chronologically.
+# Order commits topologically instead of chronologically.
 topo_order_commits = true
 # Order of commits in each group/release within the changelog.
 # Allowed values: newest, oldest

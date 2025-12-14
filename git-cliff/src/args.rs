@@ -31,7 +31,7 @@ const STYLES: Styles = Styles::styled()
     .placeholder(AnsiColor::Green.on_default());
 
 /// Command-line arguments to parse.
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Clone)]
 #[command(
     version,
     author = clap::crate_authors!("\n"),
@@ -333,6 +333,26 @@ pub struct Opt {
 		hide = !cfg!(feature = "bitbucket"),
 	)]
     pub bitbucket_repo: Option<RemoteValue>,
+    /// Sets the Azure DevOps API token.
+    #[arg(
+		long,
+		help_heading = "REMOTE OPTIONS",
+		env = "AZURE_DEVOPS_TOKEN",
+		value_name = "TOKEN",
+		hide_env_values = true,
+		hide = !cfg!(feature = "azure_devops"),
+	)]
+    pub azure_devops_token: Option<SecretString>,
+    /// Sets the Azure DevOps repository.
+    #[arg(
+		long,
+		help_heading = "REMOTE OPTIONS",
+		env = "AZURE_DEVOPS_REPO",
+		value_parser = clap::value_parser!(RemoteValue),
+		value_name = "OWNER/REPO",
+		hide = !cfg!(feature = "azure_devops"),
+	)]
+    pub azure_devops_repo: Option<RemoteValue>,
     /// Sets the commit range to process.
     #[arg(value_name = "RANGE", help_heading = Some("ARGS"))]
     pub range: Option<String>,

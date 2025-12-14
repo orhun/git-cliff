@@ -14,12 +14,15 @@ pub mod bitbucket;
 #[cfg(feature = "gitea")]
 pub mod gitea;
 
+/// Azure DevOps client.
+#[cfg(feature = "azure_devops")]
+pub mod azure_devops;
+
 use std::env;
 use std::fmt::Debug;
 use std::time::Duration;
 
 use dyn_clone::DynClone;
-use futures::{StreamExt, future, stream};
 use http_cache_reqwest::{CACacheManager, Cache, CacheMode, HttpCache, HttpCacheOptions};
 use reqwest::Client;
 use reqwest::header::{HeaderMap, HeaderValue};
@@ -47,22 +50,6 @@ pub(crate) const REQUEST_KEEP_ALIVE: u64 = 60;
 
 /// Maximum number of entries to fetch in a single page.
 pub(crate) const MAX_PAGE_SIZE: usize = 100;
-
-/// Trait for handling the different entries returned from the remote.
-pub trait RemoteEntry {
-    /// Returns the API URL for fetching the entries at the specified page.
-    fn url(
-        project_id: i64,
-        api_url: &str,
-        remote: &Remote,
-        ref_name: Option<&str>,
-        page: i32,
-    ) -> String;
-    /// Returns the request buffer size.
-    fn buffer_size() -> usize;
-    /// Whether if exit early.
-    fn early_exit(&self) -> bool;
-}
 
 /// Trait for handling remote commits.
 pub trait RemoteCommit: DynClone {
@@ -177,21 +164,12 @@ pub trait RemoteClient {
     /// Returns the HTTP client for making requests.
     fn client(&self) -> ClientWithMiddleware;
 
-    /// Returns true if the client should early exit.
-    fn early_exit<T: DeserializeOwned + RemoteEntry>(&self, page: &T) -> bool {
-        page.early_exit()
-    }
-
-    /// Retrieves a single object.
-    async fn get_entry<T: DeserializeOwned + RemoteEntry>(
-        &self,
-        project_id: i64,
-        ref_name: Option<&str>,
-        page: i32,
-    ) -> Result<T> {
-        let url = T::url(project_id, &self.api_url(), &self.remote(), ref_name, page);
+    /// Performs a HTTP GET request, deserializes the JSON response, and returns the result.
+    /// This is the core HTTP request and JSON parsing logic shared by all API methods.
+    /// Callers are responsible for any additional processing of the deserialized data.
+    async fn get_json<T: DeserializeOwned>(&self, url: &str) -> Result<T> {
         log::debug!("Sending request to: {url}");
-        let response = self.client().get(&url).send().await?;
+        let response = self.client().get(url).send().await?.error_for_status()?;
         let response_text = if response.status().is_success() {
             let text = response.text().await?;
             log::trace!("Response: {:?}", text);
@@ -202,95 +180,6 @@ pub trait RemoteClient {
             text
         };
         Ok(serde_json::from_str::<T>(&response_text)?)
-    }
-
-    /// Retrieves a single page of entries.
-    async fn get_entries_with_page<T: DeserializeOwned + RemoteEntry>(
-        &self,
-        project_id: i64,
-        ref_name: Option<&str>,
-        page: i32,
-    ) -> Result<Vec<T>> {
-        let url = T::url(project_id, &self.api_url(), &self.remote(), ref_name, page);
-        log::debug!("Sending request to: {url}");
-        let response = self.client().get(&url).send().await?;
-        let response_text = if response.status().is_success() {
-            let text = response.text().await?;
-            log::trace!("Response: {:?}", text);
-            text
-        } else {
-            let text = response.text().await?;
-            log::error!("Request error: {}", text);
-            text
-        };
-        let response = serde_json::from_str::<Vec<T>>(&response_text)?;
-        if response.is_empty() {
-            Err(Error::PaginationError(String::from("end of entries")))
-        } else {
-            Ok(response)
-        }
-    }
-
-    /// Fetches the remote API and returns the given entry.
-    ///
-    /// See `fetch_with_early_exit` for the early exit version of this method.
-    async fn fetch<T: DeserializeOwned + RemoteEntry>(
-        &self,
-        project_id: i64,
-        ref_name: Option<&str>,
-    ) -> Result<Vec<T>> {
-        let entries: Vec<Vec<T>> = stream::iter(0..)
-            .map(|i| self.get_entries_with_page(project_id, ref_name, i))
-            .buffered(T::buffer_size())
-            .take_while(|page| {
-                if let Err(e) = page {
-                    log::debug!("Error while fetching page: {:?}", e);
-                }
-                future::ready(page.is_ok())
-            })
-            .map(|page| match page {
-                Ok(v) => v,
-                Err(ref e) => {
-                    log::error!("{:#?}", e);
-                    page.expect("failed to fetch page: {}")
-                }
-            })
-            .collect()
-            .await;
-        Ok(entries.into_iter().flatten().collect())
-    }
-
-    /// Fetches the remote API and returns the given entry.
-    ///
-    /// Early exits based on the response.
-    async fn fetch_with_early_exit<T: DeserializeOwned + RemoteEntry>(
-        &self,
-        project_id: i64,
-        ref_name: Option<&str>,
-    ) -> Result<Vec<T>> {
-        let entries: Vec<T> = stream::iter(0..)
-            .map(|i| self.get_entry::<T>(project_id, ref_name, i))
-            .buffered(T::buffer_size())
-            .take_while(|page| {
-                let status = match page {
-                    Ok(v) => !self.early_exit(v),
-                    Err(e) => {
-                        log::debug!("Error while fetching page: {:?}", e);
-                        true
-                    }
-                };
-                future::ready(status && page.is_ok())
-            })
-            .map(|page| match page {
-                Ok(v) => v,
-                Err(ref e) => {
-                    log::error!("{:#?}", e);
-                    page.expect("failed to fetch page: {}")
-                }
-            })
-            .collect()
-            .await;
-        Ok(entries)
     }
 }
 

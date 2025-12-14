@@ -10,10 +10,11 @@ pub mod args;
 /// Custom logger implementation.
 pub mod logger;
 
+use std::env;
 use std::fs::{self, File};
+use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::{env, io};
 
 use args::{BumpOption, Opt, Sort, Strip};
 use clap::ValueEnum;
@@ -29,7 +30,7 @@ use glob::Pattern;
 
 /// Checks for a new version on crates.io
 #[cfg(feature = "update-informer")]
-fn check_new_version() {
+pub fn check_new_version() {
     use update_informer::Check;
     let pkg_name = env!("CARGO_PKG_NAME");
     let pkg_version = env!("CARGO_PKG_VERSION");
@@ -156,6 +157,30 @@ fn process_submodules(
     Ok(())
 }
 
+/// Initializes the configuration file.
+pub fn init_config(name: Option<&str>, config_path: &Path) -> Result<()> {
+    let contents = match name {
+        Some(name) => BuiltinConfig::get_config(name.to_string())?,
+        None => EmbeddedConfig::get_config()?,
+    };
+
+    let config_path = if config_path == Path::new(DEFAULT_CONFIG) {
+        PathBuf::from(DEFAULT_CONFIG)
+    } else {
+        config_path.to_path_buf()
+    };
+
+    log::info!(
+        "Saving the configuration file{} to {:?}",
+        name.map(|v| format!(" ({v})")).unwrap_or_default(),
+        config_path
+    );
+
+    fs::write(config_path, contents)?;
+
+    Ok(())
+}
+
 /// Processes the tags and commits for creating release entries for the
 /// changelog.
 ///
@@ -248,17 +273,36 @@ fn process_repository<'a>(
     // Parse commits.
     let commit_range = determine_commit_range(args, config, repository)?;
 
-    // Include only the current directory if not running from the root repository
+    // Include only the current directory if not running from the root repository.
+    //
+    // NOTE:
+    // The conditions for including the current directory when not running from the root repository
+    // have grown quite complex. This may warrant additional documentation to explain the behavior.
+    //
+    // Current logic triggers when all of the following are true:
+    // - `cwd` is a child of the repository root but not the root itself
+    // - `args.repository` is either None or empty
+    // - `args.workdir` is None
+    // - `include_path` is currently empty
+    //
+    // Additionally, if `include_path` is already explicitly set, it might be preferable to append.
+    let cwd = env::current_dir()?;
     let mut include_path = config.git.include_paths.clone();
-    if let Some(mut path_diff) = pathdiff::diff_paths(env::current_dir()?, repository.root_path()?)
-    {
-        if args.workdir.is_none() && include_path.is_empty() && path_diff != Path::new("") {
-            log::info!(
-                "Including changes from the current directory: {:?}",
-                path_diff.display()
-            );
-            path_diff.extend(["**", "*"]);
-            include_path = vec![Pattern::new(path_diff.to_string_lossy().as_ref())?];
+    if let Ok(root) = repository.root_path() {
+        if cwd.starts_with(&root) &&
+            cwd != root &&
+            args.repository.as_ref().is_none_or(|r| r.is_empty()) &&
+            args.workdir.is_none() &&
+            include_path.is_empty()
+        {
+            let path = cwd.join("**").join("*");
+            if let Ok(stripped) = path.strip_prefix(root) {
+                log::info!(
+                    "Including changes from the current directory: {}",
+                    cwd.display()
+                );
+                include_path = vec![Pattern::new(stripped.to_string_lossy().as_ref())?];
+            }
         }
     }
 
@@ -443,7 +487,7 @@ fn process_repository<'a>(
 ///     Ok(())
 /// }
 /// ```
-pub fn run(args: Opt) -> Result<()> {
+pub fn run<'a>(args: Opt) -> Result<Changelog<'a>> {
     run_with_changelog_modifier(args, |_| Ok(()))
 }
 
@@ -470,36 +514,10 @@ pub fn run(args: Opt) -> Result<()> {
 ///     Ok(())
 /// }
 /// ```
-pub fn run_with_changelog_modifier(
+pub fn run_with_changelog_modifier<'a>(
     mut args: Opt,
     changelog_modifier: impl FnOnce(&mut Changelog) -> Result<()>,
-) -> Result<()> {
-    // Check if there is a new version available.
-    #[cfg(feature = "update-informer")]
-    check_new_version();
-
-    // Create the configuration file if init flag is given.
-    if let Some(init_config) = args.init {
-        let contents = match init_config {
-            Some(ref name) => BuiltinConfig::get_config(name.to_string())?,
-            None => EmbeddedConfig::get_config()?,
-        };
-
-        let config_path = if args.config == PathBuf::from(DEFAULT_CONFIG) {
-            PathBuf::from(DEFAULT_CONFIG)
-        } else {
-            args.config.clone()
-        };
-
-        log::info!(
-            "Saving the configuration file{} to {:?}",
-            init_config.map(|v| format!(" ({v})")).unwrap_or_default(),
-            config_path
-        );
-        fs::write(config_path, contents)?;
-        return Ok(());
-    }
-
+) -> Result<Changelog<'a>> {
     // Retrieve the built-in configuration.
     let builtin_config = BuiltinConfig::parse(args.config.to_string_lossy().to_string());
 
@@ -626,6 +644,13 @@ pub fn run_with_changelog_modifier(
             .token
             .clone_from(&args.bitbucket_token);
     }
+    if args.azure_devops_token.is_some() {
+        config
+            .remote
+            .azure_devops
+            .token
+            .clone_from(&args.azure_devops_token);
+    }
     if let Some(ref remote) = args.github_repo {
         config.remote.github.owner = remote.0.owner.to_string();
         config.remote.github.repo = remote.0.repo.to_string();
@@ -645,6 +670,11 @@ pub fn run_with_changelog_modifier(
         config.remote.gitea.owner = remote.0.owner.to_string();
         config.remote.gitea.repo = remote.0.repo.to_string();
         config.remote.gitea.is_custom = true;
+    }
+    if let Some(ref remote) = args.azure_devops_repo {
+        config.remote.azure_devops.owner = remote.0.owner.to_string();
+        config.remote.azure_devops.repo = remote.0.repo.to_string();
+        config.remote.azure_devops.is_custom = true;
     }
     if args.no_exec {
         config
@@ -696,18 +726,29 @@ pub fn run_with_changelog_modifier(
         } else {
             Box::new(File::open(context_path)?)
         };
-        let mut changelog = Changelog::from_context(&mut input, &config)?;
+        let mut changelog = Changelog::from_context(&mut input, config)?;
         changelog.add_remote_context()?;
         changelog
     } else {
         // Process the repositories.
-        let repositories = args.repository.clone().unwrap_or(vec![env::current_dir()?]);
+        let repositories: Vec<Repository> = if let Some(paths) = &args.repository {
+            paths
+                .iter()
+                .map(|p| {
+                    let abs_path = fs::canonicalize(p)?;
+                    Repository::init(abs_path)
+                })
+                .collect::<Result<Vec<_>>>()?
+        } else {
+            let cwd = env::current_dir()?;
+            vec![Repository::discover(cwd)?]
+        };
         let mut releases = Vec::<Release>::new();
         let mut commit_range = None;
         for repository in repositories {
             // Skip commits
             let mut skip_list = Vec::new();
-            let ignore_file = repository.join(IGNORE_FILE);
+            let ignore_file = repository.root_path()?.join(IGNORE_FILE);
             if ignore_file.exists() {
                 let contents = fs::read_to_string(ignore_file)?;
                 let commits = contents
@@ -728,9 +769,6 @@ pub fn run_with_changelog_modifier(
                 });
             }
 
-            // Process the repository.
-            let repository = Repository::init(repository)?;
-
             // The commit range, used for determining the remote commits to include
             // in the changelog, doesn't make sense if multiple repositories are
             // specified. As such, pick the commit range from the last given
@@ -743,20 +781,23 @@ pub fn run_with_changelog_modifier(
                 &args,
             )?);
         }
-        Changelog::new(releases, &config, commit_range.as_deref())?
+        Changelog::new(releases, config, commit_range.as_deref())?
     };
     changelog_modifier(&mut changelog)?;
 
-    // Print the result.
-    let mut out: Box<dyn io::Write> = if let Some(path) = &output {
-        if path == Path::new("-") {
-            Box::new(io::stdout())
-        } else {
-            Box::new(io::BufWriter::new(File::create(path)?))
-        }
-    } else {
-        Box::new(io::stdout())
-    };
+    Ok(changelog)
+}
+
+/// Writes the changelog to a file.
+pub fn write_changelog<W: io::Write>(
+    args: &Opt,
+    mut changelog: Changelog<'_>,
+    mut out: W,
+) -> Result<()> {
+    let output = args
+        .output
+        .clone()
+        .or(changelog.config.changelog.output.clone());
     if args.bump.is_some() || args.bumped_version {
         let next_version = if let Some(next_version) = changelog.bump_version()? {
             next_version
@@ -766,11 +807,11 @@ pub fn run_with_changelog_modifier(
             log::warn!("There is nothing to bump");
             last_version
         } else if changelog.releases.is_empty() {
-            config.bump.get_initial_tag()
+            changelog.config.bump.get_initial_tag()
         } else {
             return Ok(());
         };
-        if let Some(tag_pattern) = &config.git.tag_pattern {
+        if let Some(tag_pattern) = &changelog.config.git.tag_pattern {
             if !tag_pattern.is_match(&next_version) {
                 return Err(Error::ChangelogError(format!(
                     "Next version ({}) does not match the tag pattern: {}",
@@ -779,7 +820,11 @@ pub fn run_with_changelog_modifier(
             }
         }
         if args.bumped_version {
-            writeln!(out, "{next_version}")?;
+            if config.changelog.output.is_none() {
+                writeln!(out, "{next_version}")?;
+            } else {
+                writeln!(io::stdout(), "{next_version}")?;
+            }
             return Ok(());
         }
     }
