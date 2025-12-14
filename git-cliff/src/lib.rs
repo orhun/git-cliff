@@ -740,7 +740,7 @@ pub fn run_with_changelog_modifier<'a>(
                 .iter()
                 .map(|p| {
                     let abs_path = fs::canonicalize(p)?;
-                    Repository::init(abs_path)
+                    Repository::discover(abs_path)
                 })
                 .collect::<Result<Vec<_>>>()?
         } else {
