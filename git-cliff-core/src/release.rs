@@ -61,6 +61,7 @@ pub struct Release<'a> {
     pub bitbucket: RemoteReleaseMetadata,
     /// Contributors.
     #[cfg(feature = "azure_devops")]
+    #[serde(rename = "azure_devops")]
     pub azure_devops: RemoteReleaseMetadata,
 }
 
