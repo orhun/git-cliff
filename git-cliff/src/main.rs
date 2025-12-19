@@ -36,7 +36,9 @@ fn main() -> Result<()> {
 
     // Check if there is a new version available.
     #[cfg(feature = "update-informer")]
-    git_cliff::check_new_version();
+    if !args.offline {
+        git_cliff::check_new_version();
+    }
 
     // Create the configuration file if init flag is given.
     if let Some(path) = &args.init {
