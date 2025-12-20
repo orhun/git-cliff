@@ -462,8 +462,7 @@ fn process_repository<'a>(
     if let Some(message) = &args.with_tag_message {
         if let Some(latest_release) = releases
             .iter_mut()
-            .filter(|release| !release.commits.is_empty())
-            .next_back()
+            .rfind(|release| !release.commits.is_empty())
         {
             latest_release.message = Some(message.to_owned());
         }
