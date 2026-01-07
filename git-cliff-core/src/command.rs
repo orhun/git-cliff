@@ -61,10 +61,11 @@ mod test {
     fn run_os_command() -> Result<()> {
         assert_eq!(
             "eroc-ffilc-tig",
-            run("echo $APP_NAME | rev", None, vec![(
-                "APP_NAME",
-                env!("CARGO_PKG_NAME")
-            )])?
+            run(
+                "echo $APP_NAME | rev",
+                None,
+                vec![("APP_NAME", env!("CARGO_PKG_NAME"))]
+            )?
             .trim()
         );
         assert_eq!(

@@ -45,12 +45,18 @@ You can follow [this guide](https://docs.gitlab.com/ee/user/profile/personal_acc
 
 :::
 
-To set an access token, you can use the [configuration file](/docs/configuration/remote) (not recommended), `--gitlab-token` argument or `GITLAB_TOKEN` environment variable.
+To set an access token, you can use the [configuration file](/docs/configuration/remote) (not recommended), `--gitlab-token` argument or `GITLAB_TOKEN` environment variable. If `GITLAB_TOKEN` is not set, **git-cliff** looks for a matching entry in `$NETRC` (or `~/.netrc`) before falling back to the configured token.
 
 For example:
 
 ```bash
 GITLAB_TOKEN="***" git cliff --gitlab-repo "orhun/git-cliff"
+```
+
+Or via netrc:
+
+```netrc
+machine gitlab.com login oauth2 password <token>
 ```
 
 :::tip
