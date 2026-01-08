@@ -149,6 +149,9 @@ pub struct Opt {
 		num_args = 0..=1,
 	)]
     pub with_tag_message: Option<String>,
+    /// Sets the tags to skip in the changelog.
+    #[arg(long, env = "GIT_CLIFF_SKIP_TAGS", value_name = "PATTERN")]
+    pub skip_tags: Option<Regex>,
     /// Sets the tags to ignore in the changelog.
     #[arg(long, env = "GIT_CLIFF_IGNORE_TAGS", value_name = "PATTERN")]
     pub ignore_tags: Option<Regex>,

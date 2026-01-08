@@ -100,6 +100,8 @@ jobs:
             command: --bump --tag=2.1.1
           - fixtures-name: test-cli-arg-ignore-tags
             command: --ignore-tags ".*beta"
+          - fixtures-name: test-cli-arg-skip-tags
+            command: --skip-tags ".*beta"
           - fixtures-name: test-tag-message
           - fixtures-name: test-bump-unreleased-with-tag-message-arg
             command: --bump --unreleased --with-tag-message "Some text"

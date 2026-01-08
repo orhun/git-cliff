@@ -236,6 +236,8 @@ This value can be also overridden with using the `--tag-pattern` argument.
 
 A regex for skip processing the matched tags.
 
+This value can be also overridden with using the `--skip-tags` argument.
+
 ### ignore_tags
 
 A regex for ignore processing the matched tags.

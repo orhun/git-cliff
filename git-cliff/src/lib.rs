@@ -691,6 +691,9 @@ pub fn run_with_changelog_modifier<'a>(
             .iter_mut()
             .for_each(|v| v.replace_command = None);
     }
+    if args.skip_tags.is_some() {
+        config.git.skip_tags.clone_from(&args.skip_tags);
+    }
     config.git.skip_tags = config.git.skip_tags.filter(|r| !r.as_str().is_empty());
     if args.tag_pattern.is_some() {
         config.git.tag_pattern.clone_from(&args.tag_pattern);
