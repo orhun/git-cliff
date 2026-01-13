@@ -91,7 +91,13 @@ impl<'a> Changelog<'a> {
     }
 
     /// Processes a single commit and returns/logs the result.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            skip_all,
+            fields(id = commit.id)
+        )
+    )]
     fn process_commit(
         commit: &Commit<'a>,
         git_config: &GitConfig,
@@ -114,7 +120,13 @@ impl<'a> Changelog<'a> {
 
     /// Checks the commits and returns an error if any unconventional commits
     /// are found.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            skip_all,
+            fields(commits = commits.len())
+        )
+    )]
     fn check_conventional_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
         log::debug!("Verifying that all commits are conventional");
         let mut unconventional_count = 0;
@@ -143,7 +155,13 @@ impl<'a> Changelog<'a> {
 
     /// Checks the commits and returns an error if any commits are not matched
     /// by any commit parser.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            skip_all,
+            fields(commits = commits.len())
+        )
+    )]
     fn check_unmatched_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
         log::debug!("Verifying that no commits are unmatched by commit parsers");
         let mut unmatched_count = 0;
@@ -172,7 +190,13 @@ impl<'a> Changelog<'a> {
     }
 
     /// Processes a commit list by applying parsing, splitting, and validation rules.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            skip_all,
+            fields(commits = commits.len())
+        )
+    )]
     fn process_commit_list(
         commits: &mut Vec<Commit<'a>>,
         git_config: &GitConfig,
@@ -213,7 +237,13 @@ impl<'a> Changelog<'a> {
 
     /// Processes the commits and omits the ones that doesn't match the
     /// criteria set by configuration file.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            skip_all,
+            fields(releases = self.releases.len())
+        )
+    )]
     fn process_commits(&mut self) -> Result<()> {
         log::debug!("Processing the commits");
 
@@ -247,7 +277,13 @@ impl<'a> Changelog<'a> {
     }
 
     /// Processes the releases and filters them out based on the configuration.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            skip_all,
+            fields(releases = self.releases.len())
+        )
+    )]
     fn process_releases(&mut self) {
         log::debug!("Processing {} release(s)", self.releases.len());
         let skip_regex = self.config.git.skip_tags.as_ref();
