@@ -196,7 +196,6 @@ impl RemoteClient for GitLabClient {
 
 impl GitLabClient {
     /// Constructs the URL for GitLab project API.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn project_url(api_url: &str, remote: &Remote) -> String {
         format!(
             "{}/projects/{}%2F{}",
@@ -207,7 +206,6 @@ impl GitLabClient {
     }
 
     /// Constructs the URL for GitLab commits API.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn commits_url(project_id: i64, api_url: &str, ref_name: Option<&str>, page: i32) -> String {
         let mut url = format!(
             "{api_url}/projects/{project_id}/repository/commits?per_page={MAX_PAGE_SIZE}&\
@@ -221,7 +219,6 @@ impl GitLabClient {
         url
     }
     /// Constructs the URL for GitLab merge requests API.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn pull_requests_url(project_id: i64, api_url: &str, page: i32) -> String {
         format!(
             "{api_url}/projects/{project_id}/merge_requests?per_page={MAX_PAGE_SIZE}&page={page}&\
@@ -263,7 +260,6 @@ impl GitLabClient {
         self.get_pull_request_stream(project_id).try_collect().await
     }
 
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn get_commit_stream<'a>(
         &'a self,
         project_id: i64,
@@ -304,7 +300,6 @@ impl GitLabClient {
         }
     }
 
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn get_pull_request_stream<'a>(
         &'a self,
         project_id: i64,

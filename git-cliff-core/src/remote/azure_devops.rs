@@ -181,7 +181,6 @@ impl RemoteClient for AzureDevOpsClient {
 
 impl AzureDevOpsClient {
     /// Constructs the URL for Azure DevOps commits API.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn commits_url(api_url: &str, remote: &Remote, ref_name: Option<&str>, page: i32) -> String {
         let skip = page * MAX_PAGE_SIZE as i32;
         let mut url = format!(
@@ -204,7 +203,6 @@ impl AzureDevOpsClient {
     }
 
     /// Constructs the URL for Azure DevOps pull requests API.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn pull_requests_url(api_url: &str, remote: &Remote, page: i32) -> String {
         let skip = page * MAX_PAGE_SIZE as i32;
         format!(
@@ -236,7 +234,6 @@ impl AzureDevOpsClient {
         self.get_pull_request_stream().try_collect().await
     }
 
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn get_commit_stream<'a>(
         &'a self,
         ref_name: Option<&str>,
@@ -275,7 +272,6 @@ impl AzureDevOpsClient {
         }
     }
 
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn get_pull_request_stream<'a>(
         &'a self,
     ) -> impl Stream<Item = Result<Box<dyn RemotePullRequest>>> + 'a {
