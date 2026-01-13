@@ -85,7 +85,16 @@ impl Release<'_> {
     ///
     /// It uses the default bump version configuration to calculate the next
     /// version.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            skip_all,
+            fields(
+                version = self.version.as_deref().unwrap_or("unreleased"),
+                commits = self.commits.len()
+            )
+        )
+    )]
     pub fn calculate_next_version(&self) -> Result<String> {
         self.calculate_next_version_with_config(&Bump::default())
     }
@@ -105,7 +114,16 @@ impl Release<'_> {
     ///
     /// It uses the given bump version configuration to calculate the next
     /// version.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            skip_all,
+            fields(
+                version = self.version.as_deref().unwrap_or("unreleased"),
+                commits = self.commits.len()
+            )
+        )
+    )]
     pub(super) fn calculate_next_version_with_config(&self, config: &Bump) -> Result<String> {
         match self
             .previous
