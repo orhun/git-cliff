@@ -85,6 +85,7 @@ impl Release<'_> {
     ///
     /// It uses the default bump version configuration to calculate the next
     /// version.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn calculate_next_version(&self) -> Result<String> {
         self.calculate_next_version_with_config(&Bump::default())
     }
@@ -95,6 +96,7 @@ impl Release<'_> {
     /// the `statistics` field. It does not modify the original release but
     /// returns a new instance with the computed statistics included.
     #[must_use]
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn with_statistics(mut self) -> Self {
         self.statistics = Some((&self).into());
         self
@@ -104,6 +106,7 @@ impl Release<'_> {
     ///
     /// It uses the given bump version configuration to calculate the next
     /// version.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub(super) fn calculate_next_version_with_config(&self, config: &Bump) -> Result<String> {
         match self
             .previous
