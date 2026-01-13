@@ -7,12 +7,6 @@ use super::*;
 use crate::config::Remote;
 use crate::error::*;
 
-/// Log message to show while fetching data from GitLab.
-pub const START_FETCHING_MSG: &str = "Retrieving data from GitLab...";
-
-/// Log message to show when done fetching from GitLab.
-pub const FINISHED_FETCHING_MSG: &str = "Done fetching GitLab data.";
-
 /// Template variables related to this remote.
 pub(crate) const TEMPLATE_VARIABLES: &[&str] = &["gitlab", "commit.gitlab", "commit.remote"];
 
@@ -202,6 +196,7 @@ impl RemoteClient for GitLabClient {
 
 impl GitLabClient {
     /// Constructs the URL for GitLab project API.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn project_url(api_url: &str, remote: &Remote) -> String {
         format!(
             "{}/projects/{}%2F{}",
@@ -212,6 +207,7 @@ impl GitLabClient {
     }
 
     /// Constructs the URL for GitLab commits API.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn commits_url(project_id: i64, api_url: &str, ref_name: Option<&str>, page: i32) -> String {
         let mut url = format!(
             "{api_url}/projects/{project_id}/repository/commits?per_page={MAX_PAGE_SIZE}&\
@@ -225,6 +221,7 @@ impl GitLabClient {
         url
     }
     /// Constructs the URL for GitLab merge requests API.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn pull_requests_url(project_id: i64, api_url: &str, page: i32) -> String {
         format!(
             "{api_url}/projects/{project_id}/merge_requests?per_page={MAX_PAGE_SIZE}&page={page}&\
@@ -233,6 +230,7 @@ impl GitLabClient {
     }
 
     /// Looks up the project details.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub async fn get_project(&self) -> Result<GitLabProject> {
         let url = Self::project_url(&self.api_url(), &self.remote());
         self.get_json::<GitLabProject>(&url).await
@@ -241,6 +239,7 @@ impl GitLabClient {
     /// Fetches the complete list of commits.
     /// This is inefficient for large repositories; consider using
     /// `get_commit_stream` instead.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub async fn get_commits(
         &self,
         project_id: i64,
@@ -255,6 +254,7 @@ impl GitLabClient {
     /// Fetches the complete list of pull requests.
     /// This is inefficient for large repositories; consider using
     /// `get_pull_request_stream` instead.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub async fn get_pull_requests(
         &self,
         project_id: i64,
@@ -263,6 +263,7 @@ impl GitLabClient {
         self.get_pull_request_stream(project_id).try_collect().await
     }
 
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn get_commit_stream<'a>(
         &'a self,
         project_id: i64,
@@ -303,6 +304,7 @@ impl GitLabClient {
         }
     }
 
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn get_pull_request_stream<'a>(
         &'a self,
         project_id: i64,
