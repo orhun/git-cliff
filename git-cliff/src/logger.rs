@@ -6,8 +6,8 @@ use indicatif::{ProgressState, ProgressStyle};
 use owo_colors::{OwoColorize, Style, Styled};
 use tracing::{Event, Level, Subscriber};
 use tracing_indicatif::IndicatifLayer;
+use tracing_subscriber::fmt::FmtContext;
 use tracing_subscriber::fmt::format::{self, FormatEvent, FormatFields};
-use tracing_subscriber::fmt::{FmtContext, FormattedFields};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::registry::LookupSpan;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -173,13 +173,6 @@ where
         if let Some(scope) = ctx.event_scope() {
             for span in scope.from_root() {
                 write!(writer, "{}", span.name().bright_black().bold())?;
-                let ext = span.extensions();
-                let fields = &ext
-                    .get::<FormattedFields<N>>()
-                    .expect("will never be `None`");
-                if !fields.is_empty() {
-                    write!(writer, "{{{}}}", fields)?;
-                }
                 write!(writer, "{}", ": ".bright_black().bold())?;
             }
         }
