@@ -1,19 +1,23 @@
-use std::io::Write;
+use std::fmt;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::{env, fmt};
 
-use env_logger::Builder;
-use env_logger::fmt::{Color, Style, StyledValue};
 use git_cliff_core::error::{Error, Result};
-#[cfg(feature = "remote")]
-use indicatif::{ProgressBar, ProgressStyle};
-use log::Level;
-
-/// Environment variable to use for the logger.
-const LOGGER_ENV: &str = "RUST_LOG";
+use indicatif::{ProgressState, ProgressStyle};
+use owo_colors::{OwoColorize, Style, Styled};
+use tracing::{Event, Level, Subscriber};
+use tracing_indicatif::IndicatifLayer;
+use tracing_subscriber::fmt::format::{self, FormatEvent, FormatFields};
+use tracing_subscriber::fmt::{FmtContext, FormattedFields};
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::registry::LookupSpan;
+use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::{EnvFilter, Registry};
 
 /// Global variable for storing the maximum width of the modules.
 static MAX_MODULE_WIDTH: AtomicUsize = AtomicUsize::new(0);
+
+/// Unicode braille spinner frames used by indicatif.
+const SPINNER_TICKS: &[&str] = &["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
 /// Wrapper for the padded values.
 struct Padded<T> {
@@ -38,120 +42,169 @@ fn max_target_width(target: &str) -> usize {
     }
 }
 
-/// Adds colors to the given level and returns it.
-fn colored_level(style: &mut Style, level: Level) -> StyledValue<'_, &'static str> {
-    match level {
-        Level::Trace => style.set_color(Color::Magenta).value("TRACE"),
-        Level::Debug => style.set_color(Color::Blue).value("DEBUG"),
-        Level::Info => style.set_color(Color::Green).value("INFO "),
-        Level::Warn => style.set_color(Color::Yellow).value("WARN "),
-        Level::Error => style.set_color(Color::Red).value("ERROR"),
+/// Adds styles/colors to the given level and returns it.
+fn style_level(level: &Level) -> Styled<&'static str> {
+    match *level {
+        Level::ERROR => Style::new().red().bold().style("ERROR"),
+        Level::WARN => Style::new().yellow().bold().style("WARN"),
+        Level::INFO => Style::new().green().bold().style("INFO"),
+        Level::DEBUG => Style::new().blue().bold().style("DEBUG"),
+        Level::TRACE => Style::new().magenta().bold().style("TRACE"),
     }
 }
 
-#[cfg(feature = "remote")]
-lazy_static::lazy_static! {
-    /// Lazily initialized progress bar.
-    pub static ref PROGRESS_BAR: ProgressBar = {
-        let progress_bar = ProgressBar::new_spinner();
-        progress_bar.set_style(
-            ProgressStyle::with_template("{spinner:.green} {msg}")
-                .unwrap()
-                .tick_strings(&[
-                    "▹▹▹▹▹",
-                    "▸▹▹▹▹",
-                    "▹▸▹▹▹",
-                    "▹▹▸▹▹",
-                    "▹▹▹▸▹",
-                    "▹▹▹▹▸",
-                    "▪▪▪▪▪",
-                ]),
-        );
-        progress_bar
-    };
+/// Shortens the target string to fit within the specified width.
+/// TODO: This function is currently unused but kept for future.
+#[allow(dead_code)]
+fn shorten_target(target: &str, width: usize) -> String {
+    if target.len() <= width {
+        return target.to_string();
+    }
+    let parts: Vec<&str> = target.split("::").collect();
+    if parts.len() >= 2 {
+        format!("{}...{}", parts[0], parts[parts.len() - 1])
+    } else {
+        target.to_string()
+    }
 }
 
-/// Initializes the global logger.
+/// Formats the elapsed time as `X.Ys` (sub-second precision).
+fn elapsed_subsec_key(state: &ProgressState, writer: &mut dyn fmt::Write) {
+    let seconds = state.elapsed().as_secs();
+    let sub_seconds = (state.elapsed().as_millis() % 1000) / 100;
+    let _ = write!(writer, "{}.{}s", seconds, sub_seconds);
+}
+
+/// Emits an ANSI color escape sequence for the spinner, based on elapsed time.
 ///
-/// This method also creates a progress bar which is triggered
-/// by the network operations that are related to GitHub.
-#[allow(unreachable_code, clippy::needless_return)]
-pub fn init() -> Result<()> {
-    let mut builder = Builder::new();
-    builder.format(move |f, record| {
-        let target = record.target();
-        let max_width = max_target_width(target);
+/// The color gradually transitions:
+/// - green  -> yellow (0–4s)
+/// - yellow -> red    (4–8s)
+fn color_start_key(state: &ProgressState, writer: &mut dyn fmt::Write) {
+    let elapsed = state.elapsed().as_secs_f32();
+    let t = (elapsed / 8.0).min(1.0); // 8秒で変化
+    let (r, g, b) = if t < 0.5 {
+        let nt = t * 2.0;
+        (lerp(140, 230, nt), lerp(200, 210, nt), lerp(160, 150, nt))
+    } else {
+        let nt = (t - 0.5) * 2.0;
+        (lerp(230, 230, nt), lerp(210, 140, nt), lerp(150, 140, nt))
+    };
+    let _ = write!(writer, "\x1b[38;2;{};{};{}m", r, g, b);
+}
 
-        let mut style = f.style();
-        let level = colored_level(&mut style, record.level());
+/// Performs linear interpolation between two color components.
+fn lerp(a: u8, b: u8, t: f32) -> u8 {
+    (a as f32 + (b as f32 - a as f32) * t) as u8
+}
 
-        let mut style = f.style();
-        let target = style.set_bold(true).value(Padded {
-            value: target,
-            width: max_width,
-        });
+/// Resets ANSI styling to the terminal default.
+///
+/// This must be paired with `color_start_key` to avoid leaking color state into subsequent log
+/// output.
+fn color_end_key(_: &ProgressState, writer: &mut dyn fmt::Write) {
+    let _ = writer.write_str("\x1b[0m");
+}
 
-        #[cfg(feature = "github")]
-        {
-            let message = record.args().to_string();
-            if message.starts_with(git_cliff_core::remote::github::START_FETCHING_MSG) {
-                PROGRESS_BAR.enable_steady_tick(std::time::Duration::from_millis(80));
-                PROGRESS_BAR.set_message(message);
-                return Ok(());
-            } else if message.starts_with(git_cliff_core::remote::github::FINISHED_FETCHING_MSG) {
-                PROGRESS_BAR.finish_and_clear();
-                return Ok(());
+/// Emits an ANSI escape sequence for dim (muted) foreground text.
+fn dim_start_key(_: &ProgressState, writer: &mut dyn fmt::Write) {
+    let _ = writer.write_str("\x1b[90m");
+}
+
+/// Resets ANSI styling to the terminal default.
+///
+/// This must be paired with `dim_start_key` to avoid leaking color state into subsequent log
+/// output.
+fn dim_end_key(_: &ProgressState, writer: &mut dyn fmt::Write) {
+    let _ = writer.write_str("\x1b[0m");
+}
+
+/// Builds the `indicatif::ProgressStyle` used for tracing spans.
+///
+/// This style:
+/// - renders a Unicode spinner for active spans
+/// - colorizes the spinner based on elapsed time
+/// - shows span name, fields, and wide messages
+/// - appends a sub-second elapsed timer
+fn indicatif_progress_style() -> ProgressStyle {
+    ProgressStyle::with_template(
+        "{span_child_prefix}{color_start}{spinner}{color_end} {dim_start}{span_name} \
+         {span_fields} {wide_msg}{dim_end} [{color_start}{elapsed_subsec}{color_end}]",
+    )
+    .unwrap()
+    .with_key("elapsed_subsec", elapsed_subsec_key)
+    .with_key("color_start", color_start_key)
+    .with_key("color_end", color_end_key)
+    .with_key("dim_start", dim_start_key)
+    .with_key("eim_end", dim_end_key)
+    .tick_strings(SPINNER_TICKS)
+}
+
+/// Simple formatter. We format: "LEVEL TARGET > MESSAGE", with a basic padding for target.
+struct GitCliffFormatter;
+
+impl<S, N> FormatEvent<S, N> for GitCliffFormatter
+where
+    S: Subscriber + for<'a> LookupSpan<'a>,
+    N: for<'a> FormatFields<'a> + 'static,
+{
+    fn format_event(
+        &self,
+        ctx: &FmtContext<'_, S, N>,
+        mut writer: format::Writer<'_>,
+        event: &Event<'_>,
+    ) -> fmt::Result {
+        let metadata = event.metadata();
+        let level = style_level(metadata.level());
+        let target = metadata.target();
+        let max_width = max_target_width(&target);
+        write!(
+            &mut writer,
+            "{} {} > ",
+            Padded {
+                value: level,
+                width: 5,
+            },
+            Padded {
+                value: target.bright_black().bold(),
+                width: max_width,
+            },
+        )?;
+        if let Some(scope) = ctx.event_scope() {
+            for span in scope.from_root() {
+                write!(writer, "{}", span.name().bright_black().bold())?;
+                let ext = span.extensions();
+                let fields = &ext
+                    .get::<FormattedFields<N>>()
+                    .expect("will never be `None`");
+                if !fields.is_empty() {
+                    write!(writer, "{{{}}}", fields)?;
+                }
+                write!(writer, "{}", ": ".bright_black().bold())?;
             }
         }
-
-        #[cfg(feature = "gitlab")]
-        {
-            let message = record.args().to_string();
-            if message.starts_with(git_cliff_core::remote::gitlab::START_FETCHING_MSG) {
-                PROGRESS_BAR.enable_steady_tick(std::time::Duration::from_millis(80));
-                PROGRESS_BAR.set_message(message);
-                return Ok(());
-            } else if message.starts_with(git_cliff_core::remote::gitlab::FINISHED_FETCHING_MSG) {
-                PROGRESS_BAR.finish_and_clear();
-                return Ok(());
-            }
-        }
-
-        #[cfg(feature = "gitea")]
-        {
-            let message = record.args().to_string();
-            if message.starts_with(git_cliff_core::remote::gitea::START_FETCHING_MSG) {
-                PROGRESS_BAR.enable_steady_tick(std::time::Duration::from_millis(80));
-                PROGRESS_BAR.set_message(message);
-                return Ok(());
-            } else if message.starts_with(git_cliff_core::remote::gitea::FINISHED_FETCHING_MSG) {
-                PROGRESS_BAR.finish_and_clear();
-                return Ok(());
-            }
-        }
-
-        #[cfg(feature = "bitbucket")]
-        {
-            let message = record.args().to_string();
-            if message.starts_with(git_cliff_core::remote::bitbucket::START_FETCHING_MSG) {
-                PROGRESS_BAR.enable_steady_tick(std::time::Duration::from_millis(80));
-                PROGRESS_BAR.set_message(message);
-                return Ok(());
-            } else if message.starts_with(git_cliff_core::remote::bitbucket::FINISHED_FETCHING_MSG)
-            {
-                PROGRESS_BAR.finish_and_clear();
-                return Ok(());
-            }
-        }
-
-        writeln!(f, " {} {} > {}", level, target, record.args())
-    });
-
-    if let Ok(var) = env::var(LOGGER_ENV) {
-        builder.parse_filters(&var);
+        ctx.field_format().format_fields(writer.by_ref(), event)?;
+        writeln!(writer)
     }
+}
 
-    builder
+/// Initializes the global tracing subscriber.
+pub fn init() -> Result<()> {
+    // Build EnvFilter from `RUST_LOG` or fallback to "info"
+    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into());
+    let indicatif_layer = IndicatifLayer::new()
+        .with_progress_style(indicatif_progress_style())
+        .with_span_child_prefix_symbol("↳ ")
+        .with_span_child_prefix_indent(" ");
+    let fmt_layer = tracing_subscriber::fmt::layer()
+        .with_writer(indicatif_layer.get_stderr_writer())
+        .with_ansi(true)
+        .event_format(GitCliffFormatter);
+    let subscriber = Registry::default()
+        .with(env_filter)
+        .with(indicatif_layer)
+        .with(fmt_layer);
+    subscriber
         .try_init()
         .map_err(|e| Error::LoggerError(e.to_string()))
 }
