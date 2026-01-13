@@ -33,6 +33,7 @@ pub struct Changelog<'a> {
 
 impl<'a> Changelog<'a> {
     /// Constructs a new instance.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn new(releases: Vec<Release<'a>>, config: Config, range: Option<&str>) -> Result<Self> {
         let is_offline = config.remote.offline;
         let mut changelog = Changelog::build(releases, config)?;
@@ -49,6 +50,7 @@ impl<'a> Changelog<'a> {
     }
 
     /// Builds a changelog from releases and config.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn build(releases: Vec<Release<'a>>, config: Config) -> Result<Self> {
         let trim = config.changelog.trim;
         Ok(Self {
@@ -68,6 +70,7 @@ impl<'a> Changelog<'a> {
     }
 
     /// Constructs an instance from a serialized context object.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn from_context<R: Read>(input: &mut R, config: Config) -> Result<Self> {
         Changelog::build(serde_json::from_reader(input)?, config)
     }
@@ -79,6 +82,7 @@ impl<'a> Changelog<'a> {
     /// # Errors
     ///
     /// This operation fails if the deserialization fails.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn add_context(
         &mut self,
         key: impl Into<String>,
@@ -90,6 +94,7 @@ impl<'a> Changelog<'a> {
     }
 
     /// Processes a single commit and returns/logs the result.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn process_commit(commit: &Commit<'a>, git_config: &GitConfig) -> Option<Commit<'a>> {
         match commit.process(git_config) {
             Ok(commit) => Some(commit),
@@ -111,6 +116,7 @@ impl<'a> Changelog<'a> {
 
     /// Checks the commits and returns an error if any unconventional commits
     /// are found.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn check_conventional_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
         log::debug!("Verifying that all commits are conventional");
         let mut unconventional_count = 0;
@@ -139,6 +145,7 @@ impl<'a> Changelog<'a> {
 
     /// Checks the commits and returns an error if any commits are not matched
     /// by any commit parser.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn check_unmatched_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
         log::debug!("Verifying that no commits are unmatched by commit parsers");
         let mut unmatched_count = 0;
@@ -166,6 +173,8 @@ impl<'a> Changelog<'a> {
         Ok(())
     }
 
+    /// Processes a commit list by applying parsing, splitting, and validation rules.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn process_commit_list(commits: &mut Vec<Commit<'a>>, git_config: &GitConfig) -> Result<()> {
         *commits = commits
             .iter()
@@ -205,6 +214,7 @@ impl<'a> Changelog<'a> {
 
     /// Processes the commits and omits the ones that doesn't match the
     /// criteria set by configuration file.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn process_commits(&mut self) -> Result<()> {
         log::debug!("Processing the commits");
         for release in self.releases.iter_mut() {
@@ -217,6 +227,7 @@ impl<'a> Changelog<'a> {
     }
 
     /// Processes the releases and filters them out based on the configuration.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn process_releases(&mut self) {
         log::debug!("Processing {} release(s)", self.releases.len());
         let skip_regex = self.config.git.skip_tags.as_ref();
@@ -282,6 +293,7 @@ impl<'a> Changelog<'a> {
     /// If no GitHub related variable is used in the template then this function
     /// returns empty vectors.
     #[cfg(feature = "github")]
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn get_github_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::github;
         if self.config.remote.github.is_custom ||
@@ -292,12 +304,7 @@ impl<'a> Changelog<'a> {
                 .is_some_and(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
         {
             let github_client = GitHubClient::try_from(self.config.remote.github.clone())?;
-            log::info!(
-                "{} ({})",
-                github::START_FETCHING_MSG,
-                self.config.remote.github
-            );
-            let data = tokio::runtime::Builder::new_multi_thread()
+            tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
                 .build()?
                 .block_on(async {
@@ -308,9 +315,7 @@ impl<'a> Changelog<'a> {
                     log::debug!("Number of GitHub commits: {}", commits.len());
                     log::debug!("Number of GitHub pull requests: {}", pull_requests.len());
                     Ok((commits, pull_requests))
-                });
-            log::info!("{}", github::FINISHED_FETCHING_MSG);
-            data
+                })
         } else {
             Ok((vec![], vec![]))
         }
@@ -332,6 +337,7 @@ impl<'a> Changelog<'a> {
     /// If no GitLab related variable is used in the template then this function
     /// returns empty vectors.
     #[cfg(feature = "gitlab")]
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn get_gitlab_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::gitlab;
         if self.config.remote.gitlab.is_custom ||
@@ -342,12 +348,7 @@ impl<'a> Changelog<'a> {
                 .is_some_and(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
         {
             let gitlab_client = GitLabClient::try_from(self.config.remote.gitlab.clone())?;
-            log::info!(
-                "{} ({})",
-                gitlab::START_FETCHING_MSG,
-                self.config.remote.gitlab
-            );
-            let data = tokio::runtime::Builder::new_multi_thread()
+            tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
                 .build()?
                 .block_on(async {
@@ -367,9 +368,7 @@ impl<'a> Changelog<'a> {
                     log::debug!("Number of GitLab commits: {}", commits.len());
                     log::debug!("Number of GitLab merge requests: {}", merge_requests.len());
                     Ok((commits, merge_requests))
-                });
-            log::info!("{}", gitlab::FINISHED_FETCHING_MSG);
-            data
+                })
         } else {
             Ok((vec![], vec![]))
         }
@@ -389,6 +388,7 @@ impl<'a> Changelog<'a> {
     /// If no Gitea related variable is used in the template then this function
     /// returns empty vectors.
     #[cfg(feature = "gitea")]
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn get_gitea_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::gitea;
         if self.config.remote.gitea.is_custom ||
@@ -399,12 +399,7 @@ impl<'a> Changelog<'a> {
                 .is_some_and(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
         {
             let gitea_client = GiteaClient::try_from(self.config.remote.gitea.clone())?;
-            log::info!(
-                "{} ({})",
-                gitea::START_FETCHING_MSG,
-                self.config.remote.gitea
-            );
-            let data = tokio::runtime::Builder::new_multi_thread()
+            tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
                 .build()?
                 .block_on(async {
@@ -415,9 +410,7 @@ impl<'a> Changelog<'a> {
                     log::debug!("Number of Gitea commits: {}", commits.len());
                     log::debug!("Number of Gitea pull requests: {}", pull_requests.len());
                     Ok((commits, pull_requests))
-                });
-            log::info!("{}", gitea::FINISHED_FETCHING_MSG);
-            data
+                })
         } else {
             Ok((vec![], vec![]))
         }
@@ -439,6 +432,7 @@ impl<'a> Changelog<'a> {
     /// If no bitbucket related variable is used in the template then this
     /// function returns empty vectors.
     #[cfg(feature = "bitbucket")]
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn get_bitbucket_metadata(
         &self,
         ref_name: Option<&str>,
@@ -452,12 +446,7 @@ impl<'a> Changelog<'a> {
                 .is_some_and(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
         {
             let bitbucket_client = BitbucketClient::try_from(self.config.remote.bitbucket.clone())?;
-            log::info!(
-                "{} ({})",
-                bitbucket::START_FETCHING_MSG,
-                self.config.remote.bitbucket
-            );
-            let data = tokio::runtime::Builder::new_multi_thread()
+            tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
                 .build()?
                 .block_on(async {
@@ -468,9 +457,7 @@ impl<'a> Changelog<'a> {
                     log::debug!("Number of Bitbucket commits: {}", commits.len());
                     log::debug!("Number of Bitbucket pull requests: {}", pull_requests.len());
                     Ok((commits, pull_requests))
-                });
-            log::info!("{}", bitbucket::FINISHED_FETCHING_MSG);
-            data
+                })
         } else {
             Ok((vec![], vec![]))
         }
@@ -490,6 +477,7 @@ impl<'a> Changelog<'a> {
     /// If no Azure DevOps related variable is used in the template then this
     /// function returns empty vectors.
     #[cfg(feature = "azure_devops")]
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn get_azure_devops_metadata(
         &self,
         ref_name: Option<&str>,
@@ -504,12 +492,7 @@ impl<'a> Changelog<'a> {
         {
             let azure_devops_client =
                 AzureDevOpsClient::try_from(self.config.remote.azure_devops.clone())?;
-            log::info!(
-                "{} ({})",
-                azure_devops::START_FETCHING_MSG,
-                self.config.remote.azure_devops
-            );
-            let data = tokio::runtime::Builder::new_multi_thread()
+            tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
                 .build()?
                 .block_on(async {
@@ -523,9 +506,7 @@ impl<'a> Changelog<'a> {
                         pull_requests.len()
                     );
                     Ok((commits, pull_requests))
-                });
-            log::info!("{}", azure_devops::FINISHED_FETCHING_MSG);
-            data
+                })
         } else {
             Ok((vec![], vec![]))
         }
@@ -542,6 +523,7 @@ impl<'a> Changelog<'a> {
 
     /// Adds remote data (e.g. GitHub commits) to the releases.
     #[allow(unused_variables)]
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn add_remote_data(&mut self, range: Option<&str>) -> Result<()> {
         log::debug!("Adding remote data");
 
@@ -612,6 +594,7 @@ impl<'a> Changelog<'a> {
     }
 
     /// Increments the version for the unreleased changes based on semver.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn bump_version(&mut self) -> Result<Option<String>> {
         if let Some(ref mut last_release) = self.releases.iter_mut().next() {
             if last_release.version.is_none() {
@@ -632,6 +615,7 @@ impl<'a> Changelog<'a> {
     }
 
     /// Generates the changelog and writes it to the given output.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn generate<W: Write + ?Sized>(&self, out: &mut W) -> Result<()> {
         log::debug!("Generating changelog");
         let postprocessors = self.config.changelog.postprocessors.clone();
@@ -695,6 +679,7 @@ impl<'a> Changelog<'a> {
     }
 
     /// Generates a changelog and prepends it to the given changelog.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn prepend<W: Write + ?Sized>(&self, mut changelog: String, out: &mut W) -> Result<()> {
         log::debug!("Generating changelog and prepending");
         if let Some(header) = &self.config.changelog.header {
@@ -706,6 +691,7 @@ impl<'a> Changelog<'a> {
     }
 
     /// Prints the changelog context to the given output.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn write_context<W: Write + ?Sized>(&self, out: &mut W) -> Result<()> {
         let output = Releases {
             releases: &self.releases,
@@ -716,6 +702,7 @@ impl<'a> Changelog<'a> {
     }
 }
 
+#[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
 fn get_body_template(config: &Config, trim: bool) -> Result<Template> {
     let template = Template::new("body", config.changelog.body.clone(), trim)?;
     let deprecated_vars = [
