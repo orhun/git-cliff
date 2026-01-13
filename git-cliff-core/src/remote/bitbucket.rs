@@ -147,7 +147,6 @@ impl RemoteClient for BitbucketClient {
 
 impl BitbucketClient {
     /// Constructs the URL for Bitbucket commits API.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn commits_url(api_url: &str, remote: &Remote, ref_name: Option<&str>, page: i32) -> String {
         let mut url = format!(
             "{}/{}/{}/commits?pagelen={MAX_PAGE_SIZE}&page={page}",
@@ -162,7 +161,6 @@ impl BitbucketClient {
     }
 
     /// Constructs the URL for Bitbucket pull requests API.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn pull_requests_url(api_url: &str, remote: &Remote, page: i32) -> String {
         format!(
             "{}/{}/{}/pullrequests?&pagelen={BITBUCKET_MAX_PAGE_PRS}&page={page}&state=MERGED",

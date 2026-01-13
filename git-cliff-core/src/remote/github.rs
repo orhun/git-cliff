@@ -132,7 +132,6 @@ impl RemoteClient for GitHubClient {
 
 impl GitHubClient {
     /// Constructs the URL for GitHub commits API.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn commits_url(api_url: &str, remote: &Remote, ref_name: Option<&str>, page: i32) -> String {
         let mut url = format!(
             "{}/repos/{}/{}/commits?per_page={MAX_PAGE_SIZE}&page={page}",
@@ -147,7 +146,6 @@ impl GitHubClient {
     }
 
     /// Constructs the URL for GitHub pull requests API.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn pull_requests_url(api_url: &str, remote: &Remote, page: i32) -> String {
         format!(
             "{}/repos/{}/{}/pulls?per_page={MAX_PAGE_SIZE}&page={page}&state=closed",

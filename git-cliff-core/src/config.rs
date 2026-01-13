@@ -425,7 +425,6 @@ pub struct TextProcessor {
 
 impl TextProcessor {
     /// Replaces the text with using the given pattern or the command output.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn replace(&self, rendered: &mut String, command_envs: Vec<(&str, &str)>) -> Result<()> {
         if let Some(text) = &self.replace {
             *rendered = self.pattern.replace_all(rendered, text).to_string();

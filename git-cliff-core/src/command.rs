@@ -8,7 +8,6 @@ use crate::error::Result;
 ///
 /// Use `input` parameter to specify a text to write to stdin.
 /// Environment variables are set accordingly to `envs`.
-#[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
 pub fn run(command: &str, input: Option<String>, envs: Vec<(&str, &str)>) -> Result<String> {
     log::trace!("Running command: {command:?}");
     let mut child = if cfg!(target_os = "windows") {
