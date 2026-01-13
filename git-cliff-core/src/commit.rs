@@ -192,11 +192,7 @@ impl From<&GitCommit<'_>> for Commit<'_> {
 
 impl Commit<'_> {
     /// Constructs a new instance.
-<<<<<<< HEAD
     #[must_use]
-=======
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
->>>>>>> c537d78 (feat: add spans to commit module)
     pub fn new(id: String, message: String) -> Self {
         Self {
             id,
@@ -241,7 +237,6 @@ impl Commit<'_> {
     }
 
     /// Returns the commit with its conventional type set.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn into_conventional(mut self) -> Result<Self> {
         match ConventionalCommit::parse(Box::leak(self.raw_message().to_string().into_boxed_str()))
         {
@@ -272,7 +267,6 @@ impl Commit<'_> {
     /// Returns `false` if `protect_breaking_commits` is enabled in the config
     /// and the commit is breaking, or the parser's `skip` field is None or
     /// `false`. Returns `true` otherwise.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn skip_commit(&self, parser: &CommitParser, protect_breaking: bool) -> bool {
         parser.skip.unwrap_or(false) &&
             !(self.conv.as_ref().is_some_and(ConventionalCommit::breaking) && protect_breaking)
