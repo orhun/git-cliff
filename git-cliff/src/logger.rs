@@ -136,7 +136,7 @@ fn indicatif_progress_style() -> ProgressStyle {
     .with_key("color_start", color_start_key)
     .with_key("color_end", color_end_key)
     .with_key("dim_start", dim_start_key)
-    .with_key("eim_end", dim_end_key)
+    .with_key("dim_end", dim_end_key)
     .tick_strings(SPINNER_TICKS)
 }
 
