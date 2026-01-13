@@ -157,7 +157,7 @@ where
         let metadata = event.metadata();
         let level = style_level(metadata.level());
         let target = metadata.target();
-        let max_width = max_target_width(&target);
+        let max_width = max_target_width(target);
         write!(
             &mut writer,
             "{} {} > ",
