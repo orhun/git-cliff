@@ -7,12 +7,6 @@ use super::{Debug, MAX_PAGE_SIZE, RemoteClient, RemoteCommit, RemotePullRequest}
 use crate::config::Remote;
 use crate::error::{Error, Result};
 
-/// Log message to show while fetching data from GitHub.
-pub const START_FETCHING_MSG: &str = "Retrieving data from GitHub...";
-
-/// Log message to show when done fetching from GitHub.
-pub const FINISHED_FETCHING_MSG: &str = "Done fetching GitHub data.";
-
 /// Template variables related to this remote.
 pub(crate) const TEMPLATE_VARIABLES: &[&str] = &["github", "commit.github", "commit.remote"];
 
@@ -138,6 +132,7 @@ impl RemoteClient for GitHubClient {
 
 impl GitHubClient {
     /// Constructs the URL for GitHub commits API.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn commits_url(api_url: &str, remote: &Remote, ref_name: Option<&str>, page: i32) -> String {
         let mut url = format!(
             "{}/repos/{}/{}/commits?per_page={MAX_PAGE_SIZE}&page={page}",
@@ -152,6 +147,7 @@ impl GitHubClient {
     }
 
     /// Constructs the URL for GitHub pull requests API.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn pull_requests_url(api_url: &str, remote: &Remote, page: i32) -> String {
         format!(
             "{}/repos/{}/{}/pulls?per_page={MAX_PAGE_SIZE}&page={page}&state=closed",
@@ -162,6 +158,7 @@ impl GitHubClient {
     /// Fetches the complete list of commits.
     /// This is inefficient for large repositories; consider using
     /// `get_commit_stream` instead.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub async fn get_commits(&self, ref_name: Option<&str>) -> Result<Vec<Box<dyn RemoteCommit>>> {
         use futures::TryStreamExt;
         self.get_commit_stream(ref_name).try_collect().await
@@ -170,6 +167,7 @@ impl GitHubClient {
     /// Fetches the complete list of pull requests.
     /// This is inefficient for large repositories; consider using
     /// `get_pull_request_stream` instead.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub async fn get_pull_requests(&self) -> Result<Vec<Box<dyn RemotePullRequest>>> {
         use futures::TryStreamExt;
         self.get_pull_request_stream().try_collect().await
