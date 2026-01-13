@@ -34,7 +34,6 @@ pub struct Changelog<'a> {
 
 impl<'a> Changelog<'a> {
     /// Constructs a new instance.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn new(releases: Vec<Release<'a>>, config: Config, range: Option<&str>) -> Result<Self> {
         let is_offline = config.remote.offline;
         let mut changelog = Changelog::build(releases, config)?;
@@ -51,7 +50,6 @@ impl<'a> Changelog<'a> {
     }
 
     /// Builds a changelog from releases and config.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn build(releases: Vec<Release<'a>>, config: Config) -> Result<Self> {
         let trim = config.changelog.trim;
         Ok(Self {
@@ -71,7 +69,6 @@ impl<'a> Changelog<'a> {
     }
 
     /// Constructs an instance from a serialized context object.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn from_context<R: Read>(input: &mut R, config: Config) -> Result<Self> {
         Changelog::build(serde_json::from_reader(input)?, config)
     }
@@ -83,7 +80,6 @@ impl<'a> Changelog<'a> {
     /// # Errors
     ///
     /// This operation fails if the deserialization fails.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn add_context(
         &mut self,
         key: impl Into<String>,
@@ -731,7 +727,6 @@ impl<'a> Changelog<'a> {
     }
 }
 
-#[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
 fn get_body_template(config: &Config, trim: bool) -> Result<Template> {
     let template = Template::new("body", config.changelog.body.clone(), trim)?;
     let deprecated_vars = [

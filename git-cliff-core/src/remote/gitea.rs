@@ -116,7 +116,6 @@ impl RemoteClient for GiteaClient {
 
 impl GiteaClient {
     /// Constructs the URL for Gitea commits API.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn commits_url(api_url: &str, remote: &Remote, ref_name: Option<&str>, page: i32) -> String {
         let mut url = format!(
             "{}/api/v1/repos/{}/{}/commits?limit={MAX_PAGE_SIZE}&page={page}",
@@ -131,7 +130,6 @@ impl GiteaClient {
     }
 
     /// Constructs the URL for Gitea pull requests API.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn pull_requests_url(api_url: &str, remote: &Remote, page: i32) -> String {
         format!(
             "{}/api/v1/repos/{}/{}/pulls?limit={MAX_PAGE_SIZE}&page={page}&state=closed",
