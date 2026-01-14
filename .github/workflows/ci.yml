@@ -70,6 +70,7 @@ jobs:
           cargo tarpaulin --out xml --verbose --all-features \
             -- --skip "repo::test::git_upstream_remote"
       - name: Upload reports to codecov
+        if: github.actor != 'dependabot[bot]'
         uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
         with:
           name: code-coverage-report
