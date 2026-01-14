@@ -95,7 +95,7 @@ fn color_start_key(state: &ProgressState, writer: &mut dyn fmt::Write) {
 
 /// Performs linear interpolation between two color components.
 fn lerp(a: u8, b: u8, t: f32) -> u8 {
-    (a as f32 + (b as f32 - a as f32) * t) as u8
+    ((a as f32 + (b as f32 - a as f32) * t).clamp(0.0, 255.0)) as u8
 }
 
 /// Resets ANSI styling to the terminal default.
