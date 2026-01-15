@@ -35,8 +35,9 @@ cargo build
 
 > **Note on toolchains**
 >
-> - The project uses **stable Rust** for builds/tests.
-> - **and are run with the toolchain** in CI. Contributors are expected to run the same checks locally.
+> - The project uses **stable Rust** for builds and tests.
+> - Formatting and linting are run with the **nightly toolchain** in CI due to the use of unstable `rustfmt` options.
+>   Contributors are expected to run the same checks locally.
 
 ---
 
@@ -58,7 +59,7 @@ env UPDATE_EXPECT=1 cargo test
 
 ---
 
-## CI Parity (Required Before Opening a PR)
+## Required CI Checks (Before Opening a PR)
 
 To match the repository CI, please run **all** of the following checks locally.
 
@@ -90,7 +91,7 @@ cargo +nightly fmt --all
 
 ---
 
-## Recommended Tooling
+## Required Tooling
 
 - Install the nightly toolchain (required for `rustfmt` / `clippy` parity):
 
@@ -98,7 +99,7 @@ cargo +nightly fmt --all
 rustup toolchain install nightly
 ```
 
-- Optional: set up editor/IDE integration to use **nightly rustfmt** for this repository.
+- Optional: set up editor/IDE integration to use **nightly `rustfmt`** for this repository.
 
 ---
 
