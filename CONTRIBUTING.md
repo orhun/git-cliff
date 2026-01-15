@@ -9,6 +9,18 @@ Note that we have a [Code of Conduct](./CODE_OF_CONDUCT.md), please follow it in
 
 ---
 
+## Required Tooling
+
+- Install the nightly toolchain (required for `rustfmt`):
+
+```sh
+rustup toolchain install nightly
+```
+
+- Optional: set up editor/IDE integration to use **nightly** `rustfmt` for this repository.
+
+---
+
 ## Setup
 
 1. Fork this repository and create your branch from `main`.
@@ -83,18 +95,6 @@ If formatting fails, please run:
 ```sh
 cargo +nightly fmt --all
 ```
-
----
-
-## Required Tooling
-
-- Install the nightly toolchain (required for `rustfmt` / `clippy` parity):
-
-```sh
-rustup toolchain install nightly
-```
-
-- Optional: set up editor/IDE integration to use **nightly** `rustfmt` for this repository.
 
 ---
 
