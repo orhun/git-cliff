@@ -37,9 +37,7 @@
   - [ ] `cargo +nightly fmt --all -- --check --verbose`
   - [ ] `cargo +nightly fmt --all`
 - [ ] I checked the lints with [clippy](https://github.com/rust-lang/rust-clippy).
-  - [ ] `cargo +nightly clippy --tests --verbose -- -D warnings`
-  - [ ] `cargo +nightly clippy --all-targets --verbose -- -W clippy::pedantic`
-  - [ ] Any allowed pedantic lints are clearly justified (if applicable).
+  - [ ] `cargo clippy --tests --verbose -- -D warnings`
 - [ ] I have added tests to cover my changes.
 - [ ] All new and existing tests passed.
   - [ ] `cargo test`
