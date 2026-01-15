@@ -41,6 +41,5 @@
 - [ ] I have added tests to cover my changes.
 - [ ] All new and existing tests passed.
   - [ ] `cargo test`
-  - [ ] `.github/fixtures/test-fixtures-locally.sh <FIXTURE NAME>`
 
 <!--- Thank you for contributing to git-cliff! ⛰️  -->
