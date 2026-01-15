@@ -27,7 +27,7 @@ git clone git@github.com:{username}/git-cliff && cd git-cliff
 git fetch --tags https://github.com/orhun/git-cliff
 ```
 
-4. Install Rust `1.64.0` or later and build the project:
+4. Install [Rust](https://www.rust-lang.org/) or later and build the project:
 
 ```sh
 cargo build
@@ -35,7 +35,7 @@ cargo build
 
 > **Note on toolchains**
 >
-> - The project uses **stable Rust** for builds and tests.
+> - The project uses **stable** Rust for builds and tests.
 > - Formatting and linting are run with the **nightly toolchain** in CI due to the use of unstable `rustfmt` options.
 >   Contributors are expected to run the same checks locally.
 
@@ -99,7 +99,7 @@ cargo +nightly fmt --all
 rustup toolchain install nightly
 ```
 
-- Optional: set up editor/IDE integration to use **nightly `rustfmt`** for this repository.
+- Optional: set up editor/IDE integration to use **nightly** `rustfmt` for this repository.
 
 ---
 
