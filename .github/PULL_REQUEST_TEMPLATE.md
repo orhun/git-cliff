@@ -34,15 +34,15 @@
 - [ ] My code follows the code style of this project.
 - [ ] I have updated the documentation accordingly (if applicable).
 - [ ] I have formatted the code with [rustfmt](https://github.com/rust-lang/rustfmt).
-  - [ ] ```cargo +nightly fmt --all -- --check --verbose```
-  - [ ] ```cargo +nightly fmt --all```
+  - [ ] `cargo +nightly fmt --all -- --check --verbose`
+  - [ ] `cargo +nightly fmt --all`
 - [ ] I checked the lints with [clippy](https://github.com/rust-lang/rust-clippy).
-  - [ ] ```cargo +nightly clippy --tests --verbose -- -D warnings```
-  - [ ] ```cargo +nightly clippy --all-targets --verbose -- -W clippy::pedantic```
+  - [ ] `cargo +nightly clippy --tests --verbose -- -D warnings`
+  - [ ] `cargo +nightly clippy --all-targets --verbose -- -W clippy::pedantic`
   - [ ] Any allowed pedantic lints are clearly justified (if applicable).
 - [ ] I have added tests to cover my changes.
 - [ ] All new and existing tests passed.
-  - [ ] ```cargo test```
-  - [ ] ```.github/fixtures/test-fixtures-lovally.sh <FIXTURE NAME>```
+  - [ ] `cargo test`
+  - [ ] `.github/fixtures/test-fixtures-lovally.sh <FIXTURE NAME>`
 
 <!--- Thank you for contributing to git-cliff! ⛰️  -->
