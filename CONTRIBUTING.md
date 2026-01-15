@@ -33,7 +33,7 @@ git fetch --tags https://github.com/orhun/git-cliff
 cargo build
 ```
 
-> **Note on toolchains**
+> [!NOTE]
 >
 > - The project uses **stable** Rust for builds and tests.
 > - Formatting and linting are run with the **nightly toolchain** in CI due to the use of unstable `rustfmt` options.
