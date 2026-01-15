@@ -7,6 +7,8 @@ When contributing, please first discuss the change you wish to make via [issue](
 
 Note that we have a [Code of Conduct](./CODE_OF_CONDUCT.md), please follow it in all your interactions with the project.
 
+---
+
 ## Setup
 
 1. Fork this repository and create your branch from `main`.
@@ -19,35 +21,86 @@ git clone https://github.com/{username}/git-cliff && cd git-cliff
 git clone git@github.com:{username}/git-cliff && cd git-cliff
 ```
 
-To ensure the successful execution of the tests, it is essential to fetch the tags as follows:
+3. Fetch tags (required for tests):
 
 ```sh
 git fetch --tags https://github.com/orhun/git-cliff
 ```
 
-3. Make sure that you have [Rust](https://www.rust-lang.org/) `1.64.0` or later installed and build the project.
+4. Install Rust `1.64.0` or later and build the project:
 
 ```sh
 cargo build
 ```
 
-4. Start committing your changes. Follow the [conventional commit specification](https://www.conventionalcommits.org/) while doing so.
+> **Note on toolchains**
+>
+> - The project uses **stable Rust** for builds/tests.
+> - **and are run with the toolchain** in CI. Contributors are expected to run the same checks locally.
 
-5. Add your tests (if you haven't already) or update the existing tests according to the changes. And check if the tests are passed.
+---
+
+## Development Workflow
+
+1. Start committing your changes. Follow the [Conventional Commits](https://www.conventionalcommits.org/) specification.
+
+2. Add your tests (if you haven't already) or update the existing tests according to the changes. And check if the tests are passed:
 
 ```sh
 cargo test
 ```
 
-6. If needed, update the snapshot tests (i.e. tests using `expect_test`):
+3. If you changed snapshot tests (i.e. `expect_test`), update snapshots:
 
 ```sh
 env UPDATE_EXPECT=1 cargo test
 ```
 
-7. Make sure [rustfmt](https://github.com/rust-lang/rustfmt) and [clippy](https://github.com/rust-lang/rust-clippy) don't complain about your changes.
+---
 
-We use the `nightly` channel for `rustfmt` so please set the appropriate settings for your editor/IDE for that.
+## CI Parity (Required Before Opening a PR)
+
+To match the repository CI, please run **all** of the following checks locally.
+
+### 1. Clippy (warnings are errors)
+
+```sh
+cargo +nightly clippy --tests --verbose -- -D warnings
+```
+
+### 2. Clippy (pedantic lints)
+
+```sh
+cargo +nightly clippy --all-targets --verbose -- -W clippy::pedantic
+```
+
+> You may allow specific pedantic lints **only with a clear justification**.
+
+### 3. rustfmt (nightly)
+
+```sh
+cargo +nightly fmt --all -- --check --verbose
+```
+
+If formatting fails, please run:
+
+```sh
+cargo +nightly fmt --all
+```
+
+---
+
+## Recommended Tooling
+
+- Install the nightly toolchain (required for `rustfmt` / `clippy` parity):
+
+```sh
+rustup toolchain install nightly
+```
+
+- Optional: set up editor/IDE integration to use **nightly rustfmt** for this repository.
+
+---
 
 ## Create a Pull Request
 
