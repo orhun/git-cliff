@@ -57,27 +57,22 @@ cargo test
 env UPDATE_EXPECT=1 cargo test
 ```
 
----
+4. Run CI checks locally - `clippy` (warnings are errors)
 
-## Required CI Checks (Before Opening a PR)
-
-To match the repository CI, please run **all** of the following checks locally.
-
-### 1. Clippy (warnings are errors)
 
 ```sh
-cargo +nightly clippy --tests --verbose -- -D warnings
+cargo clippy --tests --verbose -- -D warnings
 ```
 
-### 2. Clippy (pedantic lints)
+5. Run CI checks locally - `clippy` (pedantic lints)
 
 ```sh
-cargo +nightly clippy --all-targets --verbose -- -W clippy::pedantic
+cargo clippy --all-targets --verbose -- -W clippy::pedantic
 ```
 
 > You may allow specific pedantic lints **only with a clear justification**.
 
-### 3. rustfmt (nightly)
+6. Run CI checks locally – `rustfmt`
 
 ```sh
 cargo +nightly fmt --all -- --check --verbose
