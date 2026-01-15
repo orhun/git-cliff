@@ -9,15 +9,9 @@
 
 ## How Has This Been Tested?
 
-<!--- Please describe in detail how you tested your changes.                     -->
-<!--- Include details of your testing environment, and the tests you ran to      -->
-<!--- see how your change affects other areas of the code, etc.                  -->
-<!--- At minimum, confirm that you ran the required CI parity checks locally:    -->
-<!---  - cargo test                                                              -->
-<!---  - clippy (warnings as errors)                                             -->
-<!---  - clippy (pedantic lints)                                                 -->
-<!---  - rustfmt (nightly)                                                       -->
-<!--- Include anything else that is relevant (manual testing, edge cases, etc.). -->
+<!--- Please describe in detail how you tested your changes.                -->
+<!--- Include details of your testing environment, and the tests you ran to -->
+<!--- see how your change affects other areas of the code, etc.             -->
 
 ## Screenshots / Logs (if applicable)
 
