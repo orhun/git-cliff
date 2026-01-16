@@ -87,7 +87,7 @@ cargo clippy --all-targets --verbose -- -W clippy::pedantic
 > - You may allow specific pedantic lints **only with a clear justification**.
 > - Running `clippy` with pedantic lints is **optional**, but it can serve as a helpful guideline for new code and implementations, helping maintain consistency and catch potential issues early.
 
-6. Run CI checks locally – `rustfmt`
+6. Run formatting checks – `rustfmt`
 
 ```sh
 cargo +nightly fmt --all -- --check --verbose
