@@ -39,7 +39,7 @@ git clone git@github.com:{username}/git-cliff && cd git-cliff
 git fetch --tags https://github.com/orhun/git-cliff
 ```
 
-4. Install [Rust](https://www.rust-lang.org/) `1.64.0` or later and build the project:
+4. Install [Rust](https://www.rust-lang.org/) `1.85.1` or later and build the project:
 
 ```sh
 cargo build
