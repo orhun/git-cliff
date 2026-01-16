@@ -267,7 +267,11 @@ impl Commit<'_> {
     /// `false`. Returns `true` otherwise.
     fn skip_commit(&self, parser: &CommitParser, protect_breaking: bool) -> bool {
         parser.skip.unwrap_or(false) &&
-            !(self.conv.as_ref().is_some_and(|c| c.breaking()) && protect_breaking)
+            !(self
+                .conv
+                .as_ref()
+                .is_some_and(git_conventional::Commit::breaking) &&
+                protect_breaking)
     }
 
     /// Parses the commit using [`CommitParser`]s.
@@ -294,14 +298,14 @@ impl Commit<'_> {
             let body = self
                 .conv
                 .as_ref()
-                .and_then(|v| v.body())
-                .map(|v| v.to_string());
+                .and_then(git_conventional::Commit::body)
+                .map(std::string::ToString::to_string);
             if let Some(body_regex) = parser.body.as_ref() {
                 regex_checks.push((body_regex, body.clone().unwrap_or_default()));
             }
             if let (Some(footer_regex), Some(footers)) = (
                 parser.footer.as_ref(),
-                self.conv.as_ref().map(|v| v.footers()),
+                self.conv.as_ref().map(git_conventional::Commit::footers),
             ) {
                 regex_checks.extend(footers.iter().map(|f| (footer_regex, f.to_string())));
             }

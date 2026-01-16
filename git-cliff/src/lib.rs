@@ -292,7 +292,7 @@ fn process_repository<'a>(
     if let Ok(root) = repository.root_path() {
         if cwd.starts_with(&root) &&
             cwd != root &&
-            args.repository.as_ref().is_none_or(|r| r.is_empty()) &&
+            args.repository.as_ref().is_none_or(std::vec::Vec::is_empty) &&
             args.workdir.is_none() &&
             include_path.is_empty()
         {

@@ -268,7 +268,7 @@ impl GitLabClient {
         project_id: i64,
         ref_name: Option<&str>,
     ) -> impl Stream<Item = Result<Box<dyn RemoteCommit>>> + 'a {
-        let ref_name = ref_name.map(|s| s.to_string());
+        let ref_name = ref_name.map(std::string::ToString::to_string);
         async_stream! {
                 // GitLab pages are 1-indexed
                 let page_stream = stream::iter(1..)

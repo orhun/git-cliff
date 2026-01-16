@@ -196,7 +196,7 @@ impl BitbucketClient {
         &'a self,
         ref_name: Option<&str>,
     ) -> impl Stream<Item = Result<Box<dyn RemoteCommit>>> + 'a {
-        let ref_name = ref_name.map(|s| s.to_string());
+        let ref_name = ref_name.map(std::string::ToString::to_string);
         async_stream! {
             // The BitBucket API uses 1-based indexing for pages.
             let page_stream = stream::iter(1..)

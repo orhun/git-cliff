@@ -26,7 +26,7 @@ impl Template {
         if trim {
             content = content
                 .lines()
-                .map(|v| v.trim())
+                .map(str::trim)
                 .collect::<Vec<&str>>()
                 .join("\n");
         }

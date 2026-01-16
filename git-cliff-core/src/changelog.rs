@@ -240,7 +240,7 @@ impl<'a> Changelog<'a> {
                 }
                 true
             })
-            .map(|release| release.with_statistics())
+            .map(super::release::Release::with_statistics)
             .collect();
         for skipped_tag in &skipped_tags {
             if let Some(release_index) = self.releases.iter().position(|release| {
