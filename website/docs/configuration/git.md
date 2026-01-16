@@ -349,6 +349,9 @@ A regex for ignore processing the matched tags.
 
 While `skip_tags` drop commits from the changelog, `ignore_tags` include ignored commits into the next tag.
 
+Ignored tags still participate in calculating the next version before their
+commits are merged into the next changelog release. They must match `tag_pattern`.
+
 :::note
 
 Note that if a commit has multiple tags, any matched tag will result in all associated tags being ignored, including those not explicitly matched by the regex. This is because git-cliff processes tags at the commit level rather than individually.

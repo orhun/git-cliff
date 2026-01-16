@@ -393,6 +393,8 @@ pub enum BumpType {
     Minor,
     /// Bump patch version.
     Patch,
+    /// Bump an existing prerelease version.
+    Prerelease,
 }
 
 /// Bump version configuration.
@@ -451,6 +453,11 @@ pub struct Bump {
 
     /// Force to always bump in major, minor or patch.
     pub bump_type: Option<BumpType>,
+
+    /// Initialize a prerelease suffix after a version bump.
+    /// Without this, an existing prerelease is promoted to its stable version,
+    /// unless the bump type is explicitly prerelease.
+    pub pre_release: Option<String>,
 }
 
 impl Bump {
