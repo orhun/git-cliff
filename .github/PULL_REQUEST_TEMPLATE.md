@@ -4,14 +4,14 @@
 
 ## Motivation and Context
 
-<!--- Why is this change required? What problem does it solve? -->
+<!--- Why is this change required? What problem does it solve?  -->
 <!--- If it fixes an open issue, please link to the issue here. -->
 
 ## How Has This Been Tested?
 
-<!--- Please describe in detail how you tested your changes. -->
+<!--- Please describe in detail how you tested your changes.                -->
 <!--- Include details of your testing environment, and the tests you ran to -->
-<!--- see how your change affects other areas of the code, etc. -->
+<!--- see how your change affects other areas of the code, etc.             -->
 
 ## Screenshots / Logs (if applicable)
 
@@ -28,14 +28,17 @@
 
 ## Checklist:
 
-<!--- Go over all the following points, and put an `x` in all the boxes that apply. -->
+<!--- Go over all the following points, and put an `x` in all the boxes that apply.   -->
 <!--- If you're unsure about any of these, don't hesitate to ask. We're here to help! -->
 
 - [ ] My code follows the code style of this project.
-- [ ] I have updated the documentation accordingly.
+- [ ] I have updated the documentation accordingly (if applicable).
 - [ ] I have formatted the code with [rustfmt](https://github.com/rust-lang/rustfmt).
+  - [ ] `cargo +nightly fmt --all`
 - [ ] I checked the lints with [clippy](https://github.com/rust-lang/rust-clippy).
+  - [ ] `cargo clippy --tests --verbose -- -D warnings`
 - [ ] I have added tests to cover my changes.
 - [ ] All new and existing tests passed.
+  - [ ] `cargo test`
 
 <!--- Thank you for contributing to git-cliff! ⛰️  -->

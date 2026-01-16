@@ -7,6 +7,20 @@ When contributing, please first discuss the change you wish to make via [issue](
 
 Note that we have a [Code of Conduct](./CODE_OF_CONDUCT.md), please follow it in all your interactions with the project.
 
+---
+
+## Required Tooling
+
+- Install the nightly toolchain (required for `rustfmt`):
+
+```sh
+rustup toolchain install nightly
+```
+
+- Optional: set up editor/IDE integration to use **nightly** `rustfmt` for this repository.
+
+---
+
 ## Setup
 
 1. Fork this repository and create your branch from `main`.
@@ -19,35 +33,73 @@ git clone https://github.com/{username}/git-cliff && cd git-cliff
 git clone git@github.com:{username}/git-cliff && cd git-cliff
 ```
 
-To ensure the successful execution of the tests, it is essential to fetch the tags as follows:
+3. Fetch tags (required for tests):
 
 ```sh
 git fetch --tags https://github.com/orhun/git-cliff
 ```
 
-3. Make sure that you have [Rust](https://www.rust-lang.org/) `1.64.0` or later installed and build the project.
+4. Install [Rust](https://www.rust-lang.org/) `1.85.1` or later and build the project:
 
 ```sh
 cargo build
 ```
 
-4. Start committing your changes. Follow the [conventional commit specification](https://www.conventionalcommits.org/) while doing so.
+> [!NOTE]
+>
+> - The project uses **stable** Rust for builds and tests.
+> - Formatting and linting are run with the **nightly toolchain** in CI due to the use of unstable `rustfmt` options.
+>   Contributors are expected to run the same checks locally.
 
-5. Add your tests (if you haven't already) or update the existing tests according to the changes. And check if the tests are passed.
+---
+
+## Development Workflow
+
+1. Start committing your changes. Follow the [Conventional Commits](https://www.conventionalcommits.org/) specification.
+
+2. Add your tests (if you haven't already) or update the existing tests according to the changes. And check if the tests are passed:
 
 ```sh
 cargo test
 ```
 
-6. If needed, update the snapshot tests (i.e. tests using `expect_test`):
+3. If you changed snapshot tests (i.e. `expect_test`), update snapshots:
 
 ```sh
 env UPDATE_EXPECT=1 cargo test
 ```
 
-7. Make sure [rustfmt](https://github.com/rust-lang/rustfmt) and [clippy](https://github.com/rust-lang/rust-clippy) don't complain about your changes.
+4. Run CI checks locally - `clippy` (warnings are errors)
 
-We use the `nightly` channel for `rustfmt` so please set the appropriate settings for your editor/IDE for that.
+
+```sh
+cargo clippy --tests --verbose -- -D warnings
+```
+
+5. Run CI checks locally - `clippy` (**optional**, but recommended for pedantic linting)
+
+```sh
+cargo clippy --all-targets --verbose -- -W clippy::pedantic
+```
+
+> [!NOTE]
+>
+> - You may allow specific pedantic lints **only with a clear justification**.
+> - Running `clippy` with pedantic lints is **optional**, but it can serve as a helpful guideline for new code and implementations, helping maintain consistency and catch potential issues early.
+
+6. Run formatting checks – `rustfmt`
+
+```sh
+cargo +nightly fmt --all -- --check --verbose
+```
+
+If formatting fails, please run:
+
+```sh
+cargo +nightly fmt --all
+```
+
+---
 
 ## Create a Pull Request
 
