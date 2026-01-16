@@ -9,7 +9,7 @@ use crate::error::Result;
 /// Use `input` parameter to specify a text to write to stdin.
 /// Environment variables are set accordingly to `envs`.
 pub fn run(command: &str, input: Option<String>, envs: Vec<(&str, &str)>) -> Result<String> {
-    log::trace!("Running command: {:?}", command);
+    log::trace!("Running command: {command:?}");
     let mut child = if cfg!(target_os = "windows") {
         Command::new("cmd")
             .envs(envs)
@@ -45,7 +45,7 @@ pub fn run(command: &str, input: Option<String>, envs: Vec<(&str, &str)>) -> Res
         for output in [output.stdout, output.stderr] {
             let output = str::from_utf8(&output)?.to_string();
             if !output.is_empty() {
-                log::error!("{}", output);
+                log::error!("{output}");
             }
         }
         Err(IoError::other(format!("command exited with {:?}", output.status)).into())

@@ -219,7 +219,7 @@ impl GitLabClient {
         );
 
         if let Some(ref_name) = ref_name {
-            url.push_str(&format!("&ref_name={}", ref_name));
+            url.push_str(&format!("&ref_name={ref_name}"));
         }
 
         url

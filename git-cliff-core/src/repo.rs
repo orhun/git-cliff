@@ -228,9 +228,9 @@ impl Repository {
                 Some(new_file_id.to_string())
             } else {
                 // submodule updated
-                Some(format!("{}..{}", old_file_id, new_file_id))
+                Some(format!("{old_file_id}..{new_file_id}"))
             };
-            log::trace!("Release commit range for submodules: {:?}", range);
+            log::trace!("Release commit range for submodules: {range:?}");
             delta.new_file().path().and_then(Path::to_str).zip(range)
         });
         // iterate through all path diffs and find corresponding submodule if
@@ -822,7 +822,7 @@ mod test {
             .current_dir(temp_dir.path())
             .output()
             .expect("failed to execute git init");
-        assert!(output.status.success(), "git init failed {:?}", output);
+        assert!(output.status.success(), "git init failed {output:?}");
 
         let repo =
             Repository::discover(temp_dir.path().to_path_buf()).expect("failed to init repo");
@@ -1006,14 +1006,14 @@ mod test {
             .current_dir(&repo.path)
             .output()
             .expect("failed to execute git add");
-        assert!(output.status.success(), "git add failed {:?}", output);
+        assert!(output.status.success(), "git add failed {output:?}");
 
         let output = Command::new("git")
             .args(["commit", "--no-gpg-sign", "-m", "test commit"])
             .current_dir(&repo.path)
             .output()
             .expect("failed to execute git commit");
-        assert!(output.status.success(), "git commit failed {:?}", output);
+        assert!(output.status.success(), "git commit failed {output:?}");
 
         repo.inner
             .head()

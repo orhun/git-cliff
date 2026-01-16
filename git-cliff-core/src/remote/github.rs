@@ -145,7 +145,7 @@ impl GitHubClient {
         );
 
         if let Some(ref_name) = ref_name {
-            url.push_str(&format!("&sha={}", ref_name));
+            url.push_str(&format!("&sha={ref_name}"));
         }
 
         url

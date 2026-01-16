@@ -40,7 +40,7 @@ mod test {
             message: Some(String::from("Initial release")),
         };
         assert_eq!(
-            format!("{:?}", tag),
+            format!("{tag:?}"),
             "Tag { name: \"v1.0\", message: Some(\"Initial release\") }"
         );
     }

@@ -52,7 +52,7 @@ impl BuiltinConfig {
         }
         let contents = match Self::get(&name) {
             Some(v) => Ok(str::from_utf8(&v.data)?.to_string()),
-            None => Err(Error::EmbeddedError(format!("config {} not found", name,))),
+            None => Err(Error::EmbeddedError(format!("config {name} not found"))),
         }?;
         Ok(contents)
     }

@@ -212,7 +212,7 @@ fn process_repository<'a>(
         let count = count_tags.is_none_or(|r| {
             let count_tag = r.is_match(name);
             if count_tag {
-                log::debug!("Counting release: {}", name);
+                log::debug!("Counting release: {name}");
             }
             count_tag
         });
@@ -224,7 +224,7 @@ fn process_repository<'a>(
 
             let ignore_tag = r.is_match(name);
             if ignore_tag {
-                log::debug!("Ignoring release: {}", name);
+                log::debug!("Ignoring release: {name}");
             }
             ignore_tag
         });
@@ -236,29 +236,29 @@ fn process_repository<'a>(
         match repository.upstream_remote() {
             Ok(remote) => {
                 if !config.remote.github.is_set() {
-                    log::debug!("No GitHub remote is set, using remote: {}", remote);
+                    log::debug!("No GitHub remote is set, using remote: {remote}");
                     config.remote.github.owner = remote.owner;
                     config.remote.github.repo = remote.repo;
                     config.remote.github.is_custom = remote.is_custom;
                 } else if !config.remote.gitlab.is_set() {
-                    log::debug!("No GitLab remote is set, using remote: {}", remote);
+                    log::debug!("No GitLab remote is set, using remote: {remote}");
                     config.remote.gitlab.owner = remote.owner;
                     config.remote.gitlab.repo = remote.repo;
                     config.remote.gitlab.is_custom = remote.is_custom;
                 } else if !config.remote.gitea.is_set() {
-                    log::debug!("No Gitea remote is set, using remote: {}", remote);
+                    log::debug!("No Gitea remote is set, using remote: {remote}");
                     config.remote.gitea.owner = remote.owner;
                     config.remote.gitea.repo = remote.repo;
                     config.remote.gitea.is_custom = remote.is_custom;
                 } else if !config.remote.bitbucket.is_set() {
-                    log::debug!("No Bitbucket remote is set, using remote: {}", remote);
+                    log::debug!("No Bitbucket remote is set, using remote: {remote}");
                     config.remote.bitbucket.owner = remote.owner;
                     config.remote.bitbucket.repo = remote.repo;
                     config.remote.bitbucket.is_custom = remote.is_custom;
                 }
             }
             Err(e) => {
-                log::debug!("Failed to get remote from repository: {:?}", e);
+                log::debug!("Failed to get remote from repository: {e:?}");
             }
         }
     }
@@ -267,8 +267,8 @@ fn process_repository<'a>(
     }
 
     // Print debug information about configuration and arguments.
-    log::trace!("Arguments: {:#?}", args);
-    log::trace!("Config: {:#?}", config);
+    log::trace!("Arguments: {args:#?}");
+    log::trace!("Config: {config:#?}");
 
     // Parse commits.
     let commit_range = determine_commit_range(args, config, repository)?;
