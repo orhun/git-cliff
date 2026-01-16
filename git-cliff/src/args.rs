@@ -4,7 +4,7 @@ use clap::builder::styling::{Ansi256Color, AnsiColor};
 use clap::builder::{Styles, TypedValueParser, ValueParserFactory};
 use clap::error::{ContextKind, ContextValue, ErrorKind};
 use clap::{ArgAction, Parser, ValueEnum};
-use git_cliff_core::config::{BumpType, Remote};
+use git_cliff_core::config::{BumpType, PreReleaseType, Remote};
 use git_cliff_core::{DEFAULT_CONFIG, DEFAULT_OUTPUT};
 use glob::Pattern;
 use regex::Regex;
@@ -195,6 +195,16 @@ pub struct Opt {
         allow_hyphen_values = true
     )]
     pub tag: Option<String>,
+    /// Sets the pre-release type
+    #[arg(
+        long,
+        value_name = "PRE-RELEASE",
+        value_enum,
+        num_args = 0..=1,
+        default_missing_value = "None",
+        value_parser = clap::value_parser!(PreReleaseOption))]
+    pub pre_release: Option<PreReleaseOption>,
+
     /// Bumps the version for unreleased changes. Optionally with specified
     /// version.
     #[arg(
@@ -416,6 +426,51 @@ impl TypedValueParser for RemoteValueParser {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
+pub enum PreReleaseOption {
+    Type(PreReleaseType),
+}
+
+impl ValueParserFactory for PreReleaseOption {
+    type Parser = PreReleaseOptionParser;
+    fn value_parser() -> Self::Parser {
+        PreReleaseOptionParser
+    }
+}
+
+/// Parser for bump type.
+#[derive(Clone, Debug)]
+pub struct PreReleaseOptionParser;
+
+impl TypedValueParser for PreReleaseOptionParser {
+    type Value = PreReleaseOption;
+    fn parse_ref(
+        &self,
+        cmd: &clap::Command,
+        arg: Option<&clap::Arg>,
+        value: &std::ffi::OsStr,
+    ) -> Result<Self::Value, clap::Error> {
+        let inner = clap::builder::StringValueParser::new();
+        let value = inner.parse_ref(cmd, arg, value)?;
+        match value.as_str() {
+            "alpha" => Ok(PreReleaseOption::Type(PreReleaseType::Alpha)),
+            "beta" => Ok(PreReleaseOption::Type(PreReleaseType::Beta)),
+            "rc" => Ok(PreReleaseOption::Type(PreReleaseType::Rc)),
+            _ => {
+                let mut err = clap::Error::new(ErrorKind::ValueValidation).with_cmd(cmd);
+                if let Some(arg) = arg {
+                    err.insert(
+                        ContextKind::InvalidArg,
+                        ContextValue::String(arg.to_string()),
+                    );
+                }
+                err.insert(ContextKind::InvalidValue, ContextValue::String(value));
+                Err(err)
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum BumpOption {
     Auto,
     Specific(BumpType),
@@ -558,6 +613,21 @@ mod tests {
         assert_eq!(
             BumpOption::Specific(BumpType::Major),
             bump_option_parser.parse_ref(&Opt::command(), None, OsStr::new("major"))?
+        );
+        Ok(())
+    }
+
+        #[test]
+    fn pre_release_option_parser() -> Result<(), clap::Error> {
+        let pre_release_option_parser = PreReleaseOptionParser;
+        assert_eq!(
+            PreReleaseOption::Type(PreReleaseType::Alpha),
+            pre_release_option_parser.parse_ref(&Opt::command(), None, OsStr::new("alpha"))?
+        );
+        assert!(
+            pre_release_option_parser
+                .parse_ref(&Opt::command(), None, OsStr::new("test"))
+                .is_err()
         );
         Ok(())
     }

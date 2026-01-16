@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use next_version::{NextVersion, VersionUpdater};
-use semver::Version;
+use semver::{Prerelease, Version};
 use serde::{Deserialize, Serialize};
 use serde_json::value::Value;
 
@@ -146,27 +146,42 @@ impl Release<'_> {
                     next_version = next_version
                         .with_custom_minor_increment_regex(custom_minor_increment_regex)?;
                 }
-                let next_version = if let Some(bump_type) = &config.bump_type {
+                let mut next_version = if let Some(bump_type) = &config.bump_type {
                     match bump_type {
-                        BumpType::Major => semver?.increment_major().to_string(),
-                        BumpType::Minor => semver?.increment_minor().to_string(),
-                        BumpType::Patch => semver?.increment_patch().to_string(),
+                        BumpType::Major => semver?.increment_major(),
+                        BumpType::Minor => semver?.increment_minor(),
+                        BumpType::Patch => semver?.increment_patch(),
                     }
                 } else {
-                    next_version
-                        .increment(
-                            &semver?,
-                            self.commits
-                                .iter()
-                                .map(|commit| commit.message.trim_end().to_string())
-                                .collect::<Vec<String>>(),
-                        )
-                        .to_string()
+                    next_version.increment(
+                        &semver?,
+                        self.commits
+                            .iter()
+                            .map(|commit| commit.message.trim_end().to_string())
+                            .collect::<Vec<String>>(),
+                    )
                 };
+
+                if let Some(pre_release_type) = config.pre_release {
+                    let pre_release = match pre_release_type {
+                        crate::config::PreReleaseType::Alpha => semver::Prerelease::new("alpha.0")?,
+                        crate::config::PreReleaseType::Beta => semver::Prerelease::new("beta.0")?,
+                        crate::config::PreReleaseType::Rc => semver::Prerelease::new("rc.0")?,
+                    };
+
+                    if !next_version.pre.is_empty() && next_version.pre > pre_release {
+                        next_version.increment_prerelease();
+                    } else {
+                        next_version.pre = pre_release;
+                    }
+                } else {
+                    next_version.pre = Prerelease::EMPTY;
+                }
+
                 if let Some(prefix) = prefix {
                     Ok(format!("{prefix}{next_version}"))
                 } else {
-                    Ok(next_version)
+                    Ok(next_version.to_string())
                 }
             }
             None => Ok(config.get_initial_tag()),
@@ -255,19 +270,17 @@ mod test {
                 "fix: aaaaaa",
             ]),
             ("v100.0.0", "v101.0.0", vec!["feat!: something"]),
-            ("v1.0.0-alpha.1", "v1.0.0-alpha.2", vec!["fix: minor"]),
-            ("testing/v1.0.0-beta.1", "testing/v1.0.0-beta.2", vec![
+            ("v1.0.0-alpha.1", "v1.0.0", vec!["fix: minor"]),
+            ("testing/v1.0.0-beta.1", "testing/v1.0.0", vec![
                 "feat: nice",
             ]),
             ("tauri-v1.5.4", "tauri-v1.6.0", vec!["feat: something"]),
-            (
-                "rocket/rocket-v4.0.0-rc.1",
-                "rocket/rocket-v4.0.0-rc.2",
-                vec!["chore!: wow"],
-            ),
+            ("rocket/rocket-v4.0.0-rc.1", "rocket/rocket-v4.0.0", vec![
+                "chore!: wow",
+            ]),
             (
                 "aaa#/@#$@9384!#%^#@#@!#!239432413-idk-9999.2200.5932-alpha.419",
-                "aaa#/@#$@9384!#%^#@#@!#!239432413-idk-9999.2200.5932-alpha.420",
+                "aaa#/@#$@9384!#%^#@#@!#!239432413-idk-9999.2200.5932",
                 vec!["feat: damn this is working"],
             ),
         ];
@@ -309,6 +322,7 @@ mod test {
                 custom_major_increment_regex: None,
                 custom_minor_increment_regex: None,
                 bump_type: None,
+                pre_release: None,
             })?;
             assert_eq!(expected_version, &next_version);
         }
@@ -332,6 +346,7 @@ mod test {
                 custom_major_increment_regex: None,
                 custom_minor_increment_regex: None,
                 bump_type: None,
+                pre_release: None,
             })?;
             assert_eq!(expected_version, &next_version);
         }
@@ -355,6 +370,7 @@ mod test {
                 custom_major_increment_regex: None,
                 custom_minor_increment_regex: None,
                 bump_type: None,
+                pre_release: None,
             })?;
             assert_eq!(expected_version, &next_version);
         }
@@ -379,9 +395,95 @@ mod test {
                     custom_major_increment_regex: None,
                     custom_minor_increment_regex: None,
                     bump_type: None,
+                    pre_release: None
                 })?
             );
         }
+
+        for (version, expected_version, commits) in [
+            ("0.0.1", "0.0.2-alpha.0", vec!["fix: fix xyz"]),
+            ("0.0.1", "0.1.0-alpha.0", vec![
+                "feat: add xyz",
+                "fix: fix xyz",
+            ]),
+            ("0.0.1", "0.1.0-alpha.0", vec![
+                "feat!: add xyz",
+                "feat: zzz",
+            ]),
+            ("0.1.0", "0.1.1-alpha.0", vec!["fix: fix xyz"]),
+            ("0.1.0", "0.2.0-alpha.0", vec![
+                "feat: add xyz",
+                "fix: fix xyz",
+            ]),
+            ("0.1.0", "0.2.0-alpha.0", vec![
+                "feat!: add xyz",
+                "feat: zzz",
+            ]),
+            ("0.1.0-alpha.0", "0.1.0-alpha.1", vec![
+                "feat!: add xyz",
+                "feat: zzz",
+            ]),
+            ("0.1.0-beta.0", "0.1.0-beta.1", vec![
+                "feat!: add xyz",
+                "feat: zzz",
+            ]),
+        ] {
+            let release = build_release(version, &commits);
+            let next_version = release.calculate_next_version_with_config(&Bump {
+                features_always_bump_minor: Some(true),
+                breaking_always_bump_major: Some(false),
+                initial_tag: None,
+                custom_major_increment_regex: None,
+                custom_minor_increment_regex: None,
+                bump_type: None,
+                pre_release: Some(crate::config::PreReleaseType::Alpha),
+            })?;
+            assert_eq!(expected_version, &next_version);
+        }
+
+        for (version, expected_version, commits) in [
+            ("0.1.0-alpha.0", "0.1.0-rc.0", vec![
+                "feat!: add xyz",
+                "feat: zzz",
+            ]),
+            ("0.1.0-beta.2", "0.1.0-rc.0", vec![
+                "feat!: add xyz",
+                "feat: zzz",
+            ]),
+        ] {
+            let release = build_release(version, &commits);
+            let next_version = release.calculate_next_version_with_config(&Bump {
+                features_always_bump_minor: Some(true),
+                breaking_always_bump_major: Some(false),
+                initial_tag: None,
+                custom_major_increment_regex: None,
+                custom_minor_increment_regex: None,
+                bump_type: None,
+                pre_release: Some(crate::config::PreReleaseType::Rc),
+            })?;
+            assert_eq!(expected_version, &next_version);
+        }
+
+        for (version, expected_version, commits) in [
+            ("0.1.0-alpha.0", "0.1.0", vec![
+                "feat!: add xyz",
+                "feat: zzz",
+            ]),
+            ("0.1.0-beta.2", "0.1.0", vec!["feat!: add xyz", "feat: zzz"]),
+        ] {
+            let release = build_release(version, &commits);
+            let next_version = release.calculate_next_version_with_config(&Bump {
+                features_always_bump_minor: Some(true),
+                breaking_always_bump_major: Some(false),
+                initial_tag: None,
+                custom_major_increment_regex: None,
+                custom_minor_increment_regex: None,
+                bump_type: None,
+                pre_release: None,
+            })?;
+            assert_eq!(expected_version, &next_version);
+        }
+
         Ok(())
     }
 

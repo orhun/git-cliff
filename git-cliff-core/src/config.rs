@@ -317,6 +317,18 @@ pub enum BumpType {
     Patch,
 }
 
+/// Pre-releases types.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum PreReleaseType {
+    /// Alpha version for pre-releases
+    Alpha,
+    /// Beta version for pre-releases
+    Beta,
+    /// Release candidate for pre-releases
+    Rc,
+}
+
 /// Bump version configuration.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Bump {
@@ -364,6 +376,9 @@ pub struct Bump {
 
     /// Force to always bump in major, minor or patch.
     pub bump_type: Option<BumpType>,
+
+    /// Specify if the next version should be a pre-release
+    pub pre_release: Option<PreReleaseType>,
 }
 
 impl Bump {
