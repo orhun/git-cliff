@@ -283,6 +283,6 @@ mod test {
             date: String::from("2021-07-18T15:14:39+03:00"),
         };
 
-        assert_eq!(Some(1626610479), remote_commit.timestamp());
+        assert_eq!(Some(1_626_610_479), remote_commit.timestamp());
     }
 }

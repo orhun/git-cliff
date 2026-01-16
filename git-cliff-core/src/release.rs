@@ -387,9 +387,9 @@ mod test {
     fn with_statistics() -> Result<()> {
         let release = Release {
             commits: vec![],
-            timestamp: Some(1649373910),
+            timestamp: Some(1_649_373_910),
             previous: Some(Box::new(Release {
-                timestamp: Some(1649201110),
+                timestamp: Some(1_649_201_110),
                 ..Default::default()
             })),
             repository: Some(String::from("/root/repo")),
@@ -591,7 +591,7 @@ mod test {
                 },
                 GitHubPullRequest {
                     title: Some(String::from("4")),
-                    number: 1000,
+                    number: 1_000,
                     merge_commit_sha: Some(String::from(
                         "4d3ffe4753b923f4d7807c490e650e6624a12074",
                     )),
@@ -601,7 +601,7 @@ mod test {
                 },
                 GitHubPullRequest {
                     title: Some(String::from("5")),
-                    number: 999999,
+                    number: 999_999,
                     merge_commit_sha: Some(String::from(
                         "5a55e92e5a62dc5bf9872ffb2566959fad98bd05",
                     )),
@@ -679,14 +679,14 @@ mod test {
                 github: RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: Some(String::from("4")),
-                    pr_number: Some(1000),
+                    pr_number: Some(1_000),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: Some(String::from("4")),
-                    pr_number: Some(1000),
+                    pr_number: Some(1_000),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
                 }),
@@ -698,14 +698,14 @@ mod test {
                 github: RemoteContributor {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("5")),
-                    pr_number: Some(999999),
+                    pr_number: Some(999_999),
                     pr_labels: vec![String::from("github")],
                     is_first_time: false,
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("5")),
-                    pr_number: Some(999999),
+                    pr_number: Some(999_999),
                     pr_labels: vec![String::from("github")],
                     is_first_time: false,
                 }),
@@ -764,7 +764,7 @@ mod test {
                 RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: Some(String::from("4")),
-                    pr_number: Some(1000),
+                    pr_number: Some(1_000),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: true,
                 },
@@ -1305,7 +1305,7 @@ mod test {
                 },
                 GiteaPullRequest {
                     title: Some(String::from("4")),
-                    number: 1000,
+                    number: 1_000,
                     merge_commit_sha: Some(String::from(
                         "4d3ffe4753b923f4d7807c490e650e6624a12074",
                     )),
@@ -1315,7 +1315,7 @@ mod test {
                 },
                 GiteaPullRequest {
                     title: Some(String::from("5")),
-                    number: 999999,
+                    number: 999_999,
                     merge_commit_sha: Some(String::from(
                         "5a55e92e5a62dc5bf9872ffb2566959fad98bd05",
                     )),
@@ -1393,14 +1393,14 @@ mod test {
                 gitea: RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: Some(String::from("4")),
-                    pr_number: Some(1000),
+                    pr_number: Some(1_000),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: Some(String::from("4")),
-                    pr_number: Some(1000),
+                    pr_number: Some(1_000),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
                 }),
@@ -1412,14 +1412,14 @@ mod test {
                 gitea: RemoteContributor {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("5")),
-                    pr_number: Some(999999),
+                    pr_number: Some(999_999),
                     pr_labels: vec![String::from("github")],
                     is_first_time: false,
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("5")),
-                    pr_number: Some(999999),
+                    pr_number: Some(999_999),
                     pr_labels: vec![String::from("github")],
                     is_first_time: false,
                 }),
@@ -1478,7 +1478,7 @@ mod test {
                 RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: Some(String::from("4")),
-                    pr_number: Some(1000),
+                    pr_number: Some(1_000),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: true,
                 },

@@ -1006,7 +1006,7 @@ mod test {
                     id: String::from("coffee"),
                     message: String::from("revert(app): skip this commit"),
                     committer: Signature {
-                        timestamp: 48704000,
+                        timestamp: 48_704_000,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1015,7 +1015,7 @@ mod test {
                     id: String::from("tea"),
                     message: String::from("feat(app): damn right"),
                     committer: Signature {
-                        timestamp: 48790400,
+                        timestamp: 48_790_400,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1024,7 +1024,7 @@ mod test {
                     id: String::from("0bc123"),
                     message: String::from("feat(app): add cool features"),
                     committer: Signature {
-                        timestamp: 48876800,
+                        timestamp: 48_876_800,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1033,7 +1033,7 @@ mod test {
                     id: String::from("000000"),
                     message: String::from("support unconventional commits"),
                     committer: Signature {
-                        timestamp: 48963200,
+                        timestamp: 48_963_200,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1042,7 +1042,7 @@ mod test {
                     id: String::from("0bc123"),
                     message: String::from("feat: support unscoped commits"),
                     committer: Signature {
-                        timestamp: 49049600,
+                        timestamp: 49_049_600,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1051,7 +1051,7 @@ mod test {
                     id: String::from("0werty"),
                     message: String::from("style(ui): make good stuff"),
                     committer: Signature {
-                        timestamp: 49136000,
+                        timestamp: 49_136_000,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1060,7 +1060,7 @@ mod test {
                     id: String::from("0w3rty"),
                     message: String::from("fix(ui): fix more stuff"),
                     committer: Signature {
-                        timestamp: 49222400,
+                        timestamp: 49_222_400,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1069,7 +1069,7 @@ mod test {
                     id: String::from("qw3rty"),
                     message: String::from("doc: update docs"),
                     committer: Signature {
-                        timestamp: 49308800,
+                        timestamp: 49_308_800,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1078,7 +1078,7 @@ mod test {
                     id: String::from("0bc123"),
                     message: String::from("docs: add some documentation"),
                     committer: Signature {
-                        timestamp: 49395200,
+                        timestamp: 49_395_200,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1087,7 +1087,7 @@ mod test {
                     id: String::from("0jkl12"),
                     message: String::from("chore(app): do nothing"),
                     committer: Signature {
-                        timestamp: 49481600,
+                        timestamp: 49_481_600,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1096,7 +1096,7 @@ mod test {
                     id: String::from("qwerty"),
                     message: String::from("chore: <preprocess>"),
                     committer: Signature {
-                        timestamp: 49568000,
+                        timestamp: 49_568_000,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1105,7 +1105,7 @@ mod test {
                     id: String::from("qwertz"),
                     message: String::from("feat!: support breaking commits"),
                     committer: Signature {
-                        timestamp: 49654400,
+                        timestamp: 49_654_400,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1114,7 +1114,7 @@ mod test {
                     id: String::from("qwert0"),
                     message: String::from("match(group): support regex-replace for groups"),
                     committer: Signature {
-                        timestamp: 49740800,
+                        timestamp: 49_740_800,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1123,7 +1123,7 @@ mod test {
                     id: String::from("coffee"),
                     message: String::from("revert(app): skip this commit"),
                     committer: Signature {
-                        timestamp: 49827200,
+                        timestamp: 49_827_200,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1132,7 +1132,7 @@ mod test {
                     id: String::from("footer"),
                     message: String::from("misc: use footer\n\nFooter: footer text"),
                     committer: Signature {
-                        timestamp: 49913600,
+                        timestamp: 49_913_600,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1140,7 +1140,7 @@ mod test {
             ],
             commit_range: None,
             commit_id: Some(String::from("0bc123")),
-            timestamp: Some(50000000),
+            timestamp: Some(50_000_000),
             previous: None,
             repository: Some(String::from("/root/repo")),
             submodule_commits: HashMap::from([(String::from("submodule_one"), vec![
@@ -1191,7 +1191,7 @@ mod test {
                     id: String::from("n0thin"),
                     message: String::from("feat(xyz): skip commit"),
                     committer: Signature {
-                        timestamp: 49913600,
+                        timestamp: 49_913_600,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1207,7 +1207,7 @@ mod test {
                         id: String::from("abc123"),
                         message: String::from("feat(app): add xyz"),
                         committer: Signature {
-                            timestamp: 49395200,
+                            timestamp: 49_395_200,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1216,7 +1216,7 @@ mod test {
                         id: String::from("abc124"),
                         message: String::from("docs(app): document zyx"),
                         committer: Signature {
-                            timestamp: 49481600,
+                            timestamp: 49_481_600,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1225,7 +1225,7 @@ mod test {
                         id: String::from("def789"),
                         message: String::from("merge #4"),
                         committer: Signature {
-                            timestamp: 49568000,
+                            timestamp: 49_568_000,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1234,7 +1234,7 @@ mod test {
                         id: String::from("dev063"),
                         message: String::from("feat(app)!: merge #5"),
                         committer: Signature {
-                            timestamp: 49654400,
+                            timestamp: 49_654_400,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1243,7 +1243,7 @@ mod test {
                         id: String::from("qwerty"),
                         message: String::from("fix(app): fix abc"),
                         committer: Signature {
-                            timestamp: 49740800,
+                            timestamp: 49_740_800,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1252,7 +1252,7 @@ mod test {
                         id: String::from("hjkl12"),
                         message: String::from("chore(ui): do boring stuff"),
                         committer: Signature {
-                            timestamp: 49827200,
+                            timestamp: 49_827_200,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1261,7 +1261,7 @@ mod test {
                         id: String::from("coffee2"),
                         message: String::from("revert(app): skip this commit"),
                         committer: Signature {
-                            timestamp: 49913600,
+                            timestamp: 49_913_600,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1464,7 +1464,7 @@ feat(app): feature #3
 ",
             ),
             committer: Signature {
-                timestamp: 49827200,
+                timestamp: 49_827_200,
                 ..Default::default()
             },
             ..Default::default()
@@ -1478,7 +1478,7 @@ style: make awesome stuff look better
 ",
             ),
             committer: Signature {
-                timestamp: 49740800,
+                timestamp: 49_740_800,
                 ..Default::default()
             },
             ..Default::default()
@@ -1493,7 +1493,7 @@ chore(deps): fix broken deps
 ",
             ),
             committer: Signature {
-                timestamp: 49308800,
+                timestamp: 49_308_800,
                 ..Default::default()
             },
             ..Default::default()
