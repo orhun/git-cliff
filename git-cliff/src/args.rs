@@ -195,6 +195,15 @@ pub struct Opt {
         allow_hyphen_values = true
     )]
     pub tag: Option<String>,
+    /// Sets the pre-release type
+    #[arg(
+        long,
+        value_name = "PRE-RELEASE",
+        num_args = 0..=1,
+        default_missing_value = "alpha",
+    )]
+    pub pre_release: Option<String>,
+
     /// Bumps the version for unreleased changes. Optionally with specified
     /// version.
     #[arg(
