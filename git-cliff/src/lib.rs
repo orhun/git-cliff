@@ -334,7 +334,7 @@ fn process_repository<'a>(
                 }
             }
         } else {
-            releases[0].version = Some(tag.to_string());
+            releases[0].version = Some(tag.clone());
             releases[0].timestamp = Some(
                 SystemTime::now()
                     .duration_since(UNIX_EPOCH)?
@@ -769,7 +769,7 @@ pub fn run_with_changelog_modifier<'a>(
             }
             for sha1 in skip_list {
                 config.git.commit_parsers.insert(0, CommitParser {
-                    sha: Some(sha1.to_string()),
+                    sha: Some(sha1.clone()),
                     skip: Some(true),
                     ..Default::default()
                 });
@@ -820,8 +820,7 @@ pub fn write_changelog<W: io::Write>(
         if let Some(tag_pattern) = &changelog.config.git.tag_pattern {
             if !tag_pattern.is_match(&next_version) {
                 return Err(Error::ChangelogError(format!(
-                    "Next version ({}) does not match the tag pattern: {}",
-                    next_version, tag_pattern
+                    "Next version ({next_version}) does not match the tag pattern: {tag_pattern}",
                 )));
             }
         }

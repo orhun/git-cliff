@@ -557,7 +557,7 @@ impl Repository {
 
 fn find_remote(url: &str) -> Result<Remote> {
     url_path_segments(url).or_else(|err| {
-        if url.contains("@") && url.contains(":") && url.contains("/") {
+        if url.contains('@') && url.contains(':') && url.contains('/') {
             ssh_path_segments(url)
         } else {
             Err(err)
@@ -601,14 +601,14 @@ fn ssh_path_segments(url: &str) -> Result<Remote> {
     let [_, owner_repo, ..] = url
         .strip_suffix(".git")
         .unwrap_or(url)
-        .split(":")
+        .split(':')
         .collect::<Vec<_>>()[..]
     else {
         return Err(Error::RepoError(String::from(
             "failed to get the owner and repo from ssh remote (:)",
         )));
     };
-    let [owner, repo] = owner_repo.split("/").collect::<Vec<_>>()[..] else {
+    let [owner, repo] = owner_repo.split('/').collect::<Vec<_>>()[..] else {
         return Err(Error::RepoError(String::from(
             "failed to get the owner and repo from ssh remote (/)",
         )));
@@ -833,8 +833,7 @@ mod test {
             .expect("failed to execute git config user.email");
         assert!(
             output.status.success(),
-            "git config user.email failed {:?}",
-            output
+            "git config user.email failed {output:?}",
         );
 
         let output = Command::new("git")
@@ -844,8 +843,7 @@ mod test {
             .expect("failed to execute git config user.name");
         assert!(
             output.status.success(),
-            "git config user.name failed {:?}",
-            output
+            "git config user.name failed {output:?}",
         );
 
         (repo, temp_dir)

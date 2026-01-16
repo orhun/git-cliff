@@ -213,10 +213,7 @@ impl GitLabClient {
 
     /// Constructs the URL for GitLab commits API.
     fn commits_url(project_id: i64, api_url: &str, ref_name: Option<&str>, page: i32) -> String {
-        let mut url = format!(
-            "{}/projects/{}/repository/commits?per_page={MAX_PAGE_SIZE}&page={page}",
-            api_url, project_id
-        );
+        let mut url = format!("{api_url}/projects/{project_id}/repository/commits?per_page={MAX_PAGE_SIZE}&page={page}");
 
         if let Some(ref_name) = ref_name {
             url.push_str(&format!("&ref_name={ref_name}"));
@@ -226,10 +223,7 @@ impl GitLabClient {
     }
     /// Constructs the URL for GitLab merge requests API.
     fn pull_requests_url(project_id: i64, api_url: &str, page: i32) -> String {
-        format!(
-            "{}/projects/{}/merge_requests?per_page={MAX_PAGE_SIZE}&page={page}&state=merged",
-            api_url, project_id
-        )
+        format!("{api_url}/projects/{project_id}/merge_requests?per_page={MAX_PAGE_SIZE}&page={page}&state=merged")
     }
 
     /// Looks up the project details.

@@ -268,6 +268,6 @@ mod test {
             }),
         };
 
-        assert_eq!(Some(1626610479), remote_commit.timestamp());
+        assert_eq!(Some(1_626_610_479), remote_commit.timestamp());
     }
 }

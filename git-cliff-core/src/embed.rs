@@ -61,7 +61,7 @@ impl BuiltinConfig {
     ///
     /// [`Config`]: Config
     pub fn parse(name: String) -> Result<(Config, String)> {
-        let parsed = Self::get_config(name.to_string())?.parse()?;
+        let parsed = Self::get_config(name.clone())?.parse()?;
         Ok((parsed, name))
     }
 }
