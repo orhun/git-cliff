@@ -22,7 +22,7 @@ use args::{BumpOption, Opt, Sort, Strip};
 use clap::ValueEnum;
 use git_cliff_core::changelog::Changelog;
 use git_cliff_core::commit::{Commit, CommitStatistics, Range};
-use git_cliff_core::config::{CommitParser, Config};
+use git_cliff_core::config::{BumpType, CommitParser, Config};
 use git_cliff_core::embed::{BuiltinConfig, EmbeddedConfig};
 use git_cliff_core::error::{Error, Result};
 use git_cliff_core::release::Release;
@@ -221,7 +221,6 @@ fn process_repository<'a>(
     let ignore_regex = config.git.ignore_tags.as_ref();
     let count_tags = config.git.count_tags.as_ref();
     let recurse_submodules = config.git.recurse_submodules.unwrap_or(false);
-    let compute_commit_statistics = args.context || config.uses_commit_statistics()?;
     tags.retain(|_, tag| {
         let name = &tag.name;
 
@@ -349,6 +348,7 @@ fn process_repository<'a>(
     let include_path = (!include_path.is_empty()).then_some(include_path);
     let exclude_path =
         (!config.git.exclude_paths.is_empty()).then_some(config.git.exclude_paths.clone());
+    let compute_commit_statistics = config.uses_commit_statistics()?;
     let mut commits = repository.commits(
         commit_range.as_deref(),
         include_path,
@@ -833,7 +833,19 @@ pub fn run_with_changelog_modifier<'a>(
 
     // Process commits and releases for the changelog.
     if let Some(BumpOption::Specific(bump_type)) = args.bump {
+        if bump_type == BumpType::Prerelease && args.release {
+            return Err(Error::ArgumentError(String::from(
+                "The '--bump prerelease' and '--release' options cannot be used together",
+            )));
+        }
+
         config.bump.bump_type = Some(bump_type);
+    }
+
+    if let Some(prerelease) = &args.prerelease {
+        config.bump.pre_release = Some(prerelease.clone());
+    } else if args.release {
+        config.bump.pre_release = None;
     }
 
     // Generate changelog from context.
@@ -975,6 +987,7 @@ pub fn write_changelog<W: io::Write>(
             return Ok(());
         }
     }
+    changelog.filter_releases();
     if args.context {
         changelog.write_context(&mut out)?;
         return Ok(());
