@@ -47,12 +47,12 @@ impl<'a> Changelog<'a> {
         Ok(Self {
             releases,
             header_template: match &config.changelog.header {
-                Some(header) => Some(Template::new("header", header.to_string(), trim)?),
+                Some(header) => Some(Template::new("header", header.clone(), trim)?),
                 None => None,
             },
             body_template: get_body_template(&config, trim)?,
             footer_template: match &config.changelog.footer {
-                Some(footer) => Some(Template::new("footer", footer.to_string(), trim)?),
+                Some(footer) => Some(Template::new("footer", footer.clone(), trim)?),
                 None => None,
             },
             config,
@@ -617,7 +617,7 @@ impl<'a> Changelog<'a> {
                 let next_version =
                     last_release.calculate_next_version_with_config(&self.config.bump)?;
                 log::debug!("Bumping the version to {next_version}");
-                last_release.version = Some(next_version.to_string());
+                last_release.version = Some(next_version.clone());
                 last_release.timestamp = Some(
                     SystemTime::now()
                         .duration_since(UNIX_EPOCH)?

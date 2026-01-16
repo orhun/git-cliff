@@ -351,12 +351,12 @@ fn process_repository<'a>(
     for git_commit in commits.iter().rev() {
         let release = releases.last_mut().unwrap();
         let commit = Commit::from(git_commit);
-        let commit_id = commit.id.to_string();
+        let commit_id = commit.id.clone();
         release.commits.push(commit);
         release.repository = Some(repository_path.clone());
         release.commit_id = Some(commit_id);
         if let Some(tag) = tags.get(release.commit_id.as_ref().unwrap()) {
-            release.version = Some(tag.name.to_string());
+            release.version = Some(tag.name.clone());
             release.message.clone_from(&tag.message);
             release.timestamp = if args.tag.as_deref() == Some(tag.name.as_str()) {
                 match tag_timestamp {
@@ -425,7 +425,7 @@ fn process_repository<'a>(
         // Set the previous release if the first tag is found.
         if let Some((commit_id, tag)) = first_tag {
             let previous_release = Release {
-                commit_id: Some(commit_id.to_string()),
+                commit_id: Some(commit_id.clone()),
                 version: Some(tag.name.clone()),
                 timestamp: Some(
                     repository
@@ -655,28 +655,28 @@ pub fn run_with_changelog_modifier<'a>(
             .clone_from(&args.azure_devops_token);
     }
     if let Some(ref remote) = args.github_repo {
-        config.remote.github.owner = remote.0.owner.to_string();
-        config.remote.github.repo = remote.0.repo.to_string();
+        config.remote.github.owner = remote.0.owner.clone();
+        config.remote.github.repo = remote.0.repo.clone();
         config.remote.github.is_custom = true;
     }
     if let Some(ref remote) = args.gitlab_repo {
-        config.remote.gitlab.owner = remote.0.owner.to_string();
-        config.remote.gitlab.repo = remote.0.repo.to_string();
+        config.remote.gitlab.owner = remote.0.owner.clone();
+        config.remote.gitlab.repo = remote.0.repo.clone();
         config.remote.gitlab.is_custom = true;
     }
     if let Some(ref remote) = args.bitbucket_repo {
-        config.remote.bitbucket.owner = remote.0.owner.to_string();
-        config.remote.bitbucket.repo = remote.0.repo.to_string();
+        config.remote.bitbucket.owner = remote.0.owner.clone();
+        config.remote.bitbucket.repo = remote.0.repo.clone();
         config.remote.bitbucket.is_custom = true;
     }
     if let Some(ref remote) = args.gitea_repo {
-        config.remote.gitea.owner = remote.0.owner.to_string();
-        config.remote.gitea.repo = remote.0.repo.to_string();
+        config.remote.gitea.owner = remote.0.owner.clone();
+        config.remote.gitea.repo = remote.0.repo.clone();
         config.remote.gitea.is_custom = true;
     }
     if let Some(ref remote) = args.azure_devops_repo {
-        config.remote.azure_devops.owner = remote.0.owner.to_string();
-        config.remote.azure_devops.repo = remote.0.repo.to_string();
+        config.remote.azure_devops.owner = remote.0.owner.clone();
+        config.remote.azure_devops.repo = remote.0.repo.clone();
         config.remote.azure_devops.is_custom = true;
     }
     if args.no_exec {

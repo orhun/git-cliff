@@ -285,7 +285,7 @@ impl Commit<'_> {
         for parser in parsers {
             let mut regex_checks = Vec::new();
             if let Some(message_regex) = parser.message.as_ref() {
-                regex_checks.push((message_regex, self.message.to_string()));
+                regex_checks.push((message_regex, self.message.clone()));
             }
             let body = self
                 .conv

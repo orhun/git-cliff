@@ -424,7 +424,7 @@ impl TextProcessor {
             *rendered = self.pattern.replace_all(rendered, text).to_string();
         } else if let Some(command) = &self.replace_command {
             if self.pattern.is_match(rendered) {
-                *rendered = command::run(command, Some(rendered.to_string()), command_envs)?;
+                *rendered = command::run(command, Some(rendered.clone()), command_envs)?;
             }
         }
         Ok(())
@@ -513,7 +513,7 @@ impl Config {
         {
             if supported_path.exists() {
                 log::debug!("Using configuration file from: {supported_path:?}");
-                return Some(supported_path.to_path_buf());
+                return Some(supported_path.clone());
             }
         }
         None
