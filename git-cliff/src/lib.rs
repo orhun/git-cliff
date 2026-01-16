@@ -20,7 +20,7 @@ use args::{BumpOption, Opt, Sort, Strip};
 use clap::ValueEnum;
 use git_cliff_core::changelog::Changelog;
 use git_cliff_core::commit::{Commit, Range};
-use git_cliff_core::config::{CommitParser, Config};
+use git_cliff_core::config::{BumpType, CommitParser, Config};
 use git_cliff_core::embed::{BuiltinConfig, EmbeddedConfig};
 use git_cliff_core::error::{Error, Result};
 use git_cliff_core::release::Release;
@@ -196,41 +196,8 @@ fn process_repository<'a>(
         args.topo_order,
         args.use_branch_tags,
     )?;
-    let skip_regex = config.git.skip_tags.as_ref();
-    let ignore_regex = config.git.ignore_tags.as_ref();
-    let count_tags = config.git.count_tags.as_ref();
+
     let recurse_submodules = config.git.recurse_submodules.unwrap_or(false);
-    tags.retain(|_, tag| {
-        let name = &tag.name;
-
-        // Keep skip tags to drop commits in the later stage.
-        let skip = skip_regex.is_some_and(|r| r.is_match(name));
-        if skip {
-            return true;
-        }
-
-        let count = count_tags.is_none_or(|r| {
-            let count_tag = r.is_match(name);
-            if count_tag {
-                log::debug!("Counting release: {name}");
-            }
-            count_tag
-        });
-
-        let ignore = ignore_regex.is_some_and(|r| {
-            if r.as_str().trim().is_empty() {
-                return false;
-            }
-
-            let ignore_tag = r.is_match(name);
-            if ignore_tag {
-                log::debug!("Ignoring release: {name}");
-            }
-            ignore_tag
-        });
-
-        count && !ignore
-    });
 
     if !config.remote.is_any_set() {
         match repository.upstream_remote() {
@@ -726,7 +693,19 @@ pub fn run_with_changelog_modifier<'a>(
 
     // Process commits and releases for the changelog.
     if let Some(BumpOption::Specific(bump_type)) = args.bump {
+        if bump_type == BumpType::Prerelease && args.release {
+            return Err(Error::ArgumentError(String::from(
+                "The '--bump prerelease' and '--release' options cannot be used together",
+            )));
+        }
+
         config.bump.bump_type = Some(bump_type);
+    }
+
+    if let Some(prerelease) = &args.prerelease {
+        config.bump.pre_release = Some(prerelease.clone());
+    } else if args.release {
+        config.bump.pre_release = None;
     }
 
     // Generate changelog from context.
@@ -808,7 +787,7 @@ pub fn write_changelog<W: io::Write>(
         .output
         .clone()
         .or(changelog.config.changelog.output.clone());
-    if args.bump.is_some() || args.bumped_version {
+    if args.bump.is_some() || args.bumped_version || args.release {
         let next_version = if let Some(next_version) = changelog.bump_version()? {
             next_version
         } else if let Some(last_version) =
@@ -837,6 +816,7 @@ pub fn write_changelog<W: io::Write>(
             return Ok(());
         }
     }
+    changelog.filter_releases();
     if args.context {
         changelog.write_context(&mut out)?;
         return Ok(());
