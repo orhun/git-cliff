@@ -39,8 +39,8 @@ pub struct Repository {
 pub struct SubmoduleRange {
     /// Repository object to which this range belongs.
     pub repository: Repository,
-    /// Commit range in "<first_submodule_commit>..<last_submodule_commit>" or
-    /// "<last_submodule_commit>" format.
+    /// Commit range in "FIRST..LAST" or "LAST" format, where FIRST is
+    /// the first submodule commit and LAST is the last submodule commit.
     pub range: String,
 }
 
@@ -569,7 +569,9 @@ fn find_remote(url: &str) -> Result<Remote> {
 ///
 /// This function expects the URL to be in the following format:
 ///
-/// > https://hostname/query/path.git
+/// ```text
+/// https://hostname/query/path.git
+/// ```
 fn url_path_segments(url: &str) -> Result<Remote> {
     let parsed_url = Url::parse(url.strip_suffix(".git").unwrap_or(url))?;
     let segments: Vec<&str> = parsed_url

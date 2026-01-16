@@ -88,7 +88,7 @@ pub struct GitConfig {
     /// Parse commits according to the conventional commits specification.
     pub conventional_commits: bool,
     /// Require all commits to be conventional.
-    /// Takes precedence over filter_unconventional.
+    /// Takes precedence over `filter_unconventional`.
     pub require_conventional: bool,
     /// Exclude commits that do not match the conventional commits specification
     /// from the changelog.
@@ -118,7 +118,7 @@ pub struct GitConfig {
     /// Regex to select git tags that do not represent proper releases.
     #[serde(with = "serde_regex", default)]
     pub skip_tags: Option<Regex>,
-    /// Regex to exclude git tags after applying the tag_pattern.
+    /// Regex to exclude git tags after applying the `tag_pattern`.
     #[serde(with = "serde_regex", default)]
     pub ignore_tags: Option<Regex>,
     /// Regex to count matched tags.
