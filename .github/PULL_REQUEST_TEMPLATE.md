@@ -34,7 +34,6 @@
 - [ ] My code follows the code style of this project.
 - [ ] I have updated the documentation accordingly (if applicable).
 - [ ] I have formatted the code with [rustfmt](https://github.com/rust-lang/rustfmt).
-  - [ ] `cargo +nightly fmt --all -- --check --verbose`
   - [ ] `cargo +nightly fmt --all`
 - [ ] I checked the lints with [clippy](https://github.com/rust-lang/rust-clippy).
   - [ ] `cargo clippy --tests --verbose -- -D warnings`
