@@ -186,6 +186,7 @@ pub fn init_config(name: Option<&str>, config_path: &Path) -> Result<()> {
 ///
 /// This function uses the configuration and arguments to process the given
 /// repository individually.
+#[allow(clippy::too_many_lines)]
 fn process_repository<'a>(
     repository: &'static Repository,
     config: &mut Config,
@@ -513,6 +514,7 @@ pub fn run<'a>(args: Opt) -> Result<Changelog<'a>> {
 ///     Ok(())
 /// }
 /// ```
+#[allow(clippy::too_many_lines)]
 pub fn run_with_changelog_modifier<'a>(
     mut args: Opt,
     changelog_modifier: impl FnOnce(&mut Changelog) -> Result<()>,

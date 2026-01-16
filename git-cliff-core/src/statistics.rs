@@ -129,7 +129,9 @@ mod test {
     use crate::config::LinkParser;
     use crate::error::Result;
     use crate::release::Release;
+
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn from_release() -> Result<()> {
         fn find_count(v: &[LinkCount], text: &str, href: &str) -> Option<usize> {
             v.iter()

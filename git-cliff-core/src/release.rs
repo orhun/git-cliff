@@ -192,6 +192,7 @@ mod test {
 
     use super::*;
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn bump_version() -> Result<()> {
         fn build_release<'a>(version: &str, commits: &'a [&str]) -> Release<'a> {
             Release {
@@ -405,6 +406,7 @@ mod test {
 
     #[cfg(feature = "github")]
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn update_github_metadata() -> Result<()> {
         use crate::remote::github::{
             GitHubCommit, GitHubCommitAuthor, GitHubCommitDetails, GitHubCommitDetailsAuthor,
@@ -777,6 +779,7 @@ mod test {
 
     #[cfg(feature = "gitlab")]
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn update_gitlab_metadata() -> Result<()> {
         use crate::remote::gitlab::{GitLabCommit, GitLabMergeRequest, GitLabUser};
 
@@ -1147,6 +1150,7 @@ mod test {
 
     #[cfg(feature = "gitea")]
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn update_gitea_metadata() -> Result<()> {
         use crate::remote::gitea::{
             GiteaCommit, GiteaCommitAuthor, GiteaPullRequest, PullRequestLabel,
@@ -1491,6 +1495,7 @@ mod test {
 
     #[cfg(feature = "bitbucket")]
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn update_bitbucket_metadata() -> Result<()> {
         use crate::remote::bitbucket::{
             BitbucketCommit, BitbucketCommitAuthor, BitbucketPullRequest,
@@ -1789,6 +1794,7 @@ mod test {
 
     #[cfg(feature = "azure_devops")]
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn update_azure_devops_metadata() -> Result<()> {
         use crate::remote::azure_devops::{
             AzureDevOpsCommit, AzureDevOpsCommitAuthor, AzureDevOpsCommitRef,
