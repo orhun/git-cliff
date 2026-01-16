@@ -85,6 +85,7 @@ pub struct Range {
 
 impl Range {
     /// Creates a new [`Range`] from [`crate::commit::Commit`].
+    #[must_use]
     pub fn new(from: &Commit, to: &Commit) -> Self {
         Self {
             from: from.id.clone(),
@@ -191,6 +192,7 @@ impl From<&GitCommit<'_>> for Commit<'_> {
 
 impl Commit<'_> {
     /// Constructs a new instance.
+    #[must_use]
     pub fn new(id: String, message: String) -> Self {
         Self {
             id,
@@ -200,6 +202,7 @@ impl Commit<'_> {
     }
 
     /// Get raw message for converting into conventional commit.
+    #[must_use]
     pub fn raw_message(&self) -> &str {
         self.raw_message.as_deref().unwrap_or(&self.message)
     }
@@ -390,6 +393,7 @@ impl Commit<'_> {
     /// Sets the [`links`] of the commit.
     ///
     /// [`links`]: Commit::links
+    #[must_use]
     pub fn parse_links(mut self, parsers: &[LinkParser]) -> Self {
         for parser in parsers {
             let regex = &parser.pattern;

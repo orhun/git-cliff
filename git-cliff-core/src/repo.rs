@@ -132,6 +132,7 @@ impl Repository {
     ///
     /// In case of a submodule this is the relative path to the toplevel
     /// repository.
+    #[must_use]
     pub fn path(&self) -> &PathBuf {
         &self.path
     }
@@ -407,6 +408,7 @@ impl Repository {
     /// Returns the current tag.
     ///
     /// It is the same as running `git describe --tags`
+    #[must_use]
     pub fn current_tag(&self) -> Option<Tag> {
         self.inner
             .describe(DescribeOptions::new().describe_tags())
@@ -422,6 +424,7 @@ impl Repository {
     /// Returns the tag object of the given name.
     ///
     /// If given name doesn't exist, it still returns `Tag` with the given name.
+    #[must_use]
     pub fn resolve_tag(&self, name: &str) -> Tag {
         match self
             .inner
@@ -442,6 +445,7 @@ impl Repository {
     }
 
     /// Returns the commit object of the given ID.
+    #[must_use]
     pub fn find_commit(&self, id: &str) -> Option<Commit<'_>> {
         if let Ok(oid) = Oid::from_str(id) {
             if let Ok(commit) = self.inner.find_commit(oid) {

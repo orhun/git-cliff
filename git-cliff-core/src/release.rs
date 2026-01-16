@@ -93,6 +93,7 @@ impl Release<'_> {
     /// This method computes various statistics from the release data and sets
     /// the `statistics` field. It does not modify the original release but
     /// returns a new instance with the computed statistics included.
+    #[must_use]
     pub fn with_statistics(mut self) -> Self {
         self.statistics = Some((&self).into());
         self

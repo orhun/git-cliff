@@ -196,6 +196,7 @@ pub struct RemoteConfig {
 
 impl RemoteConfig {
     /// Returns `true` if any remote is set.
+    #[must_use]
     pub fn is_any_set(&self) -> bool {
         #[cfg(feature = "github")]
         if self.github.is_set() {
@@ -295,6 +296,7 @@ impl Remote {
     }
 
     /// Returns `true` if the remote has an owner and repo.
+    #[must_use]
     pub fn is_set(&self) -> bool {
         !self.owner.is_empty() && !self.repo.is_empty()
     }
@@ -365,6 +367,7 @@ impl Bump {
     /// Returns the initial tag.
     ///
     /// This function also logs the returned value.
+    #[must_use]
     pub fn get_initial_tag(&self) -> String {
         if let Some(tag) = self.initial_tag.clone() {
             log::warn!("No releases found, using initial tag '{tag}' as the next version");
@@ -502,6 +505,7 @@ impl Config {
     /// Find the path of the config file.
     ///
     /// If the config file is not found in its standard locations, [`None`] is returned.
+    #[must_use]
     pub fn retrieve_config_path() -> Option<PathBuf> {
         for supported_path in [
             #[cfg(target_os = "macos")]
