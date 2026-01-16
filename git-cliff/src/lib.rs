@@ -28,6 +28,8 @@ use git_cliff_core::repo::{Repository, SubmoduleRange};
 use git_cliff_core::{DEFAULT_CONFIG, IGNORE_FILE};
 use glob::Pattern;
 
+use crate::args::PreReleaseOption;
+
 /// Checks for a new version on crates.io
 #[cfg(feature = "update-informer")]
 pub fn check_new_version() {
@@ -720,6 +722,10 @@ pub fn run_with_changelog_modifier<'a>(
     // Process commits and releases for the changelog.
     if let Some(BumpOption::Specific(bump_type)) = args.bump {
         config.bump.bump_type = Some(bump_type);
+    }
+
+    if let Some(PreReleaseOption::Type(pre_release_type)) = args.pre_release {
+        config.bump.pre_release = Some(pre_release_type);
     }
 
     // Generate changelog from context.
