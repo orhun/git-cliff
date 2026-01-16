@@ -777,7 +777,7 @@ mod test {
 				"#,
                 ),
                 footer: Some(String::from(
-                    r#"-- total releases: {{ releases | length }} --"#,
+                    r"-- total releases: {{ releases | length }} --",
                 )),
                 trim: true,
                 postprocessors: vec![TextProcessor {
@@ -1319,7 +1319,7 @@ mod test {
         changelog.generate(&mut out)?;
         assert_eq!(
             String::from(
-                r#"# Changelog
+                r"# Changelog
 
 			## Release [v1.1.0] - 1970-01-01 - (/root/repo)
 
@@ -1397,7 +1397,7 @@ mod test {
 			- 12 commit(s) parsed as conventional.
 			- 0 linked issue(s) detected in commits.
 			-- total releases: 2 --
-			"#
+			"
             )
             .replace("			", ""),
             str::from_utf8(&out).unwrap_or_default()
@@ -1419,7 +1419,7 @@ mod test {
         changelog.generate(&mut out)?;
         assert_eq!(
             String::from(
-                r#"# Changelog
+                r"# Changelog
 
 			## Unreleased
 
@@ -1431,7 +1431,7 @@ mod test {
 			- 0 linked issue(s) detected in commits.
 			- -578 day(s) passed between releases.
 			-- total releases: 1 --
-			"#
+			"
             )
             .replace("			", ""),
             str::from_utf8(&out).unwrap_or_default()
@@ -1503,7 +1503,7 @@ chore(deps): fix broken deps
         changelog.generate(&mut out)?;
         assert_eq!(
             String::from(
-                r#"# Changelog
+                r"# Changelog
 
 			## Unreleased
 
@@ -1595,7 +1595,7 @@ chore(deps): fix broken deps
 			- 1 linked issue(s) detected in commits.
 			  - [#3](https://github.com/3) (referenced 1 time(s))
 			-- total releases: 2 --
-			"#
+			"
             )
             .replace("			", ""),
             str::from_utf8(&out).unwrap_or_default()
@@ -1622,7 +1622,7 @@ chore(deps): fix broken deps
         changelog.add_context("custom_field", "Hello")?;
         let mut out = Vec::new();
         changelog.generate(&mut out)?;
-        expect_test::expect![[r#"
+        expect_test::expect![[r"
     # Changelog
 
     ## Unreleased
@@ -1685,7 +1685,7 @@ chore(deps): fix broken deps
     #### ui
     - make good stuff
     -- total releases: 2 --
-"#]]
+"]]
         .assert_eq(str::from_utf8(&out).unwrap_or_default());
         Ok(())
     }

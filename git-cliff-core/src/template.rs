@@ -306,12 +306,12 @@ mod test {
 
     #[test]
     fn render_template() -> Result<()> {
-        let template = r#"
+        let template = r"
 		## {{ version }} - <DATE>
 		{% for commit in commits %}
 		### {{ commit.group }}
 		- {{ commit.message | upper_first }}
-		{% endfor %}"#;
+		{% endfor %}";
         let mut template = Template::new("test", template.to_string(), false)?;
         let release = get_fake_release_data();
         assert_eq!(
@@ -345,9 +345,9 @@ mod test {
 
     #[test]
     fn render_trimmed_template() -> Result<()> {
-        let template = r#"
+        let template = r"
 		##  {{ version }}
-		"#;
+		";
         let template = Template::new("test", template.to_string(), true)?;
         let release = get_fake_release_data();
         assert_eq!(
