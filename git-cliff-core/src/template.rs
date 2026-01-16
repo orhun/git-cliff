@@ -84,7 +84,9 @@ impl Template {
         };
 
         let re = Regex::new(&from).map_err(|e| {
-            tera::Error::msg(format!("Filter `replace_regex` received an invalid regex pattern: {e}"))
+            tera::Error::msg(format!(
+                "Filter `replace_regex` received an invalid regex pattern: {e}"
+            ))
         })?;
         Ok(tera::to_value(re.replace_all(&s, &to))?)
     }
@@ -105,7 +107,9 @@ impl Template {
             }
         };
         let re = Regex::new(&pat).map_err(|e| {
-            tera::Error::msg(format!("Filter `find_regex` received an invalid regex pattern: {e}"))
+            tera::Error::msg(format!(
+                "Filter `find_regex` received an invalid regex pattern: {e}"
+            ))
         })?;
         let result: Vec<&str> = re.find_iter(&s).map(|mat| mat.as_str()).collect();
         Ok(tera::to_value(result)?)
@@ -126,7 +130,9 @@ impl Template {
             }
         };
         let re = Regex::new(&pat).map_err(|e| {
-            tera::Error::msg(format!("Filter `split_regex` received an invalid regex pattern: {e}"))
+            tera::Error::msg(format!(
+                "Filter `split_regex` received an invalid regex pattern: {e}"
+            ))
         })?;
         let result: Vec<&str> = re.split(&s).collect();
         Ok(tera::to_value(result)?)
