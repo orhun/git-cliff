@@ -93,11 +93,13 @@ impl From<&Release<'_>> for Statistics {
         let days_passed_since_last_release = match release.previous.as_ref() {
             Some(prev) => release
                 .timestamp
-                .map(|ts| Utc.timestamp_opt(ts, 0))
-                .unwrap_or_else(|| {
-                    let now = Utc::now();
-                    Utc.timestamp_opt(now.timestamp(), 0)
-                })
+                .map_or_else(
+                    || {
+                        let now = Utc::now();
+                        Utc.timestamp_opt(now.timestamp(), 0)
+                    },
+                    |ts| Utc.timestamp_opt(ts, 0),
+                )
                 .single()
                 .zip(
                     prev.timestamp

@@ -282,8 +282,7 @@ impl<'a> Changelog<'a> {
                 .contains_variable(github::TEMPLATE_VARIABLES) ||
             self.footer_template
                 .as_ref()
-                .map(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
-                .unwrap_or(false)
+                .is_some_and(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
         {
             let github_client = GitHubClient::try_from(self.config.remote.github.clone())?;
             log::info!(
@@ -333,8 +332,7 @@ impl<'a> Changelog<'a> {
                 .contains_variable(gitlab::TEMPLATE_VARIABLES) ||
             self.footer_template
                 .as_ref()
-                .map(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
-                .unwrap_or(false)
+                .is_some_and(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
         {
             let gitlab_client = GitLabClient::try_from(self.config.remote.gitlab.clone())?;
             log::info!(
@@ -391,8 +389,7 @@ impl<'a> Changelog<'a> {
                 .contains_variable(gitea::TEMPLATE_VARIABLES) ||
             self.footer_template
                 .as_ref()
-                .map(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
-                .unwrap_or(false)
+                .is_some_and(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
         {
             let gitea_client = GiteaClient::try_from(self.config.remote.gitea.clone())?;
             log::info!(
@@ -445,8 +442,7 @@ impl<'a> Changelog<'a> {
                 .contains_variable(bitbucket::TEMPLATE_VARIABLES) ||
             self.footer_template
                 .as_ref()
-                .map(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
-                .unwrap_or(false)
+                .is_some_and(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
         {
             let bitbucket_client = BitbucketClient::try_from(self.config.remote.bitbucket.clone())?;
             log::info!(
@@ -497,8 +493,7 @@ impl<'a> Changelog<'a> {
                 .contains_variable(azure_devops::TEMPLATE_VARIABLES) ||
             self.footer_template
                 .as_ref()
-                .map(|v| v.contains_variable(azure_devops::TEMPLATE_VARIABLES))
-                .unwrap_or(false)
+                .is_some_and(|v| v.contains_variable(azure_devops::TEMPLATE_VARIABLES))
         {
             let azure_devops_client =
                 AzureDevOpsClient::try_from(self.config.remote.azure_devops.clone())?;

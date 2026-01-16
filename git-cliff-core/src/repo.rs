@@ -175,10 +175,7 @@ impl Repository {
         }
 
         Self::set_commit_range(&mut revwalk, range).map_err(|e| {
-            Error::SetCommitRangeError(
-                range.map(String::from).unwrap_or_else(|| "?".to_string()),
-                e,
-            )
+            Error::SetCommitRangeError(range.map_or_else(|| "?".to_string(), String::from), e)
         })?;
         let mut commits: Vec<Commit> = revwalk
             .filter_map(|id| id.ok())

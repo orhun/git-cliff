@@ -267,7 +267,7 @@ impl Commit<'_> {
     /// `false`. Returns `true` otherwise.
     fn skip_commit(&self, parser: &CommitParser, protect_breaking: bool) -> bool {
         parser.skip.unwrap_or(false) &&
-            !(self.conv.as_ref().map(|c| c.breaking()).unwrap_or(false) && protect_breaking)
+            !(self.conv.as_ref().is_some_and(|c| c.breaking()) && protect_breaking)
     }
 
     /// Parses the commit using [`CommitParser`]s.
