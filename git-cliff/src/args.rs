@@ -362,8 +362,8 @@ pub struct Opt {
     /// Load TLS certificates from the native certificate store.
     #[arg(long, help_heading = Some("FLAGS"), hide = !cfg!(feature = "remote"))]
     pub use_native_tls: bool,
-    /// Use only local git history in actions
-    #[arg(long, help_heading = Some("FLAGS"))]
+    /// Disable network access for remote repositories.
+    #[arg(long, help_heading = Some("REMOTE OPTIONS"), hide = !cfg!(feature = "remote"))]
     pub offline: bool,
 }
 

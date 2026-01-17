@@ -65,6 +65,7 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
     --bitbucket-repo <OWNER/REPO>     Sets the Bitbucket repository [env: BITBUCKET_REPO=]
     --azure-devops-token <TOKEN>      Sets the Azure DevOps API token [env: AZURE_DEVOPS_TOKEN]
     --azure-devops-repo <OWNER/REPO>  Sets the Azure DevOps repository [env: AZURE_DEVOPS_REPO=]
+    --offline                         Disable network access for remote repositories
 ```
 
 ## Args
