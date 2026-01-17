@@ -248,10 +248,11 @@ macro_rules! update_release_metadata {
                         v.is_first_time = !commits
                             .iter()
                             .filter(|commit| {
-                                // if current release is unreleased no need to filter
-                                // commits or filter commits that are from
-                                // newer releases
-                                self.timestamp == None ||
+                                // If the current release is unreleased or we cannot
+                                // resolve the release commit timestamp, skip filtering
+                                // to avoid false positives.
+                                self.timestamp.is_none() ||
+                                    release_commit_timestamp.is_none() ||
                                     commit.timestamp() < release_commit_timestamp
                             })
                             .map(|v| v.username())
