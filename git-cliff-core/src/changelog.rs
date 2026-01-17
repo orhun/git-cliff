@@ -34,8 +34,15 @@ pub struct Changelog<'a> {
 impl<'a> Changelog<'a> {
     /// Constructs a new instance.
     pub fn new(releases: Vec<Release<'a>>, config: Config, range: Option<&str>) -> Result<Self> {
+        let is_offline = config.remote.offline;
         let mut changelog = Changelog::build(releases, config)?;
-        changelog.add_remote_data(range)?;
+
+        // Always add context, but only add data if we are running in online mode.
+        changelog.add_remote_context()?;
+        if !is_offline {
+            changelog.add_remote_data(range)?;
+        }
+
         changelog.process_commits()?;
         changelog.process_releases();
         Ok(changelog)
@@ -542,7 +549,6 @@ impl<'a> Changelog<'a> {
     #[allow(unused_variables)]
     pub fn add_remote_data(&mut self, range: Option<&str>) -> Result<()> {
         log::debug!("Adding remote data");
-        self.add_remote_context()?;
 
         // Determine the ref at which to fetch remote commits, based on the commit
         // range
@@ -954,6 +960,7 @@ mod test {
                 exclude_paths: Vec::new(),
             },
             remote: RemoteConfig {
+                offline: false,
                 github: Remote {
                     owner: String::from("coolguy"),
                     repo: String::from("awesome"),

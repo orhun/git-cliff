@@ -1,0 +1,38 @@
+# git-cliff ~ configuration file
+# https://git-cliff.org/docs/configuration
+
+[remote]
+# Should make us avoid all calls to external services
+offline = true
+
+# GitHub integration for fetching commit metadata.
+[remote.github]
+owner = "orhun"
+repo = "git-cliff-readme-example"
+
+[changelog]
+# A Tera template to be rendered for each release in the changelog.
+# See https://keats.github.io/tera/docs/#introduction
+body = """
+## What's Changed
+
+{%- if version %} in {{ version }}{%- endif -%}
+{% for commit in commits %}
+  * {{ commit.message | split(pat="\n") | first | trim }}\
+    {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif -%}
+    {% if commit.remote.pr_number %} in #{{ commit.remote.pr_number }}{%- endif %}
+{%- endfor -%}
+
+{% if version %}
+    {% if previous.version %}
+      **Full Changelog**: https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}/compare/{{ previous.version }}...{{ version }}
+    {% endif %}
+{% else -%}
+  {% raw %}\n{% endraw %}
+{% endif %}
+"""
+
+[git]
+# Parse commits according to the conventional commits specification.
+# See https://www.conventionalcommits.org
+conventional_commits = false

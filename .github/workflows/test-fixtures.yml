@@ -143,6 +143,7 @@ jobs:
           - fixtures-name: test-workdir-include-path
             command: v2.6.1..v2.7.0 --workdir .github/fixtures/
           - fixtures-name: test-fail-on-unmatched-commit
+          - fixtures-name: test-offline
 
     steps:
       - name: Checkout

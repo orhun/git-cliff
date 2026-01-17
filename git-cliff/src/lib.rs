@@ -654,6 +654,9 @@ pub fn run_with_changelog_modifier<'a>(
             .token
             .clone_from(&args.azure_devops_token);
     }
+    if args.offline {
+        config.remote.offline = args.offline;
+    }
     if let Some(ref remote) = args.github_repo {
         config.remote.github.owner = remote.0.owner.to_string();
         config.remote.github.repo = remote.0.repo.to_string();

@@ -177,6 +177,9 @@ mod serde_pattern {
 /// Remote configuration.
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct RemoteConfig {
+    /// Run in offline mode.
+    #[serde(default)]
+    pub offline: bool,
     /// GitHub remote.
     #[serde(default)]
     pub github: Remote,
