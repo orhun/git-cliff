@@ -6,9 +6,7 @@ owner = "orhun"
 repo = "git-cliff-readme-example"
 
 [changelog]
-body = """
-new_contributors: {{ github.contributors | filter(attribute="is_first_time", value=true) | length }}
-"""
+body = """new_contributors: {{ github.contributors | filter(attribute="is_first_time", value=true) | length }}"""
 
 [git]
 conventional_commits = false
