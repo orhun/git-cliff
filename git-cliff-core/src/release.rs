@@ -241,22 +241,28 @@ mod test {
             ("1.0.0", "2.0.0", vec!["feat!: add xyz", "feat: zzz"]),
             ("1.0.0", "2.0.0", vec!["feat!: add xyz\n", "feat: zzz\n"]),
             ("2.0.0", "2.0.1", vec!["fix: something"]),
-            ("foo/1.0.0", "foo/1.1.0", vec![
-                "feat: add xyz",
-                "fix: fix xyz",
-            ]),
-            ("bar/1.0.0", "bar/2.0.0", vec![
-                "fix: add xyz",
-                "fix!: aaaaaa",
-            ]),
-            ("zzz-123/test/1.0.0", "zzz-123/test/1.0.1", vec![
-                "fix: aaaaaa",
-            ]),
+            (
+                "foo/1.0.0",
+                "foo/1.1.0",
+                vec!["feat: add xyz", "fix: fix xyz"],
+            ),
+            (
+                "bar/1.0.0",
+                "bar/2.0.0",
+                vec!["fix: add xyz", "fix!: aaaaaa"],
+            ),
+            (
+                "zzz-123/test/1.0.0",
+                "zzz-123/test/1.0.1",
+                vec!["fix: aaaaaa"],
+            ),
             ("v100.0.0", "v101.0.0", vec!["feat!: something"]),
             ("v1.0.0-alpha.1", "v1.0.0-alpha.2", vec!["fix: minor"]),
-            ("testing/v1.0.0-beta.1", "testing/v1.0.0-beta.2", vec![
-                "feat: nice",
-            ]),
+            (
+                "testing/v1.0.0-beta.1",
+                "testing/v1.0.0-beta.2",
+                vec!["feat: nice"],
+            ),
             ("tauri-v1.5.4", "tauri-v1.6.0", vec!["feat: something"]),
             (
                 "rocket/rocket-v4.0.0-rc.1",
@@ -1103,44 +1109,89 @@ mod test {
         ];
         assert_eq!(expected_commits, release.commits);
 
-        release
-            .github
-            .contributors
-            .sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+        #[cfg(feature = "github")]
+        {
+            release
+                .github
+                .contributors
+                .sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
 
-        let expected_metadata = RemoteReleaseMetadata {
-            contributors: vec![
-                RemoteContributor {
-                    username: Some(String::from("orhun")),
-                    pr_title: Some(String::from("1")),
-                    pr_number: Some(1),
-                    pr_labels: vec![String::from("rust")],
-                    is_first_time: false,
-                },
-                RemoteContributor {
-                    username: Some(String::from("nuhro")),
-                    pr_title: None,
-                    pr_number: None,
-                    pr_labels: vec![],
-                    is_first_time: true,
-                },
-                RemoteContributor {
-                    username: Some(String::from("awesome_contributor")),
-                    pr_title: None,
-                    pr_number: None,
-                    pr_labels: vec![],
-                    is_first_time: true,
-                },
-                RemoteContributor {
-                    username: Some(String::from("someone")),
-                    pr_title: None,
-                    pr_number: None,
-                    pr_labels: vec![],
-                    is_first_time: true,
-                },
-            ],
-        };
-        assert_eq!(expected_metadata, release.gitlab);
+            let expected_metadata = RemoteReleaseMetadata {
+                contributors: vec![
+                    RemoteContributor {
+                        username: Some(String::from("orhun")),
+                        pr_title: Some(String::from("1")),
+                        pr_number: Some(1),
+                        pr_labels: vec![String::from("rust")],
+                        is_first_time: false,
+                    },
+                    RemoteContributor {
+                        username: Some(String::from("nuhro")),
+                        pr_title: None,
+                        pr_number: None,
+                        pr_labels: vec![],
+                        is_first_time: true,
+                    },
+                    RemoteContributor {
+                        username: Some(String::from("awesome_contributor")),
+                        pr_title: None,
+                        pr_number: None,
+                        pr_labels: vec![],
+                        is_first_time: true,
+                    },
+                    RemoteContributor {
+                        username: Some(String::from("someone")),
+                        pr_title: None,
+                        pr_number: None,
+                        pr_labels: vec![],
+                        is_first_time: true,
+                    },
+                ],
+            };
+            assert_eq!(expected_metadata, release.github);
+        }
+
+        #[cfg(feature = "gitlab")]
+        {
+            let expected_metadata = RemoteReleaseMetadata {
+                contributors: vec![
+                    RemoteContributor {
+                        username: Some(String::from("orhun")),
+                        pr_title: Some(String::from("1")),
+                        pr_number: Some(1),
+                        pr_labels: vec![String::from("rust")],
+                        is_first_time: false,
+                    },
+                    RemoteContributor {
+                        username: Some(String::from("nuhro")),
+                        pr_title: None,
+                        pr_number: None,
+                        pr_labels: vec![],
+                        is_first_time: true,
+                    },
+                    RemoteContributor {
+                        username: Some(String::from("awesome_contributor")),
+                        pr_title: None,
+                        pr_number: None,
+                        pr_labels: vec![],
+                        is_first_time: true,
+                    },
+                    RemoteContributor {
+                        username: Some(String::from("someone")),
+                        pr_title: None,
+                        pr_number: None,
+                        pr_labels: vec![],
+                        is_first_time: true,
+                    },
+                ],
+            };
+            assert_eq!(expected_metadata, release.gitlab);
+        }
+
+        #[cfg(not(feature = "gitlab"))]
+        {
+            assert!(release.gitlab.contributors.is_empty());
+        }
 
         Ok(())
     }

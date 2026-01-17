@@ -52,6 +52,18 @@ git cliff --github-token <TOKEN>
 
 Same applies for GitLab/Bitbucket with `--gitlab-token`/`--gitea-token`/`--bitbucket-token` and `GITLAB_TOKEN`/`GITEA_TOKEN`/`BITBUCKET_TOKEN` environment variables.
 
+For GitLab, tokens are resolved in the following order:
+
+- `GITLAB_TOKEN` or the `--gitlab-token` flag
+- Netrc (`$NETRC` if set, otherwise `~/.netrc`)
+- `remote.gitlab.token` from the configuration file
+
+The netrc entry should match the GitLab API host (derived from `remote.gitlab.api_url` or `GITLAB_API_URL`). A minimal entry looks like:
+
+```netrc
+machine gitlab.com login oauth2 password <token>
+```
+
 ### api_url
 
 Sets the API URL for a particular remote.

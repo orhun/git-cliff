@@ -1,7 +1,13 @@
+use std::env;
+use std::fs;
+use std::path::PathBuf;
+
 use async_stream::stream as async_stream;
 use futures::{Stream, StreamExt, stream};
 use reqwest_middleware::ClientWithMiddleware;
+use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
+use url::Url;
 
 use super::*;
 use crate::config::Remote;
@@ -15,6 +21,123 @@ pub const FINISHED_FETCHING_MSG: &str = "Done fetching GitLab data.";
 
 /// Template variables related to this remote.
 pub(crate) const TEMPLATE_VARIABLES: &[&str] = &["gitlab", "commit.gitlab", "commit.remote"];
+
+/// Resolve GitLab API token with priority `GITLAB_TOKEN` -> netrc -> config.
+pub fn gitlab_token(remote: &Remote) -> Result<Option<SecretString>> {
+    if let Ok(token) = env::var("GITLAB_TOKEN") {
+        return Ok(Some(SecretString::new(token)));
+    }
+
+    if let Some(host) = gitlab_host(remote) {
+        if let Some(token) = token_from_netrc(&host)? {
+            return Ok(Some(token));
+        }
+    }
+
+    Ok(remote.token.clone())
+}
+
+fn gitlab_host(remote: &Remote) -> Option<String> {
+    let api_url = env::var(GitLabClient::API_URL_ENV)
+        .ok()
+        .or_else(|| remote.api_url.clone())
+        .unwrap_or_else(|| GitLabClient::API_URL.to_string());
+    parse_host(&api_url)
+}
+
+fn parse_host(api_url: &str) -> Option<String> {
+    if let Ok(url) = Url::parse(api_url) {
+        if let Some(host) = url.host_str() {
+            return Some(host.to_string());
+        }
+    }
+
+    let trimmed = api_url
+        .trim_start_matches("https://")
+        .trim_start_matches("http://");
+    let host = trimmed.split('/').next().unwrap_or("").trim();
+    if host.is_empty() {
+        None
+    } else {
+        Some(host.to_string())
+    }
+}
+
+fn netrc_paths() -> Vec<PathBuf> {
+    if let Ok(custom) = env::var("NETRC") {
+        return vec![PathBuf::from(custom)];
+    }
+
+    let mut paths = Vec::new();
+    if let Some(home) = dirs::home_dir() {
+        paths.push(home.join(".netrc"));
+        #[cfg(windows)]
+        paths.push(home.join("_netrc"));
+    }
+    paths
+}
+
+fn token_from_netrc(host: &str) -> Result<Option<SecretString>> {
+    for path in netrc_paths() {
+        match fs::read_to_string(&path) {
+            Ok(contents) => {
+                if let Some(token) = parse_netrc(&contents, host) {
+                    return Ok(Some(SecretString::new(token)));
+                }
+            }
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(err) => {
+                log::debug!("Failed to read netrc file {}: {}", path.display(), err);
+                continue;
+            }
+        }
+    }
+    Ok(None)
+}
+
+fn parse_netrc(contents: &str, host: &str) -> Option<String> {
+    let tokens: Vec<String> = contents
+        .lines()
+        .map(|line| line.split('#').next().unwrap_or("").trim())
+        .filter(|line| !line.is_empty())
+        .flat_map(|line| line.split_whitespace().map(str::to_string))
+        .collect();
+
+    let mut i = 0;
+    let mut default_password: Option<String> = None;
+
+    while i < tokens.len() {
+        if tokens[i] == "machine" && i + 1 < tokens.len() {
+            let machine = tokens[i + 1].clone();
+            i += 2;
+
+            let mut password: Option<String> = None;
+
+            while i < tokens.len() {
+                match tokens[i].as_str() {
+                    "machine" => break,
+                    "password" if i + 1 < tokens.len() => {
+                        password = Some(tokens[i + 1].clone());
+                        i += 2;
+                    }
+                    _ => i += 1,
+                }
+            }
+
+            if machine == "default" {
+                default_password = password.clone().or(default_password);
+            }
+
+            if machine == host {
+                return password.or(default_password);
+            }
+        } else {
+            i += 1;
+        }
+    }
+
+    default_password
+}
 
 /// Representation of a single GitLab Project.
 ///
@@ -340,9 +463,29 @@ impl GitLabClient {
 }
 #[cfg(test)]
 mod test {
+    use std::env;
+    use std::fs;
+    use std::sync::Mutex;
+
+    use lazy_static::lazy_static;
     use pretty_assertions::assert_eq;
+    use secrecy::{ExposeSecret, SecretString};
+    use temp_dir::TempDir;
 
     use super::*;
+
+    lazy_static! {
+        static ref ENV_LOCK: Mutex<()> = Mutex::new(());
+    }
+
+    fn set_var(key: &str, value: &str) {
+        // Env var mutation is used for test isolation; safe in this single-threaded guard.
+        unsafe { env::set_var(key, value) }
+    }
+
+    fn remove_var(key: &str) {
+        unsafe { env::remove_var(key) }
+    }
 
     #[test]
     fn gitlab_project_url_encodes_owner() {
@@ -386,5 +529,151 @@ mod test {
             ..Default::default()
         };
         assert!(mr.merge_commit().is_some());
+    }
+
+    #[test]
+    fn gitlab_token_prefers_env_over_netrc_and_config() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let temp_dir = TempDir::new().unwrap();
+        let netrc_path = temp_dir.path().join("netrc");
+        fs::write(
+            &netrc_path,
+            "machine gitlab.com login oauth2 password netrc-token",
+        )
+        .unwrap();
+
+        let previous_netrc = env::var("NETRC").ok();
+        let previous_env = env::var("GITLAB_TOKEN").ok();
+        set_var("NETRC", netrc_path.to_str().unwrap());
+        set_var("GITLAB_TOKEN", "env-token");
+
+        let mut remote = Remote::new("owner", "repo");
+        remote.api_url = Some("https://gitlab.com/api/v4".into());
+        remote.token = Some(SecretString::new("config-token".into()));
+
+        let token = gitlab_token(&remote).unwrap().unwrap();
+        assert_eq!("env-token", token.expose_secret());
+
+        match previous_netrc {
+            Some(value) => set_var("NETRC", &value),
+            None => remove_var("NETRC"),
+        }
+        match previous_env {
+            Some(value) => set_var("GITLAB_TOKEN", &value),
+            None => remove_var("GITLAB_TOKEN"),
+        }
+    }
+
+    #[test]
+    fn gitlab_token_prefers_netrc_over_config() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let temp_dir = TempDir::new().unwrap();
+        let netrc_path = temp_dir.path().join("netrc");
+        fs::write(
+            &netrc_path,
+            "machine gitlab.com login gitlab-ci-token password netrc-token",
+        )
+        .unwrap();
+
+        let previous_netrc = env::var("NETRC").ok();
+        let previous_env = env::var("GITLAB_TOKEN").ok();
+        set_var("NETRC", netrc_path.to_str().unwrap());
+        remove_var("GITLAB_TOKEN");
+
+        let mut remote = Remote::new("owner", "repo");
+        remote.api_url = Some("https://gitlab.com/api/v4".into());
+        remote.token = Some(SecretString::new("config-token".into()));
+
+        let token = gitlab_token(&remote).unwrap().unwrap();
+        assert_eq!("netrc-token", token.expose_secret());
+
+        match previous_netrc {
+            Some(value) => set_var("NETRC", &value),
+            None => remove_var("NETRC"),
+        }
+        match previous_env {
+            Some(value) => set_var("GITLAB_TOKEN", &value),
+            None => remove_var("GITLAB_TOKEN"),
+        }
+    }
+
+    #[test]
+    fn gitlab_token_uses_custom_api_host() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let temp_dir = TempDir::new().unwrap();
+        let netrc_path = temp_dir.path().join("netrc");
+        fs::write(
+            &netrc_path,
+            "machine gitlab.example.com login oauth2 password scoped-token",
+        )
+        .unwrap();
+
+        let previous_netrc = env::var("NETRC").ok();
+        set_var("NETRC", netrc_path.to_str().unwrap());
+
+        let mut remote = Remote::new("owner", "repo");
+        remote.api_url = Some("https://gitlab.example.com/api/v4/".into());
+
+        let token = gitlab_token(&remote).unwrap().unwrap();
+        assert_eq!("scoped-token", token.expose_secret());
+
+        match previous_netrc {
+            Some(value) => set_var("NETRC", &value),
+            None => remove_var("NETRC"),
+        }
+    }
+
+    #[test]
+    fn gitlab_token_falls_back_to_config() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let previous_netrc = env::var("NETRC").ok();
+        let previous_env = env::var("GITLAB_TOKEN").ok();
+        remove_var("NETRC");
+        remove_var("GITLAB_TOKEN");
+
+        let mut remote = Remote::new("owner", "repo");
+        remote.token = Some(SecretString::new("config-token".into()));
+
+        let token = gitlab_token(&remote).unwrap().unwrap();
+        assert_eq!("config-token", token.expose_secret());
+
+        match previous_netrc {
+            Some(value) => set_var("NETRC", &value),
+            None => remove_var("NETRC"),
+        }
+        match previous_env {
+            Some(value) => set_var("GITLAB_TOKEN", &value),
+            None => remove_var("GITLAB_TOKEN"),
+        }
+    }
+
+    #[test]
+    fn gitlab_token_uses_default_machine_when_host_missing() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let temp_dir = TempDir::new().unwrap();
+        let netrc_path = temp_dir.path().join("netrc");
+        fs::write(
+            &netrc_path,
+            "machine default login oauth2 password default-token",
+        )
+        .unwrap();
+
+        let previous_netrc = env::var("NETRC").ok();
+        let previous_env = env::var("GITLAB_TOKEN").ok();
+        set_var("NETRC", netrc_path.to_str().unwrap());
+        remove_var("GITLAB_TOKEN");
+
+        let remote = Remote::new("owner", "repo");
+        let token = gitlab_token(&remote).unwrap().unwrap();
+        assert_eq!("default-token", token.expose_secret());
+
+        match previous_netrc {
+            Some(value) => set_var("NETRC", &value),
+            None => remove_var("NETRC"),
+        }
+        match previous_env {
+            Some(value) => set_var("GITLAB_TOKEN", &value),
+            None => remove_var("GITLAB_TOKEN"),
+        }
     }
 }
