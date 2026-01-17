@@ -105,6 +105,8 @@ jobs:
           - fixtures-name: test-tag-message
           - fixtures-name: test-bump-unreleased-with-tag-message-arg
             command: --bump --unreleased --with-tag-message "Some text"
+          - fixtures-name: test-unreleased-tag-missing-release-commit
+            command: --unreleased --tag 0.3.0
           - fixtures-name: test-from-context
             command: --from-context context.json
           - fixtures-name: test-from-context-does-not-discard-fields
