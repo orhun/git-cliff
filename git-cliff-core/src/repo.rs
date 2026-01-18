@@ -348,11 +348,17 @@ impl Repository {
                     cache_key,
                     v,
                 ) {
-                    log::error!("Failed to set cache for repo {:?}: {e}", self.path);
+                    #[allow(clippy::unnecessary_debug_formatting)]
+                    {
+                        log::error!("Failed to set cache for repo {:?}: {e}", self.path);
+                    }
                 }
             }
             Err(e) => {
-                log::error!("Failed to serialize cache for repo {:?}: {e}", self.path);
+                #[allow(clippy::unnecessary_debug_formatting)]
+                {
+                    log::error!("Failed to serialize cache for repo {:?}: {e}", self.path);
+                }
             }
         }
 

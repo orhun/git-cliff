@@ -519,7 +519,10 @@ impl Config {
         .filter_map(|v| v.as_ref())
         {
             if supported_path.exists() {
-                log::debug!("Using configuration file from: {supported_path:?}");
+                #[allow(clippy::unnecessary_debug_formatting)]
+                {
+                    log::debug!("Using configuration file from: {supported_path:?}");
+                }
                 return Some(supported_path.clone());
             }
         }
