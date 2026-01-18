@@ -658,28 +658,28 @@ pub fn run_with_changelog_modifier<'a>(
         config.remote.offline = args.offline;
     }
     if let Some(ref remote) = args.github_repo {
-        config.remote.github.owner = remote.0.owner.clone();
-        config.remote.github.repo = remote.0.repo.clone();
+        config.remote.github.owner.clone_from(&remote.0.owner);
+        config.remote.github.repo.clone_from(&remote.0.repo);
         config.remote.github.is_custom = true;
     }
     if let Some(ref remote) = args.gitlab_repo {
-        config.remote.gitlab.owner = remote.0.owner.clone();
-        config.remote.gitlab.repo = remote.0.repo.clone();
+        config.remote.gitlab.owner.clone_from(&remote.0.owner);
+        config.remote.gitlab.repo.clone_from(&remote.0.repo);
         config.remote.gitlab.is_custom = true;
     }
     if let Some(ref remote) = args.bitbucket_repo {
-        config.remote.bitbucket.owner = remote.0.owner.clone();
-        config.remote.bitbucket.repo = remote.0.repo.clone();
+        config.remote.bitbucket.owner.clone_from(&remote.0.owner);
+        config.remote.bitbucket.repo.clone_from(&remote.0.repo);
         config.remote.bitbucket.is_custom = true;
     }
     if let Some(ref remote) = args.gitea_repo {
-        config.remote.gitea.owner = remote.0.owner.clone();
-        config.remote.gitea.repo = remote.0.repo.clone();
+        config.remote.gitea.owner.clone_from(&remote.0.owner);
+        config.remote.gitea.repo.clone_from(&remote.0.repo);
         config.remote.gitea.is_custom = true;
     }
     if let Some(ref remote) = args.azure_devops_repo {
-        config.remote.azure_devops.owner = remote.0.owner.clone();
-        config.remote.azure_devops.repo = remote.0.repo.clone();
+        config.remote.azure_devops.owner.clone_from(&remote.0.owner);
+        config.remote.azure_devops.repo.clone_from(&remote.0.repo);
         config.remote.azure_devops.is_custom = true;
     }
     if args.no_exec {
