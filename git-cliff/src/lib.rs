@@ -171,9 +171,9 @@ pub fn init_config(name: Option<&str>, config_path: &Path) -> Result<()> {
     };
 
     log::info!(
-        "Saving the configuration file{} to {:?}",
+        "Saving the configuration file{} to {}",
         name.map(|v| format!(" ({v})")).unwrap_or_default(),
-        config_path
+        config_path.display(),
     );
 
     fs::write(config_path, contents)?;
@@ -579,6 +579,7 @@ pub fn run_with_changelog_modifier<'a>(
         );
         Config::load(&discovered_path)?
     } else {
+        #[allow(clippy::unnecessary_debug_formatting)]
         if !args.context {
             log::warn!(
                 "{:?} is not found, using the default configuration",
