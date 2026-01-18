@@ -3,9 +3,9 @@ use futures::{Stream, StreamExt, stream};
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{Deserialize, Serialize};
 
-use super::*;
+use super::{Debug, MAX_PAGE_SIZE, RemoteClient, RemoteCommit, RemotePullRequest};
 use crate::config::Remote;
-use crate::error::*;
+use crate::error::{Error, Result};
 
 /// Log message to show while fetching data from Gitea.
 pub const START_FETCHING_MSG: &str = "Retrieving data from Gitea...";
