@@ -163,7 +163,7 @@ impl GiteaClient {
         &'a self,
         ref_name: Option<&str>,
     ) -> impl Stream<Item = Result<Box<dyn RemoteCommit>>> + 'a {
-        let ref_name = ref_name.map(std::string::ToString::to_string);
+        let ref_name = ref_name.map(ToString::to_string);
         async_stream! {
             let page_stream = stream::iter(0..)
                 .map(|page| {

@@ -178,7 +178,7 @@ impl Repository {
             Error::SetCommitRangeError(range.map_or_else(|| "?".to_string(), String::from), e)
         })?;
         let mut commits: Vec<Commit> = revwalk
-            .filter_map(std::result::Result::ok)
+            .filter_map(StdResult::ok)
             .filter_map(|id| self.inner.find_commit(id).ok())
             .collect();
         if include_path.is_some() || exclude_path.is_some() {
