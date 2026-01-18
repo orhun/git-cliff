@@ -54,12 +54,12 @@ impl<'a> Changelog<'a> {
         Ok(Self {
             releases,
             header_template: match &config.changelog.header {
-                Some(header) => Some(Template::new("header", header.to_string(), trim)?),
+                Some(header) => Some(Template::new("header", header.clone(), trim)?),
                 None => None,
             },
             body_template: get_body_template(&config, trim)?,
             footer_template: match &config.changelog.footer {
-                Some(footer) => Some(Template::new("footer", footer.to_string(), trim)?),
+                Some(footer) => Some(Template::new("footer", footer.clone(), trim)?),
                 None => None,
             },
             config,
@@ -230,13 +230,13 @@ impl<'a> Changelog<'a> {
                 if let Some(version) = &release.version {
                     if skip_regex.is_some_and(|r| r.is_match(version)) {
                         skipped_tags.push(version.clone());
-                        log::debug!("Skipping release: {}", version);
+                        log::debug!("Skipping release: {version}");
                         return false;
                     }
                 }
                 if release.commits.is_empty() {
                     if let Some(version) = release.version.clone() {
-                        log::debug!("Release doesn't have any commits: {}", version);
+                        log::debug!("Release doesn't have any commits: {version}");
                     }
                     match &release.previous {
                         Some(prev_release) if prev_release.commits.is_empty() => {
@@ -247,7 +247,7 @@ impl<'a> Changelog<'a> {
                 }
                 true
             })
-            .map(|release| release.with_statistics())
+            .map(Release::with_statistics)
             .collect();
         for skipped_tag in &skipped_tags {
             if let Some(release_index) = self.releases.iter().position(|release| {
@@ -289,8 +289,7 @@ impl<'a> Changelog<'a> {
                 .contains_variable(github::TEMPLATE_VARIABLES) ||
             self.footer_template
                 .as_ref()
-                .map(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
-                .unwrap_or(false)
+                .is_some_and(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
         {
             let github_client = GitHubClient::try_from(self.config.remote.github.clone())?;
             log::info!(
@@ -340,8 +339,7 @@ impl<'a> Changelog<'a> {
                 .contains_variable(gitlab::TEMPLATE_VARIABLES) ||
             self.footer_template
                 .as_ref()
-                .map(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
-                .unwrap_or(false)
+                .is_some_and(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
         {
             let gitlab_client = GitLabClient::try_from(self.config.remote.gitlab.clone())?;
             log::info!(
@@ -357,7 +355,7 @@ impl<'a> Changelog<'a> {
                     let project_id = match tokio::join!(gitlab_client.get_project()) {
                         (Ok(project),) => project.id,
                         (Err(err),) => {
-                            log::error!("Failed to lookup project! {}", err);
+                            log::error!("Failed to lookup project: {err}");
                             return Err(err);
                         }
                     };
@@ -398,8 +396,7 @@ impl<'a> Changelog<'a> {
                 .contains_variable(gitea::TEMPLATE_VARIABLES) ||
             self.footer_template
                 .as_ref()
-                .map(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
-                .unwrap_or(false)
+                .is_some_and(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
         {
             let gitea_client = GiteaClient::try_from(self.config.remote.gitea.clone())?;
             log::info!(
@@ -452,8 +449,7 @@ impl<'a> Changelog<'a> {
                 .contains_variable(bitbucket::TEMPLATE_VARIABLES) ||
             self.footer_template
                 .as_ref()
-                .map(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
-                .unwrap_or(false)
+                .is_some_and(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
         {
             let bitbucket_client = BitbucketClient::try_from(self.config.remote.bitbucket.clone())?;
             log::info!(
@@ -504,8 +500,7 @@ impl<'a> Changelog<'a> {
                 .contains_variable(azure_devops::TEMPLATE_VARIABLES) ||
             self.footer_template
                 .as_ref()
-                .map(|v| v.contains_variable(azure_devops::TEMPLATE_VARIABLES))
-                .unwrap_or(false)
+                .is_some_and(|v| v.contains_variable(azure_devops::TEMPLATE_VARIABLES))
         {
             let azure_devops_client =
                 AzureDevOpsClient::try_from(self.config.remote.azure_devops.clone())?;
@@ -623,7 +618,7 @@ impl<'a> Changelog<'a> {
                 let next_version =
                     last_release.calculate_next_version_with_config(&self.config.bump)?;
                 log::debug!("Bumping the version to {next_version}");
-                last_release.version = Some(next_version.to_string());
+                last_release.version = Some(next_version.clone());
                 last_release.timestamp = Some(
                     SystemTime::now()
                         .duration_since(UNIX_EPOCH)?
@@ -783,7 +778,7 @@ mod test {
 				"#,
                 ),
                 footer: Some(String::from(
-                    r#"-- total releases: {{ releases | length }} --"#,
+                    r"-- total releases: {{ releases | length }} --",
                 )),
                 trim: true,
                 postprocessors: vec![TextProcessor {
@@ -1013,7 +1008,7 @@ mod test {
                     id: String::from("coffee"),
                     message: String::from("revert(app): skip this commit"),
                     committer: Signature {
-                        timestamp: 48704000,
+                        timestamp: 48_704_000,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1022,7 +1017,7 @@ mod test {
                     id: String::from("tea"),
                     message: String::from("feat(app): damn right"),
                     committer: Signature {
-                        timestamp: 48790400,
+                        timestamp: 48_790_400,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1031,7 +1026,7 @@ mod test {
                     id: String::from("0bc123"),
                     message: String::from("feat(app): add cool features"),
                     committer: Signature {
-                        timestamp: 48876800,
+                        timestamp: 48_876_800,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1040,7 +1035,7 @@ mod test {
                     id: String::from("000000"),
                     message: String::from("support unconventional commits"),
                     committer: Signature {
-                        timestamp: 48963200,
+                        timestamp: 48_963_200,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1049,7 +1044,7 @@ mod test {
                     id: String::from("0bc123"),
                     message: String::from("feat: support unscoped commits"),
                     committer: Signature {
-                        timestamp: 49049600,
+                        timestamp: 49_049_600,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1058,7 +1053,7 @@ mod test {
                     id: String::from("0werty"),
                     message: String::from("style(ui): make good stuff"),
                     committer: Signature {
-                        timestamp: 49136000,
+                        timestamp: 49_136_000,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1067,7 +1062,7 @@ mod test {
                     id: String::from("0w3rty"),
                     message: String::from("fix(ui): fix more stuff"),
                     committer: Signature {
-                        timestamp: 49222400,
+                        timestamp: 49_222_400,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1076,7 +1071,7 @@ mod test {
                     id: String::from("qw3rty"),
                     message: String::from("doc: update docs"),
                     committer: Signature {
-                        timestamp: 49308800,
+                        timestamp: 49_308_800,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1085,7 +1080,7 @@ mod test {
                     id: String::from("0bc123"),
                     message: String::from("docs: add some documentation"),
                     committer: Signature {
-                        timestamp: 49395200,
+                        timestamp: 49_395_200,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1094,7 +1089,7 @@ mod test {
                     id: String::from("0jkl12"),
                     message: String::from("chore(app): do nothing"),
                     committer: Signature {
-                        timestamp: 49481600,
+                        timestamp: 49_481_600,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1103,7 +1098,7 @@ mod test {
                     id: String::from("qwerty"),
                     message: String::from("chore: <preprocess>"),
                     committer: Signature {
-                        timestamp: 49568000,
+                        timestamp: 49_568_000,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1112,7 +1107,7 @@ mod test {
                     id: String::from("qwertz"),
                     message: String::from("feat!: support breaking commits"),
                     committer: Signature {
-                        timestamp: 49654400,
+                        timestamp: 49_654_400,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1121,7 +1116,7 @@ mod test {
                     id: String::from("qwert0"),
                     message: String::from("match(group): support regex-replace for groups"),
                     committer: Signature {
-                        timestamp: 49740800,
+                        timestamp: 49_740_800,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1130,7 +1125,7 @@ mod test {
                     id: String::from("coffee"),
                     message: String::from("revert(app): skip this commit"),
                     committer: Signature {
-                        timestamp: 49827200,
+                        timestamp: 49_827_200,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1139,7 +1134,7 @@ mod test {
                     id: String::from("footer"),
                     message: String::from("misc: use footer\n\nFooter: footer text"),
                     committer: Signature {
-                        timestamp: 49913600,
+                        timestamp: 49_913_600,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1147,7 +1142,7 @@ mod test {
             ],
             commit_range: None,
             commit_id: Some(String::from("0bc123")),
-            timestamp: Some(50000000),
+            timestamp: Some(50_000_000),
             previous: None,
             repository: Some(String::from("/root/repo")),
             submodule_commits: HashMap::from([(String::from("submodule_one"), vec![
@@ -1198,7 +1193,7 @@ mod test {
                     id: String::from("n0thin"),
                     message: String::from("feat(xyz): skip commit"),
                     committer: Signature {
-                        timestamp: 49913600,
+                        timestamp: 49_913_600,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1214,7 +1209,7 @@ mod test {
                         id: String::from("abc123"),
                         message: String::from("feat(app): add xyz"),
                         committer: Signature {
-                            timestamp: 49395200,
+                            timestamp: 49_395_200,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1223,7 +1218,7 @@ mod test {
                         id: String::from("abc124"),
                         message: String::from("docs(app): document zyx"),
                         committer: Signature {
-                            timestamp: 49481600,
+                            timestamp: 49_481_600,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1232,7 +1227,7 @@ mod test {
                         id: String::from("def789"),
                         message: String::from("merge #4"),
                         committer: Signature {
-                            timestamp: 49568000,
+                            timestamp: 49_568_000,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1241,7 +1236,7 @@ mod test {
                         id: String::from("dev063"),
                         message: String::from("feat(app)!: merge #5"),
                         committer: Signature {
-                            timestamp: 49654400,
+                            timestamp: 49_654_400,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1250,7 +1245,7 @@ mod test {
                         id: String::from("qwerty"),
                         message: String::from("fix(app): fix abc"),
                         committer: Signature {
-                            timestamp: 49740800,
+                            timestamp: 49_740_800,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1259,7 +1254,7 @@ mod test {
                         id: String::from("hjkl12"),
                         message: String::from("chore(ui): do boring stuff"),
                         committer: Signature {
-                            timestamp: 49827200,
+                            timestamp: 49_827_200,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1268,7 +1263,7 @@ mod test {
                         id: String::from("coffee2"),
                         message: String::from("revert(app): skip this commit"),
                         committer: Signature {
-                            timestamp: 49913600,
+                            timestamp: 49_913_600,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1326,7 +1321,7 @@ mod test {
         changelog.generate(&mut out)?;
         assert_eq!(
             String::from(
-                r#"# Changelog
+                r"# Changelog
 
 			## Release [v1.1.0] - 1970-01-01 - (/root/repo)
 
@@ -1404,7 +1399,7 @@ mod test {
 			- 12 commit(s) parsed as conventional.
 			- 0 linked issue(s) detected in commits.
 			-- total releases: 2 --
-			"#
+			"
             )
             .replace("			", ""),
             str::from_utf8(&out).unwrap_or_default()
@@ -1426,7 +1421,7 @@ mod test {
         changelog.generate(&mut out)?;
         assert_eq!(
             String::from(
-                r#"# Changelog
+                r"# Changelog
 
 			## Unreleased
 
@@ -1438,7 +1433,7 @@ mod test {
 			- 0 linked issue(s) detected in commits.
 			- -578 day(s) passed between releases.
 			-- total releases: 1 --
-			"#
+			"
             )
             .replace("			", ""),
             str::from_utf8(&out).unwrap_or_default()
@@ -1471,7 +1466,7 @@ feat(app): feature #3
 ",
             ),
             committer: Signature {
-                timestamp: 49827200,
+                timestamp: 49_827_200,
                 ..Default::default()
             },
             ..Default::default()
@@ -1485,7 +1480,7 @@ style: make awesome stuff look better
 ",
             ),
             committer: Signature {
-                timestamp: 49740800,
+                timestamp: 49_740_800,
                 ..Default::default()
             },
             ..Default::default()
@@ -1500,7 +1495,7 @@ chore(deps): fix broken deps
 ",
             ),
             committer: Signature {
-                timestamp: 49308800,
+                timestamp: 49_308_800,
                 ..Default::default()
             },
             ..Default::default()
@@ -1510,7 +1505,7 @@ chore(deps): fix broken deps
         changelog.generate(&mut out)?;
         assert_eq!(
             String::from(
-                r#"# Changelog
+                r"# Changelog
 
 			## Unreleased
 
@@ -1602,7 +1597,7 @@ chore(deps): fix broken deps
 			- 1 linked issue(s) detected in commits.
 			  - [#3](https://github.com/3) (referenced 1 time(s))
 			-- total releases: 2 --
-			"#
+			"
             )
             .replace("			", ""),
             str::from_utf8(&out).unwrap_or_default()
@@ -1629,7 +1624,7 @@ chore(deps): fix broken deps
         changelog.add_context("custom_field", "Hello")?;
         let mut out = Vec::new();
         changelog.generate(&mut out)?;
-        expect_test::expect![[r#"
+        expect_test::expect![[r"
     # Changelog
 
     ## Unreleased
@@ -1692,7 +1687,7 @@ chore(deps): fix broken deps
     #### ui
     - make good stuff
     -- total releases: 2 --
-"#]]
+"]]
         .assert_eq(str::from_utf8(&out).unwrap_or_default());
         Ok(())
     }

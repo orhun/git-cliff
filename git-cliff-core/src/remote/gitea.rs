@@ -129,7 +129,7 @@ impl GiteaClient {
         );
 
         if let Some(ref_name) = ref_name {
-            url.push_str(&format!("&sha={}", ref_name));
+            url.push_str(&format!("&sha={ref_name}"));
         }
 
         url
@@ -163,7 +163,7 @@ impl GiteaClient {
         &'a self,
         ref_name: Option<&str>,
     ) -> impl Stream<Item = Result<Box<dyn RemoteCommit>>> + 'a {
-        let ref_name = ref_name.map(|s| s.to_string());
+        let ref_name = ref_name.map(ToString::to_string);
         async_stream! {
             let page_stream = stream::iter(0..)
                 .map(|page| {
@@ -248,6 +248,6 @@ mod test {
             created: String::from("2021-07-18T15:14:39+03:00"),
         };
 
-        assert_eq!(Some(1626610479), remote_commit.timestamp());
+        assert_eq!(Some(1_626_610_479), remote_commit.timestamp());
     }
 }

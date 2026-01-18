@@ -172,11 +172,11 @@ pub trait RemoteClient {
         let response = self.client().get(url).send().await?;
         let response_text = if response.status().is_success() {
             let text = response.text().await?;
-            log::trace!("Response: {:?}", text);
+            log::trace!("Response: {text:?}");
             text
         } else {
             let text = response.text().await?;
-            log::error!("Request error: {}", text);
+            log::error!("Request error: {text}");
             text
         };
         Ok(serde_json::from_str::<T>(&response_text)?)

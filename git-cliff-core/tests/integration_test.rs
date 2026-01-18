@@ -307,7 +307,7 @@ fn generate_changelog() -> Result<()> {
     writeln!(out, "{}", changelog_config.footer.unwrap()).unwrap();
 
     assert_eq!(
-        r#"this is a changelog
+        r"this is a changelog
 
 ## Release v2.0.0 - 2023
 
@@ -344,7 +344,7 @@ abc123..hjdfas32
 - fix stuff
 - fix more stuff
 eoc - end of changelog
-"#,
+",
         out
     );
 

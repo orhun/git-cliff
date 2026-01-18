@@ -93,11 +93,13 @@ impl From<&Release<'_>> for Statistics {
         let days_passed_since_last_release = match release.previous.as_ref() {
             Some(prev) => release
                 .timestamp
-                .map(|ts| Utc.timestamp_opt(ts, 0))
-                .unwrap_or_else(|| {
-                    let now = Utc::now();
-                    Utc.timestamp_opt(now.timestamp(), 0)
-                })
+                .map_or_else(
+                    || {
+                        let now = Utc::now();
+                        Utc.timestamp_opt(now.timestamp(), 0)
+                    },
+                    |ts| Utc.timestamp_opt(ts, 0),
+                )
                 .single()
                 .zip(
                     prev.timestamp
@@ -155,7 +157,7 @@ mod test {
                 committer: Signature {
                     name: Some(String::from("John Doe")),
                     email: Some(String::from("john@doe.com")),
-                    timestamp: 1649201111,
+                    timestamp: 1_649_201_111,
                 },
                 ..Default::default()
             },
@@ -165,7 +167,7 @@ mod test {
                 committer: Signature {
                     name: Some(String::from("John Doe")),
                     email: Some(String::from("john@doe.com")),
-                    timestamp: 1649201112,
+                    timestamp: 1_649_201_112,
                 },
                 ..Default::default()
             },
@@ -175,7 +177,7 @@ mod test {
                 committer: Signature {
                     name: Some(String::from("John Doe")),
                     email: Some(String::from("john@doe.com")),
-                    timestamp: 1649201113,
+                    timestamp: 1_649_201_113,
                 },
                 ..Default::default()
             },
@@ -185,7 +187,7 @@ mod test {
                 committer: Signature {
                     name: Some(String::from("John Doe")),
                     email: Some(String::from("john@doe.com")),
-                    timestamp: 1649201114,
+                    timestamp: 1_649_201_114,
                 },
                 ..Default::default()
             },
@@ -197,7 +199,7 @@ mod test {
                 committer: Signature {
                     name: Some(String::from("John Doe")),
                     email: Some(String::from("john@doe.com")),
-                    timestamp: 1649287515,
+                    timestamp: 1_649_287_515,
                 },
                 ..Default::default()
             },
@@ -207,7 +209,7 @@ mod test {
                 committer: Signature {
                     name: Some(String::from("John Doe")),
                     email: Some(String::from("john@doe.com")),
-                    timestamp: 1649287516,
+                    timestamp: 1_649_287_516,
                 },
                 ..Default::default()
             },
@@ -217,7 +219,7 @@ mod test {
                 committer: Signature {
                     name: Some(String::from("John Doe")),
                     email: Some(String::from("john@doe.com")),
-                    timestamp: 1649287517,
+                    timestamp: 1_649_287_517,
                 },
                 ..Default::default()
             },
@@ -230,9 +232,9 @@ mod test {
             .collect();
         let release = Release {
             commits,
-            timestamp: Some(1649373910),
+            timestamp: Some(1_649_373_910),
             previous: Some(Box::new(Release {
-                timestamp: Some(1649201110),
+                timestamp: Some(1_649_201_110),
                 ..Default::default()
             })),
             repository: Some(String::from("/root/repo")),
@@ -262,15 +264,15 @@ mod test {
             committer: Signature {
                 name: Some(String::from("John Doe")),
                 email: Some(String::from("john@doe.com")),
-                timestamp: 1649201111,
+                timestamp: 1_649_201_111,
             },
             ..Default::default()
         }];
         let release = Release {
             commits,
-            timestamp: Some(1649373910),
+            timestamp: Some(1_649_373_910),
             previous: Some(Box::new(Release {
-                timestamp: Some(1649201110),
+                timestamp: Some(1_649_201_110),
                 ..Default::default()
             })),
             repository: Some(String::from("/root/repo")),
@@ -283,7 +285,7 @@ mod test {
         let commits = vec![];
         let release = Release {
             commits,
-            timestamp: Some(1649373910),
+            timestamp: Some(1_649_373_910),
             previous: None,
             repository: Some(String::from("/root/repo")),
             ..Default::default()

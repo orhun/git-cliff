@@ -39,8 +39,8 @@ pub struct Repository {
 pub struct SubmoduleRange {
     /// Repository object to which this range belongs.
     pub repository: Repository,
-    /// Commit range in "<first_submodule_commit>..<last_submodule_commit>" or
-    /// "<last_submodule_commit>" format.
+    /// Commit range in "FIRST..LAST" or "LAST" format, where FIRST is
+    /// the first submodule commit and LAST is the last submodule commit.
     pub range: String,
 }
 
@@ -132,6 +132,7 @@ impl Repository {
     ///
     /// In case of a submodule this is the relative path to the toplevel
     /// repository.
+    #[must_use]
     pub fn path(&self) -> &PathBuf {
         &self.path
     }
@@ -174,13 +175,10 @@ impl Repository {
         }
 
         Self::set_commit_range(&mut revwalk, range).map_err(|e| {
-            Error::SetCommitRangeError(
-                range.map(String::from).unwrap_or_else(|| "?".to_string()),
-                e,
-            )
+            Error::SetCommitRangeError(range.map_or_else(|| "?".to_string(), String::from), e)
         })?;
         let mut commits: Vec<Commit> = revwalk
-            .filter_map(|id| id.ok())
+            .filter_map(StdResult::ok)
             .filter_map(|id| self.inner.find_commit(id).ok())
             .collect();
         if include_path.is_some() || exclude_path.is_some() {
@@ -228,9 +226,9 @@ impl Repository {
                 Some(new_file_id.to_string())
             } else {
                 // submodule updated
-                Some(format!("{}..{}", old_file_id, new_file_id))
+                Some(format!("{old_file_id}..{new_file_id}"))
             };
-            log::trace!("Release commit range for submodules: {:?}", range);
+            log::trace!("Release commit range for submodules: {range:?}");
             delta.new_file().path().and_then(Path::to_str).zip(range)
         });
         // iterate through all path diffs and find corresponding submodule if
@@ -407,6 +405,7 @@ impl Repository {
     /// Returns the current tag.
     ///
     /// It is the same as running `git describe --tags`
+    #[must_use]
     pub fn current_tag(&self) -> Option<Tag> {
         self.inner
             .describe(DescribeOptions::new().describe_tags())
@@ -422,6 +421,7 @@ impl Repository {
     /// Returns the tag object of the given name.
     ///
     /// If given name doesn't exist, it still returns `Tag` with the given name.
+    #[must_use]
     pub fn resolve_tag(&self, name: &str) -> Tag {
         match self
             .inner
@@ -442,6 +442,7 @@ impl Repository {
     }
 
     /// Returns the commit object of the given ID.
+    #[must_use]
     pub fn find_commit(&self, id: &str) -> Option<Commit<'_>> {
         if let Ok(oid) = Oid::from_str(id) {
             if let Ok(commit) = self.inner.find_commit(oid) {
@@ -557,7 +558,7 @@ impl Repository {
 
 fn find_remote(url: &str) -> Result<Remote> {
     url_path_segments(url).or_else(|err| {
-        if url.contains("@") && url.contains(":") && url.contains("/") {
+        if url.contains('@') && url.contains(':') && url.contains('/') {
             ssh_path_segments(url)
         } else {
             Err(err)
@@ -569,7 +570,9 @@ fn find_remote(url: &str) -> Result<Remote> {
 ///
 /// This function expects the URL to be in the following format:
 ///
-/// > https://hostname/query/path.git
+/// ```text
+/// https://hostname/query/path.git
+/// ```
 fn url_path_segments(url: &str) -> Result<Remote> {
     let parsed_url = Url::parse(url.strip_suffix(".git").unwrap_or(url))?;
     let segments: Vec<&str> = parsed_url
@@ -601,14 +604,14 @@ fn ssh_path_segments(url: &str) -> Result<Remote> {
     let [_, owner_repo, ..] = url
         .strip_suffix(".git")
         .unwrap_or(url)
-        .split(":")
+        .split(':')
         .collect::<Vec<_>>()[..]
     else {
         return Err(Error::RepoError(String::from(
             "failed to get the owner and repo from ssh remote (:)",
         )));
     };
-    let [owner, repo] = owner_repo.split("/").collect::<Vec<_>>()[..] else {
+    let [owner, repo] = owner_repo.split('/').collect::<Vec<_>>()[..] else {
         return Err(Error::RepoError(String::from(
             "failed to get the owner and repo from ssh remote (/)",
         )));
@@ -822,7 +825,7 @@ mod test {
             .current_dir(temp_dir.path())
             .output()
             .expect("failed to execute git init");
-        assert!(output.status.success(), "git init failed {:?}", output);
+        assert!(output.status.success(), "git init failed {output:?}");
 
         let repo =
             Repository::discover(temp_dir.path().to_path_buf()).expect("failed to init repo");
@@ -833,8 +836,7 @@ mod test {
             .expect("failed to execute git config user.email");
         assert!(
             output.status.success(),
-            "git config user.email failed {:?}",
-            output
+            "git config user.email failed {output:?}",
         );
 
         let output = Command::new("git")
@@ -844,8 +846,7 @@ mod test {
             .expect("failed to execute git config user.name");
         assert!(
             output.status.success(),
-            "git config user.name failed {:?}",
-            output
+            "git config user.name failed {output:?}",
         );
 
         (repo, temp_dir)
@@ -1006,14 +1007,14 @@ mod test {
             .current_dir(&repo.path)
             .output()
             .expect("failed to execute git add");
-        assert!(output.status.success(), "git add failed {:?}", output);
+        assert!(output.status.success(), "git add failed {output:?}");
 
         let output = Command::new("git")
             .args(["commit", "--no-gpg-sign", "-m", "test commit"])
             .current_dir(&repo.path)
             .output()
             .expect("failed to execute git commit");
-        assert!(output.status.success(), "git commit failed {:?}", output);
+        assert!(output.status.success(), "git commit failed {output:?}");
 
         repo.inner
             .head()

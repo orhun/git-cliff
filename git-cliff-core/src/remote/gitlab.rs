@@ -214,12 +214,12 @@ impl GitLabClient {
     /// Constructs the URL for GitLab commits API.
     fn commits_url(project_id: i64, api_url: &str, ref_name: Option<&str>, page: i32) -> String {
         let mut url = format!(
-            "{}/projects/{}/repository/commits?per_page={MAX_PAGE_SIZE}&page={page}",
-            api_url, project_id
+            "{api_url}/projects/{project_id}/repository/commits?per_page={MAX_PAGE_SIZE}&\
+             page={page}"
         );
 
         if let Some(ref_name) = ref_name {
-            url.push_str(&format!("&ref_name={}", ref_name));
+            url.push_str(&format!("&ref_name={ref_name}"));
         }
 
         url
@@ -227,8 +227,8 @@ impl GitLabClient {
     /// Constructs the URL for GitLab merge requests API.
     fn pull_requests_url(project_id: i64, api_url: &str, page: i32) -> String {
         format!(
-            "{}/projects/{}/merge_requests?per_page={MAX_PAGE_SIZE}&page={page}&state=merged",
-            api_url, project_id
+            "{api_url}/projects/{project_id}/merge_requests?per_page={MAX_PAGE_SIZE}&page={page}&\
+             state=merged"
         )
     }
 
@@ -268,7 +268,7 @@ impl GitLabClient {
         project_id: i64,
         ref_name: Option<&str>,
     ) -> impl Stream<Item = Result<Box<dyn RemoteCommit>>> + 'a {
-        let ref_name = ref_name.map(|s| s.to_string());
+        let ref_name = ref_name.map(ToString::to_string);
         async_stream! {
                 // GitLab pages are 1-indexed
                 let page_stream = stream::iter(1..)
@@ -367,7 +367,7 @@ mod test {
             ..Default::default()
         };
 
-        assert_eq!(Some(1626610479), remote_commit.timestamp());
+        assert_eq!(Some(1_626_610_479), remote_commit.timestamp());
     }
 
     #[test]

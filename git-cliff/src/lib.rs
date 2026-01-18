@@ -212,7 +212,7 @@ fn process_repository<'a>(
         let count = count_tags.is_none_or(|r| {
             let count_tag = r.is_match(name);
             if count_tag {
-                log::debug!("Counting release: {}", name);
+                log::debug!("Counting release: {name}");
             }
             count_tag
         });
@@ -224,7 +224,7 @@ fn process_repository<'a>(
 
             let ignore_tag = r.is_match(name);
             if ignore_tag {
-                log::debug!("Ignoring release: {}", name);
+                log::debug!("Ignoring release: {name}");
             }
             ignore_tag
         });
@@ -236,29 +236,29 @@ fn process_repository<'a>(
         match repository.upstream_remote() {
             Ok(remote) => {
                 if !config.remote.github.is_set() {
-                    log::debug!("No GitHub remote is set, using remote: {}", remote);
+                    log::debug!("No GitHub remote is set, using remote: {remote}");
                     config.remote.github.owner = remote.owner;
                     config.remote.github.repo = remote.repo;
                     config.remote.github.is_custom = remote.is_custom;
                 } else if !config.remote.gitlab.is_set() {
-                    log::debug!("No GitLab remote is set, using remote: {}", remote);
+                    log::debug!("No GitLab remote is set, using remote: {remote}");
                     config.remote.gitlab.owner = remote.owner;
                     config.remote.gitlab.repo = remote.repo;
                     config.remote.gitlab.is_custom = remote.is_custom;
                 } else if !config.remote.gitea.is_set() {
-                    log::debug!("No Gitea remote is set, using remote: {}", remote);
+                    log::debug!("No Gitea remote is set, using remote: {remote}");
                     config.remote.gitea.owner = remote.owner;
                     config.remote.gitea.repo = remote.repo;
                     config.remote.gitea.is_custom = remote.is_custom;
                 } else if !config.remote.bitbucket.is_set() {
-                    log::debug!("No Bitbucket remote is set, using remote: {}", remote);
+                    log::debug!("No Bitbucket remote is set, using remote: {remote}");
                     config.remote.bitbucket.owner = remote.owner;
                     config.remote.bitbucket.repo = remote.repo;
                     config.remote.bitbucket.is_custom = remote.is_custom;
                 }
             }
             Err(e) => {
-                log::debug!("Failed to get remote from repository: {:?}", e);
+                log::debug!("Failed to get remote from repository: {e:?}");
             }
         }
     }
@@ -267,8 +267,8 @@ fn process_repository<'a>(
     }
 
     // Print debug information about configuration and arguments.
-    log::trace!("Arguments: {:#?}", args);
-    log::trace!("Config: {:#?}", config);
+    log::trace!("Arguments: {args:#?}");
+    log::trace!("Config: {config:#?}");
 
     // Parse commits.
     let commit_range = determine_commit_range(args, config, repository)?;
@@ -291,7 +291,7 @@ fn process_repository<'a>(
     if let Ok(root) = repository.root_path() {
         if cwd.starts_with(&root) &&
             cwd != root &&
-            args.repository.as_ref().is_none_or(|r| r.is_empty()) &&
+            args.repository.as_ref().is_none_or(Vec::is_empty) &&
             args.workdir.is_none() &&
             include_path.is_empty()
         {
@@ -334,7 +334,7 @@ fn process_repository<'a>(
                 }
             }
         } else {
-            releases[0].version = Some(tag.to_string());
+            releases[0].version = Some(tag.clone());
             releases[0].timestamp = Some(
                 SystemTime::now()
                     .duration_since(UNIX_EPOCH)?
@@ -351,12 +351,12 @@ fn process_repository<'a>(
     for git_commit in commits.iter().rev() {
         let release = releases.last_mut().unwrap();
         let commit = Commit::from(git_commit);
-        let commit_id = commit.id.to_string();
+        let commit_id = commit.id.clone();
         release.commits.push(commit);
         release.repository = Some(repository_path.clone());
         release.commit_id = Some(commit_id);
         if let Some(tag) = tags.get(release.commit_id.as_ref().unwrap()) {
-            release.version = Some(tag.name.to_string());
+            release.version = Some(tag.name.clone());
             release.message.clone_from(&tag.message);
             release.timestamp = if args.tag.as_deref() == Some(tag.name.as_str()) {
                 match tag_timestamp {
@@ -425,7 +425,7 @@ fn process_repository<'a>(
         // Set the previous release if the first tag is found.
         if let Some((commit_id, tag)) = first_tag {
             let previous_release = Release {
-                commit_id: Some(commit_id.to_string()),
+                commit_id: Some(commit_id.clone()),
                 version: Some(tag.name.clone()),
                 timestamp: Some(
                     repository
@@ -658,28 +658,28 @@ pub fn run_with_changelog_modifier<'a>(
         config.remote.offline = args.offline;
     }
     if let Some(ref remote) = args.github_repo {
-        config.remote.github.owner = remote.0.owner.to_string();
-        config.remote.github.repo = remote.0.repo.to_string();
+        config.remote.github.owner = remote.0.owner.clone();
+        config.remote.github.repo = remote.0.repo.clone();
         config.remote.github.is_custom = true;
     }
     if let Some(ref remote) = args.gitlab_repo {
-        config.remote.gitlab.owner = remote.0.owner.to_string();
-        config.remote.gitlab.repo = remote.0.repo.to_string();
+        config.remote.gitlab.owner = remote.0.owner.clone();
+        config.remote.gitlab.repo = remote.0.repo.clone();
         config.remote.gitlab.is_custom = true;
     }
     if let Some(ref remote) = args.bitbucket_repo {
-        config.remote.bitbucket.owner = remote.0.owner.to_string();
-        config.remote.bitbucket.repo = remote.0.repo.to_string();
+        config.remote.bitbucket.owner = remote.0.owner.clone();
+        config.remote.bitbucket.repo = remote.0.repo.clone();
         config.remote.bitbucket.is_custom = true;
     }
     if let Some(ref remote) = args.gitea_repo {
-        config.remote.gitea.owner = remote.0.owner.to_string();
-        config.remote.gitea.repo = remote.0.repo.to_string();
+        config.remote.gitea.owner = remote.0.owner.clone();
+        config.remote.gitea.repo = remote.0.repo.clone();
         config.remote.gitea.is_custom = true;
     }
     if let Some(ref remote) = args.azure_devops_repo {
-        config.remote.azure_devops.owner = remote.0.owner.to_string();
-        config.remote.azure_devops.repo = remote.0.repo.to_string();
+        config.remote.azure_devops.owner = remote.0.owner.clone();
+        config.remote.azure_devops.repo = remote.0.repo.clone();
         config.remote.azure_devops.is_custom = true;
     }
     if args.no_exec {
@@ -772,7 +772,7 @@ pub fn run_with_changelog_modifier<'a>(
             }
             for sha1 in skip_list {
                 config.git.commit_parsers.insert(0, CommitParser {
-                    sha: Some(sha1.to_string()),
+                    sha: Some(sha1.clone()),
                     skip: Some(true),
                     ..Default::default()
                 });
@@ -823,8 +823,7 @@ pub fn write_changelog<W: io::Write>(
         if let Some(tag_pattern) = &changelog.config.git.tag_pattern {
             if !tag_pattern.is_match(&next_version) {
                 return Err(Error::ChangelogError(format!(
-                    "Next version ({}) does not match the tag pattern: {}",
-                    next_version, tag_pattern
+                    "Next version ({next_version}) does not match the tag pattern: {tag_pattern}",
                 )));
             }
         }

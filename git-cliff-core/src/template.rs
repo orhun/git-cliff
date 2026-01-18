@@ -26,7 +26,7 @@ impl Template {
         if trim {
             content = content
                 .lines()
-                .map(|v| v.trim())
+                .map(str::trim)
                 .collect::<Vec<&str>>()
                 .join("\n");
         }
@@ -85,8 +85,7 @@ impl Template {
 
         let re = Regex::new(&from).map_err(|e| {
             tera::Error::msg(format!(
-                "Filter `replace_regex` received an invalid regex pattern: {}",
-                e
+                "Filter `replace_regex` received an invalid regex pattern: {e}"
             ))
         })?;
         Ok(tera::to_value(re.replace_all(&s, &to))?)
@@ -109,8 +108,7 @@ impl Template {
         };
         let re = Regex::new(&pat).map_err(|e| {
             tera::Error::msg(format!(
-                "Filter `find_regex` received an invalid regex pattern: {}",
-                e
+                "Filter `find_regex` received an invalid regex pattern: {e}"
             ))
         })?;
         let result: Vec<&str> = re.find_iter(&s).map(|mat| mat.as_str()).collect();
@@ -133,8 +131,7 @@ impl Template {
         };
         let re = Regex::new(&pat).map_err(|e| {
             tera::Error::msg(format!(
-                "Filter `split_regex` received an invalid regex pattern: {}",
-                e
+                "Filter `split_regex` received an invalid regex pattern: {e}"
             ))
         })?;
         let result: Vec<&str> = re.split(&s).collect();
@@ -306,12 +303,12 @@ mod test {
 
     #[test]
     fn render_template() -> Result<()> {
-        let template = r#"
+        let template = r"
 		## {{ version }} - <DATE>
 		{% for commit in commits %}
 		### {{ commit.group }}
 		- {{ commit.message | upper_first }}
-		{% endfor %}"#;
+		{% endfor %}";
         let mut template = Template::new("test", template.to_string(), false)?;
         let release = get_fake_release_data();
         assert_eq!(
@@ -345,9 +342,9 @@ mod test {
 
     #[test]
     fn render_trimmed_template() -> Result<()> {
-        let template = r#"
+        let template = r"
 		##  {{ version }}
-		"#;
+		";
         let template = Template::new("test", template.to_string(), true)?;
         let release = get_fake_release_data();
         assert_eq!(
