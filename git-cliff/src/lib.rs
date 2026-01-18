@@ -451,7 +451,7 @@ fn process_repository<'a>(
                     release.commits.last().unwrap(),
                     release.commits.first().unwrap(),
                 ),
-            })
+            });
         }
         if recurse_submodules {
             process_submodules(repository, release, config.git.topo_order_commits)?;
