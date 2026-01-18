@@ -592,8 +592,8 @@ fn url_path_segments(url: &str) -> Result<Remote> {
         )));
     };
     Ok(Remote {
-        owner: owner.to_string(),
-        repo: repo.to_string(),
+        owner: (*owner).to_string(),
+        repo: (*repo).to_string(),
         token: None,
         is_custom: false,
         api_url: None,
