@@ -923,7 +923,7 @@ mod test {
                 format!("{error:?}").contains(
                     format!("could not find repository at '{}'", path.display()).as_str()
                 )
-            )
+            );
         }
     }
 
@@ -993,7 +993,7 @@ mod test {
                 format!("{error:?}").contains(
                     format!("could not find repository at '{}'", path.display()).as_str()
                 )
-            )
+            );
         }
     }
 
