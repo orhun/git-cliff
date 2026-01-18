@@ -280,7 +280,6 @@ impl Commit<'_> {
     ///
     /// [`group`]: Commit::group
     /// [`scope`]: Commit::scope
-    #[allow(clippy::too_many_lines)]
     pub fn parse(
         mut self,
         parsers: &[CommitParser],
@@ -770,7 +769,6 @@ Refs: #123
     }
 
     #[test]
-    #[allow(clippy::too_many_lines)]
     fn parse_commit_field() -> Result<()> {
         let mut commit = Commit::new(
             String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),

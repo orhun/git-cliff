@@ -741,7 +741,6 @@ mod test {
         Bump, ChangelogConfig, CommitParser, LinkParser, Remote, RemoteConfig, TextProcessor,
     };
 
-    #[allow(clippy::too_many_lines)]
     fn get_test_data() -> (Config, Vec<Release<'static>>) {
         let config = Config {
             changelog: ChangelogConfig {
@@ -1437,7 +1436,6 @@ mod test {
     }
 
     #[test]
-    #[allow(clippy::too_many_lines)]
     fn changelog_generator_split_commits() -> Result<()> {
         let (mut config, mut releases) = get_test_data();
         config.git.split_commits = true;

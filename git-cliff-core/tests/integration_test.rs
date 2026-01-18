@@ -10,7 +10,6 @@ use pretty_assertions::assert_eq;
 use regex::Regex;
 
 #[test]
-#[allow(clippy::too_many_lines)]
 fn generate_changelog() -> Result<()> {
     let changelog_config = ChangelogConfig {
         header: Some(String::from("this is a changelog")),
