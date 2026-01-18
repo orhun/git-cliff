@@ -159,10 +159,10 @@ impl GiteaClient {
         self.get_pull_request_stream().try_collect().await
     }
 
-    fn get_commit_stream<'a>(
-        &'a self,
+    fn get_commit_stream(
+        &self,
         ref_name: Option<&str>,
-    ) -> impl Stream<Item = Result<Box<dyn RemoteCommit>>> + 'a {
+    ) -> impl Stream<Item = Result<Box<dyn RemoteCommit>>> + '_ {
         let ref_name = ref_name.map(ToString::to_string);
         async_stream! {
             let page_stream = stream::iter(0..)
@@ -197,9 +197,9 @@ impl GiteaClient {
         }
     }
 
-    fn get_pull_request_stream<'a>(
-        &'a self,
-    ) -> impl Stream<Item = Result<Box<dyn RemotePullRequest>>> + 'a {
+    fn get_pull_request_stream(
+        &self,
+    ) -> impl Stream<Item = Result<Box<dyn RemotePullRequest>>> + '_ {
         async_stream! {
         let page_stream = stream::iter(0..)
             .map(|page| async move {
