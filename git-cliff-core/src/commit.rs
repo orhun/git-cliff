@@ -487,6 +487,8 @@ impl Serialize for Commit<'_> {
         commit.serialize_field("gitea", &self.gitea)?;
         #[cfg(feature = "bitbucket")]
         commit.serialize_field("bitbucket", &self.bitbucket)?;
+        #[cfg(feature = "azure_devops")]
+        commit.serialize_field("azure_devops", &self.azure_devops)?;
         if let Some(remote) = &self.remote {
             commit.serialize_field("remote", remote)?;
         }

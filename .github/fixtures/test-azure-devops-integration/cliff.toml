@@ -24,11 +24,11 @@ body = """
     {%- endif %}
 {%- endfor -%}
 
-{% if azureDevops.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
+{% if azure_devops.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
   {% raw %}\n{% endraw -%}
   ### New Contributors
 {%- endif %}\
-{% for contributor in azureDevops.contributors | filter(attribute="is_first_time", value=true) %}
+{% for contributor in azure_devops.contributors | filter(attribute="is_first_time", value=true) %}
   * @{{ contributor.username }} made their first contribution
     {%- if contributor.pr_number %} in \
       [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pullrequest/{{ contributor.pr_number }}) \
