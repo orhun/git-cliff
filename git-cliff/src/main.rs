@@ -49,8 +49,12 @@ fn main() -> Result<()> {
     // Generate a changelog.
     let changelog = git_cliff::run(args.clone())?;
 
-    // Get output file.
-    let out: Box<dyn io::Write> = if let Some(path) = &args.output {
+    // Get output destination.
+    let output = args
+        .output
+        .clone()
+        .or(changelog.config.changelog.output.clone());
+    let out: Box<dyn io::Write> = if let Some(path) = &output {
         if path == Path::new("-") {
             Box::new(io::stdout())
         } else {
