@@ -145,12 +145,6 @@ This will result in:
 
 For each release, following contributors data is added to the [template context](/docs/templating/context) as a nested object:
 
-:::warning
-
-Note that for contributors, the template variable is `azureDevops` (camelCase), not `azure_devops`. This is different from the remote configuration which uses `remote.azure_devops`.
-
-:::
-
 ```json
 {
   "version": "v1.4.0",
@@ -158,7 +152,7 @@ Note that for contributors, the template variable is `azureDevops` (camelCase), 
   "commit_id": "0af9eb24888d1a8c9b2887fbe5427985582a0f26",
   "timestamp": 0,
   "previous": null,
-  "azureDevops": {
+  "azure_devops": {
     "contributors": [
       {
         "username": "orhun",
@@ -182,7 +176,7 @@ Note that for contributors, the template variable is `azureDevops` (camelCase), 
 This can be used in the template as follows:
 
 ```
-{% for contributor in azureDevops.contributors | filter(attribute="is_first_time", value=true) %}
+{% for contributor in azure_devops.contributors | filter(attribute="is_first_time", value=true) %}
   * @{{ contributor.username }} made their first contribution in #{{ contributor.pr_number }}
 {%- endfor -%}
 ```
