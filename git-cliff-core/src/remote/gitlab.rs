@@ -7,12 +7,6 @@ use super::*;
 use crate::config::Remote;
 use crate::error::*;
 
-/// Log message to show while fetching data from GitLab.
-pub const START_FETCHING_MSG: &str = "Retrieving data from GitLab...";
-
-/// Log message to show when done fetching from GitLab.
-pub const FINISHED_FETCHING_MSG: &str = "Done fetching GitLab data.";
-
 /// Template variables related to this remote.
 pub(crate) const TEMPLATE_VARIABLES: &[&str] = &["gitlab", "commit.gitlab", "commit.remote"];
 
@@ -233,6 +227,7 @@ impl GitLabClient {
     }
 
     /// Looks up the project details.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub async fn get_project(&self) -> Result<GitLabProject> {
         let url = Self::project_url(&self.api_url(), &self.remote());
         self.get_json::<GitLabProject>(&url).await
@@ -241,6 +236,7 @@ impl GitLabClient {
     /// Fetches the complete list of commits.
     /// This is inefficient for large repositories; consider using
     /// `get_commit_stream` instead.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub async fn get_commits(
         &self,
         project_id: i64,
@@ -255,6 +251,7 @@ impl GitLabClient {
     /// Fetches the complete list of pull requests.
     /// This is inefficient for large repositories; consider using
     /// `get_pull_request_stream` instead.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub async fn get_pull_requests(
         &self,
         project_id: i64,
