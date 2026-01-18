@@ -18,6 +18,9 @@ fn main() -> Result<()> {
     let mut buffer = Vec::<u8>::new();
     man.render(&mut buffer)?;
     fs::write(&out_path, buffer)?;
-    println!("Man page is generated at {out_path:?}");
+    #[allow(clippy::unnecessary_debug_formatting)]
+    {
+        println!("Man page is generated at {out_path:?}");
+    }
     Ok(())
 }

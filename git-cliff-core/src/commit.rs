@@ -321,7 +321,7 @@ impl Commit<'_> {
                                 match item {
                                     Value::String(s) => values.push(s.clone()),
                                     Value::Number(_) | Value::Bool(_) | Value::Null => {
-                                        values.push(item.to_string())
+                                        values.push(item.to_string());
                                     }
                                     _ => continue,
                                 }
