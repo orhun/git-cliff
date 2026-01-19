@@ -107,7 +107,7 @@ impl Summary {
 
 #[cfg(test)]
 mod test {
-    use std::io::{Error as StdIoError, ErrorKind as StdIoErrorKind};
+    use std::io::Error as StdIoError;
 
     use git_conventional::Commit;
 
@@ -116,10 +116,7 @@ mod test {
 
     #[test]
     fn commit_processing_error_kind_from_app_error() {
-        let err = AppError::IoError(StdIoError::new(
-            StdIoErrorKind::Other,
-            "something went wrong",
-        ));
+        let err = AppError::IoError(StdIoError::other("something went wrong".to_string()));
         let kind = CommitProcessingErrorKind::from(&err);
         assert_eq!(kind, CommitProcessingErrorKind::Io);
 
