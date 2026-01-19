@@ -96,14 +96,7 @@ impl<'a> Changelog<'a> {
             Err(e) => {
                 let short_id = commit.id.chars().take(7).collect::<String>();
                 let summary = commit.message.lines().next().unwrap_or_default().trim();
-                match &e {
-                    Error::ParseError(_) | Error::FieldError(_) => {
-                        log::warn!("{short_id} - {e} ({summary})");
-                    }
-                    _ => {
-                        log::trace!("{short_id} - {e} ({summary})");
-                    }
-                }
+                log::trace!("{short_id} - {e} ({summary})");
                 None
             }
         }
