@@ -143,6 +143,45 @@ mod test {
         let err = AppError::GroupError("Skipping commit due to config".into());
         let kind = CommitProcessingErrorKind::from(&err);
         assert_eq!(kind, CommitProcessingErrorKind::Skipped);
+
+        let err = AppError::UnmatchedCommitsError(1);
+        let kind = CommitProcessingErrorKind::from(&err);
+        assert_eq!(kind, CommitProcessingErrorKind::Other);
+    }
+
+    #[test]
+    fn commit_processing_error_kind_from_app_error_owned() {
+        let err = AppError::IoError(StdIoError::other("something went wrong".to_string()));
+        let kind: CommitProcessingErrorKind = err.into();
+        assert_eq!(kind, CommitProcessingErrorKind::Io);
+
+        let err = Commit::parse("")
+            .map_err(AppError::ParseError)
+            .expect_err("expected parse error");
+        let kind: CommitProcessingErrorKind = err.into();
+        assert_eq!(kind, CommitProcessingErrorKind::Parse);
+
+        let err = serde_json::from_str::<serde_json::Value>("{ invalid json }")
+            .map_err(AppError::from)
+            .expect_err("expected JSON parse error");
+        let kind: CommitProcessingErrorKind = err.into();
+        assert_eq!(kind, CommitProcessingErrorKind::Json);
+
+        let err = AppError::FieldError("missing field".into());
+        let kind: CommitProcessingErrorKind = err.into();
+        assert_eq!(kind, CommitProcessingErrorKind::Field);
+
+        let err = AppError::GroupError("no matching group".into());
+        let kind: CommitProcessingErrorKind = err.into();
+        assert_eq!(kind, CommitProcessingErrorKind::Group);
+
+        let err = AppError::GroupError("Skipping commit due to config".into());
+        let kind: CommitProcessingErrorKind = err.into();
+        assert_eq!(kind, CommitProcessingErrorKind::Skipped);
+
+        let err = AppError::UnmatchedCommitsError(1);
+        let kind: CommitProcessingErrorKind = err.into();
+        assert_eq!(kind, CommitProcessingErrorKind::Other);
     }
 
     #[test]
