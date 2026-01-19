@@ -107,5 +107,119 @@ impl Summary {
 
 #[cfg(test)]
 mod test {
-    // TODO: Implement unit tests.
+    use std::io::{Error as StdIoError, ErrorKind as StdIoErrorKind};
+
+    use git_conventional::Commit;
+
+    use super::*;
+    use crate::error::Error as AppError;
+
+    #[test]
+    fn commit_processing_error_kind_from_app_error() {
+        let err = AppError::IoError(StdIoError::new(
+            StdIoErrorKind::Other,
+            "something went wrong",
+        ));
+        let kind = CommitProcessingErrorKind::from(&err);
+        assert_eq!(kind, CommitProcessingErrorKind::Io);
+
+        let err = Commit::parse("")
+            .map_err(AppError::ParseError)
+            .expect_err("expected parse error");
+        let kind = CommitProcessingErrorKind::from(&err);
+        assert_eq!(kind, CommitProcessingErrorKind::Parse);
+
+        let err = serde_json::from_str::<serde_json::Value>("{ invalid json }")
+            .map_err(AppError::from)
+            .expect_err("expected JSON parse error");
+        let kind = CommitProcessingErrorKind::from(&err);
+        assert_eq!(kind, CommitProcessingErrorKind::Json);
+
+        let err = AppError::FieldError("missing field".into());
+        let kind = CommitProcessingErrorKind::from(&err);
+        assert_eq!(kind, CommitProcessingErrorKind::Field);
+
+        let err = AppError::GroupError("no matching group".into());
+        let kind = CommitProcessingErrorKind::from(&err);
+        assert_eq!(kind, CommitProcessingErrorKind::Group);
+
+        let err = AppError::GroupError("Skipping commit due to config".into());
+        let kind = CommitProcessingErrorKind::from(&err);
+        assert_eq!(kind, CommitProcessingErrorKind::Skipped);
+    }
+
+    #[test]
+    fn commit_processing_error_kind_should_warn_or_not() {
+        assert!(CommitProcessingErrorKind::Io.should_warn());
+        assert!(CommitProcessingErrorKind::Parse.should_warn());
+        assert!(CommitProcessingErrorKind::Json.should_warn());
+        assert!(CommitProcessingErrorKind::Field.should_warn());
+        assert!(CommitProcessingErrorKind::Group.should_warn());
+        assert!(!CommitProcessingErrorKind::Skipped.should_warn());
+        assert!(CommitProcessingErrorKind::Other.should_warn());
+    }
+
+    #[test]
+    fn commit_processing_error_kind_display_is_human_readable() {
+        let kind = CommitProcessingErrorKind::Io;
+        let s = kind.to_string();
+        assert!(!s.is_empty());
+
+        let kind = CommitProcessingErrorKind::Parse;
+        let s = kind.to_string();
+        assert!(!s.is_empty());
+
+        let kind = CommitProcessingErrorKind::Json;
+        let s = kind.to_string();
+        assert!(!s.is_empty());
+
+        let kind = CommitProcessingErrorKind::Field;
+        let s = kind.to_string();
+        assert!(!s.is_empty());
+
+        let kind = CommitProcessingErrorKind::Group;
+        let s = kind.to_string();
+        assert!(!s.is_empty());
+
+        let kind = CommitProcessingErrorKind::Skipped;
+        let s = kind.to_string();
+        assert!(!s.is_empty());
+
+        let kind = CommitProcessingErrorKind::Other;
+        let s = kind.to_string();
+        assert!(!s.is_empty());
+    }
+
+    #[test]
+    fn summary_record_ok_increments_processed_only() {
+        let mut summary = Summary::default();
+        summary.record_ok();
+        assert_eq!(summary.processed, 1);
+        assert!(summary.by_kind.is_empty());
+    }
+
+    #[test]
+    fn summary_record_err_increments_processed_and_error_kind() {
+        let mut summary = Summary::default();
+        let err = AppError::FieldError("missing field".into());
+        summary.record_err(&err);
+        assert_eq!(summary.processed, 1);
+        assert_eq!(
+            summary.by_kind.get(&CommitProcessingErrorKind::Field),
+            Some(&1)
+        );
+    }
+
+    #[test]
+    fn summary_record_err_accumulates_same_kind() {
+        let mut summary = Summary::default();
+        let err = AppError::FieldError("missing field".into());
+        summary.record_err(&err);
+        summary.record_err(&err);
+        assert_eq!(summary.processed, 2);
+        assert_eq!(
+            summary.by_kind.get(&CommitProcessingErrorKind::Field),
+            Some(&2)
+        );
+    }
 }
