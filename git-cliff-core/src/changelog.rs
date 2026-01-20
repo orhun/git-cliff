@@ -219,11 +219,10 @@ impl<'a> Changelog<'a> {
             }
         }
 
-        log::info!(
+        log::debug!(
             "Processed {} commit(s) in total (`split_commits` option may cause duplicates)",
             summary.processed
         );
-
         for (&kind, &count) in &summary.by_kind {
             if count == 0 {
                 continue;
@@ -235,7 +234,7 @@ impl<'a> Changelog<'a> {
             if kind.should_warn() {
                 log::warn!("{message}");
             } else {
-                log::info!("{message}");
+                log::debug!("{message}");
             }
         }
 
