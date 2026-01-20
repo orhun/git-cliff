@@ -283,7 +283,6 @@ impl Commit<'_> {
         filter: bool,
     ) -> Result<Self> {
         let lookup_context = serde_json::to_value(&self).map_err(|e| {
-            // TODO: This should be updated as a JsonError?
             AppError::FieldError(format!("failed to convert context into value: {e}",))
         })?;
         for parser in parsers {
