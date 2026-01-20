@@ -617,7 +617,7 @@ mod tests {
         Ok(())
     }
 
-        #[test]
+    #[test]
     fn pre_release_option_parser() -> Result<(), clap::Error> {
         let pre_release_option_parser = PreReleaseOptionParser;
         assert_eq!(
