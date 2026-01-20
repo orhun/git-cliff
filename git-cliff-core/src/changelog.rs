@@ -228,8 +228,7 @@ impl<'a> Changelog<'a> {
                 continue;
             }
             let message = format!(
-                "{count} commit(s) were skipped due to {kind}(s) (run with `--verbose` for \
-                 details)",
+                "{count} commit(s) were skipped due to {kind}(s) (run with `-vv` for details)",
             );
             if kind.should_warn() {
                 log::warn!("{message}");
