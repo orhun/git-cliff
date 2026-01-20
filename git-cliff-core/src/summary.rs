@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use std::fmt::Display;
 
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
 use crate::error::Error as AppError;
@@ -88,7 +88,7 @@ pub struct Summary {
     ///
     /// Each entry represents how many commits fell into a particular
     /// [`CommitProcessingErrorKind`] during processing.
-    pub by_kind: HashMap<CommitProcessingErrorKind, usize>,
+    pub by_kind: IndexMap<CommitProcessingErrorKind, usize>,
 }
 
 impl Summary {
