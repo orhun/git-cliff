@@ -16,6 +16,7 @@ use crate::remote::gitea::GiteaClient;
 use crate::remote::github::GitHubClient;
 #[cfg(feature = "gitlab")]
 use crate::remote::gitlab::GitLabClient;
+use crate::summary::Summary;
 use crate::template::Template;
 
 /// Changelog generator.
@@ -90,10 +91,18 @@ impl<'a> Changelog<'a> {
     }
 
     /// Processes a single commit and returns/logs the result.
-    fn process_commit(commit: &Commit<'a>, git_config: &GitConfig) -> Option<Commit<'a>> {
+    fn process_commit(
+        commit: &Commit<'a>,
+        git_config: &GitConfig,
+        summary: &mut Summary,
+    ) -> Option<Commit<'a>> {
         match commit.process(git_config) {
-            Ok(commit) => Some(commit),
+            Ok(commit) => {
+                summary.record_ok();
+                Some(commit)
+            }
             Err(e) => {
+                summary.record_err(&e);
                 let short_id = commit.id.chars().take(7).collect::<String>();
                 let summary = commit.message.lines().next().unwrap_or_default().trim();
                 log::trace!("{short_id} - {e} ({summary})");
@@ -159,31 +168,32 @@ impl<'a> Changelog<'a> {
         Ok(())
     }
 
-    fn process_commit_list(commits: &mut Vec<Commit<'a>>, git_config: &GitConfig) -> Result<()> {
-        *commits = commits
-            .iter()
-            .filter_map(|commit| Self::process_commit(commit, git_config))
-            .flat_map(|commit| {
+    fn process_commit_list(
+        commits: &mut Vec<Commit<'a>>,
+        git_config: &GitConfig,
+        summary: &mut Summary,
+    ) -> Result<()> {
+        let mut processed = Vec::new();
+        for commit in commits.iter() {
+            if let Some(commit) = Self::process_commit(commit, git_config, summary) {
                 if git_config.split_commits {
-                    commit
-                        .message
-                        .lines()
-                        .filter_map(|line| {
-                            let mut c = commit.clone();
-                            c.message = line.to_string();
-                            c.links.clear();
-                            if c.message.is_empty() {
-                                None
-                            } else {
-                                Self::process_commit(&c, git_config)
-                            }
-                        })
-                        .collect()
+                    for line in commit.message.lines() {
+                        let mut c = commit.clone();
+                        c.message = line.to_string();
+                        c.links.clear();
+                        if c.message.is_empty() {
+                            continue;
+                        }
+                        if let Some(c) = Self::process_commit(&c, git_config, summary) {
+                            processed.push(c);
+                        }
+                    }
                 } else {
-                    vec![commit]
+                    processed.push(commit);
                 }
-            })
-            .collect::<Vec<Commit>>();
+            }
+        }
+        *commits = processed;
 
         if git_config.require_conventional {
             Self::check_conventional_commits(commits)?;
@@ -200,12 +210,33 @@ impl<'a> Changelog<'a> {
     /// criteria set by configuration file.
     fn process_commits(&mut self) -> Result<()> {
         log::debug!("Processing the commits");
+
+        let mut summary = Summary::default();
         for release in self.releases.iter_mut() {
-            Self::process_commit_list(&mut release.commits, &self.config.git)?;
+            Self::process_commit_list(&mut release.commits, &self.config.git, &mut summary)?;
             for submodule_commits in release.submodule_commits.values_mut() {
-                Self::process_commit_list(submodule_commits, &self.config.git)?;
+                Self::process_commit_list(submodule_commits, &self.config.git, &mut summary)?;
             }
         }
+
+        log::debug!(
+            "Processed {} commit(s) in total (`split_commits` option may cause duplicates)",
+            summary.processed
+        );
+        for (&kind, &count) in &summary.by_kind {
+            if count == 0 {
+                continue;
+            }
+            let message = format!(
+                "{count} commit(s) were skipped due to {kind}(s) (run with `-vv` for details)",
+            );
+            if kind.should_warn() {
+                log::warn!("{message}");
+            } else {
+                log::debug!("{message}");
+            }
+        }
+
         Ok(())
     }
 
