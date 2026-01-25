@@ -519,7 +519,10 @@ impl Config {
         .filter_map(|v| v.as_ref())
         {
             if supported_path.exists() {
-                log::debug!("Using configuration file from: {supported_path:?}");
+                #[allow(clippy::unnecessary_debug_formatting)]
+                {
+                    log::debug!("Using configuration file from: {supported_path:?}");
+                }
                 return Some(supported_path.clone());
             }
         }
@@ -556,18 +559,19 @@ mod test {
     use pretty_assertions::assert_eq;
 
     use super::*;
+
     #[test]
     fn load() -> Result<()> {
+        const FOOTER_VALUE: &str = "test";
+        const TAG_PATTERN_VALUE: &str = ".*[0-9].*";
+        const IGNORE_TAGS_VALUE: &str = "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+";
+
         let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .parent()
             .expect("parent directory not found")
             .to_path_buf()
             .join("config")
             .join(crate::DEFAULT_CONFIG);
-
-        const FOOTER_VALUE: &str = "test";
-        const TAG_PATTERN_VALUE: &str = ".*[0-9].*";
-        const IGNORE_TAGS_VALUE: &str = "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+";
 
         unsafe {
             env::set_var("GIT_CLIFF__CHANGELOG__FOOTER", FOOTER_VALUE);
