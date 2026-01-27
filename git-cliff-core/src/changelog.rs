@@ -204,9 +204,9 @@ impl<'a> Changelog<'a> {
             .filter_map(|commit| {
                 let mut commit_into_conventional = Ok(commit.clone());
                 if git_config.conventional_commits {
-                    if !git_config.require_conventional &&
-                        git_config.filter_unconventional &&
-                        !git_config.split_commits
+                    if !git_config.require_conventional
+                        && git_config.filter_unconventional
+                        && !git_config.split_commits
                     {
                         commit_into_conventional = commit.clone().into_conventional();
                     } else if let Ok(conv_commit) = commit.clone().into_conventional() {
@@ -397,8 +397,8 @@ impl<'a> Changelog<'a> {
                 release
                     .previous
                     .as_ref()
-                    .and_then(|release| release.version.as_ref()) ==
-                    Some(skipped_tag)
+                    .and_then(|release| release.version.as_ref())
+                    == Some(skipped_tag)
             }) {
                 if let Some(previous_release) = self.releases.get_mut(release_index + 1) {
                     previous_release.previous = None;
@@ -427,10 +427,12 @@ impl<'a> Changelog<'a> {
     #[cfg(feature = "github")]
     fn get_github_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::github;
-        if self.config.remote.github.is_custom ||
-            self.body_template
-                .contains_variable(github::TEMPLATE_VARIABLES) ||
-            self.footer_template
+        if self.config.remote.github.is_custom
+            || self
+                .body_template
+                .contains_variable(github::TEMPLATE_VARIABLES)
+            || self
+                .footer_template
                 .as_ref()
                 .is_some_and(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
         {
@@ -477,10 +479,12 @@ impl<'a> Changelog<'a> {
     #[cfg(feature = "gitlab")]
     fn get_gitlab_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::gitlab;
-        if self.config.remote.gitlab.is_custom ||
-            self.body_template
-                .contains_variable(gitlab::TEMPLATE_VARIABLES) ||
-            self.footer_template
+        if self.config.remote.gitlab.is_custom
+            || self
+                .body_template
+                .contains_variable(gitlab::TEMPLATE_VARIABLES)
+            || self
+                .footer_template
                 .as_ref()
                 .is_some_and(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
         {
@@ -534,10 +538,12 @@ impl<'a> Changelog<'a> {
     #[cfg(feature = "gitea")]
     fn get_gitea_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::gitea;
-        if self.config.remote.gitea.is_custom ||
-            self.body_template
-                .contains_variable(gitea::TEMPLATE_VARIABLES) ||
-            self.footer_template
+        if self.config.remote.gitea.is_custom
+            || self
+                .body_template
+                .contains_variable(gitea::TEMPLATE_VARIABLES)
+            || self
+                .footer_template
                 .as_ref()
                 .is_some_and(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
         {
@@ -587,10 +593,12 @@ impl<'a> Changelog<'a> {
         ref_name: Option<&str>,
     ) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::bitbucket;
-        if self.config.remote.bitbucket.is_custom ||
-            self.body_template
-                .contains_variable(bitbucket::TEMPLATE_VARIABLES) ||
-            self.footer_template
+        if self.config.remote.bitbucket.is_custom
+            || self
+                .body_template
+                .contains_variable(bitbucket::TEMPLATE_VARIABLES)
+            || self
+                .footer_template
                 .as_ref()
                 .is_some_and(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
         {
@@ -1291,24 +1299,29 @@ mod test {
             timestamp: Some(50_000_000),
             previous: None,
             repository: Some(String::from("/root/repo")),
-            submodule_commits: HashMap::from([(String::from("submodule_one"), vec![
-                Commit::new(
-                    String::from("sub0jkl12"),
-                    String::from("chore(app): submodule_one do nothing"),
-                ),
-                Commit::new(
-                    String::from("subqwerty"),
-                    String::from("chore: submodule_one <preprocess>"),
-                ),
-                Commit::new(
-                    String::from("subqwertz"),
-                    String::from("feat!: submodule_one support breaking commits"),
-                ),
-                Commit::new(
-                    String::from("subqwert0"),
-                    String::from("match(group): submodule_one support regex-replace for groups"),
-                ),
-            ])]),
+            submodule_commits: HashMap::from([(
+                String::from("submodule_one"),
+                vec![
+                    Commit::new(
+                        String::from("sub0jkl12"),
+                        String::from("chore(app): submodule_one do nothing"),
+                    ),
+                    Commit::new(
+                        String::from("subqwerty"),
+                        String::from("chore: submodule_one <preprocess>"),
+                    ),
+                    Commit::new(
+                        String::from("subqwertz"),
+                        String::from("feat!: submodule_one support breaking commits"),
+                    ),
+                    Commit::new(
+                        String::from("subqwert0"),
+                        String::from(
+                            "match(group): submodule_one support regex-replace for groups",
+                        ),
+                    ),
+                ],
+            )]),
             statistics: None,
             #[cfg(feature = "github")]
             github: crate::remote::RemoteReleaseMetadata {
@@ -1421,14 +1434,20 @@ mod test {
                 previous: Some(Box::new(test_release)),
                 repository: Some(String::from("/root/repo")),
                 submodule_commits: HashMap::from([
-                    (String::from("submodule_one"), vec![
-                        Commit::new(String::from("def349"), String::from("sub_one merge #4")),
-                        Commit::new(String::from("da8912"), String::from("sub_one merge #5")),
-                    ]),
-                    (String::from("submodule_two"), vec![Commit::new(
-                        String::from("ab76ef"),
-                        String::from("sub_two bump"),
-                    )]),
+                    (
+                        String::from("submodule_one"),
+                        vec![
+                            Commit::new(String::from("def349"), String::from("sub_one merge #4")),
+                            Commit::new(String::from("da8912"), String::from("sub_one merge #5")),
+                        ],
+                    ),
+                    (
+                        String::from("submodule_two"),
+                        vec![Commit::new(
+                            String::from("ab76ef"),
+                            String::from("sub_two bump"),
+                        )],
+                    ),
                 ]),
                 statistics: None,
                 #[cfg(feature = "github")]
@@ -1591,6 +1610,13 @@ mod test {
     #[test]
     fn changelog_generator_split_commits() -> Result<()> {
         let (mut config, mut releases) = get_test_data();
+        config.git.processing_order.order = vec![
+            ProcessingStep::CommitPreprocessors,
+            ProcessingStep::SplitCommits,
+            ProcessingStep::IntoConventional,
+            ProcessingStep::CommitParsers,
+            ProcessingStep::LinkParsers,
+        ];
         config.git.split_commits = true;
         config.git.filter_unconventional = false;
         config.git.protect_breaking_commits = true;
@@ -1634,8 +1660,7 @@ style: make awesome stuff look better
         releases[2].commits.push(Commit {
             id: String::from("123abc"),
             message: String::from(
-                "merge(deps): bump some deps
-
+                "chore(deps): bump some deps
 chore(deps): bump some more deps
 chore(deps): fix broken deps
 ",
@@ -1668,6 +1693,7 @@ chore(deps): fix broken deps
 			- document zyx
 
 			#### deps
+			- bump some deps
 			- bump some more deps
 			- fix broken deps
 
@@ -1680,9 +1706,9 @@ chore(deps): fix broken deps
 
 			### Commit Statistics
 
-			- 7 commit(s) contributed to the release.
+			- 8 commit(s) contributed to the release.
 			- 6 day(s) passed between the first and last commit.
-			- 7 commit(s) parsed as conventional.
+			- 8 commit(s) parsed as conventional.
 			- 1 linked issue(s) detected in commits.
 			  - [#5](https://github.com/5) (referenced 1 time(s))
 			- -578 day(s) passed between releases.
@@ -1729,8 +1755,6 @@ chore(deps): fix broken deps
 			#### other
 			- support unconventional commits
 			- this commit is preprocessed
-			- use footer
-			- footer text
 			- make awesome stuff look better
 
 			#### ui
@@ -1738,9 +1762,9 @@ chore(deps): fix broken deps
 
 			### Commit Statistics
 
-			- 20 commit(s) contributed to the release.
-			- 13 day(s) passed between the first and last commit.
-			- 19 commit(s) parsed as conventional.
+			- 18 commit(s) contributed to the release.
+			- 12 day(s) passed between the first and last commit.
+			- 17 commit(s) parsed as conventional.
 			- 1 linked issue(s) detected in commits.
 			  - [#3](https://github.com/3) (referenced 1 time(s))
 			-- total releases: 2 --
