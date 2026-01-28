@@ -2,12 +2,14 @@ use git_conventional::{Commit as ConventionalCommit, Footer as ConventionalFoote
 #[cfg(feature = "repo")]
 use git2::{Commit as GitCommit, Signature as CommitSignature};
 use lazy_regex::{Lazy, Regex, lazy_regex};
+use log::{debug, trace};
 use serde::ser::{SerializeStruct, Serializer};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::value::Value;
 
-use crate::config::{CommitParser, GitConfig, LinkParser, TextProcessor};
+use crate::config::{CommitParser, GitConfig, LinkParser, ProcessingStep, TextProcessor};
 use crate::error::{Error as AppError, Result};
+use crate::summary::Summary;
 
 /// Regular expression for matching SHA1 and a following commit message
 /// separated by a whitespace.
@@ -25,7 +27,7 @@ pub struct Link {
 
 /// A conventional commit footer.
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
-struct Footer<'a> {
+pub struct Footer<'a> {
     /// Token of the footer.
     ///
     /// This is the part of the footer preceding the separator. For example, for
@@ -207,33 +209,33 @@ impl Commit<'_> {
         self.raw_message.as_deref().unwrap_or(&self.message)
     }
 
-    /// Processes the commit.
-    ///
-    /// * converts commit to a conventional commit
-    /// * sets the group for the commit
-    /// * extracts links and generates URLs
-    pub fn process(&self, config: &GitConfig) -> Result<Self> {
-        let mut commit = self.clone();
-        commit = commit.preprocess(&config.commit_preprocessors)?;
-        if config.conventional_commits {
-            if !config.require_conventional && config.filter_unconventional && !config.split_commits
-            {
-                commit = commit.into_conventional()?;
-            } else if let Ok(conv_commit) = commit.clone().into_conventional() {
-                commit = conv_commit;
-            }
-        }
+    // /// Processes the commit.
+    // ///
+    // /// * converts commit to a conventional commit
+    // /// * sets the group for the commit
+    // /// * extracts links and generates URLs
+    // pub fn process(&self, config: &GitConfig) -> Result<Self> {
+    //     let mut commit = self.clone();
+    //     commit = commit.preprocess(&config.commit_preprocessors)?;
+    //     if config.conventional_commits {
+    //         if !config.require_conventional && config.filter_unconventional &&
+    // !config.split_commits         {
+    //             commit = commit.into_conventional()?;
+    //         } else if let Ok(conv_commit) = commit.clone().into_conventional() {
+    //             commit = conv_commit;
+    //         }
+    //     }
 
-        commit = commit.parse(
-            &config.commit_parsers,
-            config.protect_breaking_commits,
-            config.filter_commits,
-        )?;
+    //     commit = commit.parse(
+    //         &config.commit_parsers,
+    //         config.protect_breaking_commits,
+    //         config.filter_commits,
+    //     )?;
 
-        commit = commit.parse_links(&config.link_parsers);
+    //     commit = commit.parse_links(&config.link_parsers);
 
-        Ok(commit)
-    }
+    //     Ok(commit)
+    // }
 
     /// Returns the commit with its conventional type set.
     pub fn into_conventional(mut self) -> Result<Self> {
@@ -349,13 +351,17 @@ impl Commit<'_> {
                     }
                 }
             }
+            println!("Proccessing commit --> {}", self.message);
+
             if parser.sha.clone().map(|v| v.to_lowercase()).as_deref() == Some(&self.id) {
                 if self.skip_commit(parser, protect_breaking) {
+                    println!("  Skipping commit --> {}", self.message);
                     return Err(AppError::GroupError(String::from("Skipping commit")));
                 } else {
                     self.group = parser.group.clone().or(self.group);
                     self.scope = parser.scope.clone().or(self.scope);
                     self.default_scope = parser.default_scope.clone().or(self.default_scope);
+
                     return Ok(self);
                 }
             }
@@ -515,6 +521,239 @@ pub(crate) fn commits_to_conventional_commits<'de, 'a, D: Deserializer<'de>>(
     Ok(commits)
 }
 
+/// Checks the commits and returns an error if any unconventional commits
+/// are found.
+fn check_conventional_commits(commits: &Vec<Commit<'_>>) -> Result<()> {
+    log::debug!("Verifying that all commits are conventional");
+    let mut unconventional_count = 0;
+    commits.iter().for_each(|commit| {
+        if commit.conv.is_none() {
+            log::error!(
+                "Commit {id} is not conventional:\n{message}",
+                id = &commit.id[..7],
+                message = commit
+                    .message
+                    .lines()
+                    .map(|line| { format!("    | {}", line.trim()) })
+                    .collect::<Vec<String>>()
+                    .join("\n")
+            );
+            unconventional_count += 1;
+        }
+    });
+
+    if unconventional_count > 0 {
+        return Err(AppError::UnconventionalCommitsError(unconventional_count));
+    }
+
+    Ok(())
+}
+
+/// Checks the commits and returns an error if any commits are not matched
+/// by any commit parser.
+fn check_unmatched_commits(commits: &Vec<Commit<'_>>) -> Result<()> {
+    log::debug!("Verifying that no commits are unmatched by commit parsers");
+    let mut unmatched_count = 0;
+    commits.iter().for_each(|commit| {
+        let is_unmatched = commit.group.is_none();
+        if is_unmatched {
+            log::error!(
+                "Commit {id} was not matched by any commit parser:\n{message}",
+                id = &commit.id[..7],
+                message = commit
+                    .message
+                    .lines()
+                    .map(|line| { format!("    | {}", line.trim()) })
+                    .collect::<Vec<String>>()
+                    .join("\n")
+            );
+            unmatched_count += 1;
+        }
+    });
+
+    if unmatched_count > 0 {
+        return Err(AppError::UnmatchedCommitsError(unmatched_count));
+    }
+
+    Ok(())
+}
+
+/// Processes the commit list based on the processing order defined in the
+/// configuration.
+pub fn process_commit_list(
+    commits: &mut Vec<Commit<'_>>,
+    git_config: &GitConfig,
+    summary: &mut Summary,
+) -> Result<()> {
+    for step in &git_config.processing_order.order {
+        match step {
+            ProcessingStep::CommitParsers => {
+                debug!("Applying commit parsers...");
+                *commits = apply_commit_parsers(commits, git_config, summary);
+            }
+            ProcessingStep::CommitPreprocessors => {
+                debug!("Applying commit preprocessors...");
+                *commits = apply_commit_preprocessors(commits, git_config, summary);
+            }
+            ProcessingStep::IntoConventional => {
+                debug!("Converting commits to conventional format...");
+                *commits = apply_into_conventional(commits, git_config, summary);
+            }
+            ProcessingStep::LinkParsers => {
+                debug!("Applying link parsers...");
+                *commits = apply_link_parsers(commits, git_config);
+            }
+            ProcessingStep::SplitCommits => {
+                debug!("Splitting commits...");
+                if git_config.split_commits {
+                    *commits = apply_split_commits(commits);
+                } else {
+                    debug!("Split commits is disabled, skipping...");
+                }
+            }
+        }
+    }
+
+    if git_config.require_conventional {
+        check_conventional_commits(commits)?;
+    }
+
+    if git_config.fail_on_unmatched_commit {
+        check_unmatched_commits(commits)?;
+    }
+
+    Ok(())
+}
+
+/// Splits the commits by their message lines.
+/// Returns a new vector of commits with each line as a separate commit.
+fn apply_split_commits<'a>(commits: &mut Vec<Commit<'a>>) -> Vec<Commit<'a>> {
+    let mut split_commits = Vec::new();
+    for commit in commits {
+        commit.message.lines().for_each(|line| {
+            let mut c = commit.clone();
+            c.message = line.to_string();
+            c.links.clear();
+            if !c.message.is_empty() {
+                split_commits.push(c)
+            };
+        })
+    }
+    split_commits
+}
+
+/// Applies the commit parsers to the commits and returns the parsed
+/// commits.
+fn apply_commit_parsers<'a>(
+    commits: &Vec<Commit<'a>>,
+    git_config: &crate::config::GitConfig,
+    summary: &mut Summary,
+) -> Vec<Commit<'a>> {
+    commits
+        .iter()
+        .filter_map(|commit| {
+            match commit.clone().parse(
+                &git_config.commit_parsers,
+                git_config.protect_breaking_commits,
+                git_config.filter_commits,
+            ) {
+                Ok(commit) => {
+                    summary.record_ok();
+                    Some(commit)
+                }
+                Err(e) => {
+                    summary.record_err(&e);
+                    on_step_err(commit.clone(), e);
+                    None
+                }
+            }
+        })
+        .collect::<Vec<_>>()
+}
+
+/// Applies the commit preprocessors to the commits and returns the
+/// preprocessed commits.
+fn apply_commit_preprocessors<'a>(
+    commits: &mut Vec<Commit<'a>>,
+    git_config: &crate::config::GitConfig,
+    summary: &mut Summary,
+) -> Vec<Commit<'a>> {
+    commits
+        .iter()
+        .filter_map(|commit| {
+            // Apply commit parsers
+            match commit.clone().preprocess(&git_config.commit_preprocessors) {
+                Ok(commit) => {
+                    summary.record_ok();
+                    Some(commit)
+                }
+                Err(e) => {
+                    summary.record_err(&e);
+                    on_step_err(commit.clone(), e);
+                    None
+                }
+            }
+        })
+        .collect::<Vec<_>>()
+}
+
+/// Converts the commits into conventional format if the configuration
+/// requires it.
+fn apply_into_conventional<'a>(
+    commits: &mut Vec<Commit<'a>>,
+    git_config: &crate::config::GitConfig,
+    summary: &mut Summary,
+) -> Vec<Commit<'a>> {
+    commits
+        .iter()
+        .filter_map(|commit| {
+            let mut commit_into_conventional = Ok(commit.clone());
+            if git_config.conventional_commits {
+                if !git_config.require_conventional &&
+                    git_config.filter_unconventional &&
+                    !git_config.split_commits
+                {
+                    commit_into_conventional = commit.clone().into_conventional();
+                } else if let Ok(conv_commit) = commit.clone().into_conventional() {
+                    commit_into_conventional = Ok(conv_commit);
+                };
+            };
+            match commit_into_conventional {
+                Ok(commit) => {
+                    summary.record_ok();
+                    Some(commit)
+                }
+                Err(e) => {
+                    summary.record_err(&e);
+                    on_step_err(commit.clone(), e);
+                    None
+                }
+            }
+        })
+        .collect::<Vec<_>>()
+}
+
+/// Applies the link parsers to the commits and returns the parsed commits.
+fn apply_link_parsers<'a>(
+    commits: &mut Vec<Commit<'a>>,
+    git_config: &crate::config::GitConfig,
+) -> Vec<Commit<'a>> {
+    commits
+        .iter()
+        .map(|commit| commit.clone().parse_links(&git_config.link_parsers))
+        .collect::<Vec<_>>()
+}
+
+/// Logs the error of a failed step from a single commit.
+fn on_step_err(commit: Commit<'_>, error: AppError) {
+    trace!(
+        "{} - {} ({})",
+        commit.id.chars().take(7).collect::<String>(),
+        error,
+        commit.message.lines().next().unwrap_or_default().trim()
+    );
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -566,48 +805,48 @@ mod test {
             conventional_commits: true,
             ..Default::default()
         };
-        let test_cases = vec![
-            (
-                Commit::new(
-                    String::from("123123"),
-                    String::from(
-                        "test(commit): add test\n\nSigned-off-by: Test User <test@example.com>",
-                    ),
+        let mut commits = vec![
+            Commit::new(
+                String::from("123123"),
+                String::from(
+                    "test(commit): add test\n\nSigned-off-by: Test User <test@example.com>",
                 ),
-                vec![Footer {
+            ),
+            Commit::new(
+                String::from("123124"),
+                String::from(
+                    "fix(commit): break stuff\n\nBREAKING CHANGE: This commit breaks \
+                     stuff\nSigned-off-by: Test User <test@example.com>",
+                ),
+            ),
+        ];
+        let footers = [
+            vec![Footer {
+                token: "Signed-off-by",
+                separator: ":",
+                value: "Test User <test@example.com>",
+                breaking: false,
+            }],
+            vec![
+                Footer {
+                    token: "BREAKING CHANGE",
+                    separator: ":",
+                    value: "This commit breaks stuff",
+                    breaking: true,
+                },
+                Footer {
                     token: "Signed-off-by",
                     separator: ":",
                     value: "Test User <test@example.com>",
                     breaking: false,
-                }],
-            ),
-            (
-                Commit::new(
-                    String::from("123124"),
-                    String::from(
-                        "fix(commit): break stuff\n\nBREAKING CHANGE: This commit breaks \
-                         stuff\nSigned-off-by: Test User <test@example.com>",
-                    ),
-                ),
-                vec![
-                    Footer {
-                        token: "BREAKING CHANGE",
-                        separator: ":",
-                        value: "This commit breaks stuff",
-                        breaking: true,
-                    },
-                    Footer {
-                        token: "Signed-off-by",
-                        separator: ":",
-                        value: "Test User <test@example.com>",
-                        breaking: false,
-                    },
-                ],
-            ),
+                },
+            ],
         ];
 
-        for (commit, footers) in &test_cases {
-            let commit = commit.process(&cfg).expect("commit should process");
+        // let mut commits: Vec<_> = test_cases.iter().map(|(c, _)| c.to_owned()).collect();
+        process_commit_list(&mut commits, &cfg, &mut Summary::default()).unwrap();
+
+        for (commit, footers) in commits.iter().zip(footers.iter()) {
             assert_eq!(&commit.footers().collect::<Vec<_>>(), footers);
         }
     }
