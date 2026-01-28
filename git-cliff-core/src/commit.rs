@@ -218,8 +218,8 @@ impl Commit<'_> {
     //     let mut commit = self.clone();
     //     commit = commit.preprocess(&config.commit_preprocessors)?;
     //     if config.conventional_commits {
-    //         if !config.require_conventional && config.filter_unconventional && !config.split_commits
-    //         {
+    //         if !config.require_conventional && config.filter_unconventional &&
+    // !config.split_commits         {
     //             commit = commit.into_conventional()?;
     //         } else if let Ok(conv_commit) = commit.clone().into_conventional() {
     //             commit = conv_commit;
@@ -268,8 +268,8 @@ impl Commit<'_> {
     /// and the commit is breaking, or the parser's `skip` field is None or
     /// `false`. Returns `true` otherwise.
     fn skip_commit(&self, parser: &CommitParser, protect_breaking: bool) -> bool {
-        parser.skip.unwrap_or(false)
-            && !(self.conv.as_ref().is_some_and(ConventionalCommit::breaking) && protect_breaking)
+        parser.skip.unwrap_or(false) &&
+            !(self.conv.as_ref().is_some_and(ConventionalCommit::breaking) && protect_breaking)
     }
 
     /// Parses the commit using [`CommitParser`]s.
@@ -709,9 +709,9 @@ fn apply_into_conventional<'a>(
         .filter_map(|commit| {
             let mut commit_into_conventional = Ok(commit.clone());
             if git_config.conventional_commits {
-                if !git_config.require_conventional
-                    && git_config.filter_unconventional
-                    && !git_config.split_commits
+                if !git_config.require_conventional &&
+                    git_config.filter_unconventional &&
+                    !git_config.split_commits
                 {
                     commit_into_conventional = commit.clone().into_conventional();
                 } else if let Ok(conv_commit) = commit.clone().into_conventional() {
@@ -816,7 +816,7 @@ mod test {
                 String::from("123124"),
                 String::from(
                     "fix(commit): break stuff\n\nBREAKING CHANGE: This commit breaks \
-                         stuff\nSigned-off-by: Test User <test@example.com>",
+                     stuff\nSigned-off-by: Test User <test@example.com>",
                 ),
             ),
         ];
