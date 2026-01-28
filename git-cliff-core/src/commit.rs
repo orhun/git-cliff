@@ -266,8 +266,8 @@ impl Commit<'_> {
     /// and the commit is breaking, or the parser's `skip` field is None or
     /// `false`. Returns `true` otherwise.
     fn skip_commit(&self, parser: &CommitParser, protect_breaking: bool) -> bool {
-        parser.skip.unwrap_or(false) &&
-            !(self.conv.as_ref().is_some_and(ConventionalCommit::breaking) && protect_breaking)
+        parser.skip.unwrap_or(false)
+            && !(self.conv.as_ref().is_some_and(ConventionalCommit::breaking) && protect_breaking)
     }
 
     /// Parses the commit using [`CommitParser`]s.
@@ -349,13 +349,20 @@ impl Commit<'_> {
                     }
                 }
             }
+            if parser.group == Some(String::from("Footer")) {
+                // println!("{:?}", self);
+                println!("Inside commit --> {:?}", self.message);
+            }
             if parser.sha.clone().map(|v| v.to_lowercase()).as_deref() == Some(&self.id) {
                 if self.skip_commit(parser, protect_breaking) {
+                    println!("  Skipping commit --> {}", self.message);
                     return Err(AppError::GroupError(String::from("Skipping commit")));
                 } else {
                     self.group = parser.group.clone().or(self.group);
                     self.scope = parser.scope.clone().or(self.scope);
                     self.default_scope = parser.default_scope.clone().or(self.default_scope);
+
+                    println!("Returning commit --> {}", self.message);
                     return Ok(self);
                 }
             }
