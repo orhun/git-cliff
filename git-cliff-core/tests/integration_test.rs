@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 use std::fmt::Write;
 
-use git_cliff_core::commit::{Commit, Range, Signature};
+use git_cliff_core::commit::{Commit, Range, Signature, process_commit_list};
 use git_cliff_core::config::{ChangelogConfig, CommitParser, GitConfig, LinkParser, TextProcessor};
 use git_cliff_core::error::Result;
 use git_cliff_core::release::*;
+use git_cliff_core::summary::Summary;
 use git_cliff_core::template::Template;
 use pretty_assertions::assert_eq;
 use regex::Regex;
@@ -169,46 +170,43 @@ fn generate_changelog() -> Result<()> {
         release_v1_commits.last().unwrap(),
     );
 
-    let release_v2_commits = [
-				Commit::new(
-					String::from("000abc"),
-					String::from("Add unconventional commit"),
-				),
-				Commit::new(String::from("abc123"), String::from("feat: add xyz")),
-				Commit::new(String::from("abc124"), String::from("feat: add zyx")),
-				Commit::new(
-					String::from("abc124"),
-					String::from(
-						"feat(random-scope): add random feature\n\nThis is related to https://github.com/NixOS/nixpkgs/issues/136814\n\nCloses #123",
-					),
-				),
-				Commit::new(String::from("def789"), String::from("invalid commit")),
-				Commit::new(
-					String::from("def789"),
-					String::from("feat(big-feature)!: this is a breaking change"),
-				),
-				Commit::new(String::from("qwerty"), String::from("fix: fix abc")),
-				Commit::new(
-					String::from("qwop"),
-					String::from("final: invalid commit"),
-				),
-				Commit::new(
-					String::from("hjkl12"),
-					String::from("chore: do boring stuff"),
-				),
-				Commit::new(
-					String::from("hjkl13"),
-					String::from("test(x): test some stuff"),
-				),
-				Commit::new(
-					String::from("1234"),
-					String::from("fix: support preprocessing (fixes #99)"),
-				),
-                commit_with_author
-			]
-			.iter()
-			.filter_map(|c| c.process(&git_config).ok())
-			.collect::<Vec<Commit>>();
+    let mut release_v2_commits = vec![
+        Commit::new(
+            String::from("000abc"),
+            String::from("Add unconventional commit"),
+        ),
+        Commit::new(String::from("abc123"), String::from("feat: add xyz")),
+        Commit::new(String::from("abc124"), String::from("feat: add zyx")),
+        Commit::new(
+            String::from("abc124"),
+            String::from(
+                "feat(random-scope): add random feature\n\nThis is related to https://github.com/NixOS/nixpkgs/issues/136814\n\nCloses #123",
+            ),
+        ),
+        Commit::new(String::from("def789"), String::from("invalid commit")),
+        Commit::new(
+            String::from("def789"),
+            String::from("feat(big-feature)!: this is a breaking change"),
+        ),
+        Commit::new(String::from("qwerty"), String::from("fix: fix abc")),
+        Commit::new(String::from("qwop"), String::from("final: invalid commit")),
+        Commit::new(
+            String::from("hjkl12"),
+            String::from("chore: do boring stuff"),
+        ),
+        Commit::new(
+            String::from("hjkl13"),
+            String::from("test(x): test some stuff"),
+        ),
+        Commit::new(
+            String::from("1234"),
+            String::from("fix: support preprocessing (fixes #99)"),
+        ),
+        commit_with_author,
+    ];
+
+    let mut summary = Summary::default();
+    process_commit_list(&mut release_v2_commits, &git_config, &mut summary).unwrap();
 
     let release_v2_commit_range = Range::new(
         release_v2_commits.first().unwrap(),
