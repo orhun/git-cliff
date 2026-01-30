@@ -1,3 +1,5 @@
+TEST
+
 <p align="center">
     <a href="https://git-cliff.org">
         <img src="https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-logo.png" width="300"></a><!-- </a> being on the same line as the <img> tag is intentional! -->
