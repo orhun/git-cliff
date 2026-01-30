@@ -2,7 +2,8 @@
 header = ""
 body = """
 {% if version %}\
-## [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% set clean_version = version | replace(from="v", to="") | replace(from="-stable", to="") %}\
+## [{{ clean_version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
 {% else %}\
 ## [unreleased]
 {% endif %}\
