@@ -19,20 +19,25 @@ pub(crate) const TEMPLATE_VARIABLES: &[&str] = &["gitlab", "commit.gitlab", "com
 /// Representation of a single GitLab Project.
 ///
 /// <https://docs.gitlab.com/ee/api/projects.html#get-single-project>
+/// <https://gitlab.com/gitlab-org/gitlab/-/blob/master/doc/api/openapi/openapi.yaml>
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitLabProject {
     /// GitLab id for project
+    ///
+    /// Note: This field is defined as optional in the OpenAPI specification,
+    /// but it is required for git-cliff semantics and is therefore not represented
+    /// as `Option`.
     pub id: i64,
     /// Optional Description of project
     pub description: Option<String>,
     /// Name of project
-    pub name: String,
+    pub name: Option<String>,
     /// Name of project with namespace owner / repo
-    pub name_with_namespace: String,
+    pub name_with_namespace: Option<String>,
     /// Name of project with namespace owner/repo
-    pub path_with_namespace: String,
+    pub path_with_namespace: Option<String>,
     /// Project created at
-    pub created_at: String,
+    pub created_at: Option<String>,
     /// Default branch eg (main/master)
     pub default_branch: Option<String>,
 }
@@ -40,34 +45,51 @@ pub struct GitLabProject {
 /// Representation of a single commit.
 ///
 /// <https://docs.gitlab.com/ee/api/commits.html>
+/// <https://gitlab.com/gitlab-org/gitlab/-/blob/master/doc/api/openapi/openapi.yaml>
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitLabCommit {
     /// Sha
+    ///
+    /// Note: This field is defined as optional in the OpenAPI specification,
+    /// but it is required for git-cliff semantics and is therefore not represented
+    /// as `Option`.
     pub id: String,
     /// Short Sha
+    ///
+    /// Note: This field is defined as optional in the OpenAPI specification,
+    /// but it is required for git-cliff semantics and is therefore not represented
+    /// as `Option`.
     pub short_id: String,
     /// Git message
-    pub title: String,
+    pub title: Option<String>,
     /// Author
+    ///
+    /// Note: This field is defined as optional in the OpenAPI specification,
+    /// but it is required for git-cliff semantics and is therefore not represented
+    /// as `Option`.
     pub author_name: String,
     /// Author Email
-    pub author_email: String,
+    pub author_email: Option<String>,
     /// Authored Date
-    pub authored_date: String,
+    pub authored_date: Option<String>,
     /// Committer Name
-    pub committer_name: String,
+    pub committer_name: Option<String>,
     /// Committer Email
-    pub committer_email: String,
+    pub committer_email: Option<String>,
     /// Committed Date
+    ///
+    /// Note: This field is defined as optional in the OpenAPI specification,
+    /// but it is required for git-cliff semantics and is therefore not represented
+    /// as `Option`.
     pub committed_date: String,
     /// Created At
-    pub created_at: String,
+    pub created_at: Option<String>,
     /// Git Message
-    pub message: String,
+    pub message: Option<String>,
     /// Parent Ids
     pub parent_ids: Vec<String>,
     /// Web Url
-    pub web_url: String,
+    pub web_url: Option<String>,
 }
 
 impl RemoteCommit for GitLabCommit {
@@ -87,32 +109,53 @@ impl RemoteCommit for GitLabCommit {
 /// Representation of a single pull request.
 ///
 /// <https://docs.gitlab.com/ee/api/merge_requests.html>
+/// <https://gitlab.com/gitlab-org/gitlab/-/blob/master/doc/api/openapi/openapi.yaml>
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitLabMergeRequest {
     /// Id
+    ///
+    /// Note: This field is defined as optional in the OpenAPI specification,
+    /// but it is required for git-cliff semantics and is therefore not represented
+    /// as `Option`.
     pub id: i64,
     /// Iid
+    ///
+    /// Note: This field is defined as optional in the OpenAPI specification,
+    /// but it is required for git-cliff semantics and is therefore not represented
+    /// as `Option`.
     pub iid: i64,
     /// Project Id
+    ///
+    /// Note: This field is defined as optional in the OpenAPI specification,
+    /// but it is required for git-cliff semantics and is therefore not represented
+    /// as `Option`.
     pub project_id: i64,
     /// Title
+    ///
+    /// Note: This field is defined as optional in the OpenAPI specification,
+    /// but it is required for git-cliff semantics and is therefore not represented
+    /// as `Option`.
     pub title: String,
     /// Description
-    pub description: String,
+    pub description: Option<String>,
     /// State
-    pub state: String,
+    pub state: Option<String>,
     /// Created At
-    pub created_at: String,
+    pub created_at: Option<String>,
     /// Author
-    pub author: GitLabUser,
+    pub author: Option<GitLabUser>,
     /// Commit Sha
+    ///
+    /// Note: This field is defined as optional in the OpenAPI specification,
+    /// but it is required for git-cliff semantics and is therefore not represented
+    /// as `Option`.
     pub sha: String,
     /// Merge Commit Sha
     pub merge_commit_sha: Option<String>,
     /// Squash Commit Sha
     pub squash_commit_sha: Option<String>,
     /// Web Url
-    pub web_url: String,
+    pub web_url: Option<String>,
     /// Labels
     pub labels: Vec<String>,
 }
@@ -140,31 +183,22 @@ impl RemotePullRequest for GitLabMergeRequest {
 }
 
 /// Representation of a GitLab User.
+///
+/// <https://gitlab.com/gitlab-org/gitlab/-/blob/master/doc/api/openapi/openapi.yaml>
 #[derive(Debug, Default, Clone, Hash, Eq, PartialEq, Deserialize, Serialize)]
 pub struct GitLabUser {
     /// Id
-    pub id: i64,
+    pub id: Option<i64>,
     /// Name
-    pub name: String,
+    pub name: Option<String>,
     /// Username
-    pub username: String,
+    pub username: Option<String>,
     /// State of the User
-    pub state: String,
+    pub state: Option<String>,
     /// Url for avatar
     pub avatar_url: Option<String>,
     /// Web Url
-    pub web_url: String,
-}
-
-/// Representation of a GitLab Reference.
-#[derive(Debug, Default, Clone, Hash, Eq, PartialEq, Deserialize, Serialize)]
-pub struct GitLabReference {
-    /// Short id
-    pub short: String,
-    /// Relative Link
-    pub relative: String,
-    /// Full Link
-    pub full: String,
+    pub web_url: Option<String>,
 }
 
 /// HTTP client for handling GitLab REST API requests.
