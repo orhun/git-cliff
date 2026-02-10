@@ -23,11 +23,7 @@ pub(crate) const TEMPLATE_VARIABLES: &[&str] = &["gitlab", "commit.gitlab", "com
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitLabProject {
     /// GitLab id for project
-    ///
-    /// Note: This field is defined as optional in the OpenAPI specification,
-    /// but it is required for git-cliff semantics and is therefore not represented
-    /// as `Option`.
-    pub id: i64,
+    pub id: Option<i64>,
     /// Optional Description of project
     pub description: Option<String>,
     /// Name of project
@@ -49,25 +45,13 @@ pub struct GitLabProject {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitLabCommit {
     /// Sha
-    ///
-    /// Note: This field is defined as optional in the OpenAPI specification,
-    /// but it is required for git-cliff semantics and is therefore not represented
-    /// as `Option`.
-    pub id: String,
+    pub id: Option<String>,
     /// Short Sha
-    ///
-    /// Note: This field is defined as optional in the OpenAPI specification,
-    /// but it is required for git-cliff semantics and is therefore not represented
-    /// as `Option`.
-    pub short_id: String,
+    pub short_id: Option<String>,
     /// Git message
     pub title: Option<String>,
     /// Author
-    ///
-    /// Note: This field is defined as optional in the OpenAPI specification,
-    /// but it is required for git-cliff semantics and is therefore not represented
-    /// as `Option`.
-    pub author_name: String,
+    pub author_name: Option<String>,
     /// Author Email
     pub author_email: Option<String>,
     /// Authored Date
@@ -77,11 +61,7 @@ pub struct GitLabCommit {
     /// Committer Email
     pub committer_email: Option<String>,
     /// Committed Date
-    ///
-    /// Note: This field is defined as optional in the OpenAPI specification,
-    /// but it is required for git-cliff semantics and is therefore not represented
-    /// as `Option`.
-    pub committed_date: String,
+    pub committed_date: Option<String>,
     /// Created At
     pub created_at: Option<String>,
     /// Git Message
@@ -94,15 +74,19 @@ pub struct GitLabCommit {
 
 impl RemoteCommit for GitLabCommit {
     fn id(&self) -> String {
-        self.id.clone()
+        self.id
+            .clone()
+            .expect("Commit id is required for git-cliff semantics")
     }
 
     fn username(&self) -> Option<String> {
-        Some(self.author_name.clone())
+        self.author_name.clone()
     }
 
     fn timestamp(&self) -> Option<i64> {
-        Some(self.convert_to_unix_timestamp(self.committed_date.clone().as_str()))
+        self.committed_date
+            .as_deref()
+            .map(|d| self.convert_to_unix_timestamp(d))
     }
 }
 
@@ -113,29 +97,13 @@ impl RemoteCommit for GitLabCommit {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitLabMergeRequest {
     /// Id
-    ///
-    /// Note: This field is defined as optional in the OpenAPI specification,
-    /// but it is required for git-cliff semantics and is therefore not represented
-    /// as `Option`.
-    pub id: i64,
+    pub id: Option<i64>,
     /// Iid
-    ///
-    /// Note: This field is defined as optional in the OpenAPI specification,
-    /// but it is required for git-cliff semantics and is therefore not represented
-    /// as `Option`.
-    pub iid: i64,
+    pub iid: Option<i64>,
     /// Project Id
-    ///
-    /// Note: This field is defined as optional in the OpenAPI specification,
-    /// but it is required for git-cliff semantics and is therefore not represented
-    /// as `Option`.
-    pub project_id: i64,
+    pub project_id: Option<i64>,
     /// Title
-    ///
-    /// Note: This field is defined as optional in the OpenAPI specification,
-    /// but it is required for git-cliff semantics and is therefore not represented
-    /// as `Option`.
-    pub title: String,
+    pub title: Option<String>,
     /// Description
     pub description: Option<String>,
     /// State
@@ -145,11 +113,7 @@ pub struct GitLabMergeRequest {
     /// Author
     pub author: Option<GitLabUser>,
     /// Commit Sha
-    ///
-    /// Note: This field is defined as optional in the OpenAPI specification,
-    /// but it is required for git-cliff semantics and is therefore not represented
-    /// as `Option`.
-    pub sha: String,
+    pub sha: Option<String>,
     /// Merge Commit Sha
     pub merge_commit_sha: Option<String>,
     /// Squash Commit Sha
@@ -163,10 +127,11 @@ pub struct GitLabMergeRequest {
 impl RemotePullRequest for GitLabMergeRequest {
     fn number(&self) -> i64 {
         self.iid
+            .expect("Merge request iid is required for git-cliff semantics")
     }
 
     fn title(&self) -> Option<String> {
-        Some(self.title.clone())
+        self.title.clone()
     }
 
     fn labels(&self) -> Vec<String> {
@@ -174,11 +139,9 @@ impl RemotePullRequest for GitLabMergeRequest {
     }
 
     fn merge_commit(&self) -> Option<String> {
-        self.merge_commit_sha.clone().or_else(|| {
-            self.squash_commit_sha
-                .clone()
-                .or_else(|| Some(self.sha.clone()))
-        })
+        self.merge_commit_sha
+            .clone()
+            .or_else(|| self.squash_commit_sha.clone().or_else(|| self.sha.clone()))
     }
 }
 
@@ -395,9 +358,9 @@ mod test {
     #[test]
     fn timestamp() {
         let remote_commit = GitLabCommit {
-            id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
-            author_name: String::from("orhun"),
-            committed_date: String::from("2021-07-18T15:14:39+03:00"),
+            id: Some(String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071")),
+            author_name: Some(String::from("orhun")),
+            committed_date: Some(String::from("2021-07-18T15:14:39+03:00")),
             ..Default::default()
         };
 
@@ -407,7 +370,7 @@ mod test {
     #[test]
     fn pull_request_no_merge_commit() {
         let mr = GitLabMergeRequest {
-            sha: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+            sha: Some(String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071")),
             ..Default::default()
         };
         assert!(mr.merge_commit().is_some());
