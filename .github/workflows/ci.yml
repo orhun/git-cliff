@@ -93,11 +93,13 @@ jobs:
       - name: Check the lints
         uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # v1.0.3
         with:
+          # Lints are configured via CLI arguments to avoid confusion with Cargo.toml precedence.
           command: clippy
           args: --tests --verbose -- -D warnings
       - name: Check the pedantic lints
         uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # v1.0.3
         with:
+          # Lints are configured via CLI arguments to avoid confusion with Cargo.toml precedence.
           command: clippy
           args: --all-targets --verbose -- -W clippy::pedantic
 
