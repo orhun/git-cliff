@@ -5,7 +5,7 @@
 //!
 //! ## Features
 #![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_docs, clippy::unwrap_used)]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff.png",
