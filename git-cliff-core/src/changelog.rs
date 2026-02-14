@@ -385,8 +385,13 @@ impl<'a> Changelog<'a> {
                     };
                     let (commits, merge_requests) = tokio::try_join!(
                         // Send id to these functions
-                        gitlab_client.get_commits(project_id, ref_name),
-                        gitlab_client.get_pull_requests(project_id),
+                        gitlab_client.get_commits(
+                            project_id.expect("Project id is required for git-cliff semantics"),
+                            ref_name
+                        ),
+                        gitlab_client.get_pull_requests(
+                            project_id.expect("Project id is required for git-cliff semantics")
+                        ),
                     )?;
                     log::debug!("Number of GitLab commits: {}", commits.len());
                     log::debug!("Number of GitLab merge requests: {}", merge_requests.len());

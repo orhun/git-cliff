@@ -19,20 +19,21 @@ pub(crate) const TEMPLATE_VARIABLES: &[&str] = &["gitlab", "commit.gitlab", "com
 /// Representation of a single GitLab Project.
 ///
 /// <https://docs.gitlab.com/ee/api/projects.html#get-single-project>
+/// <https://gitlab.com/gitlab-org/gitlab/-/blob/master/doc/api/openapi/openapi.yaml>
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitLabProject {
     /// GitLab id for project
-    pub id: i64,
+    pub id: Option<i64>,
     /// Optional Description of project
     pub description: Option<String>,
     /// Name of project
-    pub name: String,
+    pub name: Option<String>,
     /// Name of project with namespace owner / repo
-    pub name_with_namespace: String,
+    pub name_with_namespace: Option<String>,
     /// Name of project with namespace owner/repo
-    pub path_with_namespace: String,
+    pub path_with_namespace: Option<String>,
     /// Project created at
-    pub created_at: String,
+    pub created_at: Option<String>,
     /// Default branch eg (main/master)
     pub default_branch: Option<String>,
 }
@@ -40,79 +41,85 @@ pub struct GitLabProject {
 /// Representation of a single commit.
 ///
 /// <https://docs.gitlab.com/ee/api/commits.html>
+/// <https://gitlab.com/gitlab-org/gitlab/-/blob/master/doc/api/openapi/openapi.yaml>
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitLabCommit {
     /// Sha
-    pub id: String,
+    pub id: Option<String>,
     /// Short Sha
-    pub short_id: String,
+    pub short_id: Option<String>,
     /// Git message
-    pub title: String,
+    pub title: Option<String>,
     /// Author
-    pub author_name: String,
+    pub author_name: Option<String>,
     /// Author Email
-    pub author_email: String,
+    pub author_email: Option<String>,
     /// Authored Date
-    pub authored_date: String,
+    pub authored_date: Option<String>,
     /// Committer Name
-    pub committer_name: String,
+    pub committer_name: Option<String>,
     /// Committer Email
-    pub committer_email: String,
+    pub committer_email: Option<String>,
     /// Committed Date
-    pub committed_date: String,
+    pub committed_date: Option<String>,
     /// Created At
-    pub created_at: String,
+    pub created_at: Option<String>,
     /// Git Message
-    pub message: String,
+    pub message: Option<String>,
     /// Parent Ids
     pub parent_ids: Vec<String>,
     /// Web Url
-    pub web_url: String,
+    pub web_url: Option<String>,
 }
 
 impl RemoteCommit for GitLabCommit {
     fn id(&self) -> String {
-        self.id.clone()
+        self.id
+            .clone()
+            .expect("Commit id is required for git-cliff semantics")
     }
 
     fn username(&self) -> Option<String> {
-        Some(self.author_name.clone())
+        self.author_name.clone()
     }
 
     fn timestamp(&self) -> Option<i64> {
-        Some(self.convert_to_unix_timestamp(self.committed_date.clone().as_str()))
+        self.committed_date
+            .as_deref()
+            .map(|d| self.convert_to_unix_timestamp(d))
     }
 }
 
 /// Representation of a single pull request.
 ///
 /// <https://docs.gitlab.com/ee/api/merge_requests.html>
+/// <https://gitlab.com/gitlab-org/gitlab/-/blob/master/doc/api/openapi/openapi.yaml>
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GitLabMergeRequest {
     /// Id
-    pub id: i64,
+    pub id: Option<i64>,
     /// Iid
-    pub iid: i64,
+    pub iid: Option<i64>,
     /// Project Id
-    pub project_id: i64,
+    pub project_id: Option<i64>,
     /// Title
-    pub title: String,
+    pub title: Option<String>,
     /// Description
-    pub description: String,
+    pub description: Option<String>,
     /// State
-    pub state: String,
+    pub state: Option<String>,
     /// Created At
-    pub created_at: String,
+    pub created_at: Option<String>,
     /// Author
-    pub author: GitLabUser,
+    pub author: Option<GitLabUser>,
     /// Commit Sha
-    pub sha: String,
+    pub sha: Option<String>,
     /// Merge Commit Sha
     pub merge_commit_sha: Option<String>,
     /// Squash Commit Sha
     pub squash_commit_sha: Option<String>,
     /// Web Url
-    pub web_url: String,
+    pub web_url: Option<String>,
     /// Labels
     pub labels: Vec<String>,
 }
@@ -120,10 +127,11 @@ pub struct GitLabMergeRequest {
 impl RemotePullRequest for GitLabMergeRequest {
     fn number(&self) -> i64 {
         self.iid
+            .expect("Merge request id is required for git-cliff semantics")
     }
 
     fn title(&self) -> Option<String> {
-        Some(self.title.clone())
+        self.title.clone()
     }
 
     fn labels(&self) -> Vec<String> {
@@ -131,40 +139,29 @@ impl RemotePullRequest for GitLabMergeRequest {
     }
 
     fn merge_commit(&self) -> Option<String> {
-        self.merge_commit_sha.clone().or_else(|| {
-            self.squash_commit_sha
-                .clone()
-                .or_else(|| Some(self.sha.clone()))
-        })
+        self.merge_commit_sha
+            .clone()
+            .or_else(|| self.squash_commit_sha.clone().or_else(|| self.sha.clone()))
     }
 }
 
 /// Representation of a GitLab User.
+///
+/// <https://gitlab.com/gitlab-org/gitlab/-/blob/master/doc/api/openapi/openapi.yaml>
 #[derive(Debug, Default, Clone, Hash, Eq, PartialEq, Deserialize, Serialize)]
 pub struct GitLabUser {
     /// Id
-    pub id: i64,
+    pub id: Option<i64>,
     /// Name
-    pub name: String,
+    pub name: Option<String>,
     /// Username
-    pub username: String,
+    pub username: Option<String>,
     /// State of the User
-    pub state: String,
+    pub state: Option<String>,
     /// Url for avatar
     pub avatar_url: Option<String>,
     /// Web Url
-    pub web_url: String,
-}
-
-/// Representation of a GitLab Reference.
-#[derive(Debug, Default, Clone, Hash, Eq, PartialEq, Deserialize, Serialize)]
-pub struct GitLabReference {
-    /// Short id
-    pub short: String,
-    /// Relative Link
-    pub relative: String,
-    /// Full Link
-    pub full: String,
+    pub web_url: Option<String>,
 }
 
 /// HTTP client for handling GitLab REST API requests.
@@ -362,9 +359,9 @@ mod test {
     #[test]
     fn timestamp() {
         let remote_commit = GitLabCommit {
-            id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
-            author_name: String::from("orhun"),
-            committed_date: String::from("2021-07-18T15:14:39+03:00"),
+            id: Some(String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071")),
+            author_name: Some(String::from("orhun")),
+            committed_date: Some(String::from("2021-07-18T15:14:39+03:00")),
             ..Default::default()
         };
 
@@ -374,7 +371,7 @@ mod test {
     #[test]
     fn pull_request_no_merge_commit() {
         let mr = GitLabMergeRequest {
-            sha: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+            sha: Some(String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071")),
             ..Default::default()
         };
         assert!(mr.merge_commit().is_some());
