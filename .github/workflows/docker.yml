@@ -36,25 +36,23 @@ jobs:
             type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
             type=semver,pattern={{version}}
 
-      - name: Find SHA Tag
-        id: sha_tag
+      - name: Find Image by SHA Tag
+        id: image_sha_tag
         env:
           META_JSON: ${{ steps.meta.outputs.json }}
         # This jq script is the most direct way to pull the current sha tag for targeting
         # the security scan.
         # The JSON output is currently an object and one property is the tags array.
-        # That array contains and entry like `"ghcr.io/orhun/git-cliff/git-cliff:sha-1810ad6"`
-        # This JQ script pulls the tags, then selects the first one that contains the string
-        # `:sha-`. This is then put through capture regex to get the sha tag in a named group.
-        # That named group has the value of the tag only which is exported to be used later.
+        # That array contains and entry like "ghcr.io/orhun/git-cliff/git-cliff:sha-1810ad6"
+        # This JQ script pulls the tags, then selects the first one that contains both
+        # `ghcr.io` and `:sha-`. The full tag value is then exported to be used later.
         run: |
           tag_value="$(
             jq -r '
-              first(.tags[] | select(contains(":sha-")))
-              | capture(":(?<tag>[^:]+)$").tag
+              first(.tags[] | select(contains("ghcr.io") and contains(":sha-")))
             ' <<< "$META_JSON"
           )"
-          echo "tag=$tag_value" >> "$GITHUB_OUTPUT"
+          echo "image=$tag_value" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
@@ -108,7 +106,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: anchore/sbom-action@cee1b8e05ae5b2593a75e197229729eabaa9f8ec # v0.20.2
         with:
-          image: ghcr.io/${{ github.repository_owner }}/git-cliff/git-cliff:${{ steps.sha_tag.outputs.tag }}
+          image: ${{ steps.image_sha_tag.outputs.image }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
