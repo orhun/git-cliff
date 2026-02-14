@@ -32,8 +32,27 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=sha
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') }}
+            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
             type=semver,pattern={{version}}
+
+      - name: Find Image by SHA Tag
+        id: image_sha_tag
+        env:
+          META_JSON: ${{ steps.meta.outputs.json }}
+        # This jq script is the most direct way to pull the current sha tag for targeting
+        # the security scan.
+        # The JSON output is currently an object and one property is the tags array.
+        # That array contains and entry like "ghcr.io/orhun/git-cliff/git-cliff:sha-1810ad6"
+        # This JQ script pulls the tags, then selects the first one that contains both
+        # `ghcr.io` and `:sha-`. The full tag value is then exported to be used later.
+        run: |
+          tag_value="$(
+            jq -r '
+              first(.tags[] | select(contains("ghcr.io") and contains(":sha-")))
+            ' <<< "$META_JSON"
+          )"
+          echo "image=$tag_value" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
@@ -84,9 +103,10 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache
 
       - name: Scan the image
+        if: github.event_name != 'pull_request'
         uses: anchore/sbom-action@cee1b8e05ae5b2593a75e197229729eabaa9f8ec # v0.20.2
         with:
-          image: ghcr.io/${{ github.repository_owner }}/git-cliff/git-cliff
+          image: ${{ steps.image_sha_tag.outputs.image }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}

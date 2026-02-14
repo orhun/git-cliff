@@ -25,6 +25,15 @@ Or you can use the image from the [GitHub Package Registry](https://github.com/o
 docker run -t -v "$(pwd)":/app/ "ghcr.io/orhun/git-cliff/git-cliff:${TAG:-latest}"
 ```
 
+### Tags
+
+Tags are generated from the CI and follow these rules:
+
+- `latest`: only on version tag builds
+- `main`: only on pushes to the `main` branch
+- `sha-<short>`: commit SHA builds (e.g. `sha-954106f`)
+- `X.Y.Z`: SemVer tag derived from Git tag (e.g. `2.12.0`)
+
 ### Building
 
 Custom Docker images can be built from the [Dockerfile](https://github.com/orhun/git-cliff/blob/main/Dockerfile):
