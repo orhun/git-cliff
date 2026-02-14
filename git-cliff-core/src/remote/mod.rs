@@ -169,7 +169,7 @@ pub trait RemoteClient {
     /// Callers are responsible for any additional processing of the deserialized data.
     async fn get_json<T: DeserializeOwned>(&self, url: &str) -> Result<T> {
         log::debug!("Sending request to: {url}");
-        let response = self.client().get(url).send().await?;
+        let response = self.client().get(url).send().await?.error_for_status()?;
         let response_text = if response.status().is_success() {
             let text = response.text().await?;
             log::trace!("Response: {text:?}");
