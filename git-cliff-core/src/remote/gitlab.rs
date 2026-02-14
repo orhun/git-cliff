@@ -3,9 +3,9 @@ use futures::{Stream, StreamExt, stream};
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{Deserialize, Serialize};
 
-use super::*;
+use super::{Debug, MAX_PAGE_SIZE, RemoteClient, RemoteCommit, RemotePullRequest};
 use crate::config::Remote;
-use crate::error::*;
+use crate::error::{Error, Result};
 
 /// Log message to show while fetching data from GitLab.
 pub const START_FETCHING_MSG: &str = "Retrieving data from GitLab...";
@@ -263,11 +263,11 @@ impl GitLabClient {
         self.get_pull_request_stream(project_id).try_collect().await
     }
 
-    fn get_commit_stream<'a>(
-        &'a self,
+    fn get_commit_stream(
+        &self,
         project_id: i64,
         ref_name: Option<&str>,
-    ) -> impl Stream<Item = Result<Box<dyn RemoteCommit>>> + 'a {
+    ) -> impl Stream<Item = Result<Box<dyn RemoteCommit>>> + '_ {
         let ref_name = ref_name.map(ToString::to_string);
         async_stream! {
                 // GitLab pages are 1-indexed
@@ -303,10 +303,10 @@ impl GitLabClient {
         }
     }
 
-    fn get_pull_request_stream<'a>(
-        &'a self,
+    fn get_pull_request_stream(
+        &self,
         project_id: i64,
-    ) -> impl Stream<Item = Result<Box<dyn RemotePullRequest>>> + 'a {
+    ) -> impl Stream<Item = Result<Box<dyn RemotePullRequest>>> + '_ {
         async_stream! {
             // GitLab pages are 1-indexed
             let page_stream = stream::iter(1..)
@@ -338,6 +338,7 @@ impl GitLabClient {
         }
     }
 }
+
 #[cfg(test)]
 mod test {
     use pretty_assertions::assert_eq;
