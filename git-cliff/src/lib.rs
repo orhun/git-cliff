@@ -288,6 +288,30 @@ fn process_repository<'a>(
     // Additionally, if `include_path` is already explicitly set, it might be preferable to append.
     let cwd = env::current_dir()?;
     let mut include_path = config.git.include_paths.clone();
+    if let Some(workdir) = &args.workdir {
+        if let Ok(root) = repository.root_path() {
+            // Convert workdir to an absolute path and then to a repo-relative glob.
+            // This avoids absolute-pattern mismatches against relative diff paths.
+            let mut workdir_abs = if workdir.is_absolute() {
+                workdir.clone()
+            } else {
+                cwd.join(workdir)
+            };
+            if let Ok(canon) = fs::canonicalize(&workdir_abs) {
+                workdir_abs = canon;
+            }
+            if let Ok(rel) = workdir_abs.strip_prefix(&root) {
+                if !rel.as_os_str().is_empty() {
+                    // Add trailing separator so directories expand to `**`.
+                    let rel = rel.join("");
+                    let rel_str = rel.to_string_lossy().to_string();
+                    if !include_path.iter().any(|p| p.as_str() == rel_str) {
+                        include_path.push(Pattern::new(&rel_str)?);
+                    }
+                }
+            }
+        }
+    }
     if let Ok(root) = repository.root_path() {
         if cwd.starts_with(&root) &&
             cwd != root &&
@@ -534,11 +558,6 @@ pub fn run_with_changelog_modifier<'a>(
         if let Some(changelog) = args.prepend {
             args.prepend = Some(workdir.join(changelog));
         }
-        // pushing an empty component force-adds a trailing path separator
-        // which is needed for correct glob expansion
-        args.include_path = Some(vec![Pattern::new(
-            workdir.join("").to_string_lossy().as_ref(),
-        )?]);
     }
 
     // Set path for the configuration file.
