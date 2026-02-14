@@ -105,7 +105,7 @@ pandoc --from=gfm --to=pdf --pdf-engine=xelatex -o CHANGELOG.pdf CHANGELOG.md --
 
 ## Handling remote Git service API rate limits
 
-When retrieving information from a remote Git repository, you may encounter HTTP 403 errors due to rate limiting.  
+When retrieving information from a remote Git repository, you may encounter HTTP 403 errors due to rate limiting.
 
 As a simple workaround, you can run `git-cliff` in offline mode to skip remote API calls:
 
@@ -113,5 +113,9 @@ As a simple workaround, you can run `git-cliff` in offline mode to skip remote A
 git-cliff --offline
 ```
 
-- This will generate the changelog using only local Git commit information.
-- Note that PR titles, labels, and other remote metadata will not be included in offline mode.
+:::note
+
+This will generate the changelog using only local Git commit information.
+Note that PR titles, labels, and other remote metadata will not be included in offline mode.
+
+:::
