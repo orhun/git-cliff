@@ -127,7 +127,7 @@ pub struct GitLabMergeRequest {
 impl RemotePullRequest for GitLabMergeRequest {
     fn number(&self) -> i64 {
         self.iid
-            .expect("Merge request iid is required for git-cliff semantics")
+            .expect("Merge request id is required for git-cliff semantics")
     }
 
     fn title(&self) -> Option<String> {
