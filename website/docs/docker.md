@@ -31,7 +31,7 @@ Tags are generated from the CI and follow these rules:
 
 - `latest`: only on version tag builds
 - `main`: only on pushes to the `main` branch
-- `sha-<short>`: commit SHA builds
+- `sha-<short>`: commit SHA builds (e.g. `sha-954106f`)
 - `X.Y.Z`: SemVer tag derived from Git tag (e.g. `2.12.0`)
 
 ### Building
