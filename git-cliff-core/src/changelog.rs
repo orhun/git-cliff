@@ -116,7 +116,7 @@ impl<'a> Changelog<'a> {
     fn check_conventional_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
         log::debug!("Verifying that all commits are conventional");
         let mut unconventional_count = 0;
-        commits.iter().for_each(|commit| {
+        for commit in commits.iter() {
             if commit.conv.is_none() {
                 log::error!(
                     "Commit {id} is not conventional:\n{message}",
@@ -130,7 +130,7 @@ impl<'a> Changelog<'a> {
                 );
                 unconventional_count += 1;
             }
-        });
+        }
 
         if unconventional_count > 0 {
             return Err(Error::UnconventionalCommitsError(unconventional_count));
@@ -144,22 +144,24 @@ impl<'a> Changelog<'a> {
     fn check_unmatched_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
         log::debug!("Verifying that no commits are unmatched by commit parsers");
         let mut unmatched_count = 0;
-        commits.iter().for_each(|commit| {
-            let is_unmatched = commit.group.is_none();
-            if is_unmatched {
-                log::error!(
-                    "Commit {id} was not matched by any commit parser:\n{message}",
-                    id = &commit.id[..7],
-                    message = commit
-                        .message
-                        .lines()
-                        .map(|line| { format!("    | {}", line.trim()) })
-                        .collect::<Vec<String>>()
-                        .join("\n")
-                );
-                unmatched_count += 1;
+        for commit in commits.iter() {
+            {
+                let is_unmatched = commit.group.is_none();
+                if is_unmatched {
+                    log::error!(
+                        "Commit {id} was not matched by any commit parser:\n{message}",
+                        id = &commit.id[..7],
+                        message = commit
+                            .message
+                            .lines()
+                            .map(|line| { format!("    | {}", line.trim()) })
+                            .collect::<Vec<String>>()
+                            .join("\n")
+                    );
+                    unmatched_count += 1;
+                }
             }
-        });
+        }
 
         if unmatched_count > 0 {
             return Err(Error::UnmatchedCommitsError(unmatched_count));
