@@ -65,6 +65,7 @@ impl Display for CommitProcessingErrorKind {
 
 impl CommitProcessingErrorKind {
     /// Whether this error kind should be surfaced as a warning summary.
+    #[must_use]
     pub fn should_warn(self) -> bool {
         matches!(
             self,
