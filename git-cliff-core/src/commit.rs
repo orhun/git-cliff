@@ -921,7 +921,7 @@ Refs: #123
     }
 
     #[test]
-    fn commit_sha() -> Result<()> {
+    fn commit_sha() {
         let commit = Commit::new(
             String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
             String::from("feat: do something"),
@@ -947,8 +947,6 @@ Refs: #123
             parsed_commit.is_err(),
             "Expected error when parsing with `skip: Some(true)`, but got Ok"
         );
-
-        Ok(())
     }
 
     #[test]

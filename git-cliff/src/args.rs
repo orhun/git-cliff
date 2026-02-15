@@ -469,6 +469,7 @@ impl Opt {
     /// input string into contents of the path returned by [`home_dir`].
     ///
     /// [`home_dir`]: dirs::home_dir
+    #[allow(clippy::unnecessary_wraps)]
     fn parse_dir(dir: &str) -> Result<PathBuf, String> {
         Ok(PathBuf::from(shellexpand::tilde(dir).to_string()))
     }
