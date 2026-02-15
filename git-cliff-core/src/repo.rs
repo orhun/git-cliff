@@ -218,8 +218,8 @@ impl Repository {
     /// [`Repository::commits`].
     pub fn submodules_range(
         &self,
-        old_commit: Option<Commit<'_>>,
-        new_commit: Commit<'_>,
+        old_commit: Option<&Commit<'_>>,
+        new_commit: &Commit<'_>,
     ) -> Result<Vec<SubmoduleRange>> {
         let old_tree = old_commit.and_then(|commit| commit.tree().ok());
         let new_tree = new_commit.tree().ok();
