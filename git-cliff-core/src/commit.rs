@@ -328,7 +328,7 @@ impl Commit<'_> {
                             }
                             Some(values)
                         }
-                        _ => None,
+                        Value::Object(_) => None,
                     })
                 };
                 match values {
