@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use async_stream::stream as async_stream;
 use futures::{Stream, StreamExt, stream};
 use reqwest_middleware::ClientWithMiddleware;
@@ -199,10 +201,12 @@ impl AzureDevOpsClient {
         );
 
         if let Some(ref_name) = ref_name {
-            url.push_str(&format!(
+            write!(
+                url,
                 "&searchCriteria.itemVersion.versionType=tag&searchCriteria.itemVersion.version={}",
                 urlencoding::encode(ref_name)
-            ));
+            )
+            .expect("Writing ref name query should never fail");
         }
 
         url
