@@ -116,7 +116,7 @@ impl<'a> Changelog<'a> {
     fn check_conventional_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
         log::debug!("Verifying that all commits are conventional");
         let mut unconventional_count = 0;
-        for commit in commits.iter() {
+        for commit in commits {
             if commit.conv.is_none() {
                 log::error!(
                     "Commit {id} is not conventional:\n{message}",
@@ -144,7 +144,7 @@ impl<'a> Changelog<'a> {
     fn check_unmatched_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
         log::debug!("Verifying that no commits are unmatched by commit parsers");
         let mut unmatched_count = 0;
-        for commit in commits.iter() {
+        for commit in commits {
             {
                 let is_unmatched = commit.group.is_none();
                 if is_unmatched {
@@ -214,7 +214,7 @@ impl<'a> Changelog<'a> {
         log::debug!("Processing the commits");
 
         let mut summary = Summary::default();
-        for release in self.releases.iter_mut() {
+        for release in &mut self.releases {
             Self::process_commit_list(&mut release.commits, &self.config.git, &mut summary)?;
             for submodule_commits in release.submodule_commits.values_mut() {
                 Self::process_commit_list(submodule_commits, &self.config.git, &mut summary)?;
