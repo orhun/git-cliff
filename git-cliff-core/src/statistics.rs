@@ -90,8 +90,8 @@ impl From<&Release<'_>> for Statistics {
                 .then_with(|| lhs.text.cmp(&rhs.text))
                 .then_with(|| lhs.href.cmp(&rhs.href))
         });
-        let days_passed_since_last_release = match release.previous.as_ref() {
-            Some(prev) => release
+        let days_passed_since_last_release = if let Some(prev) = release.previous.as_ref() {
+            release
                 .timestamp
                 .map_or_else(
                     || {
@@ -105,11 +105,10 @@ impl From<&Release<'_>> for Statistics {
                     prev.timestamp
                         .and_then(|ts| Utc.timestamp_opt(ts, 0).single()),
                 )
-                .map(|(curr, prev)| (curr.date_naive() - prev.date_naive()).num_days()),
-            None => {
-                log::trace!("Previous release not found");
-                None
-            }
+                .map(|(curr, prev)| (curr.date_naive() - prev.date_naive()).num_days())
+        } else {
+            log::trace!("Previous release not found");
+            None
         };
         Self {
             commit_count,
