@@ -323,7 +323,7 @@ impl Commit<'_> {
                                     Value::Number(_) | Value::Bool(_) | Value::Null => {
                                         values.push(item.to_string());
                                     }
-                                    _ => continue,
+                                    _ => {}
                                 }
                             }
                             Some(values)
