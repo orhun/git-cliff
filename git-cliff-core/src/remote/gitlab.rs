@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use async_stream::stream as async_stream;
 use futures::{Stream, StreamExt, stream};
 use reqwest_middleware::ClientWithMiddleware;
@@ -216,7 +218,8 @@ impl GitLabClient {
         );
 
         if let Some(ref_name) = ref_name {
-            url.push_str(&format!("&ref_name={ref_name}"));
+            write!(url, "&ref_name={}", urlencoding::encode(ref_name))
+                .expect("Writing ref name query should never fail");
         }
 
         url
