@@ -84,6 +84,7 @@ pub struct ChangelogConfig {
 
 /// Git configuration
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct GitConfig {
     /// Parse commits according to the conventional commits specification.
     pub conventional_commits: bool,

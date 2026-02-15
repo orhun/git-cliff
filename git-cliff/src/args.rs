@@ -51,6 +51,7 @@ const STYLES: Styles = Styles::styled()
 	disable_version_flag = true,
     styles(STYLES),
 )]
+#[allow(clippy::struct_excessive_bools)]
 pub struct Opt {
     #[arg(
 		short,
