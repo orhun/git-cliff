@@ -1,6 +1,7 @@
 use std::io;
 use std::path::{self, Path, PathBuf};
 use std::result::Result as StdResult;
+use std::sync::LazyLock;
 
 use git2::{
     BranchType, Commit, DescribeOptions, Oid, Repository as GitRepository, Sort, TreeWalkMode,
@@ -8,7 +9,7 @@ use git2::{
 };
 use glob::Pattern;
 use indexmap::IndexMap;
-use lazy_regex::{Lazy, Regex, lazy_regex};
+use regex::Regex;
 use url::Url;
 
 use crate::config::Remote;
@@ -16,10 +17,13 @@ use crate::error::{Error, Result};
 use crate::tag::Tag;
 
 /// Regex for replacing the signature part of a tag message.
-static TAG_SIGNATURE_REGEX: Lazy<Regex> = lazy_regex!(
-    // https://git-scm.com/docs/gitformat-signature#_description
-    r"(?s)-----BEGIN (PGP|SSH|SIGNED) (SIGNATURE|MESSAGE)-----(.*?)-----END (PGP|SSH|SIGNED) (SIGNATURE|MESSAGE)-----"
-);
+static TAG_SIGNATURE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+        // https://git-scm.com/docs/gitformat-signature#_description
+        r"(?s)-----BEGIN (PGP|SSH|SIGNED) (SIGNATURE|MESSAGE)-----(.*?)-----END (PGP|SSH|SIGNED) (SIGNATURE|MESSAGE)-----"
+    )
+    .expect("valid git tag signature regex")
+});
 
 /// Name of the cache file for changed files.
 const CHANGED_FILES_CACHE: &str = "changed_files_cache";
