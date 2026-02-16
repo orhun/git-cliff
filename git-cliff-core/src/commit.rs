@@ -15,7 +15,7 @@ use crate::error::{Error as AppError, Result};
 /// separated by a whitespace.
 //static SHA1_REGEX: Lazy<Regex> = lazy_regex!(r#"^\b([a-f0-9]{40})\b (.*)$"#);
 static SHA1_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r#"^\b([a-f0-9]{40})\b (.*)$"#).expect("valid SHA1 regex"));
+    LazyLock::new(|| Regex::new(r"^\b([a-f0-9]{40})\b (.*)$").expect("valid SHA1 regex"));
 
 /// Object representing a link
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
