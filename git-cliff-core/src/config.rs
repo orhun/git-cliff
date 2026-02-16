@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use std::sync::LazyLock;
 use std::{fmt, fs};
 
 use glob::Pattern;
@@ -23,17 +24,15 @@ struct ManifestInfo {
     regex: Regex,
 }
 
-lazy_static::lazy_static! {
-    /// Array containing manifest information for Rust and Python projects.
-    static ref MANIFEST_INFO: Vec<ManifestInfo> = vec![
+/// Array containing manifest information for Rust and Python projects.
+static MANIFEST_INFO: LazyLock<Vec<ManifestInfo>> = LazyLock::new(|| {
+    vec![
         ManifestInfo {
             path: PathBuf::from("Cargo.toml"),
-            regex: RegexBuilder::new(
-                r"^\[(?:workspace|package)\.metadata\.git\-cliff\.",
-            )
-            .multi_line(true)
-            .build()
-            .expect("failed to build regex"),
+            regex: RegexBuilder::new(r"^\[(?:workspace|package)\.metadata\.git\-cliff\.")
+                .multi_line(true)
+                .build()
+                .expect("failed to build regex"),
         },
         ManifestInfo {
             path: PathBuf::from("pyproject.toml"),
@@ -42,9 +41,8 @@ lazy_static::lazy_static! {
                 .build()
                 .expect("failed to build regex"),
         },
-    ];
-
-}
+    ]
+});
 
 /// Configuration values.
 #[derive(Debug, Clone, Serialize, Deserialize)]
