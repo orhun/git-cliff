@@ -386,7 +386,7 @@ mod test {
     }
 
     #[test]
-    fn with_statistics() -> Result<()> {
+    fn with_statistics() {
         let release = Release {
             commits: vec![],
             timestamp: Some(1_649_373_910),
@@ -401,8 +401,6 @@ mod test {
         assert!(release.statistics.is_none());
         let release = release.with_statistics();
         assert!(release.statistics.is_some());
-
-        Ok(())
     }
 
     #[cfg(feature = "github")]

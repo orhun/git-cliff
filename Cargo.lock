@@ -1007,7 +1007,6 @@ dependencies = [
  "git-cliff-core",
  "glob",
  "indicatif",
- "lazy_static",
  "log",
  "pathdiff",
  "pprof",
@@ -1040,8 +1039,6 @@ dependencies = [
  "glob",
  "http-cache-reqwest",
  "indexmap",
- "lazy-regex",
- "lazy_static",
  "log",
  "next_version",
  "pretty_assertions",
@@ -1632,29 +1629,6 @@ checksum = "0c0b063578492ceec17683ef2f8c5e89121fbd0b172cbc280635ab7567db2738"
 dependencies = [
  "once_cell",
  "wasm-bindgen",
-]
-
-[[package]]
-name = "lazy-regex"
-version = "3.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "191898e17ddee19e60bccb3945aa02339e81edd4a8c50e21fd4d48cdecda7b29"
-dependencies = [
- "lazy-regex-proc_macros",
- "once_cell",
- "regex",
-]
-
-[[package]]
-name = "lazy-regex-proc_macros"
-version = "3.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c35dc8b0da83d1a9507e12122c80dea71a9c7c613014347392483a83ea593e04"
-dependencies = [
- "proc-macro2",
- "quote",
- "regex",
- "syn 2.0.111",
 ]
 
 [[package]]

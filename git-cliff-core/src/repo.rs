@@ -1,6 +1,7 @@
 use std::io;
 use std::path::{self, Path, PathBuf};
 use std::result::Result as StdResult;
+use std::sync::LazyLock;
 
 use git2::{
     BranchType, Commit, DescribeOptions, Oid, Repository as GitRepository, Sort, TreeWalkMode,
@@ -8,7 +9,7 @@ use git2::{
 };
 use glob::Pattern;
 use indexmap::IndexMap;
-use lazy_regex::{Lazy, Regex, lazy_regex};
+use regex::Regex;
 use url::Url;
 
 use crate::config::Remote;
@@ -16,10 +17,13 @@ use crate::error::{Error, Result};
 use crate::tag::Tag;
 
 /// Regex for replacing the signature part of a tag message.
-static TAG_SIGNATURE_REGEX: Lazy<Regex> = lazy_regex!(
-    // https://git-scm.com/docs/gitformat-signature#_description
-    r"(?s)-----BEGIN (PGP|SSH|SIGNED) (SIGNATURE|MESSAGE)-----(.*?)-----END (PGP|SSH|SIGNED) (SIGNATURE|MESSAGE)-----"
-);
+static TAG_SIGNATURE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+        // https://git-scm.com/docs/gitformat-signature#_description
+        r"(?s)-----BEGIN (PGP|SSH|SIGNED) (SIGNATURE|MESSAGE)-----(.*?)-----END (PGP|SSH|SIGNED) (SIGNATURE|MESSAGE)-----"
+    )
+    .expect("valid git tag signature regex")
+});
 
 /// Name of the cache file for changed files.
 const CHANGED_FILES_CACHE: &str = "changed_files_cache";
@@ -182,12 +186,24 @@ impl Repository {
             .filter_map(|id| self.inner.find_commit(id).ok())
             .collect();
         if include_path.is_some() || exclude_path.is_some() {
-            let include_patterns = include_path
-                .map(|patterns| patterns.into_iter().map(Self::normalize_pattern).collect());
-            let exclude_patterns = exclude_path
-                .map(|patterns| patterns.into_iter().map(Self::normalize_pattern).collect());
+            let include_patterns = include_path.map(|patterns| {
+                patterns
+                    .into_iter()
+                    .map(Self::normalize_pattern)
+                    .collect::<Vec<_>>()
+            });
+            let exclude_patterns = exclude_path.map(|patterns| {
+                patterns
+                    .into_iter()
+                    .map(Self::normalize_pattern)
+                    .collect::<Vec<_>>()
+            });
             commits.retain(|commit| {
-                self.should_retain_commit(commit, &include_patterns, &exclude_patterns)
+                self.should_retain_commit(
+                    commit,
+                    include_patterns.as_ref(),
+                    exclude_patterns.as_ref(),
+                )
             });
         }
         Ok(commits)
@@ -206,8 +222,8 @@ impl Repository {
     /// [`Repository::commits`].
     pub fn submodules_range(
         &self,
-        old_commit: Option<Commit<'_>>,
-        new_commit: Commit<'_>,
+        old_commit: Option<&Commit<'_>>,
+        new_commit: &Commit<'_>,
     ) -> Result<Vec<SubmoduleRange>> {
         let old_tree = old_commit.and_then(|commit| commit.tree().ok());
         let new_tree = new_commit.tree().ok();
@@ -273,8 +289,8 @@ impl Repository {
     fn should_retain_commit(
         &self,
         commit: &Commit,
-        include_patterns: &Option<Vec<Pattern>>,
-        exclude_patterns: &Option<Vec<Pattern>>,
+        include_patterns: Option<&Vec<Pattern>>,
+        exclude_patterns: Option<&Vec<Pattern>>,
     ) -> bool {
         let changed_files = self.commit_changed_files(commit);
         match (include_patterns, exclude_patterns) {
@@ -1042,8 +1058,11 @@ mod test {
         ]);
 
         {
-            let retain =
-                repo.should_retain_commit(&first_commit, &Some(vec![new_pattern("dir/")]), &None);
+            let retain = repo.should_retain_commit(
+                &first_commit,
+                Some(vec![new_pattern("dir/")]).as_ref(),
+                None,
+            );
             assert!(retain, "include: dir/");
         }
 
@@ -1055,61 +1074,73 @@ mod test {
         ]);
 
         {
-            let retain = repo.should_retain_commit(&commit, &None, &None);
+            let retain = repo.should_retain_commit(&commit, None, None);
             assert!(retain, "no include/exclude patterns");
         }
 
         {
-            let retain = repo.should_retain_commit(&commit, &Some(vec![new_pattern("./")]), &None);
+            let retain =
+                repo.should_retain_commit(&commit, Some(vec![new_pattern("./")]).as_ref(), None);
             assert!(retain, "include: ./");
         }
 
         {
-            let retain = repo.should_retain_commit(&commit, &Some(vec![new_pattern("**")]), &None);
+            let retain =
+                repo.should_retain_commit(&commit, Some(vec![new_pattern("**")]).as_ref(), None);
             assert!(retain, "include: **");
         }
 
         {
-            let retain = repo.should_retain_commit(&commit, &Some(vec![new_pattern("*")]), &None);
+            let retain =
+                repo.should_retain_commit(&commit, Some(vec![new_pattern("*")]).as_ref(), None);
             assert!(retain, "include: *");
         }
 
         {
             let retain =
-                repo.should_retain_commit(&commit, &Some(vec![new_pattern("dir/")]), &None);
+                repo.should_retain_commit(&commit, Some(vec![new_pattern("dir/")]).as_ref(), None);
             assert!(retain, "include: dir/");
         }
 
         {
             let retain =
-                repo.should_retain_commit(&commit, &Some(vec![new_pattern("dir/*")]), &None);
+                repo.should_retain_commit(&commit, Some(vec![new_pattern("dir/*")]).as_ref(), None);
             assert!(retain, "include: dir/*");
         }
 
         {
-            let retain =
-                repo.should_retain_commit(&commit, &Some(vec![new_pattern("file1.txt")]), &None);
+            let retain = repo.should_retain_commit(
+                &commit,
+                Some(vec![new_pattern("file1.txt")]).as_ref(),
+                None,
+            );
             assert!(retain, "include: file1.txt");
         }
 
         {
-            let retain =
-                repo.should_retain_commit(&commit, &None, &Some(vec![new_pattern("file1.txt")]));
+            let retain = repo.should_retain_commit(
+                &commit,
+                None,
+                Some(vec![new_pattern("file1.txt")]).as_ref(),
+            );
             assert!(retain, "exclude: file1.txt");
         }
 
         {
             let retain = repo.should_retain_commit(
                 &commit,
-                &Some(vec![new_pattern("file1.txt")]),
-                &Some(vec![new_pattern("file2.txt")]),
+                Some(vec![new_pattern("file1.txt")]).as_ref(),
+                Some(vec![new_pattern("file2.txt")]).as_ref(),
             );
             assert!(retain, "include: file1.txt, exclude: file2.txt");
         }
 
         {
-            let retain =
-                repo.should_retain_commit(&commit, &None, &Some(vec![new_pattern("**/*.txt")]));
+            let retain = repo.should_retain_commit(
+                &commit,
+                None,
+                Some(vec![new_pattern("**/*.txt")]).as_ref(),
+            );
             assert!(!retain, "exclude: **/*.txt");
         }
     }
