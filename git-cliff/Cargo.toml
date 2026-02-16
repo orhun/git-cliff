@@ -49,7 +49,6 @@ glob.workspace = true
 regex.workspace = true
 log.workspace = true
 secrecy.workspace = true
-lazy_static.workspace = true
 dirs.workspace = true
 clap = { version = "4.5.53", features = ["derive", "env", "wrap_help", "cargo"] }
 clap_complete = "4.5.61"

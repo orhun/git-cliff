@@ -122,8 +122,8 @@ impl From<&Release<'_>> for Statistics {
 
 #[cfg(test)]
 mod test {
-    use lazy_regex::Regex;
     use pretty_assertions::assert_eq;
+    use regex::Regex;
 
     use super::*;
     use crate::commit::{Commit, Signature};
