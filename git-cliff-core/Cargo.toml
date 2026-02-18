@@ -46,6 +46,10 @@ gitea = ["remote"]
 ## You can turn this off if you don't use Azure DevOps and don't want
 ## to make network requests to the Azure DevOps API.
 azure_devops = ["remote"]
+## Enable tracing instrumentation in git-cliff-core.
+## This is intentionally feature-gated to keep the core library
+## lightweight and to allow downstream users to opt in to tracing.
+tracing = ["dep:tracing"]
 
 [dependencies]
 glob.workspace = true
@@ -83,6 +87,7 @@ urlencoding = "2.1.3"
 cacache = { version = "13.1.0", features = ["mmap", "tokio-runtime"], default-features = false }
 time = "0.3.44"
 chrono = { version = "0.4.41", features = ["serde"] }
+tracing = { workspace = true, optional = true }
 
 [dependencies.git2]
 version = "0.20.3"
