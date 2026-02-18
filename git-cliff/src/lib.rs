@@ -28,6 +28,8 @@ use git_cliff_core::repo::{Repository, SubmoduleRange};
 use git_cliff_core::{DEFAULT_CONFIG, IGNORE_FILE};
 use glob::Pattern;
 
+use crate::args::PreReleaseOption;
+
 /// Checks for a new version on crates.io
 #[cfg(feature = "update-informer")]
 pub fn check_new_version() {
@@ -196,41 +198,8 @@ fn process_repository<'a>(
         args.topo_order,
         args.use_branch_tags,
     )?;
-    let skip_regex = config.git.skip_tags.as_ref();
-    let ignore_regex = config.git.ignore_tags.as_ref();
-    let count_tags = config.git.count_tags.as_ref();
+
     let recurse_submodules = config.git.recurse_submodules.unwrap_or(false);
-    tags.retain(|_, tag| {
-        let name = &tag.name;
-
-        // Keep skip tags to drop commits in the later stage.
-        let skip = skip_regex.is_some_and(|r| r.is_match(name));
-        if skip {
-            return true;
-        }
-
-        let count = count_tags.is_none_or(|r| {
-            let count_tag = r.is_match(name);
-            if count_tag {
-                log::debug!("Counting release: {name}");
-            }
-            count_tag
-        });
-
-        let ignore = ignore_regex.is_some_and(|r| {
-            if r.as_str().trim().is_empty() {
-                return false;
-            }
-
-            let ignore_tag = r.is_match(name);
-            if ignore_tag {
-                log::debug!("Ignoring release: {name}");
-            }
-            ignore_tag
-        });
-
-        count && !ignore
-    });
 
     if !config.remote.is_any_set() {
         match repository.upstream_remote() {
@@ -729,6 +698,10 @@ pub fn run_with_changelog_modifier<'a>(
         config.bump.bump_type = Some(bump_type);
     }
 
+    if let Some(PreReleaseOption::Type(pre_release_type)) = args.pre_release {
+        config.bump.pre_release = Some(pre_release_type);
+    }
+
     // Generate changelog from context.
     let mut changelog: Changelog = if let Some(context_path) = args.from_context {
         let mut input: Box<dyn io::Read> = if context_path == Path::new("-") {
@@ -837,6 +810,7 @@ pub fn write_changelog<W: io::Write>(
             return Ok(());
         }
     }
+    changelog.filter_releases();
     if args.context {
         changelog.write_context(&mut out)?;
         return Ok(());
