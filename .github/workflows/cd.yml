@@ -252,7 +252,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Build Python wheels (linux)
         if: matrix.build.PYPI_PUBLISH == true && startsWith(matrix.build.NAME, 'linux')
-        uses: PyO3/maturin-action@86b9d133d34bc1b40018696f782949dac11bd380 # v1.49.4
+        uses: PyO3/maturin-action@b1bd829e37fef14c63f19162034228a2f3dc1021 # v1.50.0
         with:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
@@ -264,7 +264,7 @@ jobs:
         if: |
           matrix.build.PYPI_PUBLISH == true &&
           (startsWith(matrix.build.OS, 'macos') || startsWith(matrix.build.OS, 'windows'))
-        uses: PyO3/maturin-action@86b9d133d34bc1b40018696f782949dac11bd380 # v1.49.4
+        uses: PyO3/maturin-action@b1bd829e37fef14c63f19162034228a2f3dc1021 # v1.50.0
         with:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
@@ -272,7 +272,7 @@ jobs:
           sccache: "true"
       - name: Build Python wheels (musl)
         if: matrix.build.PYPI_PUBLISH == true && endsWith(matrix.build.OS, 'musl')
-        uses: PyO3/maturin-action@86b9d133d34bc1b40018696f782949dac11bd380 # v1.49.4
+        uses: PyO3/maturin-action@b1bd829e37fef14c63f19162034228a2f3dc1021 # v1.50.0
         with:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
@@ -328,7 +328,7 @@ jobs:
           pattern: wheels-*
           merge-multiple: true
       - name: Publish to PyPI
-        uses: PyO3/maturin-action@86b9d133d34bc1b40018696f782949dac11bd380 # v1.49.4
+        uses: PyO3/maturin-action@b1bd829e37fef14c63f19162034228a2f3dc1021 # v1.50.0
         env:
           MATURIN_PYPI_TOKEN: ${{ vars.USE_TESTPYPI == 'true' && secrets.TESTPYPI_API_TOKEN || secrets.PYPI_API_TOKEN }}
           MATURIN_REPOSITORY: ${{ vars.USE_TESTPYPI == 'true' && 'testpypi' || 'pypi' }}
@@ -482,7 +482,7 @@ jobs:
       contents: read
     steps:
       - name: Bump formula
-        uses: mislav/bump-homebrew-formula-action@8e2baa47daaa8db10fcdeb04105dfa6850eb0d68 # v3.4
+        uses: mislav/bump-homebrew-formula-action@56a283fa15557e9abaa4bdb63b8212abc68e655c # v3.6
         with:
           formula-name: git-cliff
           formula-path: Formula/g/git-cliff.rb
