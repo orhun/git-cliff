@@ -71,7 +71,7 @@ jobs:
             -- --skip "repo::test::git_upstream_remote"
       - name: Upload reports to codecov
         if: github.actor != 'dependabot[bot]'
-        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
         with:
           name: code-coverage-report
           files: cobertura.xml
@@ -140,7 +140,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Check the links
-        uses: lycheeverse/lychee-action@82202e5e9c2f4ef1a55a3d02563e1cb6041e5332 # v2.4.1
+        uses: lycheeverse/lychee-action@a8c4c7cb88f0c7386610c35eb25108e448569cb0 # v2.7.0
         with:
           args: -v --config lychee.toml *.md website/docs/* website/blog/*
           fail: true
