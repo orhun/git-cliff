@@ -32,7 +32,7 @@ If a release does not contain any submodule updates, `submodule_commits` is just
 
 :::
 
-:::warn
+:::warning
 
 Nested submodules are not yet supported.
 
