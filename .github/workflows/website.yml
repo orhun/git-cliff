@@ -36,7 +36,9 @@ jobs:
         with:
           node-version: 20
           cache: yarn
-          cache-dependency-path: ./website/package-lock.json
+          cache-dependency-path: ./website/yarn.lock
+      - name: Enable Corepack
+        run: corepack enable
       - name: Install dependencies
         working-directory: ./website
         run: yarn install --frozen-lockfile --non-interactive
@@ -59,7 +61,9 @@ jobs:
         with:
           node-version: 20
           cache: yarn
-          cache-dependency-path: ./website/package-lock.json
+          cache-dependency-path: ./website/yarn.lock
+      - name: Enable Corepack
+        run: corepack enable
       - name: Install dependencies
         working-directory: ./website
         run: yarn install --frozen-lockfile --non-interactive
