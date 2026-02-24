@@ -1,15 +1,17 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "module": "node18",
-    "moduleResolution": "node16",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "resolveJsonModule": true,
     "noEmit": true,
     "allowJs": true,
-    "checkJs": true
+    "checkJs": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true
   },
   "include": ["src", "tsup.config.ts", "eslint.config.js"]
 }
