@@ -355,6 +355,7 @@ mod test {
                 ("0.1.0", "0.1.1", vec!["fix: fix xyz"]),
                 ("0.1.0", "0.1.1", vec!["feat: add xyz", "fix: fix xyz"]),
                 ("0.1.0", "1.0.0", vec!["feat!: add xyz", "feat: zzz"]),
+                ("1.2.0-rc.3", "1.2.0", vec!["fix: fix xyz"]),
             ]
             .iter(),
         ) {
@@ -479,6 +480,79 @@ mod test {
             })?;
             assert_eq!(expected_version, &next_version);
         }
+
+        for (version, expected_version, commits) in [
+            ("1.2.0-beta.2", "1.2.0-beta.3", vec![
+                "feat: zzz",
+            ]),
+            ("1.2.0-alpha.2", "1.2.0-beta.0", vec!["feat: zzz"]),
+            ("v1.2.0", "v1.3.0-beta.0", vec!["feat: zzz"]),
+
+        ] {
+            let release = build_release(version, &commits);
+            let next_version = release.calculate_next_version_with_config(&Bump {
+                features_always_bump_minor: Some(true),
+                breaking_always_bump_major: Some(false),
+                initial_tag: None,
+                custom_major_increment_regex: None,
+                custom_minor_increment_regex: None,
+                bump_type: None,
+                pre_release: Some("beta".to_string()),
+            })?;
+            assert_eq!(expected_version, &next_version);
+        }
+
+        for (version, expected_version, commits) in [
+            ("0.3.0-beta.2", "1.0.0-alpha.0", vec!["feat: zzz"]),
+        ] {
+            let release = build_release(version, &commits);
+            let next_version = release.calculate_next_version_with_config(&Bump {
+                features_always_bump_minor: Some(true),
+                breaking_always_bump_major: Some(false),
+                initial_tag: None,
+                custom_major_increment_regex: None,
+                custom_minor_increment_regex: None,
+                bump_type: Some(BumpType::Major),
+                pre_release: Some("alpha".to_string()),
+            })?;
+            assert_eq!(expected_version, &next_version);
+        }
+
+        for (version, expected_version, commits) in [
+             ("1.2.0-beta.2+build.45", "1.2.0+build.45", vec!["feat: zzz"]),
+             ("1.2.0-beta.1.2", "1.2.0", vec!["feat: zzz"]),
+         ] {
+             let release = build_release(version, &commits);
+             let next_version = release.calculate_next_version_with_config(&Bump {
+                 features_always_bump_minor: Some(true),
+                 breaking_always_bump_major: Some(false),
+                 initial_tag: None,
+                 custom_major_increment_regex: None,
+                 custom_minor_increment_regex: None,
+                 bump_type: None,
+                 pre_release: None,
+             })?;
+             assert_eq!(expected_version, &next_version);
+         }
+
+
+        for (version, expected_version, commits) in [
+            ("1.2.0-beta.2+build.45", "1.2.0-beta.3+build.45", vec!["feat: zzz"]),
+            ("1.2.0-beta.1.2", "1.2.0-beta.1.3", vec!["feat: zzz"]),
+        ] {
+            let release = build_release(version, &commits);
+            let next_version = release.calculate_next_version_with_config(&Bump {
+                features_always_bump_minor: Some(true),
+                breaking_always_bump_major: Some(false),
+                initial_tag: None,
+                custom_major_increment_regex: None,
+                custom_minor_increment_regex: None,
+                bump_type: None,
+                pre_release: Some("beta".to_string()),
+            })?;
+            assert_eq!(expected_version, &next_version);
+        }
+        
 
         Ok(())
     }
