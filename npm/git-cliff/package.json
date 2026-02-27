@@ -29,7 +29,7 @@
     "typecheck": "tsc",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
-    "build": "tsup",
+    "build": "tsdown",
     "dev": "yarn build && node lib/cli/cli.js"
   },
   "repository": {
@@ -86,7 +86,7 @@
     "@typescript-eslint/eslint-plugin": "^8.38.0",
     "@typescript-eslint/parser": "^8.38.0",
     "eslint": "^9.32.0",
-    "tsup": "^8.5.0",
+    "tsdown": "^0.21.0-beta.2",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0"
   },
