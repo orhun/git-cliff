@@ -1,16 +1,17 @@
-import { defineConfig, type Options } from "tsup";
+import { defineConfig, type UserConfig } from "tsdown";
 import packageJson from "./package.json" with { type: "json" };
 
-const baseOptions: Options = {
+const baseOptions: UserConfig = {
   clean: true,
   dts: true,
   entry: ["src/index.ts"],
   minify: false,
-  external: Object.keys(packageJson.dependencies),
+  deps: {
+    neverBundle: Object.keys(packageJson.dependencies),
+  },
   sourcemap: true,
   target: "node18",
   tsconfig: "tsconfig.json",
-  keepNames: true,
   treeshake: true,
 };
 

@@ -13,5 +13,5 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true
   },
-  "include": ["src", "tsup.config.ts", "eslint.config.js"]
+  "include": ["src", "tsdown.config.ts", "eslint.config.js"]
 }
