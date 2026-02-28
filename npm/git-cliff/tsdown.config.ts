@@ -1,7 +1,7 @@
-import { defineConfig } from "tsdown";
+import { defineConfig, type UserConfig } from "tsdown";
 import packageJson from "./package.json" with { type: "json" };
 
-const baseOptions = {
+const baseOptions: UserConfig = {
   clean: true,
   dts: true,
   entry: ["src/index.ts"],
