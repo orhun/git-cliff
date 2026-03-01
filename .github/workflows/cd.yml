@@ -197,7 +197,7 @@ jobs:
             git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}.tar.gz
       - name: Publish to GitHub
         if: ${{ !contains(github.ref, '-') }}
-        uses: svenstaro/upload-release-action@6b7fa9f267e90b50a19fef07b3596790bb941741 # v2
+        uses: svenstaro/upload-release-action@b98a3b12e86552593f3e4e577ca8a62aa2f3f22b # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}*
@@ -208,7 +208,7 @@ jobs:
           body: "${{ needs.generate-changelog.outputs.release_body }}"
       - name: Publish to GitHub (pre-release)
         if: ${{ contains(github.ref, '-') }}
-        uses: svenstaro/upload-release-action@6b7fa9f267e90b50a19fef07b3596790bb941741 # v2
+        uses: svenstaro/upload-release-action@b98a3b12e86552593f3e4e577ca8a62aa2f3f22b # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}*
@@ -252,7 +252,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Build Python wheels (linux)
         if: matrix.build.PYPI_PUBLISH == true && startsWith(matrix.build.NAME, 'linux')
-        uses: PyO3/maturin-action@b1bd829e37fef14c63f19162034228a2f3dc1021 # v1.50.0
+        uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
         with:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
@@ -264,7 +264,7 @@ jobs:
         if: |
           matrix.build.PYPI_PUBLISH == true &&
           (startsWith(matrix.build.OS, 'macos') || startsWith(matrix.build.OS, 'windows'))
-        uses: PyO3/maturin-action@b1bd829e37fef14c63f19162034228a2f3dc1021 # v1.50.0
+        uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
         with:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
@@ -272,7 +272,7 @@ jobs:
           sccache: "true"
       - name: Build Python wheels (musl)
         if: matrix.build.PYPI_PUBLISH == true && endsWith(matrix.build.OS, 'musl')
-        uses: PyO3/maturin-action@b1bd829e37fef14c63f19162034228a2f3dc1021 # v1.50.0
+        uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
         with:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
@@ -328,7 +328,7 @@ jobs:
           pattern: wheels-*
           merge-multiple: true
       - name: Publish to PyPI
-        uses: PyO3/maturin-action@b1bd829e37fef14c63f19162034228a2f3dc1021 # v1.50.0
+        uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
         env:
           MATURIN_PYPI_TOKEN: ${{ vars.USE_TESTPYPI == 'true' && secrets.TESTPYPI_API_TOKEN || secrets.PYPI_API_TOKEN }}
           MATURIN_REPOSITORY: ${{ vars.USE_TESTPYPI == 'true' && 'testpypi' || 'pypi' }}
@@ -372,7 +372,7 @@ jobs:
             git-cliff-${{ env.RELEASE_VERSION }}.deb
       - name: Upload the release
         if: ${{ !contains(github.ref, '-') }}
-        uses: svenstaro/upload-release-action@6b7fa9f267e90b50a19fef07b3596790bb941741 # v2
+        uses: svenstaro/upload-release-action@b98a3b12e86552593f3e4e577ca8a62aa2f3f22b # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: git-cliff-${{ env.RELEASE_VERSION }}.deb
@@ -381,7 +381,7 @@ jobs:
           body: "${{ needs.generate-changelog.outputs.release_body }}"
       - name: Upload the pre-release
         if: ${{ contains(github.ref, '-') }}
-        uses: svenstaro/upload-release-action@6b7fa9f267e90b50a19fef07b3596790bb941741 # v2
+        uses: svenstaro/upload-release-action@b98a3b12e86552593f3e4e577ca8a62aa2f3f22b # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: git-cliff-${{ env.RELEASE_VERSION }}.deb
@@ -423,7 +423,7 @@ jobs:
             git-cliff-${{ env.RELEASE_VERSION }}.x86_64.rpm
       - name: Upload the release
         if: ${{ !contains(github.ref, '-') }}
-        uses: svenstaro/upload-release-action@6b7fa9f267e90b50a19fef07b3596790bb941741 # v2
+        uses: svenstaro/upload-release-action@b98a3b12e86552593f3e4e577ca8a62aa2f3f22b # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: git-cliff-${{ env.RELEASE_VERSION }}.x86_64.rpm
@@ -432,7 +432,7 @@ jobs:
           body: "${{ needs.generate-changelog.outputs.release_body }}"
       - name: Upload the pre-release
         if: ${{ contains(github.ref, '-') }}
-        uses: svenstaro/upload-release-action@6b7fa9f267e90b50a19fef07b3596790bb941741 # v2
+        uses: svenstaro/upload-release-action@b98a3b12e86552593f3e4e577ca8a62aa2f3f22b # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: git-cliff-${{ env.RELEASE_VERSION }}.x86_64.rpm
