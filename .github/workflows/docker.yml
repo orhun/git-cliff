@@ -104,7 +104,7 @@ jobs:
 
       - name: Scan the image
         if: github.event_name != 'pull_request'
-        uses: anchore/sbom-action@28d71544de8eaf1b958d335707167c5f783590ad # v0.22.2
+        uses: anchore/sbom-action@17ae1740179002c89186b61233e0f892c3118b11 # v0.23.0
         with:
           image: ${{ steps.image_sha_tag.outputs.image }}
 
