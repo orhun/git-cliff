@@ -1,4 +1,6 @@
 import { arch as getArch, platform as getPlatform } from "os";
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
 
 /**
  * Returns the executable path for git-cliff located inside node_modules
@@ -22,7 +24,7 @@ export async function getExePath() {
 
   try {
     // Since the bin will be located inside `node_modules`, we can simply call import.meta.resolve
-    return import.meta.resolve(
+    return require.resolve(
       `git-cliff-${os}-${arch}/bin/git-cliff${extension}`,
     );
   } catch (e) {
