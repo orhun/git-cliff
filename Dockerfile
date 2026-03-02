@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4.3-labs
-FROM lukemathwalker/cargo-chef:0.1.73-rust-1.93.0-slim-bookworm@sha256:b8eeafda43689bd8f744c73b31c9c3bf0ed0d43cfdb55f7d486e54b06417a0c4 AS chef
+FROM lukemathwalker/cargo-chef:0.1.75-rust-1.93.1-slim-bookworm@sha256:6b4d370f21456d851cddabe7b81675727a90ba34447757195a0aec91cf41aa4b AS chef
 WORKDIR app
 
 FROM chef AS planner
