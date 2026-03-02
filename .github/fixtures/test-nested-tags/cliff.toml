@@ -1,0 +1,26 @@
+[changelog]
+header = ""
+body = """
+{% if version %}\
+{% set clean_version = version | replace(from="v", to="") | replace(from="-stable", to="") %}\
+## [{{ clean_version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+## [unreleased]
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | upper_first }}
+{% for commit in commits %}
+- {{ commit.message }}
+{%- endfor %}
+{% endfor %}
+"""
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+commit_parsers = [
+  { message = "^feat", group = "Features" },
+  { message = "^fix", group = "Bug Fixes" },
+]
+tag_pattern = "v.*-stable$"
