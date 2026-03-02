@@ -139,10 +139,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Check the links
+      - name: Check website links
         uses: lycheeverse/lychee-action@8646ba30535128ac92d33dfc9133794bfdd9b411 # v2.8.0
         with:
-          args: -v --config lychee.toml *.md website/docs/* website/blog/*
+          args: >
+            -v
+            --config lychee.toml
+            --root-dir website
+            website/docs/* website/blog/*
+          fail: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check root markdown links
+        uses: lycheeverse/lychee-action@8646ba30535128ac92d33dfc9133794bfdd9b411 # v2.8.0
+        with:
+          args: >
+            -v
+            --config lychee.toml
+            *.md
           fail: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
