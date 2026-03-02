@@ -53,7 +53,6 @@ regex.workspace = true
 log.workspace = true
 secrecy.workspace = true
 dirs.workspace = true
-lazy_static.workspace = true
 thiserror = "2.0.17"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
@@ -62,7 +61,6 @@ serde_regex = "1.1.0"
 tera = "1.20.1"
 indexmap = { version = "2.13.0", features = ["serde"] }
 toml = "0.9.8"
-lazy-regex = "3.6.0"
 next_version = "0.2.26"
 semver = "1.0.27"
 document-features = { version = "0.2.12", optional = true }

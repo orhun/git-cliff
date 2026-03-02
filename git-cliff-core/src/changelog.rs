@@ -116,7 +116,7 @@ impl<'a> Changelog<'a> {
     fn check_conventional_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
         log::debug!("Verifying that all commits are conventional");
         let mut unconventional_count = 0;
-        commits.iter().for_each(|commit| {
+        for commit in commits {
             if commit.conv.is_none() {
                 log::error!(
                     "Commit {id} is not conventional:\n{message}",
@@ -130,7 +130,7 @@ impl<'a> Changelog<'a> {
                 );
                 unconventional_count += 1;
             }
-        });
+        }
 
         if unconventional_count > 0 {
             return Err(Error::UnconventionalCommitsError(unconventional_count));
@@ -144,22 +144,24 @@ impl<'a> Changelog<'a> {
     fn check_unmatched_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
         log::debug!("Verifying that no commits are unmatched by commit parsers");
         let mut unmatched_count = 0;
-        commits.iter().for_each(|commit| {
-            let is_unmatched = commit.group.is_none();
-            if is_unmatched {
-                log::error!(
-                    "Commit {id} was not matched by any commit parser:\n{message}",
-                    id = &commit.id[..7],
-                    message = commit
-                        .message
-                        .lines()
-                        .map(|line| { format!("    | {}", line.trim()) })
-                        .collect::<Vec<String>>()
-                        .join("\n")
-                );
-                unmatched_count += 1;
+        for commit in commits {
+            {
+                let is_unmatched = commit.group.is_none();
+                if is_unmatched {
+                    log::error!(
+                        "Commit {id} was not matched by any commit parser:\n{message}",
+                        id = &commit.id[..7],
+                        message = commit
+                            .message
+                            .lines()
+                            .map(|line| { format!("    | {}", line.trim()) })
+                            .collect::<Vec<String>>()
+                            .join("\n")
+                    );
+                    unmatched_count += 1;
+                }
             }
-        });
+        }
 
         if unmatched_count > 0 {
             return Err(Error::UnmatchedCommitsError(unmatched_count));
@@ -212,7 +214,7 @@ impl<'a> Changelog<'a> {
         log::debug!("Processing the commits");
 
         let mut summary = Summary::default();
-        for release in self.releases.iter_mut() {
+        for release in &mut self.releases {
             Self::process_commit_list(&mut release.commits, &self.config.git, &mut summary)?;
             for submodule_commits in release.submodule_commits.values_mut() {
                 Self::process_commit_list(submodule_commits, &self.config.git, &mut summary)?;
