@@ -212,6 +212,13 @@ impl Commit<'_> {
     /// * converts commit to a conventional commit
     /// * sets the group for the commit
     /// * extracts links and generates URLs
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            skip_all,
+            fields(id = self.id)
+        )
+    )]
     pub fn process(&self, config: &GitConfig) -> Result<Self> {
         let mut commit = self.clone();
         commit = commit.preprocess(&config.commit_preprocessors)?;
@@ -252,6 +259,13 @@ impl Commit<'_> {
     /// Modifies the commit [`message`] using regex or custom OS command.
     ///
     /// [`message`]: Commit::message
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            skip_all,
+            fields(id = self.id)
+        )
+    )]
     pub fn preprocess(mut self, preprocessors: &[TextProcessor]) -> Result<Self> {
         preprocessors.iter().try_for_each(|preprocessor| {
             preprocessor.replace(&mut self.message, vec![("COMMIT_SHA", &self.id)])?;
@@ -276,6 +290,13 @@ impl Commit<'_> {
     ///
     /// [`group`]: Commit::group
     /// [`scope`]: Commit::scope
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            skip_all,
+            fields(id = self.id)
+        )
+    )]
     pub fn parse(
         mut self,
         parsers: &[CommitParser],
@@ -393,6 +414,13 @@ impl Commit<'_> {
     ///
     /// [`links`]: Commit::links
     #[must_use]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            skip_all,
+            fields(id = self.id)
+        )
+    )]
     pub fn parse_links(mut self, parsers: &[LinkParser]) -> Self {
         for parser in parsers {
             let regex = &parser.pattern;
@@ -504,6 +532,7 @@ impl Serialize for Commit<'_> {
 /// [`Commit::into_conventional`].
 ///
 /// This function is to be used only in [`crate::release::Release::commits`].
+#[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
 pub(crate) fn commits_to_conventional_commits<'de, 'a, D: Deserializer<'de>>(
     deserializer: D,
 ) -> std::result::Result<Vec<Commit<'a>>, D::Error> {
