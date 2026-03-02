@@ -19,3 +19,6 @@ cache = true
 
 # Maximum age for cached requests
 max_cache_age = "1d"
+
+# Maximum number of allowed retries before a link is declared dead.
+max_retries = 3
