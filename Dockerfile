@@ -16,6 +16,11 @@ RUN rm -f target/release/deps/git_cliff*
 
 FROM debian:bookworm-slim@sha256:74d56e3931e0d5a1dd51f8c8a2466d21de84a271cd3b5a733b803aa91abf4421 as runner
 
+# Install ca-certificates (required for `--use-native-tls` argument)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 # Everything inside this container will be explicitly mounted by the end user,
 # so we can sidestep some Git security restrictions. This app recommends
 # mounting data to /app, but this *can* be changed externally and *will* be
