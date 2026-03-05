@@ -363,7 +363,7 @@ pub struct Opt {
     #[arg(long, help_heading = Some("FLAGS"), hide = !cfg!(feature = "remote"))]
     pub use_native_tls: bool,
     /// Disable network access for remote repositories.
-    #[arg(long, help_heading = Some("REMOTE OPTIONS"), hide = !cfg!(feature = "remote"))]
+    #[arg(long, env = "GIT_CLIFF_OFFLINE", help_heading = Some("REMOTE OPTIONS"), hide = !cfg!(feature = "remote"))]
     pub offline: bool,
 }
 
