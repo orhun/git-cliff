@@ -111,6 +111,8 @@ As a simple workaround, you can run `git-cliff` in offline mode to skip remote A
 
 ```bash
 git-cliff --offline
+# or via environment variable
+GIT_CLIFF_OFFLINE=true git-cliff
 ```
 
 :::note
