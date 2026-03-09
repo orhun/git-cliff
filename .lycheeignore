@@ -10,3 +10,7 @@ patreon
 # Currently commented out; kept as a reference in case we want to skip npm in the future.
 # See: https://github.com/orgs/community/discussions/174098
 #https://www.npmjs.com
+# GitHub issues and PR links are occasionally unstable (502/403) due to GitHub edge/CDN behavior.
+# These links are mostly generated in CHANGELOGs and do not need strict availability checks in CI.
+https://github.com/.*/issues/.*
+https://github.com/.*/pull/.*
