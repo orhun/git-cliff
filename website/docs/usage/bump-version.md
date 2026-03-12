@@ -54,6 +54,18 @@ Optionally, you can specify a bump type in `--bump`:
 git cliff --bump [major|minor|patch]
 ```
 
+## Pre releases versions
+
+Optionally, you can specify that a version is a prerelease:
+
+```bash
+git cliff --bump --pre-release [type]
+```
+
+The produced version will be increment and in the a post-fix will be added with the unreleased type.
+If no type is specified then `alpha` is going to be used.
+If a prerelease with the same type already exists, then the numeric value will be increased.
+
 ## Zero-based versioning scheme
 
 When working with a zero-based versioning scheme (i.e., `0.x.y` or `0.0.x`),

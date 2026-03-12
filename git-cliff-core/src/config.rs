@@ -364,6 +364,9 @@ pub struct Bump {
 
     /// Force to always bump in major, minor or patch.
     pub bump_type: Option<BumpType>,
+
+    /// Specify if the next version should be a pre-release
+    pub pre_release: Option<String>,
 }
 
 impl Bump {
