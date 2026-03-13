@@ -1,12 +1,11 @@
 import chalk from "chalk";
 import { test, expect, type ConsoleMessage, type Page } from "@playwright/test";
 
-type ReportType = "DocusaurusError" | "ConsoleError" | "ConsoleWarning";
+type ReportType = ReturnType<ConsoleMessage["type"]>;
 
 interface ErrorReport {
   type: ReportType;
-  message: string;
-  reactErrorCode?: string;
+  text: string;
   url: string;
 }
 
@@ -24,61 +23,56 @@ export const logger = {
 
 const normalizeUrl = (url: string): string => url.replace(/\/+$/, "");
 
+const truncateText = (text: string, max = 128): string =>
+  text.length <= max
+    ? text
+    : text.slice(0, Math.floor(max / 2)) +
+      " ... " +
+      text.slice(-Math.floor(max / 2));
+
 test("crawl site and detect errors", async ({ page, baseURL }) => {
   test.setTimeout(600000);
-  if (!baseURL) throw new Error("baseURL is required");
+
+  if (!baseURL) {
+    throw new Error("baseURL is required");
+  }
 
   const base = normalizeUrl(baseURL);
   const visited = new Set<string>();
   const queue: string[] = [base];
-  const errors: ErrorReport[] = [];
-  const errorCache = new Set<string>();
+  const reports: Partial<Record<ReportType, number>> = {};
 
   page.on("console", (message: ConsoleMessage) => {
-    const text = message.text();
-    const lower = text.toLowerCase();
-    const url = page.url();
+    const report: ErrorReport = {
+      type: message.type(),
+      text: message.text(),
+      url: page.url(),
+    };
 
-    if (errorCache.has(`${url}:${text}`)) return;
-    if (lower.includes("cookie") && lower.includes("samesite")) return;
-
-    const isHydrationError = lower.includes("hydration") || lower.includes("did not match");
-    const docusaurusMatch = text.match(/Docusaurus.*:.*Error.*#(\d+)/i);
-    let report: ErrorReport | null = null;
-
-    if (docusaurusMatch) {
-      report = { type: "DocusaurusError", message: text, reactErrorCode: docusaurusMatch[1], url };
-    } else if (lower.includes("docusaurus") && lower.includes("error")) {
-      report = { type: "DocusaurusError", message: text, url };
-    } else if (isHydrationError || lower.includes("uncaught") || lower.includes("typeerror")) {
-      report = { type: "ConsoleError", message: text, url };
-    } else if (message.type() === "warning" || lower.includes("warning")) {
-      report = { type: "ConsoleWarning", message: text, url };
+    if (report.type === "error" || report.type === "assert") {
+      logger.error(`${report.url}: ${truncateText(report.text)}`);
+    } else if (report.type === "warning") {
+      logger.warn(`${report.url}: ${truncateText(report.text)}`);
     }
 
-    if (report) {
-      errors.push(report);
-      errorCache.add(`${url}:${text}`);
-      if (report.type === "DocusaurusError" || report.type === "ConsoleError") {
-        logger.error(`${url}: ${report.type}`);
-      } else {
-        logger.warn(`${url}: ${report.type}`);
-      }
-    }
+    reports[report.type] ??= 0;
+    reports[report.type]!++;
   });
 
   while (queue.length > 0) {
     const url = queue.shift()!;
-    if (visited.has(url)) continue;
-    visited.add(url);
-    logger.info(`Checking: ${url}`);
 
-    for (let attempt = 1; attempt <= 5; attempt++) {
-      try {
-        await page.goto(url, { waitUntil: "domcontentloaded", timeout: 15000 });
-      } catch (e) {
-        logger.warn(`Attempt ${attempt} failed for ${url}`);
-      }
+    if (visited.has(url)) {
+      continue;
+    } else {
+      visited.add(url);
+    }
+
+    logger.info(`Checking: ${url}`);
+    try {
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 15000 });
+    } catch (e) {
+      logger.error(`Failed fetching page for ${url}`);
     }
 
     const links = await page.$$eval(
@@ -98,9 +92,14 @@ test("crawl site and detect errors", async ({ page, baseURL }) => {
     }
   }
 
-  const criticalErrors = errors.filter(e => e.type !== "ConsoleWarning");
+  const errorCount = (reports.error ?? 0) + (reports.assert ?? 0);
+
+  for (const [type, count] of Object.entries(reports)) {
+    logger.info(`${chalk.bgRed(type.toUpperCase())}: ${chalk.bold(count)}`);
+  }
+
   expect(
-    criticalErrors,
-    `Found ${criticalErrors.length} errors during crawl:\n${JSON.stringify(criticalErrors, null, 2)}`,
-  ).toHaveLength(0);
+    errorCount,
+    `Found ${errorCount} console errors during crawl:\n${JSON.stringify(reports, null, 2)}`
+  ).toBe(0);
 });
