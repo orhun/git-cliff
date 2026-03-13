@@ -30,6 +30,8 @@
   "devDependencies": {
     "@docusaurus/module-type-aliases": "^3.9.2",
     "@docusaurus/tsconfig": "^3.9.2",
+    "@playwright/test": "^1.58.2",
+    "chalk": "^5.6.2",
     "typescript": "^5.9.3"
   },
   "browserslist": {
