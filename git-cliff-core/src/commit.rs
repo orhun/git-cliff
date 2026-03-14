@@ -1,7 +1,9 @@
+use std::sync::LazyLock;
+
 use git_conventional::{Commit as ConventionalCommit, Footer as ConventionalFooter};
 #[cfg(feature = "repo")]
 use git2::{Commit as GitCommit, Signature as CommitSignature};
-use lazy_regex::{Lazy, Regex, lazy_regex};
+use regex::Regex;
 use serde::ser::{SerializeStruct, Serializer};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::value::Value;
@@ -11,7 +13,9 @@ use crate::error::{Error as AppError, Result};
 
 /// Regular expression for matching SHA1 and a following commit message
 /// separated by a whitespace.
-static SHA1_REGEX: Lazy<Regex> = lazy_regex!(r#"^\b([a-f0-9]{40})\b (.*)$"#);
+//static SHA1_REGEX: Lazy<Regex> = lazy_regex!(r#"^\b([a-f0-9]{40})\b (.*)$"#);
+static SHA1_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^\b([a-f0-9]{40})\b (.*)$").expect("valid SHA1 regex"));
 
 /// Object representing a link
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
@@ -323,12 +327,12 @@ impl Commit<'_> {
                                     Value::Number(_) | Value::Bool(_) | Value::Null => {
                                         values.push(item.to_string());
                                     }
-                                    _ => continue,
+                                    _ => {}
                                 }
                             }
                             Some(values)
                         }
-                        _ => None,
+                        Value::Object(_) => None,
                     })
                 };
                 match values {
@@ -352,29 +356,27 @@ impl Commit<'_> {
             if parser.sha.clone().map(|v| v.to_lowercase()).as_deref() == Some(&self.id) {
                 if self.skip_commit(parser, protect_breaking) {
                     return Err(AppError::GroupError(String::from("Skipping commit")));
-                } else {
-                    self.group = parser.group.clone().or(self.group);
-                    self.scope = parser.scope.clone().or(self.scope);
-                    self.default_scope = parser.default_scope.clone().or(self.default_scope);
-                    return Ok(self);
                 }
+                self.group = parser.group.clone().or(self.group);
+                self.scope = parser.scope.clone().or(self.scope);
+                self.default_scope = parser.default_scope.clone().or(self.default_scope);
+                return Ok(self);
             }
             for (regex, text) in regex_checks {
                 if regex.is_match(text.trim()) {
                     if self.skip_commit(parser, protect_breaking) {
                         return Err(AppError::GroupError(String::from("Skipping commit")));
-                    } else {
-                        let regex_replace = |mut value: String| {
-                            for mat in regex.find_iter(&text) {
-                                value = regex.replace(mat.as_str(), value).to_string();
-                            }
-                            value
-                        };
-                        self.group = parser.group.clone().map(regex_replace);
-                        self.scope = parser.scope.clone().map(regex_replace);
-                        self.default_scope.clone_from(&parser.default_scope);
-                        return Ok(self);
                     }
+                    let regex_replace = |mut value: String| {
+                        for mat in regex.find_iter(&text) {
+                            value = regex.replace(mat.as_str(), value).to_string();
+                        }
+                        value
+                    };
+                    self.group = parser.group.clone().map(regex_replace);
+                    self.scope = parser.scope.clone().map(regex_replace);
+                    self.default_scope.clone_from(&parser.default_scope);
+                    return Ok(self);
                 }
             }
         }
@@ -921,7 +923,7 @@ Refs: #123
     }
 
     #[test]
-    fn commit_sha() -> Result<()> {
+    fn commit_sha() {
         let commit = Commit::new(
             String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
             String::from("feat: do something"),
@@ -947,8 +949,6 @@ Refs: #123
             parsed_commit.is_err(),
             "Expected error when parsing with `skip: Some(true)`, but got Ok"
         );
-
-        Ok(())
     }
 
     #[test]

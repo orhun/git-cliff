@@ -66,7 +66,7 @@ fn main() -> Result<()> {
 
     // Write the changelog.
     let exit_code = match git_cliff::write_changelog(&args, changelog, out) {
-        Ok(_) => 0,
+        Ok(()) => 0,
         Err(e) => {
             log::error!("{e}");
             1
