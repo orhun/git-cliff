@@ -852,7 +852,7 @@ pub fn write_changelog<W: io::Write>(
 }
 
 fn find_config_file(dir: &Path) -> Option<PathBuf> {
-    CONFIG_FILES.into_iter().find_map(|file| {
+    CONFIG_FILES.iter().find_map(|file| {
         let path = dir.join(file);
         if path.is_file() { Some(path) } else { None }
     })
