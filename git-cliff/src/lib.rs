@@ -569,9 +569,10 @@ pub fn run_with_changelog_modifier<'a>(
         Config::load(&path)?
     } else if let Some(contents) = Config::read_from_manifest()? {
         contents.parse()?
-    } else if let Some(discovered_path) = env::current_dir()?.ancestors().find_map(|dir| {
-        find_config_file(dir)
-    }) {
+    } else if let Some(discovered_path) = env::current_dir()?
+        .ancestors()
+        .find_map(|dir| find_config_file(dir))
+    {
         log::info!(
             "Using configuration from parent directory: {}",
             discovered_path.display()
@@ -858,7 +859,9 @@ fn find_config_file(dir: &Path) -> Option<PathBuf> {
         dir.join(".cliff.toml"),
         dir.join(".config/cliff.toml"),
     ] {
-        if path.is_file() { return Some(path) }
+        if path.is_file() {
+            return Some(path);
+        }
     }
     None
 }
