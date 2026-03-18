@@ -853,6 +853,12 @@ pub fn write_changelog<W: io::Write>(
 }
 
 fn find_config_file(dir: &Path) -> Option<PathBuf> {
-    let path = dir.join(DEFAULT_CONFIG);
-    if path.is_file() { Some(path) } else { None }
+    for path in [
+        dir.join(DEFAULT_CONFIG),
+        dir.join(".cliff.toml"),
+        dir.join(".config/cliff.toml"),
+    ] {
+        if path.is_file() { return Some(path) }
+    }
+    None
 }
