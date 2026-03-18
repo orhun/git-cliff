@@ -289,11 +289,11 @@ fn process_repository<'a>(
     let cwd = env::current_dir()?;
     let mut include_path = config.git.include_paths.clone();
     if let Ok(root) = repository.root_path() {
-        if cwd.starts_with(&root) &&
-            cwd != root &&
-            args.repository.as_ref().is_none_or(Vec::is_empty) &&
-            args.workdir.is_none() &&
-            include_path.is_empty()
+        if cwd.starts_with(&root)
+            && cwd != root
+            && args.repository.as_ref().is_none_or(Vec::is_empty)
+            && args.workdir.is_none()
+            && include_path.is_empty()
         {
             let path = cwd.join("**").join("*");
             if let Ok(stripped) = path.strip_prefix(root) {
@@ -569,9 +569,7 @@ pub fn run_with_changelog_modifier<'a>(
         Config::load(&path)?
     } else if let Some(contents) = Config::read_from_manifest()? {
         contents.parse()?
-    } else if let Some(discovered_path) = env::current_dir()?
-        .ancestors()
-        .find_map(|dir| find_config_file(dir))
+    } else if let Some(discovered_path) = env::current_dir()?.ancestors().find_map(find_config_file)
     {
         log::info!(
             "Using configuration from parent directory: {}",
@@ -772,11 +770,14 @@ pub fn run_with_changelog_modifier<'a>(
                 skip_list.extend(skip_commit.clone());
             }
             for sha1 in skip_list {
-                config.git.commit_parsers.insert(0, CommitParser {
-                    sha: Some(sha1.clone()),
-                    skip: Some(true),
-                    ..Default::default()
-                });
+                config.git.commit_parsers.insert(
+                    0,
+                    CommitParser {
+                        sha: Some(sha1.clone()),
+                        skip: Some(true),
+                        ..Default::default()
+                    },
+                );
             }
 
             // The commit range, used for determining the remote commits to include
@@ -854,14 +855,11 @@ pub fn write_changelog<W: io::Write>(
 }
 
 fn find_config_file(dir: &Path) -> Option<PathBuf> {
-    for path in [
+    [
         dir.join(DEFAULT_CONFIG),
         dir.join(".cliff.toml"),
         dir.join(".config/cliff.toml"),
-    ] {
-        if path.is_file() {
-            return Some(path);
-        }
-    }
-    None
+    ]
+    .into_iter()
+    .find(|path| path.is_file())
 }
