@@ -25,7 +25,7 @@ use git_cliff_core::embed::{BuiltinConfig, EmbeddedConfig};
 use git_cliff_core::error::{Error, Result};
 use git_cliff_core::release::Release;
 use git_cliff_core::repo::{Repository, SubmoduleRange};
-use git_cliff_core::{DEFAULT_CONFIG, IGNORE_FILE};
+use git_cliff_core::{CONFIG_FILES, DEFAULT_CONFIG, IGNORE_FILE};
 use glob::Pattern;
 
 /// Checks for a new version on crates.io
@@ -852,11 +852,8 @@ pub fn write_changelog<W: io::Write>(
 }
 
 fn find_config_file(dir: &Path) -> Option<PathBuf> {
-    [
-        dir.join(DEFAULT_CONFIG),
-        dir.join(".cliff.toml"),
-        dir.join(".config/cliff.toml"),
-    ]
-    .into_iter()
-    .find(|path| path.is_file())
+    CONFIG_FILES.into_iter().find_map(|file| {
+        let path = dir.join(file);
+        if path.is_file() { Some(path) } else { None }
+    })
 }

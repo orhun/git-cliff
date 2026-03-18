@@ -44,8 +44,12 @@ pub mod tag;
 /// Template engine.
 pub mod template;
 
-/// Default configuration file.
+/// Default configuration file. This is used for the user stored global configuration and embeded
+/// configuration.
 pub const DEFAULT_CONFIG: &str = "cliff.toml";
+/// List of configuration files. This list of files is used for finding the configuration file
+/// relative to the project directory.
+pub const CONFIG_FILES: &[&str] = &["cliff.toml", ".cliff.toml", ".config/cliff.toml"];
 /// Default output file.
 pub const DEFAULT_OUTPUT: &str = "CHANGELOG.md";
 /// Default ignore file.
