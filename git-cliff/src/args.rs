@@ -119,6 +119,7 @@ pub struct Opt {
 		long,
 		env = "GIT_CLIFF_INCLUDE_PATH",
 		value_name = "PATTERN",
+		value_delimiter = ' ',
 		num_args(1..)
 	)]
     pub include_path: Option<Vec<Pattern>>,
@@ -127,6 +128,7 @@ pub struct Opt {
 		long,
 		env = "GIT_CLIFF_EXCLUDE_PATH",
 		value_name = "PATTERN",
+		value_delimiter = ' ',
 		num_args(1..)
 	)]
     pub exclude_path: Option<Vec<Pattern>>,
@@ -476,11 +478,30 @@ impl Opt {
 
 #[cfg(test)]
 mod tests {
+    use std::env;
     use std::ffi::OsStr;
+    use std::sync::{LazyLock, Mutex};
 
     use clap::CommandFactory;
 
     use super::*;
+
+    static ENV_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
+
+    struct EnvVarGuard(&'static str);
+
+    impl EnvVarGuard {
+        fn set(key: &'static str, value: &str) -> Self {
+            unsafe { env::set_var(key, value) };
+            Self(key)
+        }
+    }
+
+    impl Drop for EnvVarGuard {
+        fn drop(&mut self) {
+            unsafe { env::remove_var(self.0) };
+        }
+    }
 
     #[test]
     fn verify_cli() {
@@ -559,6 +580,32 @@ mod tests {
             BumpOption::Specific(BumpType::Major),
             bump_option_parser.parse_ref(&Opt::command(), None, OsStr::new("major"))?
         );
+        Ok(())
+    }
+
+    #[test]
+    fn path_env_vars_are_split_into_multiple_patterns() -> Result<(), Box<dyn std::error::Error>> {
+        let _lock = ENV_LOCK.lock().expect("failed to lock env var test mutex");
+        let _include = EnvVarGuard::set("GIT_CLIFF_INCLUDE_PATH", "website/**/* .github/**/*");
+        let _exclude = EnvVarGuard::set("GIT_CLIFF_EXCLUDE_PATH", "docs/**/* tests/**/*");
+
+        let opt = Opt::try_parse_from(["git-cliff"])?;
+
+        assert_eq!(
+            Some(vec![
+                Pattern::new("website/**/*")?,
+                Pattern::new(".github/**/*")?,
+            ]),
+            opt.include_path
+        );
+        assert_eq!(
+            Some(vec![
+                Pattern::new("docs/**/*")?,
+                Pattern::new("tests/**/*")?
+            ]),
+            opt.exclude_path
+        );
+
         Ok(())
     }
 }
