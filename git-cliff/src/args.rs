@@ -119,7 +119,8 @@ pub struct Opt {
 		long,
 		env = "GIT_CLIFF_INCLUDE_PATH",
 		value_name = "PATTERN",
-		num_args(1..)
+		num_args(1..),
+		value_delimiter = ' '
 	)]
     pub include_path: Option<Vec<Pattern>>,
     /// Sets the path to exclude related commits.
@@ -127,7 +128,8 @@ pub struct Opt {
 		long,
 		env = "GIT_CLIFF_EXCLUDE_PATH",
 		value_name = "PATTERN",
-		num_args(1..)
+		num_args(1..),
+		value_delimiter = ' '
 	)]
     pub exclude_path: Option<Vec<Pattern>>,
     /// Sets the regex for matching git tags.
@@ -476,11 +478,44 @@ impl Opt {
 
 #[cfg(test)]
 mod tests {
-    use std::ffi::OsStr;
+    use std::ffi::{OsStr, OsString};
+    use std::sync::{Mutex, OnceLock};
 
     use clap::CommandFactory;
 
     use super::*;
+
+    static ENV_MUTEX: OnceLock<Mutex<()>> = OnceLock::new();
+
+    struct EnvVarGuard {
+        key: &'static str,
+        original_value: Option<OsString>,
+    }
+
+    impl EnvVarGuard {
+        fn set(key: &'static str, value: &str) -> Self {
+            let original_value = std::env::var_os(key);
+            unsafe {
+                std::env::set_var(key, value);
+            }
+            Self {
+                key,
+                original_value,
+            }
+        }
+    }
+
+    impl Drop for EnvVarGuard {
+        fn drop(&mut self) {
+            unsafe {
+                if let Some(value) = &self.original_value {
+                    std::env::set_var(self.key, value);
+                } else {
+                    std::env::remove_var(self.key);
+                }
+            }
+        }
+    }
 
     #[test]
     fn verify_cli() {
@@ -560,5 +595,29 @@ mod tests {
             bump_option_parser.parse_ref(&Opt::command(), None, OsStr::new("major"))?
         );
         Ok(())
+    }
+
+    #[test]
+    fn path_filter_env_vars_support_multiple_values() {
+        let _guard = ENV_MUTEX
+            .get_or_init(|| Mutex::new(()))
+            .lock()
+            .expect("failed to lock env mutex");
+        let _include_path = EnvVarGuard::set("GIT_CLIFF_INCLUDE_PATH", "website/**/* .github/**/*");
+        let _exclude_path = EnvVarGuard::set("GIT_CLIFF_EXCLUDE_PATH", "target/**/* dist/**/*");
+
+        let opt = Opt::parse_from(["git-cliff"]);
+        let include_path = opt
+            .include_path
+            .expect("include path should be parsed from env");
+        let patterns = include_path.iter().map(Pattern::as_str).collect::<Vec<_>>();
+
+        assert_eq!(vec!["website/**/*", ".github/**/*"], patterns);
+        let exclude_path = opt
+            .exclude_path
+            .expect("exclude path should be parsed from env");
+        let patterns = exclude_path.iter().map(Pattern::as_str).collect::<Vec<_>>();
+
+        assert_eq!(vec!["target/**/*", "dist/**/*"], patterns);
     }
 }
