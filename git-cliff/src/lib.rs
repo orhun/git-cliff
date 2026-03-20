@@ -291,7 +291,8 @@ fn process_repository<'a>(
     if let Ok(root) = repository.root_path() {
         if include_path.is_empty() {
             if let Some(workdir) = args.workdir.as_ref() {
-                let resolved_workdir = fs::canonicalize(workdir).unwrap_or_else(|_| workdir.clone());
+                let resolved_workdir =
+                    fs::canonicalize(workdir).unwrap_or_else(|_| workdir.clone());
                 if resolved_workdir.starts_with(&root) && resolved_workdir != root {
                     let path = resolved_workdir.join("**").join("*");
                     if let Ok(stripped) = path.strip_prefix(&root) {
