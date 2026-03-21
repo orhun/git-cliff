@@ -480,13 +480,11 @@ impl Opt {
 mod tests {
     use std::env;
     use std::ffi::OsStr;
-    use std::sync::{LazyLock, Mutex};
 
     use clap::CommandFactory;
+    use serial_test::serial;
 
     use super::*;
-
-    static ENV_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 
     struct EnvVarGuard(&'static str);
 
@@ -583,9 +581,12 @@ mod tests {
         Ok(())
     }
 
+    // Environment variables are process-global, so tests that modify them must run exclusively and restore the original state after execution.
+    // For this reason, we use the `serial` macro from the `serial_test` crate to guarantee exclusive execution.
+    // See: https://crates.io/crates/serial_test
     #[test]
+    #[serial]
     fn path_env_vars_are_split_into_multiple_patterns() -> Result<(), Box<dyn std::error::Error>> {
-        let _lock = ENV_LOCK.lock().expect("failed to lock env var test mutex");
         let _include = EnvVarGuard::set("GIT_CLIFF_INCLUDE_PATH", "website/**/* .github/**/*");
         let _exclude = EnvVarGuard::set("GIT_CLIFF_EXCLUDE_PATH", "docs/**/* tests/**/*");
 
