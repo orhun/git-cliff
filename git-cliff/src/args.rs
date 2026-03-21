@@ -581,9 +581,9 @@ mod tests {
         Ok(())
     }
 
-    // Environment variables are process-global, so tests that modify them must run exclusively and restore the original state after execution.
-    // For this reason, we use the `serial` macro from the `serial_test` crate to guarantee exclusive execution.
-    // See: https://crates.io/crates/serial_test
+    // Environment variables are process-global, so tests that modify them must run exclusively and
+    // restore the original state after execution. For this reason, we use the `serial` macro
+    // from the `serial_test` crate to guarantee exclusive execution. See: https://crates.io/crates/serial_test
     #[test]
     #[serial]
     fn path_env_vars_are_split_into_multiple_patterns() -> Result<(), Box<dyn std::error::Error>> {
