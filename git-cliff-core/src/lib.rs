@@ -50,3 +50,19 @@ pub const DEFAULT_CONFIG: &str = "cliff.toml";
 pub const DEFAULT_OUTPUT: &str = "CHANGELOG.md";
 /// Default ignore file.
 pub const IGNORE_FILE: &str = ".cliffignore";
+
+/// Sets a human-readable message on the current progress bar span.
+/// This macro only has effect if the `tracing-indicatif` feature is enabled.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! pb_msg {
+    ($($arg:tt)*) => {{
+        #[cfg(feature = "tracing-indicatif")]
+        {
+            use tracing::Span;
+            use tracing_indicatif::span_ext::IndicatifSpanExt;
+            let msg = format!($($arg)*);
+            Span::current().pb_set_message(&msg);
+        }
+    }};
+}

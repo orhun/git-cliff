@@ -88,7 +88,6 @@ impl Release<'_> {
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(
-            name = "Calculating the next version from commits",
             skip_all,
             fields(
                 version = self.version.as_deref().unwrap_or("unreleased"),
@@ -97,6 +96,7 @@ impl Release<'_> {
         )
     )]
     pub fn calculate_next_version(&self) -> Result<String> {
+        crate::pb_msg!("Calculating the next version from commits");
         self.calculate_next_version_with_config(&Bump::default())
     }
 
@@ -118,7 +118,6 @@ impl Release<'_> {
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(
-            name = "Calculating the next version from commits with custom bump rules",
             skip_all,
             fields(
                 version = self.version.as_deref().unwrap_or("unreleased"),
@@ -127,6 +126,7 @@ impl Release<'_> {
         )
     )]
     pub(super) fn calculate_next_version_with_config(&self, config: &Bump) -> Result<String> {
+        crate::pb_msg!("Calculating the next version from commits with custom bump rules");
         match self
             .previous
             .as_ref()

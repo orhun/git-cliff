@@ -63,12 +63,12 @@ url.workspace = true
 pathdiff = "0.2.3"
 tracing = { workspace = true, features = ["log"] }
 tracing-subscriber = { version = "0.3.22", features = ["env-filter", "json"] }
-tracing-indicatif = "0.3.14"
+tracing-indicatif = { workspace = true }
 owo-colors = "4.2.3"
 
 [dependencies.git-cliff-core]
 version = "2.12.0" # managed by release.sh
-features = ["tracing"]
+features = ["tracing", "tracing-indicatif"]
 path = "../git-cliff-core"
 
 [dev-dependencies]

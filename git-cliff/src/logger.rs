@@ -128,8 +128,8 @@ fn dim_end_key(_: &ProgressState, writer: &mut dyn fmt::Write) {
 /// - appends a sub-second elapsed timer
 fn indicatif_progress_style() -> ProgressStyle {
     ProgressStyle::with_template(
-        "{span_child_prefix}{color_start}{spinner}{color_end} {dim_start}{span_name} \
-         {span_fields} {wide_msg}{dim_end} [{color_start}{elapsed_subsec}{color_end}]",
+        "{span_child_prefix}{color_start}{spinner}{color_end} {dim_start}{wide_msg} {span_name} \
+         {span_fields} {dim_end} [{color_start}{elapsed_subsec}{color_end}]",
     )
     .unwrap()
     .with_key("elapsed_subsec", elapsed_subsec_key)
