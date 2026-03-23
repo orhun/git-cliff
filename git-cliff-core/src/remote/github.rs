@@ -1,5 +1,3 @@
-use std::fmt::Write;
-
 use async_stream::stream as async_stream;
 use futures::{Stream, StreamExt, stream};
 use reqwest_middleware::ClientWithMiddleware;
@@ -147,8 +145,7 @@ impl GitHubClient {
         );
 
         if let Some(ref_name) = ref_name {
-            write!(url, "&sha={}", urlencoding::encode(ref_name))
-                .expect("Writing ref name query should never fail");
+            url.push_str(&format!("&sha={ref_name}"));
         }
 
         url
