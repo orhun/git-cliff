@@ -103,7 +103,8 @@ jobs:
           command: clippy
           args: >
               --all-targets --verbose -- -W clippy::pedantic 
-              -A clippy::needless_for_each 
+              -A clippy::needless_for_each
+              -A clippy::redundant_else
 
   rustfmt:
     name: Formatting
