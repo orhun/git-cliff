@@ -49,7 +49,7 @@ pub(crate) const REQUEST_TIMEOUT: u64 = 30;
 pub(crate) const REQUEST_KEEP_ALIVE: u64 = 60;
 
 /// Maximum number of entries to fetch in a single page.
-pub(crate) const MAX_PAGE_SIZE: usize = 100;
+pub(crate) const MAX_PAGE_SIZE: i32 = 100;
 
 /// Trait for handling remote commits.
 pub trait RemoteCommit: DynClone {

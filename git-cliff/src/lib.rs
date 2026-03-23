@@ -133,7 +133,7 @@ fn process_submodules(
     // SubmoduleRange is created, describing the range of commits in the context
     // of that submodule.
     if let Some(last_commit) = last_commit {
-        let submodule_ranges = repository.submodules_range(first_commit, last_commit)?;
+        let submodule_ranges = repository.submodules_range(first_commit.as_ref(), &last_commit)?;
         let submodule_commits = submodule_ranges.iter().filter_map(|submodule_range| {
             // For each submodule, the commit range is exploded into a list of
             // commits.

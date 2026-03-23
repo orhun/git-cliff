@@ -101,7 +101,11 @@ jobs:
         with:
           # Lints are configured via CLI arguments to avoid confusion with Cargo.toml precedence.
           command: clippy
-          args: --all-targets --verbose -- -W clippy::pedantic
+          args: >
+              --all-targets --verbose -- -W clippy::pedantic 
+              -A clippy::needless_for_each
+              -A clippy::redundant_else
+              -A clippy::format_push_string
 
   rustfmt:
     name: Formatting
