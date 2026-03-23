@@ -78,11 +78,11 @@ fn elapsed_subsec_key(state: &ProgressState, writer: &mut dyn fmt::Write) {
 /// Emits an ANSI color escape sequence for the spinner, based on elapsed time.
 ///
 /// The color gradually transitions:
-/// - green  -> yellow (0–4s)
-/// - yellow -> red    (4–8s)
+/// - green  -> yellow (0–16s)
+/// - yellow -> red    (16–32s)
 fn color_start_key(state: &ProgressState, writer: &mut dyn fmt::Write) {
     let elapsed = state.elapsed().as_secs_f32();
-    let t = (elapsed / 8.0).min(1.0); // 8秒で変化
+    let t = (elapsed / 32.0).min(1.0);
     let (r, g, b) = if t < 0.5 {
         let nt = t * 2.0;
         (lerp(140, 230, nt), lerp(200, 210, nt), lerp(160, 150, nt))
