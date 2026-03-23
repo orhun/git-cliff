@@ -190,7 +190,7 @@ impl RemoteClient for AzureDevOpsClient {
 impl AzureDevOpsClient {
     /// Constructs the URL for Azure DevOps commits API.
     fn commits_url(api_url: &str, remote: &Remote, ref_name: Option<&str>, page: i32) -> String {
-        let skip = page * MAX_PAGE_SIZE as i32;
+        let skip = page * MAX_PAGE_SIZE;
         let mut url = format!(
             "{}/{}/_apis/git/repositories/{}/commits?api-version=7.1&$top={}&$skip={}",
             api_url,
@@ -214,7 +214,7 @@ impl AzureDevOpsClient {
 
     /// Constructs the URL for Azure DevOps pull requests API.
     fn pull_requests_url(api_url: &str, remote: &Remote, page: i32) -> String {
-        let skip = page * MAX_PAGE_SIZE as i32;
+        let skip = page * MAX_PAGE_SIZE;
         format!(
             "{}/{}/_apis/git/repositories/{}/pullrequests?api-version=7.1&searchCriteria.\
              status=completed&$top={}&$skip={}",
