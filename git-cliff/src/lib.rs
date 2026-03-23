@@ -525,9 +525,9 @@ pub fn run_with_changelog_modifier<'a>(
         args.config = workdir.join(args.config);
         match args.repository.as_mut() {
             Some(repository) => {
-                for r in repository.iter_mut() {
-                    *r = workdir.join(r.clone());
-                }
+                repository
+                    .iter_mut()
+                    .for_each(|r| *r = workdir.join(r.clone()));
             }
             None => args.repository = Some(vec![workdir.clone()]),
         }
