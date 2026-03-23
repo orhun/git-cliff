@@ -88,6 +88,7 @@ impl Release<'_> {
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(
+            name = "Calculating the next version from commits",
             skip_all,
             fields(
                 version = self.version.as_deref().unwrap_or("unreleased"),
@@ -117,6 +118,7 @@ impl Release<'_> {
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(
+            name = "Calculating the next version from commits with custom bump rules",
             skip_all,
             fields(
                 version = self.version.as_deref().unwrap_or("unreleased"),

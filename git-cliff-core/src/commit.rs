@@ -219,6 +219,7 @@ impl Commit<'_> {
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(
+            name = "Converting the commit to conventional format, setting its group, and extracting links",
             skip_all,
             fields(id = self.id)
         )
@@ -266,6 +267,7 @@ impl Commit<'_> {
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(
+            name = "Preprocessing the commit message using text processors",
             skip_all,
             fields(id = self.id)
         )
@@ -297,6 +299,7 @@ impl Commit<'_> {
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(
+            name = "Parsing the commit and setting its group and scope",
             skip_all,
             fields(id = self.id)
         )
@@ -421,6 +424,7 @@ impl Commit<'_> {
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(
+            name = "Parsing links for the commit using link parsers",
             skip_all,
             fields(id = self.id)
         )
@@ -536,7 +540,10 @@ impl Serialize for Commit<'_> {
 /// [`Commit::into_conventional`].
 ///
 /// This function is to be used only in [`crate::release::Release::commits`].
-#[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(name = "Converting commits to conventional commits", skip_all)
+)]
 pub(crate) fn commits_to_conventional_commits<'de, 'a, D: Deserializer<'de>>(
     deserializer: D,
 ) -> std::result::Result<Vec<Commit<'a>>, D::Error> {

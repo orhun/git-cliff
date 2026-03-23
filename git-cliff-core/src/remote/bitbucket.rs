@@ -171,7 +171,10 @@ impl BitbucketClient {
     /// Fetches the complete list of commits.
     /// This is inefficient for large repositories; consider using
     /// `get_commit_stream` instead.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Fetching all commits from Bitbucket", skip_all)
+    )]
     pub async fn get_commits(&self, ref_name: Option<&str>) -> Result<Vec<Box<dyn RemoteCommit>>> {
         use futures::TryStreamExt;
 
@@ -181,7 +184,10 @@ impl BitbucketClient {
     /// Fetches the complete list of pull requests.
     /// This is inefficient for large repositories; consider using
     /// `get_pull_request_stream` instead.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Fetching all pull requests from Bitbucket", skip_all)
+    )]
     pub async fn get_pull_requests(&self) -> Result<Vec<Box<dyn RemotePullRequest>>> {
         use futures::TryStreamExt;
 

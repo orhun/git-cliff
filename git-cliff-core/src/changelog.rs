@@ -94,6 +94,7 @@ impl<'a> Changelog<'a> {
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(
+            name="Processing a single commit",
             skip_all,
             fields(id = commit.id)
         )
@@ -123,6 +124,7 @@ impl<'a> Changelog<'a> {
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(
+            name="Checking whether commits included in a release are conventional",
             skip_all,
             fields(commits = commits.len())
         )
@@ -158,6 +160,7 @@ impl<'a> Changelog<'a> {
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(
+            name="Checking whether commits in a release are unmatched by any parser",
             skip_all,
             fields(commits = commits.len())
         )
@@ -193,6 +196,7 @@ impl<'a> Changelog<'a> {
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(
+            name="Processing commits in a single release",
             skip_all,
             fields(commits = commits.len())
         )
@@ -240,6 +244,7 @@ impl<'a> Changelog<'a> {
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(
+            name="Processing commits for the changelog",
             skip_all,
             fields(releases = self.releases.len())
         )
@@ -280,6 +285,7 @@ impl<'a> Changelog<'a> {
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(
+            name="Processing releases for the changelog",
             skip_all,
             fields(releases = self.releases.len())
         )
@@ -349,7 +355,10 @@ impl<'a> Changelog<'a> {
     /// If no GitHub related variable is used in the template then this function
     /// returns empty vectors.
     #[cfg(feature = "github")]
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Fetching GitHub metadata for the changelog", skip_all)
+    )]
     fn get_github_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::github;
         if self.config.remote.github.is_custom ||
@@ -393,7 +402,10 @@ impl<'a> Changelog<'a> {
     /// If no GitLab related variable is used in the template then this function
     /// returns empty vectors.
     #[cfg(feature = "gitlab")]
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Fetching GitLab metadata for the changelog", skip_all)
+    )]
     fn get_gitlab_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::gitlab;
         if self.config.remote.gitlab.is_custom ||
@@ -449,7 +461,10 @@ impl<'a> Changelog<'a> {
     /// If no Gitea related variable is used in the template then this function
     /// returns empty vectors.
     #[cfg(feature = "gitea")]
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Fetching Gitea metadata for the changelog", skip_all)
+    )]
     fn get_gitea_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::gitea;
         if self.config.remote.gitea.is_custom ||
@@ -493,7 +508,10 @@ impl<'a> Changelog<'a> {
     /// If no bitbucket related variable is used in the template then this
     /// function returns empty vectors.
     #[cfg(feature = "bitbucket")]
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Fetching Bitbucket metadata for the changelog", skip_all)
+    )]
     fn get_bitbucket_metadata(
         &self,
         ref_name: Option<&str>,
@@ -538,7 +556,10 @@ impl<'a> Changelog<'a> {
     /// If no Azure DevOps related variable is used in the template then this
     /// function returns empty vectors.
     #[cfg(feature = "azure_devops")]
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Fetching Azure DevOps metadata for the changelog", skip_all)
+    )]
     fn get_azure_devops_metadata(
         &self,
         ref_name: Option<&str>,
@@ -584,7 +605,10 @@ impl<'a> Changelog<'a> {
 
     /// Adds remote data (e.g. GitHub commits) to the releases.
     #[allow(unused_variables)]
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Adding remote data to the changelog", skip_all)
+    )]
     pub fn add_remote_data(&mut self, range: Option<&str>) -> Result<()> {
         log::debug!("Adding remote data");
 
@@ -655,7 +679,10 @@ impl<'a> Changelog<'a> {
     }
 
     /// Increments the version for the unreleased changes based on semver.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Bumping the version for unreleased changes", skip_all)
+    )]
     pub fn bump_version(&mut self) -> Result<Option<String>> {
         if let Some(ref mut last_release) = self.releases.iter_mut().next() {
             if last_release.version.is_none() {
@@ -676,7 +703,10 @@ impl<'a> Changelog<'a> {
     }
 
     /// Generates the changelog and writes it to the given output.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Generating and writing the changelog", skip_all)
+    )]
     pub fn generate<W: Write + ?Sized>(&self, out: &mut W) -> Result<()> {
         log::debug!("Generating changelog");
         let postprocessors = self.config.changelog.postprocessors.clone();
@@ -740,7 +770,10 @@ impl<'a> Changelog<'a> {
     }
 
     /// Generates a changelog and prepends it to the given changelog.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Generating and prepending the changelog", skip_all)
+    )]
     pub fn prepend<W: Write + ?Sized>(&self, mut changelog: String, out: &mut W) -> Result<()> {
         log::debug!("Generating changelog and prepending");
         if let Some(header) = &self.config.changelog.header {
@@ -752,7 +785,10 @@ impl<'a> Changelog<'a> {
     }
 
     /// Prints the changelog context to the given output.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Writing the changelog context as JSON", skip_all)
+    )]
     pub fn write_context<W: Write + ?Sized>(&self, out: &mut W) -> Result<()> {
         let output = Releases {
             releases: &self.releases,

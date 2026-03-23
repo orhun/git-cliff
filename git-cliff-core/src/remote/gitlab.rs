@@ -224,7 +224,10 @@ impl GitLabClient {
     }
 
     /// Looks up the project details.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Fetching the project details from GitLab", skip_all)
+    )]
     pub async fn get_project(&self) -> Result<GitLabProject> {
         let url = Self::project_url(&self.api_url(), &self.remote());
         self.get_json::<GitLabProject>(&url).await
@@ -233,7 +236,10 @@ impl GitLabClient {
     /// Fetches the complete list of commits.
     /// This is inefficient for large repositories; consider using
     /// `get_commit_stream` instead.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Fetching all commits from GitLab", skip_all)
+    )]
     pub async fn get_commits(
         &self,
         project_id: i64,
@@ -248,7 +254,10 @@ impl GitLabClient {
     /// Fetches the complete list of pull requests.
     /// This is inefficient for large repositories; consider using
     /// `get_pull_request_stream` instead.
-    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(name = "Fetching all pull requests from GitLab", skip_all)
+    )]
     pub async fn get_pull_requests(
         &self,
         project_id: i64,
