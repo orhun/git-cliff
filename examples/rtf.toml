@@ -63,21 +63,21 @@ protect_breaking_commits = false
 # Assigns commits to groups.
 # Optionally sets the commit's scope and can decide to exclude commits from further processing.
 commit_parsers = [
-    { message = "^feat", group = "Features" },
-    { message = "^fix", group = "Bug Fixes" },
-    { message = "^doc", group = "Documentation" },
-    { message = "^perf", group = "Performance" },
-    { message = "^refactor", group = "Refactor" },
-    { message = "^style", group = "Styling" },
-    { message = "^test", group = "Testing" },
+    { message = "^feat", group = "<!-- 0 -->\\f1\\u-10179?\\u-8576?\\f2  \\f0 Features" },
+    { message = "^fix", group = "<!-- 1 -->\\f1\\u-10179?\\u-9189?\\f2  \\f0 Bug Fixes" },
+    { message = "^doc", group = "<!-- 3 -->\\f1\\u-10179?\\u-8998?\\f2  \\f0 Documentation" },
+    { message = "^perf", group = "<!-- 4 -->\\f3\\u9889?\\f2  \\f0 Performance" },
+    { message = "^refactor", group = "<!-- 2 -->\\f1\\u-10179?\\u-8548?\\f2  \\f0 Refactor" },
+    { message = "^style", group = "<!-- 5 -->\\f1\\u-10180?\\u-8280?\\f2  \\f0 Styling" },
+    { message = "^test", group = "<!-- 6 -->\\f4\\u-10178?\\u-8726?\\f2  \\f0 Testing" },
     { message = "^chore\\(release\\): prepare for", skip = true },
     { message = "^chore\\(deps.*\\)", skip = true },
     { message = "^chore\\(pr\\)", skip = true },
     { message = "^chore\\(pull\\)", skip = true },
-    { message = "^chore|^ci", group = "Miscellaneous Tasks" },
-    { body = ".*security", group = "Security" },
-    { message = "^revert", group = "Revert" },
-    { message = ".*", group = "Other" },
+    { message = "^chore|^ci", group = "<!-- 7 -->\\f4\\u9881?\\u-497?\\f2  \\f0 Miscellaneous Tasks" },
+    { body = ".*security", group = "<!-- 8 -->\\f4\\u-10179?\\u-8479?\\u-497?\\f2  \\f0 Security" },
+    { message = "^revert", group = "<!-- 9 -->\\f4\\u9664?\\u-497?\\f2  \\f0 Revert" },
+    { message = ".*", group = "<!-- 10 -->\\f1\\u-10179?\\u-9028?\\f2  \\f0 Other" },
 ]
 # Exclude commits that are not matched by any commit parser.
 filter_commits = false
