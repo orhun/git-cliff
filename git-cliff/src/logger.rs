@@ -43,8 +43,8 @@ fn max_target_width(target: &str) -> usize {
 }
 
 /// Adds styles/colors to the given level and returns it.
-fn style_level(level: &Level) -> Styled<&'static str> {
-    match *level {
+fn style_level(level: Level) -> Styled<&'static str> {
+    match level {
         Level::ERROR => Style::new().red().bold().style("ERROR"),
         Level::WARN => Style::new().yellow().bold().style("WARN"),
         Level::INFO => Style::new().green().bold().style("INFO"),
@@ -72,7 +72,7 @@ fn shorten_target(target: &str, width: usize) -> String {
 fn elapsed_subsec_key(state: &ProgressState, writer: &mut dyn fmt::Write) {
     let seconds = state.elapsed().as_secs();
     let sub_seconds = (state.elapsed().as_millis() % 1000) / 100;
-    let _ = write!(writer, "{}.{}s", seconds, sub_seconds);
+    let _ = write!(writer, "{seconds}.{sub_seconds}s");
 }
 
 /// Emits an ANSI color escape sequence for the spinner, based on elapsed time.
@@ -90,12 +90,13 @@ fn color_start_key(state: &ProgressState, writer: &mut dyn fmt::Write) {
         let nt = (t - 0.5) * 2.0;
         (lerp(230, 230, nt), lerp(210, 140, nt), lerp(150, 140, nt))
     };
-    let _ = write!(writer, "\x1b[38;2;{};{};{}m", r, g, b);
+    let _ = write!(writer, "\x1b[38;2;{r};{g};{b}m");
 }
 
 /// Performs linear interpolation between two color components.
+#[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
 fn lerp(a: u8, b: u8, t: f32) -> u8 {
-    ((a as f32 + (b as f32 - a as f32) * t).clamp(0.0, 255.0)) as u8
+    ((f32::from(a) + (f32::from(b) - f32::from(a)) * t).clamp(0.0, 255.0)) as u8
 }
 
 /// Resets ANSI styling to the terminal default.
@@ -155,7 +156,7 @@ where
         event: &Event<'_>,
     ) -> fmt::Result {
         let metadata = event.metadata();
-        let level = style_level(metadata.level());
+        let level = style_level(*metadata.level());
         let target = metadata.target();
         let max_width = max_target_width(target);
         write!(
