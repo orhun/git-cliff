@@ -239,6 +239,18 @@ macro_rules! update_release_metadata {
                         true
                     }
                 });
+                if release_commit_timestamp.is_none() && self.commit_id.is_some() {
+                    log::debug!(
+                        "Could not resolve release commit timestamp for {:?} \
+                         (commit may not be in the remote API results). \
+                         Skipping timestamp filter for first-time contributor check.",
+                        self.commit_id,
+                    );
+                }
+                log::debug!(
+                    "Checking first-time contributors against {} remaining remote commits",
+                    commits.len(),
+                );
                 // mark contributors as first-time
                 self.$remote.contributors = contributors
                     .into_iter()
