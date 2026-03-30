@@ -905,8 +905,8 @@ mod test {
     #[test]
     fn update_github_metadata_tagged_release_with_history() -> Result<()> {
         use crate::remote::github::{
-            GitHubCommit, GitHubCommitAuthor, GitHubCommitDetails,
-            GitHubCommitDetailsAuthor, GitHubPullRequest, PullRequestLabel,
+            GitHubCommit, GitHubCommitAuthor, GitHubCommitDetails, GitHubCommitDetailsAuthor,
+            GitHubPullRequest, PullRequestLabel,
         };
 
         // Simulate a tagged release (like --latest would produce):
@@ -927,9 +927,7 @@ mod test {
             ],
             commit_range: None,
             // commit_id is the tagged commit (last commit in the release)
-            commit_id: Some(String::from(
-                "aaaa000000000000000000000000000000000001",
-            )),
+            commit_id: Some(String::from("aaaa000000000000000000000000000000000001")),
             // Tagged release has a timestamp
             timestamp: Some(1626613279),
             previous: Some(Box::new(Release {
@@ -966,9 +964,7 @@ mod test {
             vec![
                 // Release commits (will be matched and removed by retain):
                 GitHubCommit {
-                    sha: String::from(
-                        "aaaa000000000000000000000000000000000001",
-                    ),
+                    sha: String::from("aaaa000000000000000000000000000000000001"),
                     author: Some(GitHubCommitAuthor {
                         login: Some(String::from("orhun")),
                     }),
@@ -979,9 +975,7 @@ mod test {
                     }),
                 },
                 GitHubCommit {
-                    sha: String::from(
-                        "aaaa000000000000000000000000000000000002",
-                    ),
+                    sha: String::from("aaaa000000000000000000000000000000000002"),
                     author: Some(GitHubCommitAuthor {
                         login: Some(String::from("new_person")),
                     }),
@@ -993,9 +987,7 @@ mod test {
                 },
                 // Historical commits (will remain after retain):
                 GitHubCommit {
-                    sha: String::from(
-                        "bbbb000000000000000000000000000000000001",
-                    ),
+                    sha: String::from("bbbb000000000000000000000000000000000001"),
                     author: Some(GitHubCommitAuthor {
                         // orhun has a historical commit -> NOT first-time
                         login: Some(String::from("orhun")),
@@ -1007,9 +999,7 @@ mod test {
                     }),
                 },
                 GitHubCommit {
-                    sha: String::from(
-                        "bbbb000000000000000000000000000000000002",
-                    ),
+                    sha: String::from("bbbb000000000000000000000000000000000002"),
                     author: Some(GitHubCommitAuthor {
                         login: Some(String::from("other_dev")),
                     }),
@@ -1086,8 +1076,8 @@ mod test {
     #[test]
     fn update_github_metadata_missing_release_commit() -> Result<()> {
         use crate::remote::github::{
-            GitHubCommit, GitHubCommitAuthor, GitHubCommitDetails,
-            GitHubCommitDetailsAuthor, GitHubPullRequest, PullRequestLabel,
+            GitHubCommit, GitHubCommitAuthor, GitHubCommitDetails, GitHubCommitDetailsAuthor,
+            GitHubPullRequest, PullRequestLabel,
         };
 
         // The release commit_id points to a commit NOT in the GitHub API
@@ -1104,9 +1094,7 @@ mod test {
             ],
             commit_range: None,
             // Points to a commit NOT in GitHub results
-            commit_id: Some(String::from(
-                "cccc000000000000000000000000000000000001",
-            )),
+            commit_id: Some(String::from("cccc000000000000000000000000000000000001")),
             timestamp: Some(1626613279),
             previous: Some(Box::new(Release {
                 version: Some(String::from("1.0.0")),
@@ -1140,9 +1128,7 @@ mod test {
             vec![
                 // Matches release commit
                 GitHubCommit {
-                    sha: String::from(
-                        "aaaa000000000000000000000000000000000002",
-                    ),
+                    sha: String::from("aaaa000000000000000000000000000000000002"),
                     author: Some(GitHubCommitAuthor {
                         login: Some(String::from("returning_dev")),
                     }),
@@ -1154,9 +1140,7 @@ mod test {
                 },
                 // Historical commit from the same contributor
                 GitHubCommit {
-                    sha: String::from(
-                        "bbbb000000000000000000000000000000000001",
-                    ),
+                    sha: String::from("bbbb000000000000000000000000000000000001"),
                     author: Some(GitHubCommitAuthor {
                         login: Some(String::from("returning_dev")),
                     }),
@@ -1173,9 +1157,7 @@ mod test {
             vec![GitHubPullRequest {
                 title: Some(String::from("Pushed fix")),
                 number: 20,
-                merge_commit_sha: Some(String::from(
-                    "aaaa000000000000000000000000000000000002",
-                )),
+                merge_commit_sha: Some(String::from("aaaa000000000000000000000000000000000002")),
                 labels: vec![],
             }]
             .into_iter()
