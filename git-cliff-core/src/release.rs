@@ -906,7 +906,7 @@ mod test {
     fn update_github_metadata_tagged_release_with_history() -> Result<()> {
         use crate::remote::github::{
             GitHubCommit, GitHubCommitAuthor, GitHubCommitDetails, GitHubCommitDetailsAuthor,
-            GitHubPullRequest, PullRequestLabel,
+            GitHubPullRequest,
         };
 
         // Simulate a tagged release (like --latest would produce):
@@ -1077,7 +1077,7 @@ mod test {
     fn update_github_metadata_missing_release_commit() -> Result<()> {
         use crate::remote::github::{
             GitHubCommit, GitHubCommitAuthor, GitHubCommitDetails, GitHubCommitDetailsAuthor,
-            GitHubPullRequest, PullRequestLabel,
+            GitHubPullRequest,
         };
 
         // The release commit_id points to a commit NOT in the GitHub API
