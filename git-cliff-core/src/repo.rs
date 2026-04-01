@@ -10,6 +10,7 @@ use git2::{
 use glob::Pattern;
 use indexmap::IndexMap;
 use regex::Regex;
+use semver::Version;
 use url::Url;
 
 use crate::config::Remote;
@@ -590,6 +591,7 @@ impl Repository {
 ///
 /// This function attempts to parse version strings and compare them semantically
 /// rather than alphabetically. It handles common version formats like:
+///
 /// - v1.2.3
 /// - 1.2.3
 /// - v1.2.3-alpha.1
@@ -598,56 +600,19 @@ impl Repository {
 fn semantic_version_compare(a: &str, b: &str) -> std::cmp::Ordering {
     use std::cmp::Ordering;
 
-    // Helper function to extract version parts and pre-release info
-    let parse_version = |version: &str| -> Option<(Vec<u64>, Option<String>)> {
+    fn trim_version(version: &str) -> &str {
         // Remove common prefixes like 'v' or 'version-'
-        let cleaned = version
+        version
             .strip_prefix('v')
             .or_else(|| version.strip_prefix("version-"))
-            .unwrap_or(version);
+            .unwrap_or(version)
+    }
 
-        // Split by '-' to separate main version from pre-release
-        let parts: Vec<&str> = cleaned.split('-').collect();
-        let main_version = parts.first()?;
-        let pre_release = if parts.len() > 1 {
-            Some(parts[1..].join("-"))
-        } else {
-            None
-        };
-
-        let version_parts = main_version
-            .split('.')
-            .map(|part| part.parse::<u64>().ok())
-            .collect::<Option<Vec<u64>>>()?;
-
-        Some((version_parts, pre_release))
-    };
-
-    match (parse_version(a), parse_version(b)) {
-        (Some((parts_a, pre_a)), Some((parts_b, pre_b))) => {
-            // First compare the main version parts numerically
-            for (part_a, part_b) in parts_a.iter().zip(parts_b.iter()) {
-                match part_a.cmp(part_b) {
-                    Ordering::Equal => continue,
-                    other => return other,
-                }
-            }
-
-            // If main version parts are equal, compare lengths
-            match parts_a.len().cmp(&parts_b.len()) {
-                Ordering::Equal => {
-                    // If main versions are identical, compare pre-release
-                    match (pre_a, pre_b) {
-                        (None, None) => Ordering::Equal,
-                        (Some(_), None) => Ordering::Less, // pre-release < release
-                        (None, Some(_)) => Ordering::Greater, // release > pre-release
-                        (Some(pre_a), Some(pre_b)) => pre_a.cmp(&pre_b), /* alphabetical for
-                                                             * pre-release */
-                    }
-                }
-                other => other,
-            }
-        }
+    match (
+        Version::parse(trim_version(a)),
+        Version::parse(trim_version(b)),
+    ) {
+        (Ok(a), Ok(b)) => a.cmp(&b),
         // If semantic parsing fails for either version, fall back to alphabetical
         _ => a.cmp(b),
     }
@@ -1263,7 +1228,7 @@ mod test {
             Ordering::Less
         );
 
-        // Test pre-release vs release (lines 574-575)
+        // Test pre-release vs release
         assert_eq!(
             semantic_version_compare("v1.0.0-alpha.1", "v1.0.0"),
             Ordering::Less
@@ -1280,7 +1245,7 @@ mod test {
             Ordering::Greater
         );
 
-        // Test the specific case from the GitHub issue
+        // Test the specific case from the GitHub issue https://github.com/orhun/git-cliff/issues/1080
         assert_eq!(
             semantic_version_compare("v0.9.0", "v0.10.0"),
             Ordering::Less
@@ -1297,8 +1262,10 @@ mod test {
     /// Test that reproduces and verifies the fix for the issue where tags with
     /// double-digit version numbers are sorted alphabetically instead of semantically.
     ///
-    /// This test simulates the scenario described in GitHub issue #1080 where v0.10.0
+    /// This test simulates the scenario described in GitHub issue [#1080] where v0.10.0
     /// was incorrectly considered "less than" v0.9.0 due to alphabetical sorting.
+    ///
+    /// [#1080]: https://github.com/orhun/git-cliff/issues/1080
     #[test]
     fn test_semantic_version_tag_sorting_issue() -> Result<()> {
         let (repo, _temp_dir) = create_temp_repo();
