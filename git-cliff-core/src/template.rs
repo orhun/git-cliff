@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::error::Error as ErrorImpl;
 
+use regex::Regex;
 use serde::Serialize;
 use tera::{Context as TeraContext, Result as TeraResult, Tera, Value, ast};
 
@@ -25,7 +26,7 @@ impl Template {
         if trim {
             content = content
                 .lines()
-                .map(|v| v.trim())
+                .map(str::trim)
                 .collect::<Vec<&str>>()
                 .join("\n");
         }
@@ -37,7 +38,12 @@ impl Template {
                 Err(Error::TemplateError(e))
             };
         }
+
         tera.register_filter("upper_first", Self::upper_first_filter);
+        tera.register_filter("split_regex", Self::split_regex);
+        tera.register_filter("replace_regex", Self::replace_regex);
+        tera.register_filter("find_regex", Self::find_regex);
+
         Ok(Self {
             name: name.to_string(),
             variables: Self::get_template_variables(name, &tera)?,
@@ -54,6 +60,82 @@ impl Template {
             Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
         };
         Ok(tera::to_value(&s)?)
+    }
+
+    /// Replaces all occurrences of a regex pattern with a string.
+    fn replace_regex(value: &Value, args: &HashMap<String, Value>) -> TeraResult<Value> {
+        let s = tera::try_get_value!("replace_regex", "value", String, value);
+        let from = match args.get("from") {
+            Some(val) => tera::try_get_value!("replace_regex", "from", String, val),
+            None => {
+                return Err(tera::Error::msg(
+                    "Filter `replace_regex` expected an arg called `from`",
+                ));
+            }
+        };
+
+        let to = match args.get("to") {
+            Some(val) => tera::try_get_value!("replace_regex", "to", String, val),
+            None => {
+                return Err(tera::Error::msg(
+                    "Filter `replace_regex` expected an arg called `to`",
+                ));
+            }
+        };
+
+        let re = Regex::new(&from).map_err(|e| {
+            tera::Error::msg(format!(
+                "Filter `replace_regex` received an invalid regex pattern: {e}"
+            ))
+        })?;
+        Ok(tera::to_value(re.replace_all(&s, &to))?)
+    }
+
+    /// Finds all occurrences of a regex pattern in a string.
+    fn find_regex(value: &Value, args: &HashMap<String, Value>) -> TeraResult<Value> {
+        let s = tera::try_get_value!("find_regex", "value", String, value);
+
+        let pat = match args.get("pat") {
+            Some(p) => {
+                let p = tera::try_get_value!("find_regex", "pat", String, p);
+                p.replace("\\n", "\n").replace("\\t", "\t")
+            }
+            None => {
+                return Err(tera::Error::msg(
+                    "Filter `find_regex` expected an arg called `pat`",
+                ));
+            }
+        };
+        let re = Regex::new(&pat).map_err(|e| {
+            tera::Error::msg(format!(
+                "Filter `find_regex` received an invalid regex pattern: {e}"
+            ))
+        })?;
+        let result: Vec<&str> = re.find_iter(&s).map(|mat| mat.as_str()).collect();
+        Ok(tera::to_value(result)?)
+    }
+
+    /// Splits a string by a regex pattern.
+    fn split_regex(value: &Value, args: &HashMap<String, Value>) -> TeraResult<Value> {
+        let s = tera::try_get_value!("split_regex", "value", String, value);
+        let pat = match args.get("pat") {
+            Some(p) => {
+                let p = tera::try_get_value!("split_regex", "pat", String, p);
+                p.replace("\\n", "\n").replace("\\t", "\t")
+            }
+            None => {
+                return Err(tera::Error::msg(
+                    "Filter `split_regex` expected an arg called `pat`",
+                ));
+            }
+        };
+        let re = Regex::new(&pat).map_err(|e| {
+            tera::Error::msg(format!(
+                "Filter `split_regex` received an invalid regex pattern: {e}"
+            ))
+        })?;
+        let result: Vec<&str> = re.split(&s).collect();
+        Ok(tera::to_value(result)?)
     }
 
     /// Recursively finds the identifiers from the AST.
@@ -121,7 +203,7 @@ impl Template {
         for node in ast {
             Self::find_identifiers(node, &mut variables);
         }
-        trace!("Template variables for {name}: {variables:?}");
+        log::trace!("Template variables for {name}: {variables:?}");
         Ok(variables.into_iter().collect())
     }
 
@@ -172,7 +254,6 @@ impl Template {
 
 #[cfg(test)]
 mod test {
-    use regex::Regex;
 
     use super::*;
     use crate::commit::Commit;
@@ -213,17 +294,21 @@ mod test {
             bitbucket: crate::remote::RemoteReleaseMetadata {
                 contributors: vec![],
             },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: crate::remote::RemoteReleaseMetadata {
+                contributors: vec![],
+            },
         }
     }
 
     #[test]
     fn render_template() -> Result<()> {
-        let template = r#"
+        let template = r"
 		## {{ version }} - <DATE>
 		{% for commit in commits %}
 		### {{ commit.group }}
 		- {{ commit.message | upper_first }}
-		{% endfor %}"#;
+		{% endfor %}";
         let mut template = Template::new("test", template.to_string(), false)?;
         let release = get_fake_release_data();
         assert_eq!(
@@ -257,9 +342,9 @@ mod test {
 
     #[test]
     fn render_trimmed_template() -> Result<()> {
-        let template = r#"
+        let template = r"
 		##  {{ version }}
-		"#;
+		";
         let template = Template::new("test", template.to_string(), true)?;
         let release = get_fake_release_data();
         assert_eq!(
@@ -279,6 +364,43 @@ mod test {
         let r = template.render(&release, Option::<HashMap<&str, String>>::None.as_ref(), &[
         ])?;
         assert_eq!("Hello", r);
+        Ok(())
+    }
+
+    #[test]
+    fn test_replace_regex_filter() -> Result<()> {
+        let template = "{% set hello_variable = 'hello world' %}{{ hello_variable | \
+                        replace_regex(from='o', to='a') }}";
+        let release = get_fake_release_data();
+        let template = Template::new("test", template.to_string(), true)?;
+        let r = template.render(&release, Option::<HashMap<&str, String>>::None.as_ref(), &[
+        ])?;
+        assert_eq!("hella warld", r);
+        Ok(())
+    }
+
+    #[test]
+    fn test_find_regex_filter() -> Result<()> {
+        let template = "{% set hello_variable = 'hello world, hello universe' %}{{ hello_variable \
+                        | find_regex(pat='hello') }}";
+        let release = get_fake_release_data();
+        let template = Template::new("test", template.to_string(), true)?;
+        let r = template.render(&release, Option::<HashMap<&str, String>>::None.as_ref(), &[
+        ])?;
+        assert_eq!("[hello, hello]", r);
+        Ok(())
+    }
+
+    #[test]
+    fn test_split_regex_filter() -> Result<()> {
+        let template = "{% set hello_variable = 'hello world, hello universe' %}{{ hello_variable \
+                        | split_regex(pat=' ') }}";
+        let release = get_fake_release_data();
+        let template = Template::new("test", template.to_string(), true)?;
+        let r = template.render(&release, Option::<HashMap<&str, String>>::None.as_ref(), &[
+        ])?;
+
+        assert_eq!("[hello, world,, hello, universe]", r);
         Ok(())
     }
 }

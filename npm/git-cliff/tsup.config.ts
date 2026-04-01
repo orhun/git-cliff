@@ -1,14 +1,14 @@
 import { defineConfig, type Options } from "tsup";
-import { dependencies } from "./package.json";
+import packageJson from "./package.json" with { type: "json" };
 
 const baseOptions: Options = {
   clean: true,
   dts: true,
   entry: ["src/index.ts"],
   minify: false,
-  external: Object.keys(dependencies),
+  external: Object.keys(packageJson.dependencies),
   sourcemap: true,
-  target: "es2020",
+  target: "node18",
   tsconfig: "tsconfig.json",
   keepNames: true,
   treeshake: true,

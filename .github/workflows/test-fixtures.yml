@@ -29,6 +29,9 @@ jobs:
           - fixtures-name: test-bitbucket-integration
           - fixtures-name: test-bitbucket-integration-custom-range
             command: v1.0.0..v1.0.1
+          - fixtures-name: test-azure-devops-integration
+          - fixtures-name: test-azure-devops-integration-custom-range
+            command: v1.0.0..v1.0.1
           - fixtures-name: test-ignore-tags
           - fixtures-name: test-invert-ignore-tags
           - fixtures-name: test-topo-order
@@ -97,9 +100,13 @@ jobs:
             command: --bump --tag=2.1.1
           - fixtures-name: test-cli-arg-ignore-tags
             command: --ignore-tags ".*beta"
+          - fixtures-name: test-cli-arg-skip-tags
+            command: --skip-tags ".*beta"
           - fixtures-name: test-tag-message
           - fixtures-name: test-bump-unreleased-with-tag-message-arg
             command: --bump --unreleased --with-tag-message "Some text"
+          - fixtures-name: test-unreleased-tag-missing-release-commit
+            command: --unreleased --tag 0.3.0
           - fixtures-name: test-from-context
             command: --from-context context.json
           - fixtures-name: test-from-context-does-not-discard-fields
@@ -133,13 +140,19 @@ jobs:
           - fixtures-name: test-regex-json-array
           - fixtures-name: test-release-statistics
             previous-release-timestamp: "2022-04-06 01:25:12"
+          - fixtures-name: test-workdir-include-path
+            command: v2.6.1..v2.7.0 --workdir .github/fixtures/
+          - fixtures-name: test-fail-on-unmatched-commit
+          - fixtures-name: test-offline
 
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Run a fixtures test
         uses: ./.github/actions/run-fixtures-test
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           fixtures-dir: .github/fixtures/${{ matrix.fixtures-name }}
           command: ${{ matrix.command }}

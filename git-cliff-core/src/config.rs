@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use std::sync::LazyLock;
 use std::{fmt, fs};
 
 use glob::Pattern;
@@ -9,7 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::embed::EmbeddedConfig;
 use crate::error::Result;
-use crate::{command, error};
+use crate::{DEFAULT_CONFIG, command, error};
 
 /// Default initial tag.
 const DEFAULT_INITIAL_TAG: &str = "0.1.0";
@@ -23,17 +24,15 @@ struct ManifestInfo {
     regex: Regex,
 }
 
-lazy_static::lazy_static! {
-    /// Array containing manifest information for Rust and Python projects.
-    static ref MANIFEST_INFO: Vec<ManifestInfo> = vec![
+/// Array containing manifest information for Rust and Python projects.
+static MANIFEST_INFO: LazyLock<Vec<ManifestInfo>> = LazyLock::new(|| {
+    vec![
         ManifestInfo {
             path: PathBuf::from("Cargo.toml"),
-            regex: RegexBuilder::new(
-                r"^\[(?:workspace|package)\.metadata\.git\-cliff\.",
-            )
-            .multi_line(true)
-            .build()
-            .expect("failed to build regex"),
+            regex: RegexBuilder::new(r"^\[(?:workspace|package)\.metadata\.git\-cliff\.")
+                .multi_line(true)
+                .build()
+                .expect("failed to build regex"),
         },
         ManifestInfo {
             path: PathBuf::from("pyproject.toml"),
@@ -42,9 +41,8 @@ lazy_static::lazy_static! {
                 .build()
                 .expect("failed to build regex"),
         },
-    ];
-
-}
+    ]
+});
 
 /// Configuration values.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -84,11 +82,12 @@ pub struct ChangelogConfig {
 
 /// Git configuration
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct GitConfig {
     /// Parse commits according to the conventional commits specification.
     pub conventional_commits: bool,
     /// Require all commits to be conventional.
-    /// Takes precedence over filter_unconventional.
+    /// Takes precedence over `filter_unconventional`.
     pub require_conventional: bool,
     /// Exclude commits that do not match the conventional commits specification
     /// from the changelog.
@@ -110,13 +109,15 @@ pub struct GitConfig {
     pub link_parsers: Vec<LinkParser>,
     /// Exclude commits that are not matched by any commit parser.
     pub filter_commits: bool,
+    /// Fail on a commit that is not matched by any commit parser.
+    pub fail_on_unmatched_commit: bool,
     /// Regex to select git tags that represent releases.
     #[serde(with = "serde_regex", default)]
     pub tag_pattern: Option<Regex>,
     /// Regex to select git tags that do not represent proper releases.
     #[serde(with = "serde_regex", default)]
     pub skip_tags: Option<Regex>,
-    /// Regex to exclude git tags after applying the tag_pattern.
+    /// Regex to exclude git tags after applying the `tag_pattern`.
     #[serde(with = "serde_regex", default)]
     pub ignore_tags: Option<Regex>,
     /// Regex to count matched tags.
@@ -175,6 +176,9 @@ mod serde_pattern {
 /// Remote configuration.
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct RemoteConfig {
+    /// Run in offline mode.
+    #[serde(default)]
+    pub offline: bool,
     /// GitHub remote.
     #[serde(default)]
     pub github: Remote,
@@ -187,10 +191,14 @@ pub struct RemoteConfig {
     /// Bitbucket remote.
     #[serde(default)]
     pub bitbucket: Remote,
+    /// Azure DevOps remote.
+    #[serde(default)]
+    pub azure_devops: Remote,
 }
 
 impl RemoteConfig {
     /// Returns `true` if any remote is set.
+    #[must_use]
     pub fn is_any_set(&self) -> bool {
         #[cfg(feature = "github")]
         if self.github.is_set() {
@@ -206,6 +214,10 @@ impl RemoteConfig {
         }
         #[cfg(feature = "bitbucket")]
         if self.bitbucket.is_set() {
+            return true;
+        }
+        #[cfg(feature = "azure_devops")]
+        if self.azure_devops.is_set() {
             return true;
         }
         false
@@ -228,6 +240,10 @@ impl RemoteConfig {
         #[cfg(feature = "bitbucket")]
         {
             self.bitbucket.native_tls = Some(true);
+        }
+        #[cfg(feature = "azure_devops")]
+        {
+            self.azure_devops.native_tls = Some(true);
         }
     }
 }
@@ -282,6 +298,7 @@ impl Remote {
     }
 
     /// Returns `true` if the remote has an owner and repo.
+    #[must_use]
     pub fn is_set(&self) -> bool {
         !self.owner.is_empty() && !self.repo.is_empty()
     }
@@ -352,12 +369,13 @@ impl Bump {
     /// Returns the initial tag.
     ///
     /// This function also logs the returned value.
+    #[must_use]
     pub fn get_initial_tag(&self) -> String {
         if let Some(tag) = self.initial_tag.clone() {
-            warn!("No releases found, using initial tag '{tag}' as the next version.");
+            log::warn!("No releases found, using initial tag '{tag}' as the next version");
             tag
         } else {
-            warn!("No releases found, using {DEFAULT_INITIAL_TAG} as the next version.");
+            log::warn!("No releases found, using {DEFAULT_INITIAL_TAG} as the next version");
             DEFAULT_INITIAL_TAG.into()
         }
     }
@@ -411,7 +429,7 @@ impl TextProcessor {
             *rendered = self.pattern.replace_all(rendered, text).to_string();
         } else if let Some(command) = &self.replace_command {
             if self.pattern.is_match(rendered) {
-                *rendered = command::run(command, Some(rendered.to_string()), command_envs)?;
+                *rendered = command::run(command, Some(rendered.clone()), command_envs)?;
             }
         }
         Ok(())
@@ -469,6 +487,46 @@ impl Config {
             .build()?
             .try_deserialize()?)
     }
+
+    /// Find a special config path on macOS.
+    ///
+    /// The `dirs` crate ignores the `XDG_CONFIG_HOME` env var on macOS and only considers
+    /// `Library/Application Support` as the config dir, which is primarily used by GUI apps.
+    ///
+    /// This function determines the config path and honors the `XDG_CONFIG_HOME` env var.
+    /// If it is not set, it will fall back to `~/.config`
+    #[cfg(target_os = "macos")]
+    pub fn retrieve_xdg_config_on_macos() -> PathBuf {
+        let config_dir = std::env::var("XDG_CONFIG_HOME").map_or_else(
+            |_| dirs::home_dir().unwrap_or_default().join(".config"),
+            PathBuf::from,
+        );
+        config_dir.join("git-cliff")
+    }
+
+    /// Find the path of the config file.
+    ///
+    /// If the config file is not found in its standard locations, [`None`] is returned.
+    #[must_use]
+    pub fn retrieve_config_path() -> Option<PathBuf> {
+        for supported_path in [
+            #[cfg(target_os = "macos")]
+            Some(Config::retrieve_xdg_config_on_macos().join(DEFAULT_CONFIG)),
+            dirs::config_dir().map(|dir| dir.join("git-cliff").join(DEFAULT_CONFIG)),
+        ]
+        .iter()
+        .filter_map(|v| v.as_ref())
+        {
+            if supported_path.exists() {
+                #[allow(clippy::unnecessary_debug_formatting)]
+                {
+                    log::debug!("Using configuration file from: {supported_path:?}");
+                }
+                return Some(supported_path.clone());
+            }
+        }
+        None
+    }
 }
 
 impl FromStr for Config {
@@ -500,18 +558,19 @@ mod test {
     use pretty_assertions::assert_eq;
 
     use super::*;
+
     #[test]
     fn load() -> Result<()> {
+        const FOOTER_VALUE: &str = "test";
+        const TAG_PATTERN_VALUE: &str = ".*[0-9].*";
+        const IGNORE_TAGS_VALUE: &str = "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+";
+
         let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .parent()
             .expect("parent directory not found")
             .to_path_buf()
             .join("config")
             .join(crate::DEFAULT_CONFIG);
-
-        const FOOTER_VALUE: &str = "test";
-        const TAG_PATTERN_VALUE: &str = ".*[0-9].*";
-        const IGNORE_TAGS_VALUE: &str = "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+";
 
         unsafe {
             env::set_var("GIT_CLIFF__CHANGELOG__FOOTER", FOOTER_VALUE);

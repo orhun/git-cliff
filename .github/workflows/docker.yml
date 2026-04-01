@@ -18,11 +18,11 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
         with:
           images: |
             orhunp/git-cliff
@@ -32,20 +32,39 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=sha
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') }}
+            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
             type=semver,pattern={{version}}
 
+      - name: Find Image by SHA Tag
+        id: image_sha_tag
+        env:
+          META_JSON: ${{ steps.meta.outputs.json }}
+        # This jq script is the most direct way to pull the current sha tag for targeting
+        # the security scan.
+        # The JSON output is currently an object and one property is the tags array.
+        # That array contains and entry like "ghcr.io/orhun/git-cliff/git-cliff:sha-1810ad6"
+        # This JQ script pulls the tags, then selects the first one that contains both
+        # `ghcr.io` and `:sha-`. The full tag value is then exported to be used later.
+        run: |
+          tag_value="$(
+            jq -r '
+              first(.tags[] | select(contains("ghcr.io") and contains(":sha-")))
+            ' <<< "$META_JSON"
+          )"
+          echo "image=$tag_value" >> "$GITHUB_OUTPUT"
+
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
         with:
           platforms: arm64
 
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
       - name: Cache Docker layers
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
@@ -54,14 +73,14 @@ jobs:
 
       - name: Login to Docker Hub
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
       - name: Login to GHCR
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -69,7 +88,7 @@ jobs:
 
       - name: Build and push
         id: docker_build
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
         with:
           context: ./
           file: ./Dockerfile
@@ -84,9 +103,10 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache
 
       - name: Scan the image
-        uses: anchore/sbom-action@cee1b8e05ae5b2593a75e197229729eabaa9f8ec # v0.20.2
+        if: github.event_name != 'pull_request'
+        uses: anchore/sbom-action@57aae528053a48a3f6235f2d9461b05fbcb7366d # v0.23.1
         with:
-          image: ghcr.io/${{ github.repository_owner }}/git-cliff/git-cliff
+          image: ${{ steps.image_sha_tag.outputs.image }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}

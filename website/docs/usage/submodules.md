@@ -31,3 +31,9 @@ body = """
 If a release does not contain any submodule updates, `submodule_commits` is just an empty map.
 
 :::
+
+:::warning
+
+Nested submodules are not yet supported.
+
+:::

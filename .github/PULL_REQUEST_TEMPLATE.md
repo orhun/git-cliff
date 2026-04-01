@@ -32,10 +32,13 @@
 <!--- If you're unsure about any of these, don't hesitate to ask. We're here to help! -->
 
 - [ ] My code follows the code style of this project.
-- [ ] I have updated the documentation accordingly.
+- [ ] I have updated the documentation accordingly (if applicable).
 - [ ] I have formatted the code with [rustfmt](https://github.com/rust-lang/rustfmt).
+  - [ ] `cargo +nightly fmt --all`
 - [ ] I checked the lints with [clippy](https://github.com/rust-lang/rust-clippy).
+  - [ ] `cargo clippy --tests --verbose -- -D warnings`
 - [ ] I have added tests to cover my changes.
 - [ ] All new and existing tests passed.
+  - [ ] `cargo test`
 
-<!--- Thank you for contributing to git-cliff! ⛰️  -->
+<!--- Thank you for contributing to git-cliff! ⛰️ -->

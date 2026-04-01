@@ -31,7 +31,7 @@ const STYLES: Styles = Styles::styled()
     .placeholder(AnsiColor::Green.on_default());
 
 /// Command-line arguments to parse.
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Clone)]
 #[command(
     version,
     author = clap::crate_authors!("\n"),
@@ -51,6 +51,7 @@ const STYLES: Styles = Styles::styled()
 	disable_version_flag = true,
     styles(STYLES),
 )]
+#[allow(clippy::struct_excessive_bools)]
 pub struct Opt {
     #[arg(
 		short,
@@ -119,6 +120,7 @@ pub struct Opt {
 		long,
 		env = "GIT_CLIFF_INCLUDE_PATH",
 		value_name = "PATTERN",
+		value_delimiter = ' ',
 		num_args(1..)
 	)]
     pub include_path: Option<Vec<Pattern>>,
@@ -127,6 +129,7 @@ pub struct Opt {
 		long,
 		env = "GIT_CLIFF_EXCLUDE_PATH",
 		value_name = "PATTERN",
+		value_delimiter = ' ',
 		num_args(1..)
 	)]
     pub exclude_path: Option<Vec<Pattern>>,
@@ -149,6 +152,9 @@ pub struct Opt {
 		num_args = 0..=1,
 	)]
     pub with_tag_message: Option<String>,
+    /// Sets the tags to skip in the changelog.
+    #[arg(long, env = "GIT_CLIFF_SKIP_TAGS", value_name = "PATTERN")]
+    pub skip_tags: Option<Regex>,
     /// Sets the tags to ignore in the changelog.
     #[arg(long, env = "GIT_CLIFF_IGNORE_TAGS", value_name = "PATTERN")]
     pub ignore_tags: Option<Regex>,
@@ -253,12 +259,10 @@ pub struct Opt {
 		default_value_t = Sort::Oldest
 	)]
     pub sort: Sort,
-    /// Sets the commit range to process.
-    #[arg(value_name = "RANGE", help_heading = Some("ARGS"))]
-    pub range: Option<String>,
     /// Sets the GitHub API token.
     #[arg(
 		long,
+		help_heading = "REMOTE OPTIONS",
 		env = "GITHUB_TOKEN",
 		value_name = "TOKEN",
 		hide_env_values = true,
@@ -268,6 +272,7 @@ pub struct Opt {
     /// Sets the GitHub repository.
     #[arg(
 		long,
+		help_heading = "REMOTE OPTIONS",
 		env = "GITHUB_REPO",
 		value_parser = clap::value_parser!(RemoteValue),
 		value_name = "OWNER/REPO",
@@ -277,6 +282,7 @@ pub struct Opt {
     /// Sets the GitLab API token.
     #[arg(
 		long,
+		help_heading = "REMOTE OPTIONS",
 		env = "GITLAB_TOKEN",
 		value_name = "TOKEN",
 		hide_env_values = true,
@@ -286,6 +292,7 @@ pub struct Opt {
     /// Sets the GitLab repository.
     #[arg(
 		long,
+		help_heading = "REMOTE OPTIONS",
 		env = "GITLAB_REPO",
 		value_parser = clap::value_parser!(RemoteValue),
 		value_name = "OWNER/REPO",
@@ -295,6 +302,7 @@ pub struct Opt {
     /// Sets the Gitea API token.
     #[arg(
 		long,
+		help_heading = "REMOTE OPTIONS",
 		env = "GITEA_TOKEN",
 		value_name = "TOKEN",
 		hide_env_values = true,
@@ -304,6 +312,7 @@ pub struct Opt {
     /// Sets the Gitea repository.
     #[arg(
 		long,
+		help_heading = "REMOTE OPTIONS",
 		env = "GITEA_REPO",
 		value_parser = clap::value_parser!(RemoteValue),
 		value_name = "OWNER/REPO",
@@ -313,6 +322,7 @@ pub struct Opt {
     /// Sets the Bitbucket API token.
     #[arg(
 		long,
+		help_heading = "REMOTE OPTIONS",
 		env = "BITBUCKET_TOKEN",
 		value_name = "TOKEN",
 		hide_env_values = true,
@@ -322,15 +332,42 @@ pub struct Opt {
     /// Sets the Bitbucket repository.
     #[arg(
 		long,
+		help_heading = "REMOTE OPTIONS",
 		env = "BITBUCKET_REPO",
 		value_parser = clap::value_parser!(RemoteValue),
 		value_name = "OWNER/REPO",
 		hide = !cfg!(feature = "bitbucket"),
 	)]
     pub bitbucket_repo: Option<RemoteValue>,
+    /// Sets the Azure DevOps API token.
+    #[arg(
+		long,
+		help_heading = "REMOTE OPTIONS",
+		env = "AZURE_DEVOPS_TOKEN",
+		value_name = "TOKEN",
+		hide_env_values = true,
+		hide = !cfg!(feature = "azure_devops"),
+	)]
+    pub azure_devops_token: Option<SecretString>,
+    /// Sets the Azure DevOps repository.
+    #[arg(
+		long,
+		help_heading = "REMOTE OPTIONS",
+		env = "AZURE_DEVOPS_REPO",
+		value_parser = clap::value_parser!(RemoteValue),
+		value_name = "OWNER/REPO",
+		hide = !cfg!(feature = "azure_devops"),
+	)]
+    pub azure_devops_repo: Option<RemoteValue>,
+    /// Sets the commit range to process.
+    #[arg(value_name = "RANGE", help_heading = Some("ARGS"))]
+    pub range: Option<String>,
     /// Load TLS certificates from the native certificate store.
     #[arg(long, help_heading = Some("FLAGS"), hide = !cfg!(feature = "remote"))]
     pub use_native_tls: bool,
+    /// Disable network access for remote repositories.
+    #[arg(long, env = "GIT_CLIFF_OFFLINE", help_heading = Some("REMOTE OPTIONS"), hide = !cfg!(feature = "remote"))]
+    pub offline: bool,
 }
 
 /// Custom type for the remote value.
@@ -435,6 +472,7 @@ impl Opt {
     /// input string into contents of the path returned by [`home_dir`].
     ///
     /// [`home_dir`]: dirs::home_dir
+    #[allow(clippy::unnecessary_wraps)]
     fn parse_dir(dir: &str) -> Result<PathBuf, String> {
         Ok(PathBuf::from(shellexpand::tilde(dir).to_string()))
     }
@@ -442,11 +480,28 @@ impl Opt {
 
 #[cfg(test)]
 mod tests {
+    use std::env;
     use std::ffi::OsStr;
 
     use clap::CommandFactory;
+    use serial_test::serial;
 
     use super::*;
+
+    struct EnvVarGuard(&'static str);
+
+    impl EnvVarGuard {
+        fn set(key: &'static str, value: &str) -> Self {
+            unsafe { env::set_var(key, value) };
+            Self(key)
+        }
+    }
+
+    impl Drop for EnvVarGuard {
+        fn drop(&mut self) {
+            unsafe { env::remove_var(self.0) };
+        }
+    }
 
     #[test]
     fn verify_cli() {
@@ -525,6 +580,35 @@ mod tests {
             BumpOption::Specific(BumpType::Major),
             bump_option_parser.parse_ref(&Opt::command(), None, OsStr::new("major"))?
         );
+        Ok(())
+    }
+
+    // Environment variables are process-global, so tests that modify them must run exclusively and
+    // restore the original state after execution. For this reason, we use the `serial` macro
+    // from the `serial_test` crate to guarantee exclusive execution. See: https://crates.io/crates/serial_test
+    #[test]
+    #[serial]
+    fn path_env_vars_are_split_into_multiple_patterns() -> Result<(), Box<dyn std::error::Error>> {
+        let _include = EnvVarGuard::set("GIT_CLIFF_INCLUDE_PATH", "website/**/* .github/**/*");
+        let _exclude = EnvVarGuard::set("GIT_CLIFF_EXCLUDE_PATH", "docs/**/* tests/**/*");
+
+        let opt = Opt::try_parse_from(["git-cliff"])?;
+
+        assert_eq!(
+            Some(vec![
+                Pattern::new("website/**/*")?,
+                Pattern::new(".github/**/*")?,
+            ]),
+            opt.include_path
+        );
+        assert_eq!(
+            Some(vec![
+                Pattern::new("docs/**/*")?,
+                Pattern::new("tests/**/*")?
+            ]),
+            opt.exclude_path
+        );
+
         Ok(())
     }
 }

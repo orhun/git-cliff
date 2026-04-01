@@ -68,11 +68,18 @@ However, in some cases, you may want to use the platform's native certificate st
 
 :::
 
+### offline
+
+When the `--offline` argument, `GIT_CLIFF_OFFLINE` environment variable, or configuration parameter is set, **git-cliff** ensures that no external calls or requests are made, despite a remote being configured. This can be useful when running `--bumped-version` or in a limited environment.
+
 ---
 
 Here is a complete example for a project hosted on GitLab:
 
 ```toml
+[remote]
+offline = false
+
 [remote.gitlab]
 owner = "archlinux"
 repo = "arch-repro-status"

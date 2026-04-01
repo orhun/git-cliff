@@ -5,7 +5,7 @@
 //!
 //! ## Features
 #![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_docs, clippy::unwrap_used)]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff.png",
@@ -37,13 +37,12 @@ pub mod remote;
 pub mod repo;
 /// Release statistics.
 pub mod statistics;
+/// Changelog commit processing summary.
+pub mod summary;
 /// Git tag.
 pub mod tag;
 /// Template engine.
 pub mod template;
-
-#[macro_use]
-extern crate log;
 
 /// Default configuration file.
 pub const DEFAULT_CONFIG: &str = "cliff.toml";

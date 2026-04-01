@@ -1,4 +1,5 @@
 use std::io::Write;
+use std::sync::LazyLock;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::{env, fmt};
 
@@ -50,26 +51,23 @@ fn colored_level(style: &mut Style, level: Level) -> StyledValue<'_, &'static st
 }
 
 #[cfg(feature = "remote")]
-lazy_static::lazy_static! {
-    /// Lazily initialized progress bar.
-    pub static ref PROGRESS_BAR: ProgressBar = {
-        let progress_bar = ProgressBar::new_spinner();
-        progress_bar.set_style(
-            ProgressStyle::with_template("{spinner:.green} {msg}")
-                .unwrap()
-                .tick_strings(&[
-                    "▹▹▹▹▹",
-                    "▸▹▹▹▹",
-                    "▹▸▹▹▹",
-                    "▹▹▸▹▹",
-                    "▹▹▹▸▹",
-                    "▹▹▹▹▸",
-                    "▪▪▪▪▪",
-                ]),
-        );
-        progress_bar
-    };
-}
+pub static PROGRESS_BAR: LazyLock<ProgressBar> = LazyLock::new(|| {
+    let progress_bar = ProgressBar::new_spinner();
+    progress_bar.set_style(
+        ProgressStyle::with_template("{spinner:.green} {msg}")
+            .unwrap()
+            .tick_strings(&[
+                "▹▹▹▹▹",
+                "▸▹▹▹▹",
+                "▹▸▹▹▹",
+                "▹▹▸▹▹",
+                "▹▹▹▸▹",
+                "▹▹▹▹▸",
+                "▪▪▪▪▪",
+            ]),
+    );
+    progress_bar
+});
 
 /// Initializes the global logger.
 ///

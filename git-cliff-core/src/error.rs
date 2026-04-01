@@ -33,7 +33,7 @@ pub enum Error {
     LoggerError(String),
     /// When commit's not follow the conventional commit structure we throw this
     /// error.
-    #[error("Cannot parse the commit: `{0}`")]
+    #[error("Commit did not match conventional format: `{0}`")]
     ParseError(#[from] git_conventional::Error),
     /// Error that may occur while grouping commits.
     #[error("Grouping error: `{0}`")]
@@ -96,9 +96,6 @@ pub enum Error {
     #[error("HTTP header error: `{0}`")]
     #[cfg(feature = "remote")]
     HttpHeaderError(#[from] reqwest::header::InvalidHeaderValue),
-    /// Error that may occur during handling pages.
-    #[error("Pagination error: `{0}`")]
-    PaginationError(String),
     /// The errors that may occur while parsing URLs.
     #[error("URL parse error: `{0}`")]
     UrlParseError(#[from] url::ParseError),
@@ -115,6 +112,10 @@ pub enum Error {
     /// See `require_conventional` option for more information.
     #[error("Requiring all commits be conventional but found {0} unconventional commits.")]
     UnconventionalCommitsError(i32),
+    /// Error raised when commits are not matched by any commit parser and the
+    /// [`crate::config::GitConfig::fail_on_unmatched_commit`] option is enabled.
+    #[error("Found {0} unmatched commit(s)")]
+    UnmatchedCommitsError(i32),
 }
 
 /// Result type of the core library.

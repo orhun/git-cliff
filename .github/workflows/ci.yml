@@ -21,7 +21,7 @@ jobs:
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@4305c38b25d97ef35a8ad1f985ccf2d2242004f2 # stable
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Check
         uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # v1.0.3
         with:
@@ -38,9 +38,9 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Check typos
-        uses: crate-ci/typos@d7e6241ebf2f59df88a9e53567d2fdc5141c2fd1 # master
+        uses: crate-ci/typos@3504f4613b41e223d38c08c6953c3ef30bf29fac # master
 
   test:
     name: Test suite
@@ -50,12 +50,12 @@ jobs:
         uses: dtolnay/rust-toolchain@b95584d8105b9ab200e15821fa671848cf2b7017 # nightly
       - name: Checkout
         if: github.event_name != 'pull_request'
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
       - name: Checkout
         if: github.event_name == 'pull_request'
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
@@ -70,10 +70,11 @@ jobs:
           cargo tarpaulin --out xml --verbose --all-features \
             -- --skip "repo::test::git_upstream_remote"
       - name: Upload reports to codecov
-        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
+        if: github.actor != 'dependabot[bot]'
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
         with:
           name: code-coverage-report
-          file: cobertura.xml
+          files: cobertura.xml
           flags: unit-tests
           fail_ci_if_error: true
           verbose: true
@@ -88,17 +89,23 @@ jobs:
         with:
           components: clippy
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Check the lints
         uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # v1.0.3
         with:
+          # Lints are configured via CLI arguments to avoid confusion with Cargo.toml precedence.
           command: clippy
           args: --tests --verbose -- -D warnings
       - name: Check the pedantic lints
         uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # v1.0.3
         with:
+          # Lints are configured via CLI arguments to avoid confusion with Cargo.toml precedence.
           command: clippy
-          args: --all-targets --verbose -- -W clippy::pedantic
+          args: >
+              --all-targets --verbose -- -W clippy::pedantic 
+              -A clippy::needless_for_each
+              -A clippy::redundant_else
+              -A clippy::format_push_string
 
   rustfmt:
     name: Formatting
@@ -110,7 +117,7 @@ jobs:
           toolchain: nightly
           components: rustfmt
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Check the formatting
         run: cargo +nightly fmt --all -- --check --verbose
 
@@ -123,7 +130,7 @@ jobs:
         with:
           components: rustfmt
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Check the formatting
         uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # v1.0.3
         with:
@@ -135,11 +142,24 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Check the links
-        uses: lycheeverse/lychee-action@82202e5e9c2f4ef1a55a3d02563e1cb6041e5332 # v2.4.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Check website links
+        uses: lycheeverse/lychee-action@8646ba30535128ac92d33dfc9133794bfdd9b411 # v2.8.0
         with:
-          args: -v --max-concurrency 1 *.md website/docs/* website/blog/*
+          args: >
+            -v
+            --config lychee.toml
+            --root-dir website
+            website/docs/* website/blog/*
+          fail: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check root markdown links
+        uses: lycheeverse/lychee-action@8646ba30535128ac92d33dfc9133794bfdd9b411 # v2.8.0
+        with:
+          args: >
+            -v
+            --config lychee.toml
+            *.md
           fail: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -148,7 +168,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Install cargo-binstall
         uses: taiki-e/install-action@f45419ef14ff13c4459e1c4310c1ff046eff6b30 # cargo-binstall
       - name: Install cargo-msrv
@@ -166,9 +186,9 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Install node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 18
           registry-url: "https://registry.npmjs.org"
@@ -206,9 +226,11 @@ jobs:
   profiler:
     name: Run profiler
     runs-on: ubuntu-22.04
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
       - name: Install toolchain
@@ -216,7 +238,7 @@ jobs:
       - name: Run profiler
         run: cargo run --profile bench --features profiler -- --no-exec
       - name: Upload report
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: git-cliff.${{ github.run_id }}-profiler-report
           path: git-cliff.**.flamegraph.svg
@@ -226,13 +248,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install Nix
-        uses: nixbuild/nix-quick-install-action@63ca48f939ee3b8d835f4126562537df0fee5b91 # v32
+        uses: nixbuild/nix-quick-install-action@2c9db80fb984ceb1bcaa77cdda3fdf8cfba92035 # v34
 
       - name: Restore and cache Nix store
-        uses: nix-community/cache-nix-action@135667ec418502fa5a3598af6fb9eb733888ce6a # v6.1.3
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7.0.2
         with:
           primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix') }}
           restore-prefixes-first-match: nix-${{ runner.os }}-

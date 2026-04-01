@@ -1,8 +1,10 @@
-use std::{env, process};
+use std::fs::File;
+use std::path::Path;
+use std::{env, io, process};
 
 use clap::Parser;
 use git_cliff::args::Opt;
-use git_cliff::logger;
+use git_cliff::{init_config, logger};
 use git_cliff_core::error::Result;
 
 /// Profiler.
@@ -32,11 +34,41 @@ fn main() -> Result<()> {
         _profiler_guard = Some(());
     }
 
-    // Run git-cliff
-    let exit_code = match git_cliff::run(args) {
+    // Check if there is a new version available.
+    #[cfg(feature = "update-informer")]
+    if !args.offline {
+        git_cliff::check_new_version();
+    }
+
+    // Create the configuration file if init flag is given.
+    if let Some(path) = &args.init {
+        init_config(path.as_deref(), &args.config)?;
+        return Ok(());
+    }
+
+    // Generate a changelog.
+    let changelog = git_cliff::run(args.clone())?;
+
+    // Get output destination.
+    let output = args
+        .output
+        .clone()
+        .or(changelog.config.changelog.output.clone());
+    let out: Box<dyn io::Write> = if let Some(path) = &output {
+        if path == Path::new("-") {
+            Box::new(io::stdout())
+        } else {
+            Box::new(io::BufWriter::new(File::create(path)?))
+        }
+    } else {
+        Box::new(io::stdout())
+    };
+
+    // Write the changelog.
+    let exit_code = match git_cliff::write_changelog(&args, changelog, out) {
         Ok(()) => 0,
         Err(e) => {
-            log::error!("{}", e);
+            log::error!("{e}");
             1
         }
     };

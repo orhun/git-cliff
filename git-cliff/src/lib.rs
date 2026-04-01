@@ -10,13 +10,11 @@ pub mod args;
 /// Custom logger implementation.
 pub mod logger;
 
-#[macro_use]
-extern crate log;
-
+use std::env;
 use std::fs::{self, File};
+use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::{env, io};
 
 use args::{BumpOption, Opt, Sort, Strip};
 use clap::ValueEnum;
@@ -32,7 +30,7 @@ use glob::Pattern;
 
 /// Checks for a new version on crates.io
 #[cfg(feature = "update-informer")]
-fn check_new_version() {
+pub fn check_new_version() {
     use update_informer::Check;
     let pkg_name = env!("CARGO_PKG_NAME");
     let pkg_version = env!("CARGO_PKG_VERSION");
@@ -129,13 +127,13 @@ fn process_submodules(
         .clone()
         .and_then(|commit_id| repository.find_commit(&commit_id));
 
-    trace!("Processing submodule commits in {first_commit:?}..{last_commit:?}");
+    log::debug!("Processing submodule commits in {first_commit:?}..{last_commit:?}");
 
     // Query repository for submodule changes. For each submodule a
     // SubmoduleRange is created, describing the range of commits in the context
     // of that submodule.
     if let Some(last_commit) = last_commit {
-        let submodule_ranges = repository.submodules_range(first_commit, last_commit)?;
+        let submodule_ranges = repository.submodules_range(first_commit.as_ref(), &last_commit)?;
         let submodule_commits = submodule_ranges.iter().filter_map(|submodule_range| {
             // For each submodule, the commit range is exploded into a list of
             // commits.
@@ -156,6 +154,30 @@ fn process_submodules(
             release.submodule_commits.insert(submodule_path, commits);
         }
     }
+    Ok(())
+}
+
+/// Initializes the configuration file.
+pub fn init_config(name: Option<&str>, config_path: &Path) -> Result<()> {
+    let contents = match name {
+        Some(name) => BuiltinConfig::get_config(name.to_string())?,
+        None => EmbeddedConfig::get_config()?,
+    };
+
+    let config_path = if config_path == Path::new(DEFAULT_CONFIG) {
+        PathBuf::from(DEFAULT_CONFIG)
+    } else {
+        config_path.to_path_buf()
+    };
+
+    log::info!(
+        "Saving the configuration file{} to {}",
+        name.map(|v| format!(" ({v})")).unwrap_or_default(),
+        config_path.display(),
+    );
+
+    fs::write(config_path, contents)?;
+
     Ok(())
 }
 
@@ -190,7 +212,7 @@ fn process_repository<'a>(
         let count = count_tags.is_none_or(|r| {
             let count_tag = r.is_match(name);
             if count_tag {
-                trace!("Counting release: {}", name);
+                log::debug!("Counting release: {name}");
             }
             count_tag
         });
@@ -202,7 +224,7 @@ fn process_repository<'a>(
 
             let ignore_tag = r.is_match(name);
             if ignore_tag {
-                trace!("Ignoring release: {}", name);
+                log::debug!("Ignoring release: {name}");
             }
             ignore_tag
         });
@@ -214,29 +236,29 @@ fn process_repository<'a>(
         match repository.upstream_remote() {
             Ok(remote) => {
                 if !config.remote.github.is_set() {
-                    debug!("No GitHub remote is set, using remote: {}", remote);
+                    log::debug!("No GitHub remote is set, using remote: {remote}");
                     config.remote.github.owner = remote.owner;
                     config.remote.github.repo = remote.repo;
                     config.remote.github.is_custom = remote.is_custom;
                 } else if !config.remote.gitlab.is_set() {
-                    debug!("No GitLab remote is set, using remote: {}", remote);
+                    log::debug!("No GitLab remote is set, using remote: {remote}");
                     config.remote.gitlab.owner = remote.owner;
                     config.remote.gitlab.repo = remote.repo;
                     config.remote.gitlab.is_custom = remote.is_custom;
                 } else if !config.remote.gitea.is_set() {
-                    debug!("No Gitea remote is set, using remote: {}", remote);
+                    log::debug!("No Gitea remote is set, using remote: {remote}");
                     config.remote.gitea.owner = remote.owner;
                     config.remote.gitea.repo = remote.repo;
                     config.remote.gitea.is_custom = remote.is_custom;
                 } else if !config.remote.bitbucket.is_set() {
-                    debug!("No Bitbucket remote is set, using remote: {}", remote);
+                    log::debug!("No Bitbucket remote is set, using remote: {remote}");
                     config.remote.bitbucket.owner = remote.owner;
                     config.remote.bitbucket.repo = remote.repo;
                     config.remote.bitbucket.is_custom = remote.is_custom;
                 }
             }
             Err(e) => {
-                debug!("Failed to get remote from repository: {:?}", e);
+                log::debug!("Failed to get remote from repository: {e:?}");
             }
         }
     }
@@ -245,23 +267,42 @@ fn process_repository<'a>(
     }
 
     // Print debug information about configuration and arguments.
-    log::trace!("Arguments: {:#?}", args);
-    log::trace!("Config: {:#?}", config);
+    log::trace!("Arguments: {args:#?}");
+    log::trace!("Config: {config:#?}");
 
     // Parse commits.
     let commit_range = determine_commit_range(args, config, repository)?;
 
-    // Include only the current directory if not running from the root repository
+    // Include only the current directory if not running from the root repository.
+    //
+    // NOTE:
+    // The conditions for including the current directory when not running from the root repository
+    // have grown quite complex. This may warrant additional documentation to explain the behavior.
+    //
+    // Current logic triggers when all of the following are true:
+    // - `cwd` is a child of the repository root but not the root itself
+    // - `args.repository` is either None or empty
+    // - `args.workdir` is None
+    // - `include_path` is currently empty
+    //
+    // Additionally, if `include_path` is already explicitly set, it might be preferable to append.
+    let cwd = env::current_dir()?;
     let mut include_path = config.git.include_paths.clone();
-    if let Some(mut path_diff) = pathdiff::diff_paths(repository.root_path()?, env::current_dir()?)
-    {
-        if args.workdir.is_none() && include_path.is_empty() && path_diff != Path::new("") {
-            info!(
-                "Including changes from the current directory: {:?}",
-                path_diff.display()
-            );
-            path_diff.extend(["**", "*"]);
-            include_path = vec![Pattern::new(path_diff.to_string_lossy().as_ref())?];
+    if let Ok(root) = repository.root_path() {
+        if cwd.starts_with(&root) &&
+            cwd != root &&
+            args.repository.as_ref().is_none_or(Vec::is_empty) &&
+            args.workdir.is_none() &&
+            include_path.is_empty()
+        {
+            let path = cwd.join("**").join("*");
+            if let Ok(stripped) = path.strip_prefix(root) {
+                log::info!(
+                    "Including changes from the current directory: {}",
+                    cwd.display()
+                );
+                include_path = vec![Pattern::new(stripped.to_string_lossy().as_ref())?];
+            }
         }
     }
 
@@ -285,7 +326,7 @@ fn process_repository<'a>(
         if let Some(commit_id) = commits.first().map(|c| c.id().to_string()) {
             match tags.get(&commit_id) {
                 Some(tag) => {
-                    warn!("There is already a tag ({}) for {}", tag.name, commit_id);
+                    log::warn!("There is already a tag ({}) for {}", tag.name, commit_id);
                     tag_timestamp = Some(commits[0].time().seconds());
                 }
                 None => {
@@ -293,7 +334,7 @@ fn process_repository<'a>(
                 }
             }
         } else {
-            releases[0].version = Some(tag.to_string());
+            releases[0].version = Some(tag.clone());
             releases[0].timestamp = Some(
                 SystemTime::now()
                     .duration_since(UNIX_EPOCH)?
@@ -310,12 +351,12 @@ fn process_repository<'a>(
     for git_commit in commits.iter().rev() {
         let release = releases.last_mut().unwrap();
         let commit = Commit::from(git_commit);
-        let commit_id = commit.id.to_string();
+        let commit_id = commit.id.clone();
         release.commits.push(commit);
         release.repository = Some(repository_path.clone());
         release.commit_id = Some(commit_id);
         if let Some(tag) = tags.get(release.commit_id.as_ref().unwrap()) {
-            release.version = Some(tag.name.to_string());
+            release.version = Some(tag.name.clone());
             release.message.clone_from(&tag.message);
             release.timestamp = if args.tag.as_deref() == Some(tag.name.as_str()) {
                 match tag_timestamp {
@@ -384,7 +425,7 @@ fn process_repository<'a>(
         // Set the previous release if the first tag is found.
         if let Some((commit_id, tag)) = first_tag {
             let previous_release = Release {
-                commit_id: Some(commit_id.to_string()),
+                commit_id: Some(commit_id.clone()),
                 version: Some(tag.name.clone()),
                 timestamp: Some(
                     repository
@@ -410,7 +451,7 @@ fn process_repository<'a>(
                     release.commits.last().unwrap(),
                     release.commits.first().unwrap(),
                 ),
-            })
+            });
         }
         if recurse_submodules {
             process_submodules(repository, release, config.git.topo_order_commits)?;
@@ -421,8 +462,7 @@ fn process_repository<'a>(
     if let Some(message) = &args.with_tag_message {
         if let Some(latest_release) = releases
             .iter_mut()
-            .filter(|release| !release.commits.is_empty())
-            .next_back()
+            .rfind(|release| !release.commits.is_empty())
         {
             latest_release.message = Some(message.to_owned());
         }
@@ -446,7 +486,7 @@ fn process_repository<'a>(
 ///     Ok(())
 /// }
 /// ```
-pub fn run(args: Opt) -> Result<()> {
+pub fn run<'a>(args: Opt) -> Result<Changelog<'a>> {
     run_with_changelog_modifier(args, |_| Ok(()))
 }
 
@@ -473,36 +513,10 @@ pub fn run(args: Opt) -> Result<()> {
 ///     Ok(())
 /// }
 /// ```
-pub fn run_with_changelog_modifier(
+pub fn run_with_changelog_modifier<'a>(
     mut args: Opt,
     changelog_modifier: impl FnOnce(&mut Changelog) -> Result<()>,
-) -> Result<()> {
-    // Check if there is a new version available.
-    #[cfg(feature = "update-informer")]
-    check_new_version();
-
-    // Create the configuration file if init flag is given.
-    if let Some(init_config) = args.init {
-        let contents = match init_config {
-            Some(ref name) => BuiltinConfig::get_config(name.to_string())?,
-            None => EmbeddedConfig::get_config()?,
-        };
-
-        let config_path = if args.config == PathBuf::from(DEFAULT_CONFIG) {
-            PathBuf::from(DEFAULT_CONFIG)
-        } else {
-            args.config.clone()
-        };
-
-        info!(
-            "Saving the configuration file{} to {:?}",
-            init_config.map(|v| format!(" ({v})")).unwrap_or_default(),
-            config_path
-        );
-        fs::write(config_path, contents)?;
-        return Ok(());
-    }
-
+) -> Result<Changelog<'a>> {
     // Retrieve the built-in configuration.
     let builtin_config = BuiltinConfig::parse(args.config.to_string_lossy().to_string());
 
@@ -520,14 +534,17 @@ pub fn run_with_changelog_modifier(
         if let Some(changelog) = args.prepend {
             args.prepend = Some(workdir.join(changelog));
         }
+        // pushing an empty component force-adds a trailing path separator
+        // which is needed for correct glob expansion
+        args.include_path = Some(vec![Pattern::new(
+            workdir.join("").to_string_lossy().as_ref(),
+        )?]);
     }
 
     // Set path for the configuration file.
     let mut path = args.config.clone();
     if !path.exists() {
-        if let Some(config_path) =
-            dirs::config_dir().map(|dir| dir.join(env!("CARGO_PKG_NAME")).join(DEFAULT_CONFIG))
-        {
+        if let Some(config_path) = Config::retrieve_config_path() {
             path = config_path;
         }
     }
@@ -535,7 +552,7 @@ pub fn run_with_changelog_modifier(
     // Parse the configuration file.
     // Load the default configuration if necessary.
     let mut config = if let Some(url) = &args.config_url {
-        debug!("Using configuration file from: {url}");
+        log::debug!("Using configuration file from: {url}");
         #[cfg(feature = "remote")]
         {
             reqwest::blocking::get(url.clone())?
@@ -546,7 +563,7 @@ pub fn run_with_changelog_modifier(
         #[cfg(not(feature = "remote"))]
         unreachable!("This option is not available without the 'remote' build-time feature");
     } else if let Ok((config, name)) = builtin_config {
-        info!("Using built-in configuration file: {name}");
+        log::info!("Using built-in configuration file: {name}");
         config
     } else if path.exists() {
         Config::load(&path)?
@@ -556,15 +573,16 @@ pub fn run_with_changelog_modifier(
         let path = dir.join(DEFAULT_CONFIG);
         if path.is_file() { Some(path) } else { None }
     }) {
-        info!(
+        log::info!(
             "Using configuration from parent directory: {}",
             discovered_path.display()
         );
         Config::load(&discovered_path)?
     } else {
+        #[allow(clippy::unnecessary_debug_formatting)]
         if !args.context {
-            warn!(
-                "{:?} is not found, using the default configuration.",
+            log::warn!(
+                "{:?} is not found, using the default configuration",
                 args.config
             );
         }
@@ -630,25 +648,40 @@ pub fn run_with_changelog_modifier(
             .token
             .clone_from(&args.bitbucket_token);
     }
+    if args.azure_devops_token.is_some() {
+        config
+            .remote
+            .azure_devops
+            .token
+            .clone_from(&args.azure_devops_token);
+    }
+    if args.offline {
+        config.remote.offline = args.offline;
+    }
     if let Some(ref remote) = args.github_repo {
-        config.remote.github.owner = remote.0.owner.to_string();
-        config.remote.github.repo = remote.0.repo.to_string();
+        config.remote.github.owner.clone_from(&remote.0.owner);
+        config.remote.github.repo.clone_from(&remote.0.repo);
         config.remote.github.is_custom = true;
     }
     if let Some(ref remote) = args.gitlab_repo {
-        config.remote.gitlab.owner = remote.0.owner.to_string();
-        config.remote.gitlab.repo = remote.0.repo.to_string();
+        config.remote.gitlab.owner.clone_from(&remote.0.owner);
+        config.remote.gitlab.repo.clone_from(&remote.0.repo);
         config.remote.gitlab.is_custom = true;
     }
     if let Some(ref remote) = args.bitbucket_repo {
-        config.remote.bitbucket.owner = remote.0.owner.to_string();
-        config.remote.bitbucket.repo = remote.0.repo.to_string();
+        config.remote.bitbucket.owner.clone_from(&remote.0.owner);
+        config.remote.bitbucket.repo.clone_from(&remote.0.repo);
         config.remote.bitbucket.is_custom = true;
     }
     if let Some(ref remote) = args.gitea_repo {
-        config.remote.gitea.owner = remote.0.owner.to_string();
-        config.remote.gitea.repo = remote.0.repo.to_string();
+        config.remote.gitea.owner.clone_from(&remote.0.owner);
+        config.remote.gitea.repo.clone_from(&remote.0.repo);
         config.remote.gitea.is_custom = true;
+    }
+    if let Some(ref remote) = args.azure_devops_repo {
+        config.remote.azure_devops.owner.clone_from(&remote.0.owner);
+        config.remote.azure_devops.repo.clone_from(&remote.0.repo);
+        config.remote.azure_devops.is_custom = true;
     }
     if args.no_exec {
         config
@@ -661,6 +694,9 @@ pub fn run_with_changelog_modifier(
             .postprocessors
             .iter_mut()
             .for_each(|v| v.replace_command = None);
+    }
+    if args.skip_tags.is_some() {
+        config.git.skip_tags.clone_from(&args.skip_tags);
     }
     config.git.skip_tags = config.git.skip_tags.filter(|r| !r.as_str().is_empty());
     if args.tag_pattern.is_some() {
@@ -700,18 +736,29 @@ pub fn run_with_changelog_modifier(
         } else {
             Box::new(File::open(context_path)?)
         };
-        let mut changelog = Changelog::from_context(&mut input, &config)?;
+        let mut changelog = Changelog::from_context(&mut input, config)?;
         changelog.add_remote_context()?;
         changelog
     } else {
         // Process the repositories.
-        let repositories = args.repository.clone().unwrap_or(vec![env::current_dir()?]);
+        let repositories: Vec<Repository> = if let Some(paths) = &args.repository {
+            paths
+                .iter()
+                .map(|p| {
+                    let abs_path = fs::canonicalize(p)?;
+                    Repository::discover(abs_path)
+                })
+                .collect::<Result<Vec<_>>>()?
+        } else {
+            let cwd = env::current_dir()?;
+            vec![Repository::discover(cwd)?]
+        };
         let mut releases = Vec::<Release>::new();
         let mut commit_range = None;
         for repository in repositories {
             // Skip commits
             let mut skip_list = Vec::new();
-            let ignore_file = repository.join(IGNORE_FILE);
+            let ignore_file = repository.root_path()?.join(IGNORE_FILE);
             if ignore_file.exists() {
                 let contents = fs::read_to_string(ignore_file)?;
                 let commits = contents
@@ -726,14 +773,11 @@ pub fn run_with_changelog_modifier(
             }
             for sha1 in skip_list {
                 config.git.commit_parsers.insert(0, CommitParser {
-                    sha: Some(sha1.to_string()),
+                    sha: Some(sha1.clone()),
                     skip: Some(true),
                     ..Default::default()
                 });
             }
-
-            // Process the repository.
-            let repository = Repository::init(repository)?;
 
             // The commit range, used for determining the remote commits to include
             // in the changelog, doesn't make sense if multiple repositories are
@@ -747,43 +791,49 @@ pub fn run_with_changelog_modifier(
                 &args,
             )?);
         }
-        Changelog::new(releases, &config, commit_range.as_deref())?
+        Changelog::new(releases, config, commit_range.as_deref())?
     };
     changelog_modifier(&mut changelog)?;
 
-    // Print the result.
-    let mut out: Box<dyn io::Write> = if let Some(path) = &output {
-        if path == Path::new("-") {
-            Box::new(io::stdout())
-        } else {
-            Box::new(io::BufWriter::new(File::create(path)?))
-        }
-    } else {
-        Box::new(io::stdout())
-    };
+    Ok(changelog)
+}
+
+/// Writes the changelog to a file.
+pub fn write_changelog<W: io::Write>(
+    args: &Opt,
+    mut changelog: Changelog<'_>,
+    mut out: W,
+) -> Result<()> {
+    let output = args
+        .output
+        .clone()
+        .or(changelog.config.changelog.output.clone());
     if args.bump.is_some() || args.bumped_version {
         let next_version = if let Some(next_version) = changelog.bump_version()? {
             next_version
         } else if let Some(last_version) =
             changelog.releases.first().cloned().and_then(|v| v.version)
         {
-            warn!("There is nothing to bump.");
+            log::warn!("There is nothing to bump");
             last_version
         } else if changelog.releases.is_empty() {
-            config.bump.get_initial_tag()
+            changelog.config.bump.get_initial_tag()
         } else {
             return Ok(());
         };
-        if let Some(tag_pattern) = &config.git.tag_pattern {
+        if let Some(tag_pattern) = &changelog.config.git.tag_pattern {
             if !tag_pattern.is_match(&next_version) {
                 return Err(Error::ChangelogError(format!(
-                    "Next version ({}) does not match the tag pattern: {}",
-                    next_version, tag_pattern
+                    "Next version ({next_version}) does not match the tag pattern: {tag_pattern}",
                 )));
             }
         }
         if args.bumped_version {
-            writeln!(out, "{next_version}")?;
+            if changelog.config.changelog.output.is_none() {
+                writeln!(out, "{next_version}")?;
+            } else {
+                writeln!(io::stdout(), "{next_version}")?;
+            }
             return Ok(());
         }
     }

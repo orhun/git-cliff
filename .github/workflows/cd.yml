@@ -13,11 +13,11 @@ jobs:
       release_body: ${{ steps.git-cliff.outputs.content }}
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
       - name: Generate a changelog
-        uses: orhun/git-cliff-action@104a6cf3c9aa0fdfe4eab129f9c1900e1eb8f7fd # main
+        uses: orhun/git-cliff-action@07dda386992489f0a6151dee53f3a137713644de # main
         id: git-cliff
         with:
           config: cliff.toml
@@ -81,7 +81,7 @@ jobs:
             }
           - {
               NAME: win32-x64-mingw,
-              OS: windows-2022,
+              OS: windows-2025,
               TOOLCHAIN: stable,
               TARGET: x86_64-pc-windows-gnu,
               NPM_PUBLISH: false,
@@ -89,7 +89,7 @@ jobs:
             }
           - {
               NAME: win32-x64-msvc,
-              OS: windows-2022,
+              OS: windows-2025,
               TOOLCHAIN: stable,
               TARGET: x86_64-pc-windows-msvc,
               NPM_PUBLISH: true,
@@ -97,7 +97,7 @@ jobs:
             }
           - {
               NAME: win32-x86-msvc,
-              OS: windows-2022,
+              OS: windows-2025,
               TOOLCHAIN: stable,
               TARGET: i686-pc-windows-msvc,
               NPM_PUBLISH: false,
@@ -105,7 +105,7 @@ jobs:
             }
           - {
               NAME: win32-arm64-msvc,
-              OS: windows-2022,
+              OS: windows-2025,
               TOOLCHAIN: stable,
               TARGET: aarch64-pc-windows-msvc,
               NPM_PUBLISH: true,
@@ -129,7 +129,7 @@ jobs:
             }
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Set the release version
         shell: bash
         run: echo "RELEASE_VERSION=${GITHUB_REF:11}" >> $GITHUB_ENV
@@ -148,14 +148,14 @@ jobs:
           target: ${{ matrix.build.TARGET }}
           override: true
       - name: Build (linux/macos)
-        if: matrix.build.OS != 'windows-2022'
+        if: matrix.build.OS != 'windows-2025'
         uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # v1.0.3
         with:
           use-cross: true
           command: build
           args: --release --locked --target ${{ matrix.build.TARGET }}
       - name: Build (windows)
-        if: matrix.build.OS == 'windows-2022'
+        if: matrix.build.OS == 'windows-2025'
         uses: actions-rs/cargo@844f36862e911db73fe0815f00a4a2602c279505 # v1.0.3
         with:
           command: build
@@ -168,7 +168,7 @@ jobs:
           OUT_DIR=release/completions/ cargo run --release --bin git-cliff-completions
           OUT_DIR=release/man/ cargo run --release --bin git-cliff-mangen
           for bin in 'git-cliff' 'git-cliff-completions' 'git-cliff-mangen'; do
-            if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
+            if [ "${{ matrix.build.OS }}" = "windows-2025" ]; then
               bin="${bin}.exe"
             fi
             cp "target/${{ matrix.build.TARGET }}/release/${bin}" release/
@@ -177,7 +177,7 @@ jobs:
       - name: Create release artifacts
         shell: bash
         run: |
-          if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
+          if [ "${{ matrix.build.OS }}" = "windows-2025" ]; then
             7z a -tzip "git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}.zip" \
               git-cliff-${{ env.RELEASE_VERSION }}/
           else
@@ -197,7 +197,7 @@ jobs:
             git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}.tar.gz
       - name: Publish to GitHub
         if: ${{ !contains(github.ref, '-') }}
-        uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13 # v2
+        uses: svenstaro/upload-release-action@b98a3b12e86552593f3e4e577ca8a62aa2f3f22b # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}*
@@ -208,7 +208,7 @@ jobs:
           body: "${{ needs.generate-changelog.outputs.release_body }}"
       - name: Publish to GitHub (pre-release)
         if: ${{ contains(github.ref, '-') }}
-        uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13 # v2
+        uses: svenstaro/upload-release-action@b98a3b12e86552593f3e4e577ca8a62aa2f3f22b # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: git-cliff-${{ env.RELEASE_VERSION }}-${{ matrix.build.TARGET }}*
@@ -219,7 +219,7 @@ jobs:
           prerelease: true
       - name: Install node
         if: matrix.build.NPM_PUBLISH == true
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 18
           registry-url: "https://registry.npmjs.org"
@@ -234,14 +234,14 @@ jobs:
           node_arch=$(echo "${{ matrix.build.NAME }}" | cut -d '-' -f2)
           export node_arch
           export version="${{ env.RELEASE_VERSION }}"
-          if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
+          if [ "${{ matrix.build.OS }}" = "windows-2025" ]; then
             export node_pkg="${bin}-windows-${node_arch}"
           else
             export node_pkg="${bin}-${node_os}-${node_arch}"
           fi
           mkdir -p "${node_pkg}/bin"
           envsubst < package.json.tmpl > "${node_pkg}/package.json"
-          if [ "${{ matrix.build.OS }}" = "windows-2022" ]; then
+          if [ "${{ matrix.build.OS }}" = "windows-2025" ]; then
             bin="${bin}.exe"
           fi
           cp "../target/${{ matrix.build.TARGET }}/release/${bin}" "${node_pkg}/bin"
@@ -252,7 +252,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Build Python wheels (linux)
         if: matrix.build.PYPI_PUBLISH == true && startsWith(matrix.build.NAME, 'linux')
-        uses: PyO3/maturin-action@e10f6c464b90acceb5f640d31beda6d586ba7b4a # v1.49.3
+        uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
         with:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
@@ -264,7 +264,7 @@ jobs:
         if: |
           matrix.build.PYPI_PUBLISH == true &&
           (startsWith(matrix.build.OS, 'macos') || startsWith(matrix.build.OS, 'windows'))
-        uses: PyO3/maturin-action@e10f6c464b90acceb5f640d31beda6d586ba7b4a # v1.49.3
+        uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
         with:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
@@ -272,7 +272,7 @@ jobs:
           sccache: "true"
       - name: Build Python wheels (musl)
         if: matrix.build.PYPI_PUBLISH == true && endsWith(matrix.build.OS, 'musl')
-        uses: PyO3/maturin-action@e10f6c464b90acceb5f640d31beda6d586ba7b4a # v1.49.3
+        uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
         with:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
@@ -280,7 +280,7 @@ jobs:
           sccache: "true"
           manylinux: musllinux_1_2
       - name: Upload Python wheels
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: "wheels-${{ matrix.build.TARGET }}"
           working-directory: pypi
@@ -292,9 +292,9 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Install node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 18
           registry-url: "https://registry.npmjs.org"
@@ -322,13 +322,13 @@ jobs:
     runs-on: ubuntu-22.04
     needs: publish-binaries
     steps:
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: pypi/wheels
           pattern: wheels-*
           merge-multiple: true
       - name: Publish to PyPI
-        uses: PyO3/maturin-action@e10f6c464b90acceb5f640d31beda6d586ba7b4a # v1.49.3
+        uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
         env:
           MATURIN_PYPI_TOKEN: ${{ vars.USE_TESTPYPI == 'true' && secrets.TESTPYPI_API_TOKEN || secrets.PYPI_API_TOKEN }}
           MATURIN_REPOSITORY: ${{ vars.USE_TESTPYPI == 'true' && 'testpypi' || 'pypi' }}
@@ -342,7 +342,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Set the release version
         shell: bash
         run: echo "RELEASE_VERSION=${GITHUB_REF:11}" >> $GITHUB_ENV
@@ -372,7 +372,7 @@ jobs:
             git-cliff-${{ env.RELEASE_VERSION }}.deb
       - name: Upload the release
         if: ${{ !contains(github.ref, '-') }}
-        uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13 # v2
+        uses: svenstaro/upload-release-action@b98a3b12e86552593f3e4e577ca8a62aa2f3f22b # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: git-cliff-${{ env.RELEASE_VERSION }}.deb
@@ -381,7 +381,7 @@ jobs:
           body: "${{ needs.generate-changelog.outputs.release_body }}"
       - name: Upload the pre-release
         if: ${{ contains(github.ref, '-') }}
-        uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13 # v2
+        uses: svenstaro/upload-release-action@b98a3b12e86552593f3e4e577ca8a62aa2f3f22b # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: git-cliff-${{ env.RELEASE_VERSION }}.deb
@@ -395,7 +395,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Set the release version
         shell: bash
         run: echo "RELEASE_VERSION=${GITHUB_REF:11}" >> $GITHUB_ENV
@@ -423,7 +423,7 @@ jobs:
             git-cliff-${{ env.RELEASE_VERSION }}.x86_64.rpm
       - name: Upload the release
         if: ${{ !contains(github.ref, '-') }}
-        uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13 # v2
+        uses: svenstaro/upload-release-action@b98a3b12e86552593f3e4e577ca8a62aa2f3f22b # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: git-cliff-${{ env.RELEASE_VERSION }}.x86_64.rpm
@@ -432,7 +432,7 @@ jobs:
           body: "${{ needs.generate-changelog.outputs.release_body }}"
       - name: Upload the pre-release
         if: ${{ contains(github.ref, '-') }}
-        uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13 # v2
+        uses: svenstaro/upload-release-action@b98a3b12e86552593f3e4e577ca8a62aa2f3f22b # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: git-cliff-${{ env.RELEASE_VERSION }}.x86_64.rpm
@@ -445,7 +445,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Set the release version
         run: echo "RELEASE_VERSION=${GITHUB_REF:11}" >> $GITHUB_ENV
       - name: Install Rust toolchain
@@ -482,7 +482,7 @@ jobs:
       contents: read
     steps:
       - name: Bump formula
-        uses: mislav/bump-homebrew-formula-action@8e2baa47daaa8db10fcdeb04105dfa6850eb0d68 # v3.4
+        uses: mislav/bump-homebrew-formula-action@56a283fa15557e9abaa4bdb63b8212abc68e655c # v3.6
         with:
           formula-name: git-cliff
           formula-path: Formula/g/git-cliff.rb

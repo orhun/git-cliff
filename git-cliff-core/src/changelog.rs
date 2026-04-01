@@ -6,6 +6,8 @@ use crate::commit::Commit;
 use crate::config::{Config, GitConfig};
 use crate::error::{Error, Result};
 use crate::release::{Release, Releases};
+#[cfg(feature = "azure_devops")]
+use crate::remote::azure_devops::AzureDevOpsClient;
 #[cfg(feature = "bitbucket")]
 use crate::remote::bitbucket::BitbucketClient;
 #[cfg(feature = "gitea")]
@@ -14,6 +16,7 @@ use crate::remote::gitea::GiteaClient;
 use crate::remote::github::GitHubClient;
 #[cfg(feature = "gitlab")]
 use crate::remote::gitlab::GitLabClient;
+use crate::summary::Summary;
 use crate::template::Template;
 
 /// Changelog generator.
@@ -21,39 +24,43 @@ use crate::template::Template;
 pub struct Changelog<'a> {
     /// Releases that the changelog will contain.
     pub releases: Vec<Release<'a>>,
+    /// Configuration used for generating the changelog.
+    pub config: Config,
     header_template: Option<Template>,
     body_template: Template,
     footer_template: Option<Template>,
-    config: &'a Config,
     additional_context: HashMap<String, serde_json::Value>,
 }
 
 impl<'a> Changelog<'a> {
     /// Constructs a new instance.
-    pub fn new(
-        releases: Vec<Release<'a>>,
-        config: &'a Config,
-        range: Option<&str>,
-    ) -> Result<Self> {
+    pub fn new(releases: Vec<Release<'a>>, config: Config, range: Option<&str>) -> Result<Self> {
+        let is_offline = config.remote.offline;
         let mut changelog = Changelog::build(releases, config)?;
-        changelog.add_remote_data(range)?;
+
+        // Always add context, but only add data if we are running in online mode.
+        changelog.add_remote_context()?;
+        if !is_offline {
+            changelog.add_remote_data(range)?;
+        }
+
         changelog.process_commits()?;
         changelog.process_releases();
         Ok(changelog)
     }
 
     /// Builds a changelog from releases and config.
-    fn build(releases: Vec<Release<'a>>, config: &'a Config) -> Result<Self> {
+    fn build(releases: Vec<Release<'a>>, config: Config) -> Result<Self> {
         let trim = config.changelog.trim;
         Ok(Self {
             releases,
             header_template: match &config.changelog.header {
-                Some(header) => Some(Template::new("header", header.to_string(), trim)?),
+                Some(header) => Some(Template::new("header", header.clone(), trim)?),
                 None => None,
             },
-            body_template: get_body_template(config, trim)?,
+            body_template: get_body_template(&config, trim)?,
             footer_template: match &config.changelog.footer {
-                Some(footer) => Some(Template::new("footer", footer.to_string(), trim)?),
+                Some(footer) => Some(Template::new("footer", footer.clone(), trim)?),
                 None => None,
             },
             config,
@@ -62,7 +69,7 @@ impl<'a> Changelog<'a> {
     }
 
     /// Constructs an instance from a serialized context object.
-    pub fn from_context<R: Read>(input: &mut R, config: &'a Config) -> Result<Self> {
+    pub fn from_context<R: Read>(input: &mut R, config: Config) -> Result<Self> {
         Changelog::build(serde_json::from_reader(input)?, config)
     }
 
@@ -84,16 +91,21 @@ impl<'a> Changelog<'a> {
     }
 
     /// Processes a single commit and returns/logs the result.
-    fn process_commit(commit: &Commit<'a>, git_config: &GitConfig) -> Option<Commit<'a>> {
+    fn process_commit(
+        commit: &Commit<'a>,
+        git_config: &GitConfig,
+        summary: &mut Summary,
+    ) -> Option<Commit<'a>> {
         match commit.process(git_config) {
-            Ok(commit) => Some(commit),
+            Ok(commit) => {
+                summary.record_ok();
+                Some(commit)
+            }
             Err(e) => {
-                trace!(
-                    "{} - {} ({})",
-                    commit.id.chars().take(7).collect::<String>(),
-                    e,
-                    commit.message.lines().next().unwrap_or_default().trim()
-                );
+                summary.record_err(&e);
+                let short_id = commit.id.chars().take(7).collect::<String>();
+                let summary = commit.message.lines().next().unwrap_or_default().trim();
+                log::trace!("{short_id} - {e} ({summary})");
                 None
             }
         }
@@ -102,12 +114,11 @@ impl<'a> Changelog<'a> {
     /// Checks the commits and returns an error if any unconventional commits
     /// are found.
     fn check_conventional_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
-        debug!("Verifying that all commits are conventional.");
+        log::debug!("Verifying that all commits are conventional");
         let mut unconventional_count = 0;
-
         commits.iter().for_each(|commit| {
             if commit.conv.is_none() {
-                error!(
+                log::error!(
                     "Commit {id} is not conventional:\n{message}",
                     id = &commit.id[..7],
                     message = commit
@@ -128,34 +139,68 @@ impl<'a> Changelog<'a> {
         Ok(())
     }
 
-    fn process_commit_list(commits: &mut Vec<Commit<'a>>, git_config: &GitConfig) -> Result<()> {
-        *commits = commits
-            .iter()
-            .filter_map(|commit| Self::process_commit(commit, git_config))
-            .flat_map(|commit| {
-                if git_config.split_commits {
-                    commit
+    /// Checks the commits and returns an error if any commits are not matched
+    /// by any commit parser.
+    fn check_unmatched_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
+        log::debug!("Verifying that no commits are unmatched by commit parsers");
+        let mut unmatched_count = 0;
+        commits.iter().for_each(|commit| {
+            let is_unmatched = commit.group.is_none();
+            if is_unmatched {
+                log::error!(
+                    "Commit {id} was not matched by any commit parser:\n{message}",
+                    id = &commit.id[..7],
+                    message = commit
                         .message
                         .lines()
-                        .filter_map(|line| {
-                            let mut c = commit.clone();
-                            c.message = line.to_string();
-                            c.links.clear();
-                            if c.message.is_empty() {
-                                None
-                            } else {
-                                Self::process_commit(&c, git_config)
-                            }
-                        })
-                        .collect()
+                        .map(|line| { format!("    | {}", line.trim()) })
+                        .collect::<Vec<String>>()
+                        .join("\n")
+                );
+                unmatched_count += 1;
+            }
+        });
+
+        if unmatched_count > 0 {
+            return Err(Error::UnmatchedCommitsError(unmatched_count));
+        }
+
+        Ok(())
+    }
+
+    fn process_commit_list(
+        commits: &mut Vec<Commit<'a>>,
+        git_config: &GitConfig,
+        summary: &mut Summary,
+    ) -> Result<()> {
+        let mut processed = Vec::new();
+        for commit in commits.iter() {
+            if let Some(commit) = Self::process_commit(commit, git_config, summary) {
+                if git_config.split_commits {
+                    for line in commit.message.lines() {
+                        let mut c = commit.clone();
+                        c.message = line.to_string();
+                        c.links.clear();
+                        if c.message.is_empty() {
+                            continue;
+                        }
+                        if let Some(c) = Self::process_commit(&c, git_config, summary) {
+                            processed.push(c);
+                        }
+                    }
                 } else {
-                    vec![commit]
+                    processed.push(commit);
                 }
-            })
-            .collect::<Vec<Commit>>();
+            }
+        }
+        *commits = processed;
 
         if git_config.require_conventional {
             Self::check_conventional_commits(commits)?;
+        }
+
+        if git_config.fail_on_unmatched_commit {
+            Self::check_unmatched_commits(commits)?;
         }
 
         Ok(())
@@ -164,19 +209,40 @@ impl<'a> Changelog<'a> {
     /// Processes the commits and omits the ones that doesn't match the
     /// criteria set by configuration file.
     fn process_commits(&mut self) -> Result<()> {
-        debug!("Processing the commits...");
-        for release in self.releases.iter_mut() {
-            Self::process_commit_list(&mut release.commits, &self.config.git)?;
+        log::debug!("Processing the commits");
+
+        let mut summary = Summary::default();
+        for release in &mut self.releases {
+            Self::process_commit_list(&mut release.commits, &self.config.git, &mut summary)?;
             for submodule_commits in release.submodule_commits.values_mut() {
-                Self::process_commit_list(submodule_commits, &self.config.git)?;
+                Self::process_commit_list(submodule_commits, &self.config.git, &mut summary)?;
             }
         }
+
+        log::debug!(
+            "Processed {} commit(s) in total (`split_commits` option may cause duplicates)",
+            summary.processed
+        );
+        for (&kind, &count) in &summary.by_kind {
+            if count == 0 {
+                continue;
+            }
+            let message = format!(
+                "{count} commit(s) were skipped due to {kind}(s) (run with `-vv` for details)",
+            );
+            if kind.should_warn() {
+                log::warn!("{message}");
+            } else {
+                log::debug!("{message}");
+            }
+        }
+
         Ok(())
     }
 
     /// Processes the releases and filters them out based on the configuration.
     fn process_releases(&mut self) {
-        debug!("Processing {} release(s)...", self.releases.len());
+        log::debug!("Processing {} release(s)", self.releases.len());
         let skip_regex = self.config.git.skip_tags.as_ref();
         let mut skipped_tags = Vec::new();
         self.releases = self
@@ -188,13 +254,13 @@ impl<'a> Changelog<'a> {
                 if let Some(version) = &release.version {
                     if skip_regex.is_some_and(|r| r.is_match(version)) {
                         skipped_tags.push(version.clone());
-                        trace!("Skipping release: {}", version);
+                        log::debug!("Skipping release: {version}");
                         return false;
                     }
                 }
                 if release.commits.is_empty() {
                     if let Some(version) = release.version.clone() {
-                        trace!("Release doesn't have any commits: {}", version);
+                        log::debug!("Release doesn't have any commits: {version}");
                     }
                     match &release.previous {
                         Some(prev_release) if prev_release.commits.is_empty() => {
@@ -205,7 +271,7 @@ impl<'a> Changelog<'a> {
                 }
                 true
             })
-            .map(|release| release.with_statistics())
+            .map(Release::with_statistics)
             .collect();
         for skipped_tag in &skipped_tags {
             if let Some(release_index) = self.releases.iter().position(|release| {
@@ -247,14 +313,10 @@ impl<'a> Changelog<'a> {
                 .contains_variable(github::TEMPLATE_VARIABLES) ||
             self.footer_template
                 .as_ref()
-                .map(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
-                .unwrap_or(false)
+                .is_some_and(|v| v.contains_variable(github::TEMPLATE_VARIABLES))
         {
-            debug!(
-                "You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>"
-            );
             let github_client = GitHubClient::try_from(self.config.remote.github.clone())?;
-            info!(
+            log::info!(
                 "{} ({})",
                 github::START_FETCHING_MSG,
                 self.config.remote.github
@@ -265,13 +327,13 @@ impl<'a> Changelog<'a> {
                 .block_on(async {
                     let (commits, pull_requests) = tokio::try_join!(
                         github_client.get_commits(ref_name),
-                        github_client.get_pull_requests(ref_name),
+                        github_client.get_pull_requests(),
                     )?;
-                    debug!("Number of GitHub commits: {}", commits.len());
-                    debug!("Number of GitHub pull requests: {}", pull_requests.len());
+                    log::debug!("Number of GitHub commits: {}", commits.len());
+                    log::debug!("Number of GitHub pull requests: {}", pull_requests.len());
                     Ok((commits, pull_requests))
                 });
-            info!("{}", github::FINISHED_FETCHING_MSG);
+            log::info!("{}", github::FINISHED_FETCHING_MSG);
             data
         } else {
             Ok((vec![], vec![]))
@@ -301,14 +363,10 @@ impl<'a> Changelog<'a> {
                 .contains_variable(gitlab::TEMPLATE_VARIABLES) ||
             self.footer_template
                 .as_ref()
-                .map(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
-                .unwrap_or(false)
+                .is_some_and(|v| v.contains_variable(gitlab::TEMPLATE_VARIABLES))
         {
-            debug!(
-                "You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>"
-            );
             let gitlab_client = GitLabClient::try_from(self.config.remote.gitlab.clone())?;
-            info!(
+            log::info!(
                 "{} ({})",
                 gitlab::START_FETCHING_MSG,
                 self.config.remote.gitlab
@@ -318,23 +376,28 @@ impl<'a> Changelog<'a> {
                 .build()?
                 .block_on(async {
                     // Map repo/owner to gitlab id
-                    let project_id = match tokio::join!(gitlab_client.get_project(ref_name)) {
+                    let project_id = match tokio::join!(gitlab_client.get_project()) {
                         (Ok(project),) => project.id,
                         (Err(err),) => {
-                            error!("Failed to lookup project! {}", err);
+                            log::error!("Failed to lookup project: {err}");
                             return Err(err);
                         }
                     };
                     let (commits, merge_requests) = tokio::try_join!(
                         // Send id to these functions
-                        gitlab_client.get_commits(project_id, ref_name),
-                        gitlab_client.get_merge_requests(project_id, ref_name),
+                        gitlab_client.get_commits(
+                            project_id.expect("Project id is required for git-cliff semantics"),
+                            ref_name
+                        ),
+                        gitlab_client.get_pull_requests(
+                            project_id.expect("Project id is required for git-cliff semantics")
+                        ),
                     )?;
-                    debug!("Number of GitLab commits: {}", commits.len());
-                    debug!("Number of GitLab merge requests: {}", merge_requests.len());
+                    log::debug!("Number of GitLab commits: {}", commits.len());
+                    log::debug!("Number of GitLab merge requests: {}", merge_requests.len());
                     Ok((commits, merge_requests))
                 });
-            info!("{}", gitlab::FINISHED_FETCHING_MSG);
+            log::info!("{}", gitlab::FINISHED_FETCHING_MSG);
             data
         } else {
             Ok((vec![], vec![]))
@@ -362,14 +425,10 @@ impl<'a> Changelog<'a> {
                 .contains_variable(gitea::TEMPLATE_VARIABLES) ||
             self.footer_template
                 .as_ref()
-                .map(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
-                .unwrap_or(false)
+                .is_some_and(|v| v.contains_variable(gitea::TEMPLATE_VARIABLES))
         {
-            debug!(
-                "You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>"
-            );
             let gitea_client = GiteaClient::try_from(self.config.remote.gitea.clone())?;
-            info!(
+            log::info!(
                 "{} ({})",
                 gitea::START_FETCHING_MSG,
                 self.config.remote.gitea
@@ -380,13 +439,13 @@ impl<'a> Changelog<'a> {
                 .block_on(async {
                     let (commits, pull_requests) = tokio::try_join!(
                         gitea_client.get_commits(ref_name),
-                        gitea_client.get_pull_requests(ref_name),
+                        gitea_client.get_pull_requests(),
                     )?;
-                    debug!("Number of Gitea commits: {}", commits.len());
-                    debug!("Number of Gitea pull requests: {}", pull_requests.len());
+                    log::debug!("Number of Gitea commits: {}", commits.len());
+                    log::debug!("Number of Gitea pull requests: {}", pull_requests.len());
                     Ok((commits, pull_requests))
                 });
-            info!("{}", gitea::FINISHED_FETCHING_MSG);
+            log::info!("{}", gitea::FINISHED_FETCHING_MSG);
             data
         } else {
             Ok((vec![], vec![]))
@@ -419,14 +478,10 @@ impl<'a> Changelog<'a> {
                 .contains_variable(bitbucket::TEMPLATE_VARIABLES) ||
             self.footer_template
                 .as_ref()
-                .map(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
-                .unwrap_or(false)
+                .is_some_and(|v| v.contains_variable(bitbucket::TEMPLATE_VARIABLES))
         {
-            debug!(
-                "You are using an experimental feature! Please report bugs at <https://git-cliff.org/issues>"
-            );
             let bitbucket_client = BitbucketClient::try_from(self.config.remote.bitbucket.clone())?;
-            info!(
+            log::info!(
                 "{} ({})",
                 bitbucket::START_FETCHING_MSG,
                 self.config.remote.bitbucket
@@ -437,13 +492,68 @@ impl<'a> Changelog<'a> {
                 .block_on(async {
                     let (commits, pull_requests) = tokio::try_join!(
                         bitbucket_client.get_commits(ref_name),
-                        bitbucket_client.get_pull_requests(ref_name)
+                        bitbucket_client.get_pull_requests()
                     )?;
-                    debug!("Number of Bitbucket commits: {}", commits.len());
-                    debug!("Number of Bitbucket pull requests: {}", pull_requests.len());
+                    log::debug!("Number of Bitbucket commits: {}", commits.len());
+                    log::debug!("Number of Bitbucket pull requests: {}", pull_requests.len());
                     Ok((commits, pull_requests))
                 });
-            info!("{}", bitbucket::FINISHED_FETCHING_MSG);
+            log::info!("{}", bitbucket::FINISHED_FETCHING_MSG);
+            data
+        } else {
+            Ok((vec![], vec![]))
+        }
+    }
+
+    /// Returns the Azure DevOps metadata needed for the changelog.
+    ///
+    /// This function creates a multithread async runtime for handling the
+    /// requests. The following are fetched from the Azure DevOps REST API:
+    ///
+    /// - Commits
+    /// - Pull requests
+    ///
+    /// Each of these are paginated requests so they are being run in parallel
+    /// for speedup.
+    ///
+    /// If no Azure DevOps related variable is used in the template then this
+    /// function returns empty vectors.
+    #[cfg(feature = "azure_devops")]
+    fn get_azure_devops_metadata(
+        &self,
+        ref_name: Option<&str>,
+    ) -> Result<crate::remote::RemoteMetadata> {
+        use crate::remote::azure_devops;
+        if self.config.remote.azure_devops.is_custom ||
+            self.body_template
+                .contains_variable(azure_devops::TEMPLATE_VARIABLES) ||
+            self.footer_template
+                .as_ref()
+                .is_some_and(|v| v.contains_variable(azure_devops::TEMPLATE_VARIABLES))
+        {
+            let azure_devops_client =
+                AzureDevOpsClient::try_from(self.config.remote.azure_devops.clone())?;
+            log::info!(
+                "{} ({})",
+                azure_devops::START_FETCHING_MSG,
+                self.config.remote.azure_devops
+            );
+            let data = tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()?
+                .block_on(async {
+                    let (commits, pull_requests) = tokio::try_join!(
+                        azure_devops_client.get_commits(ref_name),
+                        azure_devops_client.get_pull_requests()
+                    )?;
+                    log::debug!("Number of Azure DevOps commits: {}", commits.len());
+                    log::debug!(
+                        "Number of Azure DevOps pull requests: {}",
+                        pull_requests.len()
+                    );
+                    Ok((commits, pull_requests))
+                });
+            log::info!("{}", azure_devops::FINISHED_FETCHING_MSG);
             data
         } else {
             Ok((vec![], vec![]))
@@ -462,8 +572,7 @@ impl<'a> Changelog<'a> {
     /// Adds remote data (e.g. GitHub commits) to the releases.
     #[allow(unused_variables)]
     pub fn add_remote_data(&mut self, range: Option<&str>) -> Result<()> {
-        debug!("Adding remote data...");
-        self.add_remote_context()?;
+        log::debug!("Adding remote data");
 
         // Determine the ref at which to fetch remote commits, based on the commit
         // range
@@ -501,6 +610,14 @@ impl<'a> Changelog<'a> {
         } else {
             (vec![], vec![])
         };
+        #[cfg(feature = "azure_devops")]
+        let (azure_devops_commits, azure_devops_pull_request) =
+            if self.config.remote.azure_devops.is_set() {
+                self.get_azure_devops_metadata(ref_name)
+                    .expect("Could not get azure_devops metadata")
+            } else {
+                (vec![], vec![])
+            };
         #[cfg(feature = "remote")]
         for release in &mut self.releases {
             #[cfg(feature = "github")]
@@ -514,6 +631,11 @@ impl<'a> Changelog<'a> {
                 bitbucket_commits.clone(),
                 bitbucket_pull_request.clone(),
             )?;
+            #[cfg(feature = "azure_devops")]
+            release.update_azure_devops_metadata(
+                azure_devops_commits.clone(),
+                azure_devops_pull_request.clone(),
+            )?;
         }
         Ok(())
     }
@@ -524,8 +646,8 @@ impl<'a> Changelog<'a> {
             if last_release.version.is_none() {
                 let next_version =
                     last_release.calculate_next_version_with_config(&self.config.bump)?;
-                debug!("Bumping the version to {next_version}");
-                last_release.version = Some(next_version.to_string());
+                log::debug!("Bumping the version to {next_version}");
+                last_release.version = Some(next_version.clone());
                 last_release.timestamp = Some(
                     SystemTime::now()
                         .duration_since(UNIX_EPOCH)?
@@ -540,7 +662,7 @@ impl<'a> Changelog<'a> {
 
     /// Generates the changelog and writes it to the given output.
     pub fn generate<W: Write + ?Sized>(&self, out: &mut W) -> Result<()> {
-        debug!("Generating changelog...");
+        log::debug!("Generating changelog");
         let postprocessors = self.config.changelog.postprocessors.clone();
 
         if let Some(header_template) = &self.header_template {
@@ -603,7 +725,7 @@ impl<'a> Changelog<'a> {
 
     /// Generates a changelog and prepends it to the given changelog.
     pub fn prepend<W: Write + ?Sized>(&self, mut changelog: String, out: &mut W) -> Result<()> {
-        debug!("Generating changelog and prepending...");
+        log::debug!("Generating changelog and prepending");
         if let Some(header) = &self.config.changelog.header {
             changelog = changelog.replacen(header, "", 1);
         }
@@ -630,9 +752,10 @@ fn get_body_template(config: &Config, trim: bool) -> Result<Template> {
         "commit.gitea",
         "commit.gitlab",
         "commit.bitbucket",
+        "commit.azure_devops",
     ];
     if template.contains_variable(&deprecated_vars) {
-        warn!(
+        log::warn!(
             "Variables {deprecated_vars:?} are deprecated and will be removed in the future. Use \
              `commit.remote` instead."
         );
@@ -684,7 +807,7 @@ mod test {
 				"#,
                 ),
                 footer: Some(String::from(
-                    r#"-- total releases: {{ releases | length }} --"#,
+                    r"-- total releases: {{ releases | length }} --",
                 )),
                 trim: true,
                 postprocessors: vec![TextProcessor {
@@ -841,6 +964,7 @@ mod test {
                 ],
                 protect_breaking_commits: false,
                 filter_commits: false,
+                fail_on_unmatched_commit: false,
                 tag_pattern: None,
                 skip_tags: Regex::new("v3.*").ok(),
                 ignore_tags: None,
@@ -860,6 +984,7 @@ mod test {
                 exclude_paths: Vec::new(),
             },
             remote: RemoteConfig {
+                offline: false,
                 github: Remote {
                     owner: String::from("coolguy"),
                     repo: String::from("awesome"),
@@ -892,6 +1017,14 @@ mod test {
                     api_url: None,
                     native_tls: None,
                 },
+                azure_devops: Remote {
+                    owner: String::from("coolguy"),
+                    repo: String::from("awesome"),
+                    token: None,
+                    is_custom: false,
+                    api_url: None,
+                    native_tls: None,
+                },
             },
             bump: Bump::default(),
         };
@@ -904,7 +1037,7 @@ mod test {
                     id: String::from("coffee"),
                     message: String::from("revert(app): skip this commit"),
                     committer: Signature {
-                        timestamp: 48704000,
+                        timestamp: 48_704_000,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -913,7 +1046,7 @@ mod test {
                     id: String::from("tea"),
                     message: String::from("feat(app): damn right"),
                     committer: Signature {
-                        timestamp: 48790400,
+                        timestamp: 48_790_400,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -922,7 +1055,7 @@ mod test {
                     id: String::from("0bc123"),
                     message: String::from("feat(app): add cool features"),
                     committer: Signature {
-                        timestamp: 48876800,
+                        timestamp: 48_876_800,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -931,7 +1064,7 @@ mod test {
                     id: String::from("000000"),
                     message: String::from("support unconventional commits"),
                     committer: Signature {
-                        timestamp: 48963200,
+                        timestamp: 48_963_200,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -940,7 +1073,7 @@ mod test {
                     id: String::from("0bc123"),
                     message: String::from("feat: support unscoped commits"),
                     committer: Signature {
-                        timestamp: 49049600,
+                        timestamp: 49_049_600,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -949,7 +1082,7 @@ mod test {
                     id: String::from("0werty"),
                     message: String::from("style(ui): make good stuff"),
                     committer: Signature {
-                        timestamp: 49136000,
+                        timestamp: 49_136_000,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -958,7 +1091,7 @@ mod test {
                     id: String::from("0w3rty"),
                     message: String::from("fix(ui): fix more stuff"),
                     committer: Signature {
-                        timestamp: 49222400,
+                        timestamp: 49_222_400,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -967,7 +1100,7 @@ mod test {
                     id: String::from("qw3rty"),
                     message: String::from("doc: update docs"),
                     committer: Signature {
-                        timestamp: 49308800,
+                        timestamp: 49_308_800,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -976,7 +1109,7 @@ mod test {
                     id: String::from("0bc123"),
                     message: String::from("docs: add some documentation"),
                     committer: Signature {
-                        timestamp: 49395200,
+                        timestamp: 49_395_200,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -985,7 +1118,7 @@ mod test {
                     id: String::from("0jkl12"),
                     message: String::from("chore(app): do nothing"),
                     committer: Signature {
-                        timestamp: 49481600,
+                        timestamp: 49_481_600,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -994,7 +1127,7 @@ mod test {
                     id: String::from("qwerty"),
                     message: String::from("chore: <preprocess>"),
                     committer: Signature {
-                        timestamp: 49568000,
+                        timestamp: 49_568_000,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1003,7 +1136,7 @@ mod test {
                     id: String::from("qwertz"),
                     message: String::from("feat!: support breaking commits"),
                     committer: Signature {
-                        timestamp: 49654400,
+                        timestamp: 49_654_400,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1012,7 +1145,7 @@ mod test {
                     id: String::from("qwert0"),
                     message: String::from("match(group): support regex-replace for groups"),
                     committer: Signature {
-                        timestamp: 49740800,
+                        timestamp: 49_740_800,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1021,7 +1154,7 @@ mod test {
                     id: String::from("coffee"),
                     message: String::from("revert(app): skip this commit"),
                     committer: Signature {
-                        timestamp: 49827200,
+                        timestamp: 49_827_200,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1030,7 +1163,7 @@ mod test {
                     id: String::from("footer"),
                     message: String::from("misc: use footer\n\nFooter: footer text"),
                     committer: Signature {
-                        timestamp: 49913600,
+                        timestamp: 49_913_600,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1038,7 +1171,7 @@ mod test {
             ],
             commit_range: None,
             commit_id: Some(String::from("0bc123")),
-            timestamp: Some(50000000),
+            timestamp: Some(50_000_000),
             previous: None,
             repository: Some(String::from("/root/repo")),
             submodule_commits: HashMap::from([(String::from("submodule_one"), vec![
@@ -1076,6 +1209,10 @@ mod test {
             bitbucket: crate::remote::RemoteReleaseMetadata {
                 contributors: vec![],
             },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: crate::remote::RemoteReleaseMetadata {
+                contributors: vec![],
+            },
         };
         let releases = vec![
             test_release.clone(),
@@ -1085,7 +1222,7 @@ mod test {
                     id: String::from("n0thin"),
                     message: String::from("feat(xyz): skip commit"),
                     committer: Signature {
-                        timestamp: 49913600,
+                        timestamp: 49_913_600,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -1101,7 +1238,7 @@ mod test {
                         id: String::from("abc123"),
                         message: String::from("feat(app): add xyz"),
                         committer: Signature {
-                            timestamp: 49395200,
+                            timestamp: 49_395_200,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1110,7 +1247,7 @@ mod test {
                         id: String::from("abc124"),
                         message: String::from("docs(app): document zyx"),
                         committer: Signature {
-                            timestamp: 49481600,
+                            timestamp: 49_481_600,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1119,7 +1256,7 @@ mod test {
                         id: String::from("def789"),
                         message: String::from("merge #4"),
                         committer: Signature {
-                            timestamp: 49568000,
+                            timestamp: 49_568_000,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1128,7 +1265,7 @@ mod test {
                         id: String::from("dev063"),
                         message: String::from("feat(app)!: merge #5"),
                         committer: Signature {
-                            timestamp: 49654400,
+                            timestamp: 49_654_400,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1137,7 +1274,7 @@ mod test {
                         id: String::from("qwerty"),
                         message: String::from("fix(app): fix abc"),
                         committer: Signature {
-                            timestamp: 49740800,
+                            timestamp: 49_740_800,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1146,7 +1283,7 @@ mod test {
                         id: String::from("hjkl12"),
                         message: String::from("chore(ui): do boring stuff"),
                         committer: Signature {
-                            timestamp: 49827200,
+                            timestamp: 49_827_200,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1155,7 +1292,7 @@ mod test {
                         id: String::from("coffee2"),
                         message: String::from("revert(app): skip this commit"),
                         committer: Signature {
-                            timestamp: 49913600,
+                            timestamp: 49_913_600,
                             ..Default::default()
                         },
                         ..Default::default()
@@ -1193,6 +1330,10 @@ mod test {
                 bitbucket: crate::remote::RemoteReleaseMetadata {
                     contributors: vec![],
                 },
+                #[cfg(feature = "azure_devops")]
+                azure_devops: crate::remote::RemoteReleaseMetadata {
+                    contributors: vec![],
+                },
             },
         ];
         (config, releases)
@@ -1202,14 +1343,14 @@ mod test {
     fn changelog_generator() -> Result<()> {
         let (config, releases) = get_test_data();
 
-        let mut changelog = Changelog::new(releases, &config, None)?;
+        let mut changelog = Changelog::new(releases, config, None)?;
         changelog.bump_version()?;
         changelog.releases[0].timestamp = Some(0);
         let mut out = Vec::new();
         changelog.generate(&mut out)?;
         assert_eq!(
             String::from(
-                r#"# Changelog
+                r"# Changelog
 
 			## Release [v1.1.0] - 1970-01-01 - (/root/repo)
 
@@ -1287,7 +1428,7 @@ mod test {
 			- 12 commit(s) parsed as conventional.
 			- 0 linked issue(s) detected in commits.
 			-- total releases: 2 --
-			"#
+			"
             )
             .replace("			", ""),
             str::from_utf8(&out).unwrap_or_default()
@@ -1304,12 +1445,12 @@ mod test {
         releases[0].commits = Vec::new();
         releases[2].commits = Vec::new();
         releases[2].previous = Some(Box::new(releases[0].clone()));
-        let changelog = Changelog::new(releases, &config, None)?;
+        let changelog = Changelog::new(releases, config, None)?;
         let mut out = Vec::new();
         changelog.generate(&mut out)?;
         assert_eq!(
             String::from(
-                r#"# Changelog
+                r"# Changelog
 
 			## Unreleased
 
@@ -1321,7 +1462,7 @@ mod test {
 			- 0 linked issue(s) detected in commits.
 			- -578 day(s) passed between releases.
 			-- total releases: 1 --
-			"#
+			"
             )
             .replace("			", ""),
             str::from_utf8(&out).unwrap_or_default()
@@ -1354,7 +1495,7 @@ feat(app): feature #3
 ",
             ),
             committer: Signature {
-                timestamp: 49827200,
+                timestamp: 49_827_200,
                 ..Default::default()
             },
             ..Default::default()
@@ -1368,7 +1509,7 @@ style: make awesome stuff look better
 ",
             ),
             committer: Signature {
-                timestamp: 49740800,
+                timestamp: 49_740_800,
                 ..Default::default()
             },
             ..Default::default()
@@ -1383,17 +1524,17 @@ chore(deps): fix broken deps
 ",
             ),
             committer: Signature {
-                timestamp: 49308800,
+                timestamp: 49_308_800,
                 ..Default::default()
             },
             ..Default::default()
         });
-        let changelog = Changelog::new(releases, &config, None)?;
+        let changelog = Changelog::new(releases, config, None)?;
         let mut out = Vec::new();
         changelog.generate(&mut out)?;
         assert_eq!(
             String::from(
-                r#"# Changelog
+                r"# Changelog
 
 			## Unreleased
 
@@ -1485,7 +1626,7 @@ chore(deps): fix broken deps
 			- 1 linked issue(s) detected in commits.
 			  - [#3](https://github.com/3) (referenced 1 time(s))
 			-- total releases: 2 --
-			"#
+			"
             )
             .replace("			", ""),
             str::from_utf8(&out).unwrap_or_default()
@@ -1508,11 +1649,11 @@ chore(deps): fix broken deps
 				- {{ commit.message }}{% endfor %}
 				{% endfor %}{% endfor %}"#
             .to_string();
-        let mut changelog = Changelog::new(releases, &config, None)?;
+        let mut changelog = Changelog::new(releases, config, None)?;
         changelog.add_context("custom_field", "Hello")?;
         let mut out = Vec::new();
         changelog.generate(&mut out)?;
-        expect_test::expect![[r#"
+        expect_test::expect![[r"
     # Changelog
 
     ## Unreleased
@@ -1575,7 +1716,7 @@ chore(deps): fix broken deps
     #### ui
     - make good stuff
     -- total releases: 2 --
-"#]]
+"]]
         .assert_eq(str::from_utf8(&out).unwrap_or_default());
         Ok(())
     }

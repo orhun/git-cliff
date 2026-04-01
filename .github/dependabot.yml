@@ -54,6 +54,12 @@ updates:
       patch:
         update-types:
           - "patch"
+    ignore:
+      # We intentionally ignore semver-major updates to avoid
+      # PR noise when new Node versions are released.
+      # Revisit this when updating the supported Node.js range.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
   # Maintain dependencies for Docker
   - package-ecosystem: docker

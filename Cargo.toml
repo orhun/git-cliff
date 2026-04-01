@@ -7,10 +7,9 @@ regex = "1.11.1"
 glob = "0.3.2"
 log = "0.4.21"
 secrecy = { version = "0.8.0", features = ["serde"] }
-lazy_static = "1.5.0"
 dirs = "6.0.0"
 url = "2.5.3"
-reqwest = { version = "0.12.22", default-features = false, features = [
+reqwest = { version = "0.12.28", default-features = false, features = [
   "blocking",
   "rustls-tls",
   "rustls-tls-native-roots",
@@ -41,22 +40,7 @@ debug = true # used by the profiler
 strip = false # keep symbols for the profiler
 
 [workspace.lints.clippy]
-literal_string_with_formatting_args = "allow"
-tabs_in_doc_comments = "allow"
-needless_raw_string_hashes = "allow"
-unreadable_literal = "allow"
-redundant_else = "allow"
-items_after_statements = "allow"
-missing_errors_doc = "allow"
-module_name_repetitions = "allow"
-uninlined_format_args = "allow"
-manual_string_new = "allow"
-must_use_candidate = "allow"
-too_many_lines = "allow"
-wildcard_imports = "allow"
-missing_panics_doc = "allow"
-inefficient_to_string = "allow"
-redundant_closure_for_method_calls = "allow"
-map_unwrap_or = "allow"
-struct_excessive_bools = "allow"
-unnecessary_wraps = "allow"
+# NOTE:
+# `clippy` is intentionally not configured at the workspace level.
+# CLI arguments take precedence over this configuration, which can
+# lead to confusing behavior.

@@ -57,7 +57,18 @@ const getRandomTestimonial = () => {
 };
 
 export default function Testimonials(): JSX.Element {
-  const review = getRandomTestimonial();
+  const [review, setReview] = React.useState<typeof testimonials[number] | null>(
+    null
+  );
+
+  React.useEffect(() => {
+    const randomIndex = Math.floor(Math.random() * testimonials.length);
+    setReview(testimonials[randomIndex]);
+  }, []);
+
+  if (!review) {
+    return null;
+  }
 
   return (
     <div className={styles.testimonialsList}>

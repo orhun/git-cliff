@@ -39,6 +39,7 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
     --tag-pattern <PATTERN>        Sets the regex for matching git tags [env: GIT_CLIFF_TAG_PATTERN=]
     --with-commit <MSG>...         Sets custom commit messages to include in the changelog [env: GIT_CLIFF_WITH_COMMIT=]
     --with-tag-message [<MSG>]     Sets custom message for the latest release [env: GIT_CLIFF_WITH_TAG_MESSAGE=]
+    --skip-tags <PATTERN>          Sets the tags to skip in the changelog [env: GIT_CLIFF_SKIP_TAGS=]
     --ignore-tags <PATTERN>        Sets the tags to ignore in the changelog [env: GIT_CLIFF_IGNORE_TAGS=]
     --count-tags <PATTERN>         Sets the tags to count in the changelog [env: GIT_CLIFF_COUNT_TAGS=]
     --skip-commit <SHA1>...        Sets commits that will be skipped in the changelog [env: GIT_CLIFF_SKIP_COMMIT=]
@@ -49,14 +50,22 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
     --from-context <PATH>          Generates changelog from a JSON context [env: GIT_CLIFF_CONTEXT=]
 -s, --strip <PART>                 Strips the given parts from the changelog [possible values: header, footer, all]
     --sort <SORT>                  Sets sorting of the commits inside sections [default: oldest] [possible values: oldest, newest]
-    --github-token <TOKEN>         Sets the GitHub API token [env: GITHUB_TOKEN]
-    --github-repo <OWNER/REPO>     Sets the GitHub repository [env: GITHUB_REPO=]
-    --gitlab-token <TOKEN>         Sets the GitLab API token [env: GITLAB_TOKEN]
-    --gitlab-repo <OWNER/REPO>     Sets the GitLab repository [env: GITLAB_REPO=]
-    --gitea-token <TOKEN>          Sets the Gitea API token [env: GITEA_TOKEN]
-    --gitea-repo <OWNER/REPO>      Sets the Gitea repository [env: GITEA_REPO=]
-    --bitbucket-token <TOKEN>      Sets the Bitbucket API token [env: BITBUCKET_TOKEN]
-    --bitbucket-repo <OWNER/REPO>  Sets the Bitbucket repository [env: BITBUCKET_REPO=]
+```
+
+## Remote Options
+
+```
+    --github-token <TOKEN>            Sets the GitHub API token [env: GITHUB_TOKEN]
+    --github-repo <OWNER/REPO>        Sets the GitHub repository [env: GITHUB_REPO=]
+    --gitlab-token <TOKEN>            Sets the GitLab API token [env: GITLAB_TOKEN]
+    --gitlab-repo <OWNER/REPO>        Sets the GitLab repository [env: GITLAB_REPO=]
+    --gitea-token <TOKEN>             Sets the Gitea API token [env: GITEA_TOKEN]
+    --gitea-repo <OWNER/REPO>         Sets the Gitea repository [env: GITEA_REPO=]
+    --bitbucket-token <TOKEN>         Sets the Bitbucket API token [env: BITBUCKET_TOKEN]
+    --bitbucket-repo <OWNER/REPO>     Sets the Bitbucket repository [env: BITBUCKET_REPO=]
+    --azure-devops-token <TOKEN>      Sets the Azure DevOps API token [env: AZURE_DEVOPS_TOKEN]
+    --azure-devops-repo <OWNER/REPO>  Sets the Azure DevOps repository [env: AZURE_DEVOPS_REPO=]
+    --offline                         Disable network access for remote repositories [env: GIT_CLIFF_OFFLINE]
 ```
 
 ## Args
