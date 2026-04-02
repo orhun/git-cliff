@@ -2,6 +2,10 @@
   // This file is not used in compilation. It is here just for a nice editor experience.
   "extends": "@docusaurus/tsconfig",
   "compilerOptions": {
-    "baseUrl": "."
+    // Temporarily suppressing TypeScript 6.x deprecation warnings (e.g., "baseUrl") inherited from the Docusaurus config.
+    // This is a workaround until upstream removes deprecated options.
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "types": ["node"]
   }
 }

@@ -56,7 +56,7 @@ const getRandomTestimonial = () => {
   return testimonials[randomIndex];
 };
 
-export default function Testimonials(): JSX.Element {
+export default function Testimonials(): JSX.Element | null {
   const [review, setReview] = React.useState<typeof testimonials[number] | null>(
     null
   );
