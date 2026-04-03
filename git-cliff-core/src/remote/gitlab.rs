@@ -226,7 +226,7 @@ impl GitLabClient {
     /// Looks up the project details.
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub async fn get_project(&self) -> Result<GitLabProject> {
-        crate::set_progress_message!("Fetching the project details from GitLab");
+        crate::set_progress_message!("Fetching the project details from GitLab ({})", self.remote);
         let url = Self::project_url(&self.api_url(), &self.remote());
         self.get_json::<GitLabProject>(&url).await
     }
@@ -241,7 +241,7 @@ impl GitLabClient {
         ref_name: Option<&str>,
     ) -> Result<Vec<Box<dyn RemoteCommit>>> {
         use futures::TryStreamExt;
-        crate::set_progress_message!("Fetching all commits from GitLab");
+        crate::set_progress_message!("Fetching all commits from GitLab ({})", self.remote);
         self.get_commit_stream(project_id, ref_name)
             .try_collect()
             .await
@@ -256,7 +256,7 @@ impl GitLabClient {
         project_id: i64,
     ) -> Result<Vec<Box<dyn RemotePullRequest>>> {
         use futures::TryStreamExt;
-        crate::set_progress_message!("Fetching all pull requests from GitLab");
+        crate::set_progress_message!("Fetching all pull requests from GitLab ({})", self.remote);
         self.get_pull_request_stream(project_id).try_collect().await
     }
 

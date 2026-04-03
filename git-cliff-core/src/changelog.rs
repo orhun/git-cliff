@@ -362,7 +362,10 @@ impl<'a> Changelog<'a> {
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn get_github_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::github;
-        crate::set_progress_message!("Fetching GitHub metadata for the changelog");
+        crate::set_progress_message!(
+            "Fetching GitHub metadata for the changelog ({})",
+            self.config.remote.github
+        );
         if self.config.remote.github.is_custom ||
             self.body_template
                 .contains_variable(github::TEMPLATE_VARIABLES) ||
@@ -407,7 +410,10 @@ impl<'a> Changelog<'a> {
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn get_gitlab_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::gitlab;
-        crate::set_progress_message!("Fetching GitLab metadata for the changelog");
+        crate::set_progress_message!(
+            "Fetching GitLab metadata for the changelog ({})",
+            self.config.remote.gitlab
+        );
         if self.config.remote.gitlab.is_custom ||
             self.body_template
                 .contains_variable(gitlab::TEMPLATE_VARIABLES) ||
@@ -464,7 +470,10 @@ impl<'a> Changelog<'a> {
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn get_gitea_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::gitea;
-        crate::set_progress_message!("Fetching Gitea metadata for the changelog");
+        crate::set_progress_message!(
+            "Fetching Gitea metadata for the changelog ({})",
+            self.config.remote.gitea
+        );
         if self.config.remote.gitea.is_custom ||
             self.body_template
                 .contains_variable(gitea::TEMPLATE_VARIABLES) ||
@@ -512,7 +521,10 @@ impl<'a> Changelog<'a> {
         ref_name: Option<&str>,
     ) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::bitbucket;
-        crate::set_progress_message!("Fetching Bitbucket metadata for the changelog");
+        crate::set_progress_message!(
+            "Fetching Bitbucket metadata for the changelog ({})",
+            self.config.remote.bitbucket
+        );
         if self.config.remote.bitbucket.is_custom ||
             self.body_template
                 .contains_variable(bitbucket::TEMPLATE_VARIABLES) ||
@@ -558,7 +570,10 @@ impl<'a> Changelog<'a> {
         ref_name: Option<&str>,
     ) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::azure_devops;
-        crate::set_progress_message!("Fetching Azure DevOps metadata for the changelog");
+        crate::set_progress_message!(
+            "Fetching Azure DevOps metadata for the changelog ({})",
+            self.config.remote.azure_devops
+        );
         if self.config.remote.azure_devops.is_custom ||
             self.body_template
                 .contains_variable(azure_devops::TEMPLATE_VARIABLES) ||
