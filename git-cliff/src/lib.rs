@@ -876,7 +876,7 @@ mod test {
     #[test]
     fn find_config_file_returns_first_match_in_priority_order() {
         // check config files in order of priority. config.toml has the highest priority to preserve
-        // backward compatibility config.toml > .cliff.toml > ... > .config/cliff.toml
+        // backward compatibility cliff.toml > .cliff.toml > ... > .config/cliff.toml
 
         let dir = tempdir().unwrap();
 
