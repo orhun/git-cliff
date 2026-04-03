@@ -858,3 +858,39 @@ pub fn write_changelog<W: io::Write>(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod test {
+    use std::fs;
+
+    use tempfile::tempdir;
+
+    use super::*;
+
+    #[test]
+    fn find_config_file_returns_none_when_no_config_exists() {
+        let dir = tempdir().unwrap();
+        assert_eq!(find_config_file(dir.path()), None);
+    }
+
+    #[test]
+    fn find_config_file_returns_first_match_in_priority_order() {
+        // check config files in order of priority. config.toml has the highest priority to preserve
+        // backward compatibility config.toml > .cliff.toml > ... > .config/cliff.toml
+
+        let dir = tempdir().unwrap();
+
+        fs::create_dir(dir.path().join(".config")).unwrap();
+        fs::write(dir.path().join(".config/cliff.toml"), "").unwrap();
+        assert_eq!(
+            find_config_file(dir.path()),
+            Some(dir.path().join(".config/cliff.toml")),
+        );
+
+        fs::write(dir.path().join("cliff.toml"), "").unwrap();
+        assert_eq!(
+            find_config_file(dir.path()),
+            Some(dir.path().join("cliff.toml")),
+        );
+    }
+}
