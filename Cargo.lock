@@ -1017,7 +1017,6 @@ dependencies = [
  "reqwest",
  "secrecy",
  "shellexpand",
- "tempfile",
  "update-informer",
  "url",
 ]
@@ -1056,6 +1055,7 @@ dependencies = [
  "serde_json",
  "serde_regex",
  "temp-dir",
+ "tempfile",
  "tera",
  "thiserror 2.0.17",
  "time",

@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::embed::EmbeddedConfig;
 use crate::error::Result;
-use crate::{DEFAULT_CONFIG, command, error};
+use crate::{CONFIG_FILES, DEFAULT_CONFIG, command, error};
 
 /// Default initial tag.
 const DEFAULT_INITIAL_TAG: &str = "0.1.0";
@@ -509,7 +509,7 @@ impl Config {
     ///
     /// If the config file is not found in its standard locations, [`None`] is returned.
     #[must_use]
-    pub fn retrieve_config_path() -> Option<PathBuf> {
+    pub fn retrieve_user_config_path() -> Option<PathBuf> {
         for supported_path in [
             #[cfg(target_os = "macos")]
             Some(Config::retrieve_xdg_config_on_macos().join(DEFAULT_CONFIG)),
@@ -527,6 +527,14 @@ impl Config {
             }
         }
         None
+    }
+
+    /// Returns the first valid configuration file found in `dir`.
+    pub fn retrieve_project_config_path(dir: &Path) -> Option<PathBuf> {
+        CONFIG_FILES.iter().find_map(|file| {
+            let path = dir.join(file);
+            if path.is_file() { Some(path) } else { None }
+        })
     }
 }
 
@@ -554,9 +562,10 @@ impl FromStr for Config {
 
 #[cfg(test)]
 mod test {
-    use std::env;
+    use std::{env, fs};
 
     use pretty_assertions::assert_eq;
+    use tempfile::tempdir;
 
     use super::*;
 
@@ -609,5 +618,34 @@ mod test {
         assert!(!Remote::new("", "test").is_set());
         assert!(!Remote::new("test", "").is_set());
         assert!(!Remote::new("", "").is_set());
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn find_project_config_file_returns_none_when_no_config_exists() {
+        let dir = tempdir().unwrap();
+        assert_eq!(Config::retrieve_project_config_path(dir.path()), None);
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn find_project_config_file_returns_first_match_in_priority_order() {
+        // check config files in order of priority. config.toml has the highest priority to preserve
+        // backward compatibility cliff.toml > .cliff.toml > ... > .config/cliff.toml
+
+        let dir = tempdir().unwrap();
+
+        fs::create_dir(dir.path().join(".config")).unwrap();
+        fs::write(dir.path().join(".config/cliff.toml"), "").unwrap();
+        assert_eq!(
+            Config::retrieve_project_config_path(dir.path()),
+            Some(dir.path().join(".config/cliff.toml")),
+        );
+
+        fs::write(dir.path().join("cliff.toml"), "").unwrap();
+        assert_eq!(
+            Config::retrieve_project_config_path(dir.path()),
+            Some(dir.path().join("cliff.toml")),
+        );
     }
 }

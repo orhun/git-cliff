@@ -25,16 +25,8 @@ use git_cliff_core::embed::{BuiltinConfig, EmbeddedConfig};
 use git_cliff_core::error::{Error, Result};
 use git_cliff_core::release::Release;
 use git_cliff_core::repo::{Repository, SubmoduleRange};
-use git_cliff_core::{CONFIG_FILES, DEFAULT_CONFIG, IGNORE_FILE};
+use git_cliff_core::{DEFAULT_CONFIG, IGNORE_FILE};
 use glob::Pattern;
-
-/// Returns the first valid configuration file found in `dir`
-fn find_config_file(dir: &Path) -> Option<PathBuf> {
-    CONFIG_FILES.iter().find_map(|file| {
-        let path = dir.join(file);
-        if path.is_file() { Some(path) } else { None }
-    })
-}
 
 /// Checks for a new version on crates.io
 #[cfg(feature = "update-informer")]
@@ -550,12 +542,7 @@ pub fn run_with_changelog_modifier<'a>(
     }
 
     // Set path for the configuration file.
-    let mut path = args.config.clone();
-    if !path.exists() {
-        if let Some(config_path) = Config::retrieve_config_path() {
-            path = config_path;
-        }
-    }
+    let path = args.config.clone();
 
     // Parse the configuration file.
     // Load the default configuration if necessary.
@@ -575,15 +562,23 @@ pub fn run_with_changelog_modifier<'a>(
         config
     } else if path.exists() {
         Config::load(&path)?
-    } else if let Some(contents) = Config::read_from_manifest()? {
-        contents.parse()?
-    } else if let Some(discovered_path) = env::current_dir()?.ancestors().find_map(find_config_file)
+    } else if let Some(discovered_path) = env::current_dir()?
+        .ancestors()
+        .find_map(Config::retrieve_project_config_path)
     {
         log::info!(
             "Using configuration from parent directory: {}",
             discovered_path.display()
         );
         Config::load(&discovered_path)?
+    } else if let Some(user_config_path) = Config::retrieve_user_config_path() {
+        log::info!(
+            "Using user configuration file: {}",
+            user_config_path.display()
+        );
+        Config::load(&user_config_path)?
+    } else if let Some(contents) = Config::read_from_manifest()? {
+        contents.parse()?
     } else {
         #[allow(clippy::unnecessary_debug_formatting)]
         if !args.context {
@@ -857,40 +852,4 @@ pub fn write_changelog<W: io::Write>(
     }
 
     Ok(())
-}
-
-#[cfg(test)]
-mod test {
-    use std::fs;
-
-    use tempfile::tempdir;
-
-    use super::*;
-
-    #[test]
-    fn find_config_file_returns_none_when_no_config_exists() {
-        let dir = tempdir().unwrap();
-        assert_eq!(find_config_file(dir.path()), None);
-    }
-
-    #[test]
-    fn find_config_file_returns_first_match_in_priority_order() {
-        // check config files in order of priority. config.toml has the highest priority to preserve
-        // backward compatibility cliff.toml > .cliff.toml > ... > .config/cliff.toml
-
-        let dir = tempdir().unwrap();
-
-        fs::create_dir(dir.path().join(".config")).unwrap();
-        fs::write(dir.path().join(".config/cliff.toml"), "").unwrap();
-        assert_eq!(
-            find_config_file(dir.path()),
-            Some(dir.path().join(".config/cliff.toml")),
-        );
-
-        fs::write(dir.path().join("cliff.toml"), "").unwrap();
-        assert_eq!(
-            find_config_file(dir.path()),
-            Some(dir.path().join("cliff.toml")),
-        );
-    }
 }
