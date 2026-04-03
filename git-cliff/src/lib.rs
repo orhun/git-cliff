@@ -28,6 +28,14 @@ use git_cliff_core::repo::{Repository, SubmoduleRange};
 use git_cliff_core::{CONFIG_FILES, DEFAULT_CONFIG, IGNORE_FILE};
 use glob::Pattern;
 
+/// Returns the first valid configuration file found in `dir`
+fn find_config_file(dir: &Path) -> Option<PathBuf> {
+    CONFIG_FILES.iter().find_map(|file| {
+        let path = dir.join(file);
+        if path.is_file() { Some(path) } else { None }
+    })
+}
+
 /// Checks for a new version on crates.io
 #[cfg(feature = "update-informer")]
 pub fn check_new_version() {
@@ -849,11 +857,4 @@ pub fn write_changelog<W: io::Write>(
     }
 
     Ok(())
-}
-
-fn find_config_file(dir: &Path) -> Option<PathBuf> {
-    CONFIG_FILES.iter().find_map(|file| {
-        let path = dir.join(file);
-        if path.is_file() { Some(path) } else { None }
-    })
 }
