@@ -107,19 +107,6 @@ fn color_end_key(_: &ProgressState, writer: &mut dyn fmt::Write) {
     let _ = writer.write_str("\x1b[0m");
 }
 
-/// Emits an ANSI escape sequence for dim (muted) foreground text.
-fn dim_start_key(_: &ProgressState, writer: &mut dyn fmt::Write) {
-    let _ = writer.write_str("\x1b[90m");
-}
-
-/// Resets ANSI styling to the terminal default.
-///
-/// This must be paired with `dim_start_key` to avoid leaking color state into subsequent log
-/// output.
-fn dim_end_key(_: &ProgressState, writer: &mut dyn fmt::Write) {
-    let _ = writer.write_str("\x1b[0m");
-}
-
 /// Builds the `indicatif::ProgressStyle` used for tracing spans.
 ///
 /// This style:
@@ -129,15 +116,13 @@ fn dim_end_key(_: &ProgressState, writer: &mut dyn fmt::Write) {
 /// - appends a sub-second elapsed timer
 fn indicatif_progress_style() -> ProgressStyle {
     ProgressStyle::with_template(
-        "{span_child_prefix}{color_start}{spinner}{color_end} {dim_start}{wide_msg} {span_name} \
-         {span_fields} {dim_end} [{color_start}{elapsed_subsec}{color_end}]",
+        "{span_child_prefix}{color_start}{spinner}{color_end} {wide_msg} {span_name} \
+         {span_fields} [{color_start}{elapsed_subsec}{color_end}]",
     )
     .unwrap()
     .with_key("elapsed_subsec", elapsed_subsec_key)
     .with_key("color_start", color_start_key)
     .with_key("color_end", color_end_key)
-    .with_key("dim_start", dim_start_key)
-    .with_key("dim_end", dim_end_key)
     .tick_strings(SPINNER_TICKS)
 }
 
