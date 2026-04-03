@@ -103,7 +103,7 @@ impl<'a> Changelog<'a> {
         git_config: &GitConfig,
         summary: &mut Summary,
     ) -> Option<Commit<'a>> {
-        crate::pb_msg!("Processing a single commit");
+        crate::set_progress_message!("Processing a single commit");
         match commit.process(git_config) {
             Ok(commit) => {
                 summary.record_ok();
@@ -129,7 +129,9 @@ impl<'a> Changelog<'a> {
         )
     )]
     fn check_conventional_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
-        crate::pb_msg!("Checking whether commits included in a release are conventional");
+        crate::set_progress_message!(
+            "Checking whether commits included in a release are conventional"
+        );
         log::debug!("Verifying that all commits are conventional");
         let mut unconventional_count = 0;
         commits.iter().for_each(|commit| {
@@ -165,7 +167,9 @@ impl<'a> Changelog<'a> {
         )
     )]
     fn check_unmatched_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
-        crate::pb_msg!("Checking whether commits in a release are unmatched by any parser");
+        crate::set_progress_message!(
+            "Checking whether commits in a release are unmatched by any parser"
+        );
         log::debug!("Verifying that no commits are unmatched by commit parsers");
         let mut unmatched_count = 0;
         commits.iter().for_each(|commit| {
@@ -205,7 +209,7 @@ impl<'a> Changelog<'a> {
         git_config: &GitConfig,
         summary: &mut Summary,
     ) -> Result<()> {
-        crate::pb_msg!("Processing commits in a single release");
+        crate::set_progress_message!("Processing commits in a single release");
         let mut processed = Vec::new();
         for commit in commits.iter() {
             if let Some(commit) = Self::process_commit(commit, git_config, summary) {
@@ -249,7 +253,7 @@ impl<'a> Changelog<'a> {
         )
     )]
     fn process_commits(&mut self) -> Result<()> {
-        crate::pb_msg!("Processing commits for the changelog");
+        crate::set_progress_message!("Processing commits for the changelog");
         log::debug!("Processing the commits");
 
         let mut summary = Summary::default();
@@ -290,7 +294,7 @@ impl<'a> Changelog<'a> {
         )
     )]
     fn process_releases(&mut self) {
-        crate::pb_msg!("Processing releases for the changelog");
+        crate::set_progress_message!("Processing releases for the changelog");
         log::debug!("Processing {} release(s)", self.releases.len());
         let skip_regex = self.config.git.skip_tags.as_ref();
         let mut skipped_tags = Vec::new();
@@ -358,7 +362,7 @@ impl<'a> Changelog<'a> {
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn get_github_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::github;
-        crate::pb_msg!("Fetching GitHub metadata for the changelog");
+        crate::set_progress_message!("Fetching GitHub metadata for the changelog");
         if self.config.remote.github.is_custom ||
             self.body_template
                 .contains_variable(github::TEMPLATE_VARIABLES) ||
@@ -403,7 +407,7 @@ impl<'a> Changelog<'a> {
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn get_gitlab_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::gitlab;
-        crate::pb_msg!("Fetching GitLab metadata for the changelog");
+        crate::set_progress_message!("Fetching GitLab metadata for the changelog");
         if self.config.remote.gitlab.is_custom ||
             self.body_template
                 .contains_variable(gitlab::TEMPLATE_VARIABLES) ||
@@ -460,7 +464,7 @@ impl<'a> Changelog<'a> {
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     fn get_gitea_metadata(&self, ref_name: Option<&str>) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::gitea;
-        crate::pb_msg!("Fetching Gitea metadata for the changelog");
+        crate::set_progress_message!("Fetching Gitea metadata for the changelog");
         if self.config.remote.gitea.is_custom ||
             self.body_template
                 .contains_variable(gitea::TEMPLATE_VARIABLES) ||
@@ -508,7 +512,7 @@ impl<'a> Changelog<'a> {
         ref_name: Option<&str>,
     ) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::bitbucket;
-        crate::pb_msg!("Fetching Bitbucket metadata for the changelog");
+        crate::set_progress_message!("Fetching Bitbucket metadata for the changelog");
         if self.config.remote.bitbucket.is_custom ||
             self.body_template
                 .contains_variable(bitbucket::TEMPLATE_VARIABLES) ||
@@ -554,7 +558,7 @@ impl<'a> Changelog<'a> {
         ref_name: Option<&str>,
     ) -> Result<crate::remote::RemoteMetadata> {
         use crate::remote::azure_devops;
-        crate::pb_msg!("Fetching Azure DevOps metadata for the changelog");
+        crate::set_progress_message!("Fetching Azure DevOps metadata for the changelog");
         if self.config.remote.azure_devops.is_custom ||
             self.body_template
                 .contains_variable(azure_devops::TEMPLATE_VARIABLES) ||
@@ -597,7 +601,7 @@ impl<'a> Changelog<'a> {
     #[allow(unused_variables)]
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn add_remote_data(&mut self, range: Option<&str>) -> Result<()> {
-        crate::pb_msg!("Adding remote data to the changelog");
+        crate::set_progress_message!("Adding remote data to the changelog");
         log::debug!("Adding remote data");
 
         // Determine the ref at which to fetch remote commits, based on the commit
@@ -669,7 +673,7 @@ impl<'a> Changelog<'a> {
     /// Increments the version for the unreleased changes based on semver.
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn bump_version(&mut self) -> Result<Option<String>> {
-        crate::pb_msg!("Bumping the version for unreleased changes");
+        crate::set_progress_message!("Bumping the version for unreleased changes");
         if let Some(ref mut last_release) = self.releases.iter_mut().next() {
             if last_release.version.is_none() {
                 let next_version =
@@ -691,7 +695,7 @@ impl<'a> Changelog<'a> {
     /// Generates the changelog and writes it to the given output.
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn generate<W: Write + ?Sized>(&self, out: &mut W) -> Result<()> {
-        crate::pb_msg!("Generating and writing the changelog");
+        crate::set_progress_message!("Generating and writing the changelog");
         log::debug!("Generating changelog");
         let postprocessors = self.config.changelog.postprocessors.clone();
 
@@ -756,7 +760,7 @@ impl<'a> Changelog<'a> {
     /// Generates a changelog and prepends it to the given changelog.
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn prepend<W: Write + ?Sized>(&self, mut changelog: String, out: &mut W) -> Result<()> {
-        crate::pb_msg!("Generating and prepending the changelog");
+        crate::set_progress_message!("Generating and prepending the changelog");
         log::debug!("Generating changelog and prepending");
         if let Some(header) = &self.config.changelog.header {
             changelog = changelog.replacen(header, "", 1);
@@ -769,7 +773,7 @@ impl<'a> Changelog<'a> {
     /// Prints the changelog context to the given output.
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn write_context<W: Write + ?Sized>(&self, out: &mut W) -> Result<()> {
-        crate::pb_msg!("Writing the changelog context as JSON");
+        crate::set_progress_message!("Writing the changelog context as JSON");
         let output = Releases {
             releases: &self.releases,
         }

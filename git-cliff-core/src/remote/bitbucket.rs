@@ -174,7 +174,7 @@ impl BitbucketClient {
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub async fn get_commits(&self, ref_name: Option<&str>) -> Result<Vec<Box<dyn RemoteCommit>>> {
         use futures::TryStreamExt;
-        crate::pb_msg!("Fetching all commits from Bitbucket");
+        crate::set_progress_message!("Fetching all commits from Bitbucket");
         self.get_commit_stream(ref_name).try_collect().await
     }
 
@@ -184,7 +184,7 @@ impl BitbucketClient {
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub async fn get_pull_requests(&self) -> Result<Vec<Box<dyn RemotePullRequest>>> {
         use futures::TryStreamExt;
-        crate::pb_msg!("Fetching all pull requests from Bitbucket");
+        crate::set_progress_message!("Fetching all pull requests from Bitbucket");
         self.get_pull_request_stream().try_collect().await
     }
 

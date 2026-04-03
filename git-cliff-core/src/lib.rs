@@ -55,7 +55,7 @@ pub const IGNORE_FILE: &str = ".cliffignore";
 /// This macro only has effect if the `tracing-indicatif` feature is enabled.
 #[doc(hidden)]
 #[macro_export]
-macro_rules! pb_msg {
+macro_rules! set_progress_message {
     ($($arg:tt)*) => {{
         #[cfg(feature = "tracing-indicatif")]
         {
