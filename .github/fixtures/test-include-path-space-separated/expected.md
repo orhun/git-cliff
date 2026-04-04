@@ -2,8 +2,8 @@
 
 ### Bug Fixes
 
-- Fix website styles
 - Update installation guide
+- Fix website styles
 
 ### Features
 
