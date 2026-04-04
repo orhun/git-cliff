@@ -143,6 +143,10 @@ jobs:
           - fixtures-name: test-workdir-include-path
             command: v2.6.1..v2.7.0 --workdir .github/fixtures/
           - fixtures-name: test-fail-on-unmatched-commit
+          - fixtures-name: test-include-path-repeated-flag
+            command: --include-path 'website/**/*' --include-path 'docs/**/*'
+          - fixtures-name: test-include-path-space-separated
+            command: --include-path 'website/**/* docs/**/*'
           - fixtures-name: test-offline
 
     steps:
