@@ -601,7 +601,7 @@ impl<'a> Changelog<'a> {
     #[allow(unused_variables)]
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn add_remote_data(&mut self, range: Option<&str>) -> Result<()> {
-        let mut remotes = Vec::new();
+        let mut remotes: Vec<String> = Vec::new();
         #[cfg(feature = "github")]
         if self.config.remote.github.is_set() {
             remotes.push(self.config.remote.github.to_string());
