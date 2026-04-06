@@ -1,5 +1,7 @@
 import { arch as getArch, platform as getPlatform } from "os";
 import { createRequire } from "node:module";
+
+// Prepares `require` for ESM/CJS dual build.
 const require = createRequire(import.meta.url);
 
 /**
