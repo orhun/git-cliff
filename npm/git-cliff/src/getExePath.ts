@@ -25,7 +25,8 @@ export async function getExePath() {
   }
 
   try {
-    // Since the bin will be located inside `node_modules`, we can simply call import.meta.resolve
+    // Resolve the executable path using `require.resolve`.
+    // This returns an absolute filesystem path to the binary.
     return require.resolve(
       `git-cliff-${os}-${arch}/bin/git-cliff${extension}`,
     );
