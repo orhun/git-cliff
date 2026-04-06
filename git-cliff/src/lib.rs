@@ -542,7 +542,12 @@ pub fn run_with_changelog_modifier<'a>(
     }
 
     // Set path for the configuration file.
-    let path = args.config.clone();
+    let mut path = args.config.clone();
+    if !path.exists() {
+        if let Some(config_path) = Config::retrieve_config_path() {
+            path = config_path;
+        }
+    }
 
     // Parse the configuration file.
     // Load the default configuration if necessary.
@@ -562,23 +567,15 @@ pub fn run_with_changelog_modifier<'a>(
         config
     } else if path.exists() {
         Config::load(&path)?
-    } else if let Some(discovered_path) = env::current_dir()?
-        .ancestors()
-        .find_map(Config::retrieve_project_config_path)
+    } else if let Some(contents) = Config::read_from_manifest()? {
+        contents.parse()?
+    } else if let Some(discovered_path) = env::current_dir()?.ancestors().find_map(find_config_file)
     {
         log::info!(
             "Using configuration from parent directory: {}",
             discovered_path.display()
         );
         Config::load(&discovered_path)?
-    } else if let Some(user_config_path) = Config::retrieve_user_config_path() {
-        log::info!(
-            "Using user configuration file: {}",
-            user_config_path.display()
-        );
-        Config::load(&user_config_path)?
-    } else if let Some(contents) = Config::read_from_manifest()? {
-        contents.parse()?
     } else {
         #[allow(clippy::unnecessary_debug_formatting)]
         if !args.context {
