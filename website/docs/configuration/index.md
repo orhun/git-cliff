@@ -38,7 +38,7 @@ Format:
 [PREFIX]__[CONFIG SECTION]__[FIELD NAME]
 ```
 
-#### Examples
+## Examples
 
 To override the `footer` element:
 
