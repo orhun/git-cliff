@@ -621,31 +621,32 @@ mod test {
     }
 
     #[test]
-    #[allow(clippy::unwrap_used)]
-    fn find_project_config_file_returns_none_when_no_config_exists() {
-        let dir = tempdir().unwrap();
+    fn find_project_config_file_returns_none_when_no_config_exists() -> Result<()> {
+        let dir = tempdir()?;
         assert_eq!(Config::retrieve_project_config_path(dir.path()), None);
+        Ok(())
     }
 
     #[test]
-    #[allow(clippy::unwrap_used)]
-    fn find_project_config_file_returns_first_match_in_priority_order() {
+    fn find_project_config_file_returns_first_match_in_priority_order() -> Result<()> {
         // check config files in order of priority. config.toml has the highest priority to preserve
         // backward compatibility cliff.toml > .cliff.toml > ... > .config/cliff.toml
 
-        let dir = tempdir().unwrap();
+        let dir = tempdir()?;
 
-        fs::create_dir(dir.path().join(".config")).unwrap();
-        fs::write(dir.path().join(".config/cliff.toml"), "").unwrap();
+        fs::create_dir(dir.path().join(".config"))?;
+        fs::write(dir.path().join(".config/cliff.toml"), "")?;
         assert_eq!(
             Config::retrieve_project_config_path(dir.path()),
             Some(dir.path().join(".config/cliff.toml")),
         );
 
-        fs::write(dir.path().join("cliff.toml"), "").unwrap();
+        fs::write(dir.path().join("cliff.toml"), "")?;
         assert_eq!(
             Config::retrieve_project_config_path(dir.path()),
             Some(dir.path().join("cliff.toml")),
         );
+
+        Ok(())
     }
 }
