@@ -628,10 +628,10 @@ mod test {
     }
 
     #[test]
+    /// Check config files in order of priority.
+    /// cliff.toml has the highest priority to preserve
+    /// Backward compatibility cliff.toml > .cliff.toml > ... > .config/cliff.toml
     fn find_project_config_file_returns_first_match_in_priority_order() -> Result<()> {
-        // check config files in order of priority. config.toml has the highest priority to preserve
-        // backward compatibility cliff.toml > .cliff.toml > ... > .config/cliff.toml
-
         let dir = tempdir()?;
 
         fs::create_dir(dir.path().join(".config"))?;
