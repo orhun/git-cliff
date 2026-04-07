@@ -793,6 +793,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "etcetera"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "de48cc4d1c1d97a20fd819def54b890cadde72ed3ad0c614822a0a433361be96"
+dependencies = [
+ "cfg-if",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
 name = "expect-test"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1002,8 +1012,8 @@ dependencies = [
  "clap",
  "clap_complete",
  "clap_mangen",
- "dirs",
  "env_logger",
+ "etcetera 0.11.0",
  "git-cliff-core",
  "glob",
  "indicatif",
@@ -1030,9 +1040,9 @@ dependencies = [
  "cacache",
  "chrono",
  "config",
- "dirs",
  "document-features",
  "dyn-clone",
+ "etcetera 0.11.0",
  "expect-test",
  "futures",
  "git-conventional",
@@ -3322,7 +3332,7 @@ version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67b27dcf766dc6ad64c2085201626e1a7955dc1983532bfc8406d552903ace2a"
 dependencies = [
- "etcetera",
+ "etcetera 0.10.0",
  "reqwest",
  "semver",
  "serde",
