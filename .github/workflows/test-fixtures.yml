@@ -155,6 +155,12 @@ jobs:
           - fixtures-name: test-include-path-config
           - fixtures-name: test-include-path-env-var
             include-path-env: "website/**/* docs/**/*"
+          # NOTE: This test verifies that GIT_CLIFF_INCLUDE_PATH correctly
+          # handles space-separated globs where one glob matches no commits
+          # (i.e. .github/**/* does not exist in the fixture's git history).
+          # Only website/**/* commits are expected in the output.
+          - fixtures-name: test-include-path-env-var-github
+            include-path-env: "website/**/* .github/**/*"
           - fixtures-name: test-offline
 
     steps:
