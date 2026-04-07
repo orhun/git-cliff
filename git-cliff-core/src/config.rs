@@ -621,18 +621,13 @@ mod test {
     }
 
     #[test]
-    fn find_project_config_file_returns_none_when_no_config_exists() -> Result<()> {
+    fn find_project_config_file() -> Result<()> {
         let dir = tempdir()?;
-        assert_eq!(Config::retrieve_project_config_path(dir.path()), None);
-        Ok(())
-    }
 
-    #[test]
-    /// Check config files in order of priority.
-    /// cliff.toml has the highest priority to preserve
-    /// Backward compatibility cliff.toml > .cliff.toml > ... > .config/cliff.toml
-    fn find_project_config_file_returns_first_match_in_priority_order() -> Result<()> {
-        let dir = tempdir()?;
+        // Check config files in order of priority.
+        // cliff.toml has the highest priority to preserve
+        // Backward compatibility cliff.toml > .cliff.toml > ... > .config/cliff.toml
+        assert_eq!(Config::retrieve_project_config_path(dir.path()), None);
 
         fs::create_dir(dir.path().join(".config"))?;
         fs::write(dir.path().join(".config/cliff.toml"), "")?;
