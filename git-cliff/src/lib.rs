@@ -13,7 +13,7 @@ pub mod logger;
 use std::env;
 use std::fs::{self, File};
 use std::io::{self, Write};
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use args::{BumpOption, Opt, Sort, Strip};
@@ -183,6 +183,52 @@ pub fn init_config(name: Option<&str>, config_path: &Path) -> Result<()> {
     Ok(())
 }
 
+fn normalize_path(path: &Path) -> PathBuf {
+    let mut normalized = PathBuf::new();
+
+    for component in path.components() {
+        match component {
+            Component::Prefix(prefix) => normalized.push(prefix.as_os_str()),
+            Component::RootDir => normalized.push(component.as_os_str()),
+            Component::CurDir => {}
+            Component::ParentDir => {
+                if normalized.as_os_str().is_empty() || !normalized.pop() {
+                    normalized.push(component.as_os_str());
+                }
+            }
+            Component::Normal(part) => normalized.push(part),
+        }
+    }
+
+    normalized
+}
+
+fn resolve_workdir_include_path(
+    root: &Path,
+    cwd: &Path,
+    workdir: &Path,
+) -> Result<Option<Pattern>> {
+    let resolved_workdir = if workdir.is_absolute() {
+        normalize_path(workdir)
+    } else {
+        normalize_path(&cwd.join(workdir))
+    };
+
+    if !resolved_workdir.starts_with(root) || resolved_workdir == root {
+        return Ok(None);
+    }
+
+    let path = resolved_workdir.join("**").join("*");
+    if let Ok(stripped) = path.strip_prefix(root) {
+        log::info!(
+            "Including changes from the workdir: {}",
+            resolved_workdir.display()
+        );
+        return Ok(Some(Pattern::new(stripped.to_string_lossy().as_ref())?));
+    }
+
+    Ok(None)
+}
 /// Processes the tags and commits for creating release entries for the
 /// changelog.
 ///
@@ -291,6 +337,11 @@ fn process_repository<'a>(
     let cwd = env::current_dir()?;
     let mut include_path = config.git.include_paths.clone();
     if let Ok(root) = repository.root_path() {
+        if let Some(workdir) = args.workdir.as_ref() {
+            if let Some(pattern) = resolve_workdir_include_path(&root, &cwd, workdir)? {
+                include_path.push(pattern);
+            }
+        }
         if cwd.starts_with(&root) &&
             cwd != root &&
             args.repository.as_ref().is_none_or(Vec::is_empty) &&
@@ -867,4 +918,53 @@ pub fn write_changelog<W: io::Write>(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn as_str(pattern: &Option<Pattern>) -> Option<&str> {
+        pattern.as_ref().map(Pattern::as_str)
+    }
+
+    #[test]
+    fn workdir_at_root_returns_none() {
+        let root = Path::new("/repo");
+        let cwd = Path::new("/repo");
+        let result = resolve_workdir_include_path(root, cwd, Path::new(".")).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn workdir_subdirectory_scopes_to_subdir() {
+        let root = Path::new("/repo");
+        let cwd = Path::new("/repo");
+        let result = resolve_workdir_include_path(root, cwd, Path::new("sub")).unwrap();
+        assert_eq!(as_str(&result), Some("sub/**/*"));
+    }
+
+    #[test]
+    fn relative_workdir_from_parent_repo_root_returns_none() {
+        let root = Path::new("/parent/repo");
+        let cwd = Path::new("/parent");
+        let result = resolve_workdir_include_path(root, cwd, Path::new("./")).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn relative_workdir_from_parent_subdirectory_scopes_to_subdir() {
+        let root = Path::new("/parent/repo");
+        let cwd = Path::new("/parent");
+        let result = resolve_workdir_include_path(root, cwd, Path::new("repo/sub")).unwrap();
+        assert_eq!(as_str(&result), Some("sub/**/*"));
+    }
+
+    #[test]
+    fn absolute_workdir_outside_repo_returns_none() {
+        let root = Path::new("/repo");
+        let workdir = Path::new("/other/path");
+        let result = resolve_workdir_include_path(root, Path::new("/tmp"), workdir).unwrap();
+        assert!(result.is_none());
+    }
 }
