@@ -13,7 +13,7 @@ pub mod logger;
 use std::env;
 use std::fs::{self, File};
 use std::io::{self, Write};
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use args::{BumpOption, Opt, Sort, Strip};
@@ -181,58 +181,51 @@ pub fn init_config(name: Option<&str>, config_path: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Resolves include paths to repo-relative glob patterns.
-///
-/// Expects canonicalized paths for `canonical_root`, `cwd`, and
-/// `canonical_workdir` to handle symlinks correctly.
-fn resolve_include_paths(
-    canonical_root: &Path,
-    cwd: &Path,
-    canonical_workdir: Option<&Path>,
-    config_include_paths: &[Pattern],
-    has_repository_arg: bool,
-) -> Result<Option<Vec<Pattern>>> {
-    let mut patterns = Vec::new();
+fn normalize_path(path: &Path) -> PathBuf {
+    let mut normalized = PathBuf::new();
 
-    for pattern in config_include_paths {
-        patterns.push(normalize_to_repo_relative(canonical_root, pattern)?);
-    }
-
-    if let Some(workdir) = canonical_workdir {
-        if workdir != canonical_root {
-            if let Ok(rel) = workdir.strip_prefix(canonical_root) {
-                let glob = rel.join("**").join("*");
-                log::info!("Including changes from workdir: {}", workdir.display());
-                patterns.push(Pattern::new(glob.to_string_lossy().as_ref())?);
+    for component in path.components() {
+        match component {
+            Component::Prefix(prefix) => normalized.push(prefix.as_os_str()),
+            Component::RootDir => normalized.push(component.as_os_str()),
+            Component::CurDir => {}
+            Component::ParentDir => {
+                if normalized.as_os_str().is_empty() || !normalized.pop() {
+                    normalized.push(component.as_os_str());
+                }
             }
-        }
-    } else if patterns.is_empty() &&
-        cwd.starts_with(canonical_root) &&
-        cwd != canonical_root &&
-        !has_repository_arg
-    {
-        if let Ok(rel) = cwd.strip_prefix(canonical_root) {
-            let glob = rel.join("**").join("*");
-            log::info!(
-                "Including changes from current directory: {}",
-                cwd.display()
-            );
-            patterns.push(Pattern::new(glob.to_string_lossy().as_ref())?);
+            Component::Normal(part) => normalized.push(part),
         }
     }
 
-    Ok((!patterns.is_empty()).then_some(patterns))
+    normalized
 }
 
-/// Strips the repo root prefix from absolute patterns.
-fn normalize_to_repo_relative(canonical_root: &Path, pattern: &Pattern) -> Result<Pattern> {
-    let pattern_path = Path::new(pattern.as_str());
-    if pattern_path.is_absolute() {
-        if let Ok(stripped) = pattern_path.strip_prefix(canonical_root) {
-            return Ok(Pattern::new(stripped.to_string_lossy().as_ref())?);
-        }
+fn resolve_workdir_include_path(
+    root: &Path,
+    cwd: &Path,
+    workdir: &Path,
+) -> Result<Option<Pattern>> {
+    let resolved_workdir = if workdir.is_absolute() {
+        normalize_path(workdir)
+    } else {
+        normalize_path(&cwd.join(workdir))
+    };
+
+    if !resolved_workdir.starts_with(root) || resolved_workdir == root {
+        return Ok(None);
     }
-    Ok(pattern.clone())
+
+    let path = resolved_workdir.join("**").join("*");
+    if let Ok(stripped) = path.strip_prefix(root) {
+        log::info!(
+            "Including changes from the workdir: {}",
+            resolved_workdir.display()
+        );
+        return Ok(Some(Pattern::new(stripped.to_string_lossy().as_ref())?));
+    }
+
+    Ok(None)
 }
 
 /// Processes the tags and commits for creating release entries for the
@@ -328,23 +321,32 @@ fn process_repository<'a>(
     let commit_range = determine_commit_range(args, config, repository)?;
 
     let cwd = env::current_dir()?;
-    let include_path = if let Ok(root) = repository.root_path() {
-        let canonical_root = fs::canonicalize(&root).unwrap_or(root);
-        let canonical_cwd = fs::canonicalize(&cwd).unwrap_or(cwd);
-        let canonical_workdir = args
-            .workdir
-            .as_ref()
-            .map(|w| fs::canonicalize(w).unwrap_or(w.clone()));
-        resolve_include_paths(
-            &canonical_root,
-            &canonical_cwd,
-            canonical_workdir.as_deref(),
-            &config.git.include_paths,
-            args.repository.as_ref().is_some_and(|r| !r.is_empty()),
-        )?
-    } else {
-        (!config.git.include_paths.is_empty()).then_some(config.git.include_paths.clone())
-    };
+    let mut include_path = config.git.include_paths.clone();
+    if let Ok(root) = repository.root_path() {
+        if let Some(workdir) = args.workdir.as_ref() {
+            if let Some(pattern) = resolve_workdir_include_path(&root, &cwd, workdir)? {
+                include_path.push(pattern);
+            }
+        }
+
+        if cwd.starts_with(&root) &&
+            cwd != root &&
+            args.repository.as_ref().is_none_or(Vec::is_empty) &&
+            args.workdir.is_none() &&
+            include_path.is_empty()
+        {
+            let path = cwd.join("**").join("*");
+            if let Ok(stripped) = path.strip_prefix(&root) {
+                log::info!(
+                    "Including changes from the current directory: {}",
+                    cwd.display()
+                );
+                include_path = vec![Pattern::new(stripped.to_string_lossy().as_ref())?];
+            }
+        }
+    }
+
+    let include_path = (!include_path.is_empty()).then_some(include_path);
     let exclude_path =
         (!config.git.exclude_paths.is_empty()).then_some(config.git.exclude_paths.clone());
     let mut commits = repository.commits(
@@ -890,98 +892,47 @@ pub fn write_changelog<W: io::Write>(
 mod tests {
     use super::*;
 
-    fn as_strs(patterns: &Option<Vec<Pattern>>) -> Vec<&str> {
-        patterns
-            .as_ref()
-            .unwrap()
-            .iter()
-            .map(|p| p.as_str())
-            .collect()
+    fn as_str(pattern: &Option<Pattern>) -> Option<&str> {
+        pattern.as_ref().map(Pattern::as_str)
     }
 
     #[test]
     fn workdir_at_root_returns_none() {
         let root = Path::new("/repo");
-        let result = resolve_include_paths(root, root, Some(root), &[], false).unwrap();
+        let cwd = Path::new("/repo");
+        let result = resolve_workdir_include_path(root, cwd, Path::new(".")).unwrap();
         assert!(result.is_none());
     }
 
     #[test]
     fn workdir_subdirectory_scopes_to_subdir() {
         let root = Path::new("/repo");
-        let workdir = Path::new("/repo/sub");
-        let result =
-            resolve_include_paths(root, Path::new("/somewhere"), Some(workdir), &[], false)
-                .unwrap();
-        assert_eq!(as_strs(&result), vec!["sub/**/*"]);
+        let cwd = Path::new("/repo");
+        let result = resolve_workdir_include_path(root, cwd, Path::new("sub")).unwrap();
+        assert_eq!(as_str(&result), Some("sub/**/*"));
     }
 
     #[test]
-    fn workdir_outside_repo_returns_none() {
+    fn relative_workdir_from_parent_repo_root_returns_none() {
+        let root = Path::new("/parent/repo");
+        let cwd = Path::new("/parent");
+        let result = resolve_workdir_include_path(root, cwd, Path::new("./")).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn relative_workdir_from_parent_subdirectory_scopes_to_subdir() {
+        let root = Path::new("/parent/repo");
+        let cwd = Path::new("/parent");
+        let result = resolve_workdir_include_path(root, cwd, Path::new("repo/sub")).unwrap();
+        assert_eq!(as_str(&result), Some("sub/**/*"));
+    }
+
+    #[test]
+    fn absolute_workdir_outside_repo_returns_none() {
         let root = Path::new("/repo");
         let workdir = Path::new("/other/path");
-        let result =
-            resolve_include_paths(root, Path::new("/somewhere"), Some(workdir), &[], false)
-                .unwrap();
+        let result = resolve_workdir_include_path(root, Path::new("/tmp"), workdir).unwrap();
         assert!(result.is_none());
-    }
-
-    #[test]
-    fn implicit_cwd_scoping_in_subdirectory() {
-        let root = Path::new("/repo");
-        let cwd = Path::new("/repo/crate-a");
-        let result = resolve_include_paths(root, cwd, None, &[], false).unwrap();
-        assert_eq!(as_strs(&result), vec!["crate-a/**/*"]);
-    }
-
-    #[test]
-    fn no_scoping_when_cwd_is_root() {
-        let root = Path::new("/repo");
-        let result = resolve_include_paths(root, root, None, &[], false).unwrap();
-        assert!(result.is_none());
-    }
-
-    #[test]
-    fn no_implicit_scoping_with_repository_arg() {
-        let root = Path::new("/repo");
-        let cwd = Path::new("/repo/sub");
-        let result = resolve_include_paths(root, cwd, None, &[], true).unwrap();
-        assert!(result.is_none());
-    }
-
-    #[test]
-    fn config_patterns_combined_with_workdir() {
-        let root = Path::new("/repo");
-        let workdir = Path::new("/repo/sub");
-        let config_patterns = vec![Pattern::new("docs/**").unwrap()];
-        let result = resolve_include_paths(
-            root,
-            Path::new("/somewhere"),
-            Some(workdir),
-            &config_patterns,
-            false,
-        )
-        .unwrap();
-        assert_eq!(as_strs(&result), vec!["docs/**", "sub/**/*"]);
-    }
-
-    #[test]
-    fn normalize_strips_repo_root_from_absolute() {
-        let root = Path::new("/repo");
-        let pattern = Pattern::new("/repo/src/main.rs").unwrap();
-        assert_eq!(
-            normalize_to_repo_relative(root, &pattern).unwrap().as_str(),
-            "src/main.rs"
-        );
-    }
-
-    #[test]
-    fn normalize_passes_relative_patterns_through() {
-        let root = Path::new("/repo");
-        let pattern = Pattern::new("src/**/*.rs").unwrap();
-        assert_eq!(
-            normalize_to_repo_relative(root, &pattern).unwrap().as_str(),
-            "src/**/*.rs"
-        );
     }
 }
