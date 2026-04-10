@@ -100,6 +100,7 @@ impl Remote {
         if !self.is_set() {
             return Err(Error::RemoteNotSetError);
         }
+        // cannot panic - see https://github.com/lunacookies/etcetera/issues/42
         let strategy = choose_base_strategy()
             .expect("cannot determine current OS's default strategy (layout)");
         let mut headers = HeaderMap::new();
