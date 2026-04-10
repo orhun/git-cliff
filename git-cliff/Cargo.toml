@@ -11,7 +11,7 @@ keywords = ["changelog", "generator", "conventional", "commit"]
 categories = ["command-line-utilities"]
 default-run = "git-cliff"
 edition = "2024"
-rust-version = "1.85.1"
+rust-version = "1.87.0"
 
 [[bin]]
 name = "git-cliff-completions"
