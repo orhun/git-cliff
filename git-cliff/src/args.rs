@@ -510,7 +510,7 @@ mod tests {
 
     #[test]
     fn path_tilde_expansion() {
-        let home_dir = dirs::home_dir().expect("cannot retrieve home directory");
+        let home_dir = std::env::home_dir().expect("cannot retrieve home directory");
         let dir = Opt::parse_dir("~/").expect("cannot expand tilde");
         assert_eq!(home_dir, dir);
     }

@@ -3,6 +3,7 @@ use std::str::FromStr;
 use std::sync::LazyLock;
 use std::{fmt, fs};
 
+use etcetera::{BaseStrategy, choose_base_strategy};
 use glob::Pattern;
 use regex::{Regex, RegexBuilder};
 use secrecy::SecretString;
@@ -488,34 +489,25 @@ impl Config {
             .try_deserialize()?)
     }
 
-    /// Find a special config path on macOS.
-    ///
-    /// The `dirs` crate ignores the `XDG_CONFIG_HOME` env var on macOS and only considers
-    /// `Library/Application Support` as the config dir, which is primarily used by GUI apps.
-    ///
-    /// This function determines the config path and honors the `XDG_CONFIG_HOME` env var.
-    /// If it is not set, it will fall back to `~/.config`
-    #[cfg(target_os = "macos")]
-    pub fn retrieve_xdg_config_on_macos() -> PathBuf {
-        let config_dir = std::env::var("XDG_CONFIG_HOME").map_or_else(
-            |_| dirs::home_dir().unwrap_or_default().join(".config"),
-            PathBuf::from,
-        );
-        config_dir.join("git-cliff")
-    }
-
     /// Find the path of the config file.
     ///
     /// If the config file is not found in its standard locations, [`None`] is returned.
     #[must_use]
     pub fn retrieve_config_path() -> Option<PathBuf> {
+        // cannot panic - see https://github.com/lunacookies/etcetera/issues/42
+        let strategy = choose_base_strategy()
+            .expect("cannot determine current OS's default strategy (layout)");
         for supported_path in [
+            strategy.config_dir().join("git-cliff").join(DEFAULT_CONFIG),
+            // paths for backwards compatibility
             #[cfg(target_os = "macos")]
-            Some(Config::retrieve_xdg_config_on_macos().join(DEFAULT_CONFIG)),
-            dirs::config_dir().map(|dir| dir.join("git-cliff").join(DEFAULT_CONFIG)),
+            strategy
+                .home_dir()
+                .to_path_buf()
+                .join("Library/Application Support/git-cliff")
+                .join(DEFAULT_CONFIG),
         ]
         .iter()
-        .filter_map(|v| v.as_ref())
         {
             if supported_path.exists() {
                 #[allow(clippy::unnecessary_debug_formatting)]
