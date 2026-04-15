@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::commit::Commit;
+use crate::commit::{Commit, Range};
 use crate::config::{Config, GitConfig};
 use crate::error::{Error, Result};
 use crate::release::{Release, Releases};
@@ -240,11 +240,13 @@ impl<'a> Changelog<'a> {
         Ok(())
     }
 
-    /// Processes the releases and filters them out based on the configuration.
+    /// Processes the releases and skip the releases specified on the configuration.
     fn process_releases(&mut self) {
         log::debug!("Processing {} release(s)", self.releases.len());
         let skip_regex = self.config.git.skip_tags.as_ref();
         let mut skipped_tags = Vec::new();
+
+        // Filtering out all the skipped releases and updating the previous pointers
         self.releases = self
             .releases
             .clone()
@@ -258,20 +260,8 @@ impl<'a> Changelog<'a> {
                         return false;
                     }
                 }
-                if release.commits.is_empty() {
-                    if let Some(version) = release.version.clone() {
-                        log::debug!("Release doesn't have any commits: {version}");
-                    }
-                    match &release.previous {
-                        Some(prev_release) if prev_release.commits.is_empty() => {
-                            return self.config.changelog.render_always;
-                        }
-                        _ => return false,
-                    }
-                }
                 true
             })
-            .map(Release::with_statistics)
             .collect();
         for skipped_tag in &skipped_tags {
             if let Some(release_index) = self.releases.iter().position(|release| {
@@ -290,6 +280,92 @@ impl<'a> Changelog<'a> {
                 }
             }
         }
+    }
+
+    /// Process the releases and filters out (by merging to the next release) the releases specified
+    /// in the configuration
+    pub fn filter_releases(&mut self) {
+        // Merging the ignored releases into the next release
+        let ignore_regex = self.config.git.ignore_tags.as_ref();
+        let count_tags = self.config.git.count_tags.as_ref();
+
+        let mut filtered_releases = vec![];
+        let mut current_release = if let Some(first) = self.releases.first() {
+            // The first release in the vector contains all the unreleased changes
+            first.clone()
+        } else {
+            return;
+        };
+
+        self.releases
+            .iter()
+            // We have already taken the first release above
+            .skip(1)
+            .for_each(|release| {
+                if let Some(name) = &release.version {
+                    log::debug!("Processing release: {}", name);
+
+                    let count = count_tags.is_none_or(|r| {
+                        let count_tag = r.is_match(name);
+                        if count_tag {
+                            log::debug!("Counting release: {}", name);
+                        }
+                        count_tag
+                    });
+
+                    let ignore = ignore_regex.is_some_and(|r| {
+                        if r.as_str().trim().is_empty() {
+                            return false;
+                        }
+
+                        let ignore_tag = r.is_match(name);
+                        if ignore_tag {
+                            log::debug!("Ignoring release: {}", name);
+                        }
+                        ignore_tag
+                    });
+
+                    if count && !ignore {
+                        filtered_releases.push(current_release.clone());
+                        current_release = release.clone();
+                    } else {
+                        let mut new_commits = release.commits.clone();
+                        new_commits.extend(current_release.commits.clone());
+
+                        if let Some(start) = new_commits.first() {
+                            if let Some(end) = new_commits.last() {
+                                {
+                                    current_release.commit_range = Some(Range::new(start, end));
+                                }
+                            }
+                        }
+
+                        current_release.commits = new_commits;
+                        current_release.previous = release.previous.clone();
+                    }
+                }
+            });
+
+        filtered_releases.push(current_release);
+
+        self.releases = filtered_releases
+            .into_iter()
+            .filter(|release| {
+                if release.commits.is_empty() {
+                    if let Some(version) = release.version.clone() {
+                        log::debug!("Release doesn't have any commits: {}", version);
+                    }
+                    match &release.previous {
+                        Some(prev_release) if prev_release.commits.is_empty() => {
+                            return self.config.changelog.render_always;
+                        }
+                        _ => return false,
+                    }
+                }
+                true
+            })
+            .map(|release| release.with_statistics())
+            .collect();
     }
 
     /// Returns the GitHub metadata needed for the changelog.
@@ -1347,6 +1423,7 @@ mod test {
         changelog.bump_version()?;
         changelog.releases[0].timestamp = Some(0);
         let mut out = Vec::new();
+        changelog.filter_releases();
         changelog.generate(&mut out)?;
         assert_eq!(
             String::from(
@@ -1445,8 +1522,9 @@ mod test {
         releases[0].commits = Vec::new();
         releases[2].commits = Vec::new();
         releases[2].previous = Some(Box::new(releases[0].clone()));
-        let changelog = Changelog::new(releases, config, None)?;
+        let mut changelog = Changelog::new(releases, config, None)?;
         let mut out = Vec::new();
+        changelog.filter_releases();
         changelog.generate(&mut out)?;
         assert_eq!(
             String::from(
@@ -1529,8 +1607,9 @@ chore(deps): fix broken deps
             },
             ..Default::default()
         });
-        let changelog = Changelog::new(releases, config, None)?;
+        let mut changelog = Changelog::new(releases, config, None)?;
         let mut out = Vec::new();
+        changelog.filter_releases();
         changelog.generate(&mut out)?;
         assert_eq!(
             String::from(

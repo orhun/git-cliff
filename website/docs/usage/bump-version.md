@@ -54,6 +54,39 @@ Optionally, you can specify a bump type in `--bump`:
 git cliff --bump [major|minor|patch]
 ```
 
+## Prerelease versions
+
+You can initialize a prerelease for a base version bump:
+
+```bash
+git cliff --bump --prerelease beta
+```
+
+This produces a version such as `1.3.0-beta.0`.
+
+To increment an existing prerelease suffix without changing the base version:
+
+```bash
+git cliff --bump prerelease
+```
+
+Examples:
+
+- `1.2.0-beta.0` -> `1.2.0-beta.1`
+- `1.2.0-beta` -> `1.2.0-beta.1`
+- `1.2.0-beta.2` -> `1.2.0-beta.3`
+
+To finalize a prerelease as a stable release:
+
+```bash
+git cliff --release
+```
+
+Examples:
+
+- `1.2.0-beta.2` -> `1.2.0`
+- `1.2.0-rc.1+build.45` -> `1.2.0+build.45`
+
 ## Zero-based versioning scheme
 
 When working with a zero-based versioning scheme (i.e., `0.x.y` or `0.0.x`),

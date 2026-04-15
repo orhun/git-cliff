@@ -198,6 +198,19 @@ pub struct Opt {
         allow_hyphen_values = true
     )]
     pub tag: Option<String>,
+    /// Initializes the prerelease suffix for a base version bump.
+    #[arg(
+        long = "prerelease",
+        value_name = "IDENTIFIER",
+        requires = "bump",
+        conflicts_with = "release"
+    )]
+    pub prerelease: Option<String>,
+
+    /// Finalizes the current prerelease version by removing its suffix.
+    #[arg(long, help_heading = Some("FLAGS"), conflicts_with = "prerelease")]
+    pub release: bool,
+
     /// Bumps the version for unreleased changes. Optionally with specified
     /// version.
     #[arg(
@@ -450,6 +463,7 @@ impl TypedValueParser for BumpOptionParser {
             "major" => Ok(BumpOption::Specific(BumpType::Major)),
             "minor" => Ok(BumpOption::Specific(BumpType::Minor)),
             "patch" => Ok(BumpOption::Specific(BumpType::Patch)),
+            "prerelease" => Ok(BumpOption::Specific(BumpType::Prerelease)),
             _ => {
                 let mut err = clap::Error::new(ErrorKind::ValueValidation).with_cmd(cmd);
                 if let Some(arg) = arg {
@@ -579,6 +593,10 @@ mod tests {
         assert_eq!(
             BumpOption::Specific(BumpType::Major),
             bump_option_parser.parse_ref(&Opt::command(), None, OsStr::new("major"))?
+        );
+        assert_eq!(
+            BumpOption::Specific(BumpType::Prerelease),
+            bump_option_parser.parse_ref(&Opt::command(), None, OsStr::new("prerelease"))?
         );
         Ok(())
     }
