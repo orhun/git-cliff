@@ -25,7 +25,7 @@ use git_cliff_core::embed::{BuiltinConfig, EmbeddedConfig};
 use git_cliff_core::error::{Error, Result};
 use git_cliff_core::release::Release;
 use git_cliff_core::repo::{Repository, SubmoduleRange};
-use git_cliff_core::{DEFAULT_CONFIG, IGNORE_FILE};
+use git_cliff_core::{CONFIG_CANDIDATES, DEFAULT_CONFIG, IGNORE_FILE};
 use glob::Pattern;
 
 /// Checks for a new version on crates.io
@@ -570,8 +570,10 @@ pub fn run_with_changelog_modifier<'a>(
     } else if let Some(contents) = Config::read_from_manifest()? {
         contents.parse()?
     } else if let Some(discovered_path) = env::current_dir()?.ancestors().find_map(|dir| {
-        let path = dir.join(DEFAULT_CONFIG);
-        if path.is_file() { Some(path) } else { None }
+        CONFIG_CANDIDATES
+            .iter()
+            .map(|name| dir.join(name))
+            .find(|p| p.is_file())
     }) {
         log::info!(
             "Using configuration from parent directory: {}",

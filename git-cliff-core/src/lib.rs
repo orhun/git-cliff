@@ -46,6 +46,11 @@ pub mod template;
 
 /// Default configuration file.
 pub const DEFAULT_CONFIG: &str = "cliff.toml";
+/// Alternative configuration file names searched in order when the default is not found.
+///
+/// This allows users to use a dot-prefixed file (`.cliff.toml`) to keep the
+/// project root tidy, following a convention used by many other tools.
+pub const CONFIG_CANDIDATES: &[&str] = &[DEFAULT_CONFIG, ".cliff.toml"];
 /// Default output file.
 pub const DEFAULT_OUTPUT: &str = "CHANGELOG.md";
 /// Default ignore file.

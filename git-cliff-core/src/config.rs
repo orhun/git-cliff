@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::embed::EmbeddedConfig;
 use crate::error::Result;
-use crate::{DEFAULT_CONFIG, command, error};
+use crate::{CONFIG_CANDIDATES, command, error};
 
 /// Default initial tag.
 const DEFAULT_INITIAL_TAG: &str = "0.1.0";
@@ -497,24 +497,32 @@ impl Config {
         // cannot panic - see https://github.com/lunacookies/etcetera/issues/42
         let strategy = choose_base_strategy()
             .expect("cannot determine current OS's default strategy (layout)");
-        for supported_path in [
-            strategy.config_dir().join("git-cliff").join(DEFAULT_CONFIG),
-            // paths for backwards compatibility
-            #[cfg(target_os = "macos")]
-            strategy
-                .home_dir()
-                .to_path_buf()
-                .join("Library/Application Support/git-cliff")
-                .join(DEFAULT_CONFIG),
-        ]
-        .iter()
-        {
-            if supported_path.exists() {
+        let config_dir = strategy.config_dir();
+
+        let mut candidates: Vec<PathBuf> = CONFIG_CANDIDATES
+            .iter()
+            .map(|name| config_dir.join("git-cliff").join(name))
+            .collect();
+
+        // legacy macOS paths for backwards compatibility
+        #[cfg(target_os = "macos")]
+        for name in CONFIG_CANDIDATES {
+            candidates.push(
+                strategy
+                    .home_dir()
+                    .to_path_buf()
+                    .join("Library/Application Support/git-cliff")
+                    .join(name),
+            );
+        }
+
+        for path in &candidates {
+            if path.exists() {
                 #[allow(clippy::unnecessary_debug_formatting)]
                 {
-                    log::debug!("Using configuration file from: {supported_path:?}");
+                    log::debug!("Using configuration file from: {path:?}");
                 }
-                return Some(supported_path.clone());
+                return Some(path.clone());
             }
         }
         None
@@ -600,5 +608,12 @@ mod test {
         assert!(!Remote::new("", "test").is_set());
         assert!(!Remote::new("test", "").is_set());
         assert!(!Remote::new("", "").is_set());
+    }
+
+    #[test]
+    fn config_candidates_order() {
+        // cliff.toml must remain the primary (index 0) so existing setups are unaffected
+        assert_eq!(crate::CONFIG_CANDIDATES[0], crate::DEFAULT_CONFIG);
+        assert!(crate::CONFIG_CANDIDATES.contains(&".cliff.toml"));
     }
 }
