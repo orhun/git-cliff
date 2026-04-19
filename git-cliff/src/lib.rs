@@ -809,7 +809,18 @@ pub fn write_changelog<W: io::Write>(
         .clone()
         .or(changelog.config.changelog.output.clone());
     if args.bump.is_some() || args.bumped_version {
+        let current_version = changelog.releases.first().and_then(|release| {
+            release.version.clone().or_else(|| {
+                release
+                    .previous
+                    .as_ref()
+                    .and_then(|previous| previous.version.clone())
+            })
+        });
         let next_version = if let Some(next_version) = changelog.bump_version()? {
+            if current_version.as_ref() == Some(&next_version) {
+                log::warn!("There is nothing to bump");
+            }
             next_version
         } else if let Some(last_version) =
             changelog.releases.first().cloned().and_then(|v| v.version)
@@ -851,4 +862,92 @@ pub fn write_changelog<W: io::Write>(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::{Mutex, Once, OnceLock};
+
+    use clap::Parser;
+    use git_cliff_core::changelog::Changelog;
+    use git_cliff_core::commit::Commit;
+    use git_cliff_core::embed::EmbeddedConfig;
+    use git_cliff_core::release::Release;
+    use log::{Level, LevelFilter, Metadata, Record};
+
+    use super::{Opt, Result, write_changelog};
+
+    static LOGGER_INIT: Once = Once::new();
+    static TEST_LOGS: OnceLock<Mutex<Vec<String>>> = OnceLock::new();
+
+    struct TestLogger;
+
+    impl log::Log for TestLogger {
+        fn enabled(&self, metadata: &Metadata<'_>) -> bool {
+            metadata.level() <= Level::Warn
+        }
+
+        fn log(&self, record: &Record<'_>) {
+            if self.enabled(record.metadata()) {
+                TEST_LOGS
+                    .get_or_init(|| Mutex::new(Vec::new()))
+                    .lock()
+                    .unwrap()
+                    .push(record.args().to_string());
+            }
+        }
+
+        fn flush(&self) {}
+    }
+
+    fn init_test_logger() {
+        static LOGGER: TestLogger = TestLogger;
+
+        LOGGER_INIT.call_once(|| {
+            log::set_logger(&LOGGER).expect("test logger should only be installed once");
+            log::set_max_level(LevelFilter::Warn);
+        });
+
+        TEST_LOGS
+            .get_or_init(|| Mutex::new(Vec::new()))
+            .lock()
+            .unwrap()
+            .clear();
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn bumped_version_warns_when_with_commit_does_not_change_version() -> Result<()> {
+        init_test_logger();
+
+        let mut config = EmbeddedConfig::parse()?;
+        config.remote.offline = true;
+
+        let changelog = Changelog::new(
+            vec![Release {
+                commits: vec![Commit::from(String::from("test"))],
+                previous: Some(Box::new(Release {
+                    version: Some(String::from("v0.1.0")),
+                    ..Default::default()
+                })),
+                ..Default::default()
+            }],
+            config,
+            None,
+        )?;
+
+        let args = Opt::parse_from(["git-cliff", "--bumped-version"]);
+        let mut out = Vec::new();
+        write_changelog(&args, changelog, &mut out)?;
+
+        assert_eq!(String::from_utf8(out).unwrap(), "v0.1.0\n");
+        assert!(TEST_LOGS
+            .get_or_init(|| Mutex::new(Vec::new()))
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|message| message.contains("There is nothing to bump")));
+
+        Ok(())
+    }
 }
