@@ -621,7 +621,7 @@ mod test {
     }
 
     #[test]
-    fn process_commit_list_keeps_legacy_behavior_when_order_is_unset() {
+    fn process_commit_list_keeps_legacy_behavior_when_order_is_unset() -> Result<()> {
         let mut commits = vec![Commit::new(
             String::from("123123"),
             String::from("chore(ci): update runner\nfix(ci): restore build"),
@@ -660,12 +660,14 @@ mod test {
             ..Default::default()
         };
 
-        process_commit_list(&mut commits, &cfg, &mut Summary::default()).unwrap();
+        process_commit_list(&mut commits, &cfg, &mut Summary::default())?;
         assert!(commits.is_empty());
+
+        Ok(())
     }
 
     #[test]
-    fn process_commit_list_supports_ordered_split_before_parsing() {
+    fn process_commit_list_supports_ordered_split_before_parsing() -> Result<()> {
         let mut commits = vec![Commit::new(
             String::from("123123"),
             String::from("chore(ci): update runner\nfix(ci): restore build"),
@@ -710,10 +712,12 @@ mod test {
             ..Default::default()
         };
 
-        process_commit_list(&mut commits, &cfg, &mut Summary::default()).unwrap();
+        process_commit_list(&mut commits, &cfg, &mut Summary::default())?;
         assert_eq!(commits.len(), 1);
         assert_eq!(commits[0].group.as_deref(), Some("fix"));
         assert_eq!(commits[0].message, "fix(ci): restore build");
+
+        Ok(())
     }
 
     #[test]
