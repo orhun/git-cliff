@@ -544,7 +544,7 @@ pub fn run_with_changelog_modifier<'a>(
     // Set path for the configuration file.
     let mut path = args.config.clone();
     if !path.exists() {
-        if let Some(config_path) = Config::retrieve_config_path() {
+        if let Some(config_path) = Config::retrieve_user_config_path() {
             path = config_path;
         }
     }
@@ -569,10 +569,10 @@ pub fn run_with_changelog_modifier<'a>(
         Config::load(&path)?
     } else if let Some(contents) = Config::read_from_manifest()? {
         contents.parse()?
-    } else if let Some(discovered_path) = env::current_dir()?.ancestors().find_map(|dir| {
-        let path = dir.join(DEFAULT_CONFIG);
-        if path.is_file() { Some(path) } else { None }
-    }) {
+    } else if let Some(discovered_path) = env::current_dir()?
+        .ancestors()
+        .find_map(Config::retrieve_project_config_path)
+    {
         log::info!(
             "Using configuration from parent directory: {}",
             discovered_path.display()

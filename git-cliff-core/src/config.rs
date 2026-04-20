@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::embed::EmbeddedConfig;
 use crate::error::Result;
-use crate::{DEFAULT_CONFIG, command, error};
+use crate::{CONFIG_FILES, DEFAULT_CONFIG, command, error};
 
 /// Default initial tag.
 const DEFAULT_INITIAL_TAG: &str = "0.1.0";
@@ -493,7 +493,7 @@ impl Config {
     ///
     /// If the config file is not found in its standard locations, [`None`] is returned.
     #[must_use]
-    pub fn retrieve_config_path() -> Option<PathBuf> {
+    pub fn retrieve_user_config_path() -> Option<PathBuf> {
         // cannot panic - see https://github.com/lunacookies/etcetera/issues/42
         let strategy = choose_base_strategy()
             .expect("cannot determine current OS's default strategy (layout)");
@@ -518,6 +518,14 @@ impl Config {
             }
         }
         None
+    }
+
+    /// Returns the first valid configuration file found in `dir`.
+    pub fn retrieve_project_config_path(dir: &Path) -> Option<PathBuf> {
+        CONFIG_FILES.iter().find_map(|file| {
+            let path = dir.join(file);
+            if path.is_file() { Some(path) } else { None }
+        })
     }
 }
 
@@ -545,9 +553,10 @@ impl FromStr for Config {
 
 #[cfg(test)]
 mod test {
-    use std::env;
+    use std::{env, fs};
 
     use pretty_assertions::assert_eq;
+    use temp_dir::TempDir;
 
     use super::*;
 
@@ -600,5 +609,30 @@ mod test {
         assert!(!Remote::new("", "test").is_set());
         assert!(!Remote::new("test", "").is_set());
         assert!(!Remote::new("", "").is_set());
+    }
+
+    #[test]
+    fn find_project_config_file() -> Result<()> {
+        let dir = TempDir::with_prefix("git-cliff-").expect("failed to create temp dir");
+
+        // Check config files in order of priority.
+        // cliff.toml has the highest priority to preserve
+        // Backward compatibility cliff.toml > .cliff.toml > ... > .config/cliff.toml
+        assert_eq!(Config::retrieve_project_config_path(dir.path()), None);
+
+        fs::create_dir(dir.path().join(".config"))?;
+        fs::write(dir.path().join(".config/cliff.toml"), "")?;
+        assert_eq!(
+            Config::retrieve_project_config_path(dir.path()),
+            Some(dir.path().join(".config/cliff.toml")),
+        );
+
+        fs::write(dir.path().join("cliff.toml"), "")?;
+        assert_eq!(
+            Config::retrieve_project_config_path(dir.path()),
+            Some(dir.path().join("cliff.toml")),
+        );
+
+        Ok(())
     }
 }
