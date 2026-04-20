@@ -133,7 +133,7 @@ fn process_submodules(
     // SubmoduleRange is created, describing the range of commits in the context
     // of that submodule.
     if let Some(last_commit) = last_commit {
-        let submodule_ranges = repository.submodules_range(first_commit, last_commit)?;
+        let submodule_ranges = repository.submodules_range(first_commit.as_ref(), &last_commit)?;
         let submodule_commits = submodule_ranges.iter().filter_map(|submodule_range| {
             // For each submodule, the commit range is exploded into a list of
             // commits.
@@ -809,7 +809,20 @@ pub fn write_changelog<W: io::Write>(
         .clone()
         .or(changelog.config.changelog.output.clone());
     if args.bump.is_some() || args.bumped_version {
+        let current_version = changelog.releases.first().and_then(|release| {
+            release.version.clone().or_else(|| {
+                release
+                    .previous
+                    .as_ref()
+                    .and_then(|previous| previous.version.clone())
+            })
+        });
         let next_version = if let Some(next_version) = changelog.bump_version()? {
+            if current_version.as_ref() == Some(&next_version) {
+                log::warn!(
+                    "The next version is the same as the current version, there is nothing to bump"
+                );
+            }
             next_version
         } else if let Some(last_version) =
             changelog.releases.first().cloned().and_then(|v| v.version)

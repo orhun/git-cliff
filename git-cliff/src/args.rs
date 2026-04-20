@@ -51,6 +51,7 @@ const STYLES: Styles = Styles::styled()
 	disable_version_flag = true,
     styles(STYLES),
 )]
+#[allow(clippy::struct_excessive_bools)]
 pub struct Opt {
     #[arg(
 		short,
@@ -119,6 +120,7 @@ pub struct Opt {
 		long,
 		env = "GIT_CLIFF_INCLUDE_PATH",
 		value_name = "PATTERN",
+		value_delimiter = ' ',
 		num_args(1..)
 	)]
     pub include_path: Option<Vec<Pattern>>,
@@ -127,6 +129,7 @@ pub struct Opt {
 		long,
 		env = "GIT_CLIFF_EXCLUDE_PATH",
 		value_name = "PATTERN",
+		value_delimiter = ' ',
 		num_args(1..)
 	)]
     pub exclude_path: Option<Vec<Pattern>>,
@@ -469,6 +472,7 @@ impl Opt {
     /// input string into contents of the path returned by [`home_dir`].
     ///
     /// [`home_dir`]: dirs::home_dir
+    #[allow(clippy::unnecessary_wraps)]
     fn parse_dir(dir: &str) -> Result<PathBuf, String> {
         Ok(PathBuf::from(shellexpand::tilde(dir).to_string()))
     }
@@ -476,11 +480,28 @@ impl Opt {
 
 #[cfg(test)]
 mod tests {
+    use std::env;
     use std::ffi::OsStr;
 
     use clap::CommandFactory;
+    use serial_test::serial;
 
     use super::*;
+
+    struct EnvVarGuard(&'static str);
+
+    impl EnvVarGuard {
+        fn set(key: &'static str, value: &str) -> Self {
+            unsafe { env::set_var(key, value) };
+            Self(key)
+        }
+    }
+
+    impl Drop for EnvVarGuard {
+        fn drop(&mut self) {
+            unsafe { env::remove_var(self.0) };
+        }
+    }
 
     #[test]
     fn verify_cli() {
@@ -489,7 +510,7 @@ mod tests {
 
     #[test]
     fn path_tilde_expansion() {
-        let home_dir = dirs::home_dir().expect("cannot retrieve home directory");
+        let home_dir = std::env::home_dir().expect("cannot retrieve home directory");
         let dir = Opt::parse_dir("~/").expect("cannot expand tilde");
         assert_eq!(home_dir, dir);
     }
@@ -559,6 +580,35 @@ mod tests {
             BumpOption::Specific(BumpType::Major),
             bump_option_parser.parse_ref(&Opt::command(), None, OsStr::new("major"))?
         );
+        Ok(())
+    }
+
+    // Environment variables are process-global, so tests that modify them must run exclusively and
+    // restore the original state after execution. For this reason, we use the `serial` macro
+    // from the `serial_test` crate to guarantee exclusive execution. See: https://crates.io/crates/serial_test
+    #[test]
+    #[serial]
+    fn path_env_vars_are_split_into_multiple_patterns() -> Result<(), Box<dyn std::error::Error>> {
+        let _include = EnvVarGuard::set("GIT_CLIFF_INCLUDE_PATH", "website/**/* .github/**/*");
+        let _exclude = EnvVarGuard::set("GIT_CLIFF_EXCLUDE_PATH", "docs/**/* tests/**/*");
+
+        let opt = Opt::try_parse_from(["git-cliff"])?;
+
+        assert_eq!(
+            Some(vec![
+                Pattern::new("website/**/*")?,
+                Pattern::new(".github/**/*")?,
+            ]),
+            opt.include_path
+        );
+        assert_eq!(
+            Some(vec![
+                Pattern::new("docs/**/*")?,
+                Pattern::new("tests/**/*")?
+            ]),
+            opt.exclude_path
+        );
+
         Ok(())
     }
 }

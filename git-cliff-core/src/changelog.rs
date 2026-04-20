@@ -212,7 +212,7 @@ impl<'a> Changelog<'a> {
         log::debug!("Processing the commits");
 
         let mut summary = Summary::default();
-        for release in self.releases.iter_mut() {
+        for release in &mut self.releases {
             Self::process_commit_list(&mut release.commits, &self.config.git, &mut summary)?;
             for submodule_commits in release.submodule_commits.values_mut() {
                 Self::process_commit_list(submodule_commits, &self.config.git, &mut summary)?;

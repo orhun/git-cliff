@@ -71,23 +71,11 @@ env UPDATE_EXPECT=1 cargo test
 
 4. Run CI checks locally - `clippy` (warnings are errors)
 
-
 ```sh
 cargo clippy --tests --verbose -- -D warnings
 ```
 
-5. Run CI checks locally - `clippy` (**optional**, but recommended for pedantic linting)
-
-```sh
-cargo clippy --all-targets --verbose -- -W clippy::pedantic
-```
-
-> [!NOTE]
->
-> - You may allow specific pedantic lints **only with a clear justification**.
-> - Running `clippy` with pedantic lints is **optional**, but it can serve as a helpful guideline for new code and implementations, helping maintain consistency and catch potential issues early.
-
-6. Run formatting checks – `rustfmt`
+5. Run formatting checks – `rustfmt`
 
 ```sh
 cargo +nightly fmt --all -- --check --verbose

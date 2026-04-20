@@ -11,7 +11,7 @@ keywords = ["changelog", "generator", "conventional", "commit"]
 categories = ["command-line-utilities"]
 default-run = "git-cliff"
 edition = "2024"
-rust-version = "1.85.1"
+rust-version = "1.87.0"
 
 [[bin]]
 name = "git-cliff-completions"
@@ -49,8 +49,7 @@ glob.workspace = true
 regex.workspace = true
 log.workspace = true
 secrecy.workspace = true
-lazy_static.workspace = true
-dirs.workspace = true
+etcetera.workspace = true
 clap = { version = "4.5.53", features = ["derive", "env", "wrap_help", "cargo"] }
 clap_complete = "4.5.61"
 clap_mangen = "0.2.31"
@@ -70,6 +69,7 @@ path = "../git-cliff-core"
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
+serial_test = { version = "3.4.0", default-features = false }
 
 [lints]
 workspace = true

@@ -23,6 +23,7 @@ use std::fmt::Debug;
 use std::time::Duration;
 
 use dyn_clone::DynClone;
+use etcetera::{BaseStrategy, choose_base_strategy};
 use http_cache_reqwest::{CACacheManager, Cache, CacheMode, HttpCache, HttpCacheOptions};
 use reqwest::Client;
 use reqwest::header::{HeaderMap, HeaderValue};
@@ -49,7 +50,7 @@ pub(crate) const REQUEST_TIMEOUT: u64 = 30;
 pub(crate) const REQUEST_KEEP_ALIVE: u64 = 60;
 
 /// Maximum number of entries to fetch in a single page.
-pub(crate) const MAX_PAGE_SIZE: usize = 100;
+pub(crate) const MAX_PAGE_SIZE: i32 = 100;
 
 /// Trait for handling remote commits.
 pub trait RemoteCommit: DynClone {
@@ -99,6 +100,9 @@ impl Remote {
         if !self.is_set() {
             return Err(Error::RemoteNotSetError);
         }
+        // cannot panic - see https://github.com/lunacookies/etcetera/issues/42
+        let strategy = choose_base_strategy()
+            .expect("cannot determine current OS's default strategy (layout)");
         let mut headers = HeaderMap::new();
         headers.insert(
             reqwest::header::ACCEPT,
@@ -126,13 +130,7 @@ impl Remote {
             .with(Cache(HttpCache {
                 mode: CacheMode::Default,
                 manager: CACacheManager {
-                    path: dirs::cache_dir()
-                        .ok_or_else(|| {
-                            Error::DirsError(String::from(
-                                "failed to find the user's cache directory",
-                            ))
-                        })?
-                        .join(env!("CARGO_PKG_NAME")),
+                    path: strategy.cache_dir().join(env!("CARGO_PKG_NAME")),
                 },
                 options: HttpCacheOptions::default(),
             }))
