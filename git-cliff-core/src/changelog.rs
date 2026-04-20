@@ -655,7 +655,7 @@ mod test {
     use regex::Regex;
 
     use super::*;
-    use crate::commit::Signature;
+    use crate::commit::{Commit, Signature};
     use crate::config::{
         Bump, ChangelogConfig, CommitParser, LinkParser, Remote, RemoteConfig, TextProcessor,
     };

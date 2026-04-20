@@ -1,11 +1,12 @@
 use std::io::Write;
-use std::sync::LazyLock;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::{env, fmt};
 
 use env_logger::Builder;
 use env_logger::fmt::{Color, Style, StyledValue};
 use git_cliff_core::error::{Error, Result};
+#[cfg(feature = "remote")]
+use std::sync::LazyLock;
 #[cfg(feature = "remote")]
 use indicatif::{ProgressBar, ProgressStyle};
 use log::Level;
