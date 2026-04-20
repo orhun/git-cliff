@@ -143,6 +143,24 @@ jobs:
           - fixtures-name: test-workdir-include-path
             command: v2.6.1..v2.7.0 --workdir .github/fixtures/
           - fixtures-name: test-fail-on-unmatched-commit
+          # NOTE: The following four include-path tests all use identical
+          # expected.md content. They verify that the same result is produced
+          # whether paths are passed via repeated --include-path flags, a
+          # single space-separated value, the cliff.toml include_paths config,
+          # or the GIT_CLIFF_INCLUDE_PATH environment variable.
+          - fixtures-name: test-include-path-repeated-flag
+            command: --include-path 'website/**/*' --include-path 'docs/**/*'
+          - fixtures-name: test-include-path-space-separated
+            command: --include-path 'website/**/* docs/**/*'
+          - fixtures-name: test-include-path-config
+          - fixtures-name: test-include-path-env-var
+            include-path-env: "website/**/* docs/**/*"
+          # NOTE: This test verifies that GIT_CLIFF_INCLUDE_PATH correctly
+          # handles space-separated globs where one glob matches no commits
+          # (i.e. .github/**/* does not exist in the fixture's git history).
+          # Only website/**/* commits are expected in the output.
+          - fixtures-name: test-include-path-env-var-github
+            include-path-env: "website/**/* .github/**/*"
           - fixtures-name: test-offline
 
     steps:
@@ -157,3 +175,4 @@ jobs:
           fixtures-dir: .github/fixtures/${{ matrix.fixtures-name }}
           command: ${{ matrix.command }}
           previous-release-timestamp: ${{ matrix.previous-release-timestamp }}
+          include-path-env: ${{ matrix.include-path-env }}

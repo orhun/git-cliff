@@ -17,6 +17,10 @@ inputs:
     description: The timestamp of the previous release
     required: false
     default: "1970-01-01 00:00:00"
+  include-path-env:
+    description: Value to set for GIT_CLIFF_INCLUDE_PATH before running git-cliff
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -46,6 +50,9 @@ runs:
       shell: bash
       run: |
         set +e
+        if [ -n '${{ inputs.include-path-env }}' ]; then
+          export GIT_CLIFF_INCLUDE_PATH='${{ inputs.include-path-env }}'
+        fi
         git cliff --config cliff.toml ${{ inputs.command }} > output.md
         echo "$?" > output.rc
         if [ -f output.md ]; then
