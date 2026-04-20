@@ -819,7 +819,7 @@ pub fn write_changelog<W: io::Write>(
         });
         let next_version = if let Some(next_version) = changelog.bump_version()? {
             if current_version.as_ref() == Some(&next_version) {
-                log::warn!("There is nothing to bump");
+                log::warn!("The next version is the same as the current version, there is nothing to bump");
             }
             next_version
         } else if let Some(last_version) =
