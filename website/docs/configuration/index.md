@@ -6,27 +6,28 @@ sidebar_position: 4
 
 **git-cliff** configuration file supports [TOML](https://github.com/toml-lang/toml) (preferred) and [YAML](https://yaml.org) formats.
 
-**git-cliff** will look for a configuration file first in the project directory, then in the global user directory. If no configuration file is found, **git-cliff** will use the default configuration values.
+## File Path
 
-## Project Configuration
+**git-cliff** will look for a configuration file first in the project directory, then in the global user directory. If no configuration file is found, **git-cliff** will use the default configuration values. See [cliff.toml](https://github.com/orhun/git-cliff/blob/main/config/cliff.toml) for the default configuration values.
 
-**git-cliff** will look for the following configuration files in this order:
+It looks for the following configuration files in this order:
 
 - `cliff.toml`
 - `.cliff.toml`
 - `.config/cliff.toml`
+- `$HOME/cliff.toml`
+- `$HOME/.cliff.toml`
+- `$HOME/.config/cliff.toml`
 
 If no configuration file is found in the current directory, it will search the parent directories.
 
-## User Configuration
+### Home Directory
 
-The configuration file is read from `$HOME/git-cliff/cliff.toml` if the file exists. This location depends on the platform, for example:
+The `$HOME` directory is dependent on the platform. For example:
 
-- on Linux: `/home/<user>/.config/git-cliff/cliff.toml`
-- on Windows: `C:\Users\<user>\AppData\Roaming\git-cliff\cliff.toml`
-- on macOS: `/Users/<user>/Library/Application Support/git-cliff/cliff.toml`
-
-See [cliff.toml](https://github.com/orhun/git-cliff/blob/main/config/cliff.toml) for the default configuration values.
+- on Linux: `/home/<user>`
+- on Windows: `C:\Users\<user>\AppData\Roaming`
+- on macOS: `/Users/<user>/Library/Application Support`
 
 ## Environment Configuration Overrides
 
