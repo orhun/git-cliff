@@ -713,7 +713,7 @@ mod test {
         process_commit_list(&mut commits, &cfg, &mut Summary::default()).unwrap();
         assert_eq!(commits.len(), 1);
         assert_eq!(commits[0].group.as_deref(), Some("fix"));
-        assert_eq!(commits[0].message, "restore build");
+        assert_eq!(commits[0].message, "fix(ci): restore build");
     }
 
     #[test]
