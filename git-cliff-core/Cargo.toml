@@ -106,7 +106,6 @@ features = ["debug-embed", "compression"]
 pretty_assertions = "1.4.1"
 expect-test = "1.5.1"
 temp-dir = "0.1.16"
-tempfile = "3.27.0"
 
 [package.metadata.docs.rs]
 all-features = true

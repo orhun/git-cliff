@@ -1055,7 +1055,6 @@ dependencies = [
  "serde_json",
  "serde_regex",
  "temp-dir",
- "tempfile",
  "tera",
  "thiserror 2.0.17",
  "time",

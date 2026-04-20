@@ -565,7 +565,7 @@ mod test {
     use std::{env, fs};
 
     use pretty_assertions::assert_eq;
-    use tempfile::tempdir;
+    use temp_dir::TempDir;
 
     use super::*;
 
@@ -622,7 +622,7 @@ mod test {
 
     #[test]
     fn find_project_config_file() -> Result<()> {
-        let dir = tempdir()?;
+        let dir = TempDir::with_prefix("git-cliff-").expect("failed to create temp dir");
 
         // Check config files in order of priority.
         // cliff.toml has the highest priority to preserve
