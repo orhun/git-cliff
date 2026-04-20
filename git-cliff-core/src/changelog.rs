@@ -657,7 +657,8 @@ mod test {
     use super::*;
     use crate::commit::{Commit, Signature};
     use crate::config::{
-        Bump, ChangelogConfig, CommitParser, LinkParser, Remote, RemoteConfig, TextProcessor,
+        Bump, ChangelogConfig, CommitParser, GitConfig, LinkParser, Remote, RemoteConfig,
+        TextProcessor,
     };
 
     fn get_test_data() -> (Config, Vec<Release<'static>>) {
