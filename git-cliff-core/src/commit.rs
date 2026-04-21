@@ -522,9 +522,6 @@ pub(crate) fn commits_to_conventional_commits<'de, 'a, D: Deserializer<'de>>(
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::config::ProcessingStep;
-    use crate::process::process_commit_list;
-    use crate::summary::Summary;
 
     #[test]
     fn conventional_commit() -> Result<()> {
@@ -618,106 +615,6 @@ mod test {
             let commit = commit.process(&cfg).expect("commit should process");
             assert_eq!(&commit.footers().collect::<Vec<_>>(), footers);
         }
-    }
-
-    #[test]
-    fn process_commit_list_keeps_legacy_behavior_when_order_is_unset() -> Result<()> {
-        let mut commits = vec![Commit::new(
-            String::from("123123"),
-            String::from("chore(ci): update runner\nfix(ci): restore build"),
-        )];
-        let cfg = crate::config::GitConfig {
-            processing_order: None,
-            conventional_commits: true,
-            split_commits: true,
-            filter_commits: true,
-            commit_parsers: vec![
-                CommitParser {
-                    sha: None,
-                    message: Regex::new("^chore").ok(),
-                    body: None,
-                    footer: None,
-                    group: None,
-                    default_scope: None,
-                    scope: None,
-                    skip: Some(true),
-                    field: None,
-                    pattern: None,
-                },
-                CommitParser {
-                    sha: None,
-                    message: Regex::new("^fix").ok(),
-                    body: None,
-                    footer: None,
-                    group: Some(String::from("fix")),
-                    default_scope: None,
-                    scope: None,
-                    skip: None,
-                    field: None,
-                    pattern: None,
-                },
-            ],
-            ..Default::default()
-        };
-
-        process_commit_list(&mut commits, &cfg, &mut Summary::default())?;
-        assert!(commits.is_empty());
-
-        Ok(())
-    }
-
-    #[test]
-    fn process_commit_list_supports_ordered_split_before_parsing() -> Result<()> {
-        let mut commits = vec![Commit::new(
-            String::from("123123"),
-            String::from("chore(ci): update runner\nfix(ci): restore build"),
-        )];
-        let cfg = crate::config::GitConfig {
-            processing_order: Some(vec![
-                ProcessingStep::CommitPreprocessors,
-                ProcessingStep::SplitCommits,
-                ProcessingStep::ConventionalCommits,
-                ProcessingStep::CommitParsers,
-                ProcessingStep::LinkParsers,
-            ]),
-            conventional_commits: true,
-            split_commits: true,
-            filter_commits: true,
-            commit_parsers: vec![
-                CommitParser {
-                    sha: None,
-                    message: Regex::new("^chore").ok(),
-                    body: None,
-                    footer: None,
-                    group: None,
-                    default_scope: None,
-                    scope: None,
-                    skip: Some(true),
-                    field: None,
-                    pattern: None,
-                },
-                CommitParser {
-                    sha: None,
-                    message: Regex::new("^fix").ok(),
-                    body: None,
-                    footer: None,
-                    group: Some(String::from("fix")),
-                    default_scope: None,
-                    scope: None,
-                    skip: None,
-                    field: None,
-                    pattern: None,
-                },
-            ],
-            ..Default::default()
-        };
-
-        process_commit_list(&mut commits, &cfg, &mut Summary::default())?;
-        assert_eq!(commits.len(), 1);
-        assert_eq!(commits[0].group.as_deref(), Some("fix"));
-        assert_eq!(commits[0].message, "fix(ci): restore build");
-
-        Ok(())
     }
 
     #[test]

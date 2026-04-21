@@ -4,7 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::config::Config;
 use crate::error::Result;
-use crate::process::process_commit_list;
+use crate::process::CommitProcessor;
 use crate::release::{Release, Releases};
 #[cfg(feature = "azure_devops")]
 use crate::remote::azure_devops::AzureDevOpsClient;
@@ -97,9 +97,9 @@ impl<'a> Changelog<'a> {
 
         let mut summary = Summary::default();
         for release in &mut self.releases {
-            process_commit_list(&mut release.commits, &self.config.git, &mut summary)?;
+            CommitProcessor::new(&self.config.git, &mut summary).run(&mut release.commits)?;
             for submodule_commits in release.submodule_commits.values_mut() {
-                process_commit_list(submodule_commits, &self.config.git, &mut summary)?;
+                CommitProcessor::new(&self.config.git, &mut summary).run(submodule_commits)?;
             }
         }
 

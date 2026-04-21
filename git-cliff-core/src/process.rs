@@ -3,15 +3,6 @@ use crate::config::{GitConfig, ProcessingStep};
 use crate::error::{Error as AppError, Result};
 use crate::summary::Summary;
 
-/// Processes commits using either legacy behavior or a configured processing order.
-pub fn process_commit_list<'a>(
-    commits: &mut Vec<Commit<'a>>,
-    git_config: &GitConfig,
-    summary: &mut Summary,
-) -> Result<()> {
-    CommitProcessor::new(git_config, summary).run(commits)
-}
-
 /// Stateful commit-processing pipeline.
 pub struct CommitProcessor<'cfg, 'sum> {
     config: &'cfg GitConfig,
@@ -263,5 +254,113 @@ impl<'cfg, 'sum> CommitProcessor<'cfg, 'sum> {
         let short_id = commit.id.chars().take(7).collect::<String>();
         let summary = commit.message.lines().next().unwrap_or_default().trim();
         log::trace!("{short_id} - {error} ({summary})");
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use regex::Regex;
+
+    use super::*;
+    use crate::config::{CommitParser, ProcessingStep};
+
+    #[test]
+    fn list_keeps_legacy_behavior_when_order_is_unset() -> Result<()> {
+        let mut commits = vec![Commit::new(
+            String::from("123123"),
+            String::from("chore(ci): update runner\nfix(ci): restore build"),
+        )];
+        let cfg = crate::config::GitConfig {
+            processing_order: None,
+            conventional_commits: true,
+            split_commits: true,
+            filter_commits: true,
+            commit_parsers: vec![
+                CommitParser {
+                    sha: None,
+                    message: Regex::new("^chore").ok(),
+                    body: None,
+                    footer: None,
+                    group: None,
+                    default_scope: None,
+                    scope: None,
+                    skip: Some(true),
+                    field: None,
+                    pattern: None,
+                },
+                CommitParser {
+                    sha: None,
+                    message: Regex::new("^fix").ok(),
+                    body: None,
+                    footer: None,
+                    group: Some(String::from("fix")),
+                    default_scope: None,
+                    scope: None,
+                    skip: None,
+                    field: None,
+                    pattern: None,
+                },
+            ],
+            ..Default::default()
+        };
+
+        CommitProcessor::new(&cfg, &mut Summary::default()).run(&mut commits)?;
+        assert!(commits.is_empty());
+
+        Ok(())
+    }
+
+    #[test]
+    fn list_supports_ordered_split_before_parsing() -> Result<()> {
+        let mut commits = vec![Commit::new(
+            String::from("123123"),
+            String::from("chore(ci): update runner\nfix(ci): restore build"),
+        )];
+        let cfg = crate::config::GitConfig {
+            processing_order: Some(vec![
+                ProcessingStep::CommitPreprocessors,
+                ProcessingStep::SplitCommits,
+                ProcessingStep::ConventionalCommits,
+                ProcessingStep::CommitParsers,
+                ProcessingStep::LinkParsers,
+            ]),
+            conventional_commits: true,
+            split_commits: true,
+            filter_commits: true,
+            commit_parsers: vec![
+                CommitParser {
+                    sha: None,
+                    message: Regex::new("^chore").ok(),
+                    body: None,
+                    footer: None,
+                    group: None,
+                    default_scope: None,
+                    scope: None,
+                    skip: Some(true),
+                    field: None,
+                    pattern: None,
+                },
+                CommitParser {
+                    sha: None,
+                    message: Regex::new("^fix").ok(),
+                    body: None,
+                    footer: None,
+                    group: Some(String::from("fix")),
+                    default_scope: None,
+                    scope: None,
+                    skip: None,
+                    field: None,
+                    pattern: None,
+                },
+            ],
+            ..Default::default()
+        };
+
+        CommitProcessor::new(&cfg, &mut Summary::default()).run(&mut commits)?;
+        assert_eq!(commits.len(), 1);
+        assert_eq!(commits[0].group.as_deref(), Some("fix"));
+        assert_eq!(commits[0].message, "fix(ci): restore build");
+
+        Ok(())
     }
 }
