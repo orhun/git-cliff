@@ -163,6 +163,7 @@ jobs:
           - fixtures-name: test-include-path-env-var-github
             include-path-env: "website/**/* .github/**/*"
           - fixtures-name: test-offline
+          - fixtures-name: test-nested-tags
 
     steps:
       - name: Checkout
