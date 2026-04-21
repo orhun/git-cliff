@@ -89,6 +89,7 @@ following context is generated to use for templating:
     ],
     "days_passed_since_last_release": 0
   },
+  "bump_type": "minor",
   "previous": {
     "version": "previous release"
   }
@@ -202,6 +203,7 @@ If [`conventional_commits`](/docs/configuration/git#conventional_commits) is set
     ],
     "days_passed_since_last_release": 0
   },
+  "bump_type": "minor",
   "previous": {
     "version": "previous release"
   }

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use next_version::{NextVersion, VersionUpdater};
+use next_version::{NextVersion as NextVersionTrait, VersionUpdater};
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use serde_json::value::Value;
@@ -47,6 +47,9 @@ pub struct Release<'a> {
     pub statistics: Option<Statistics>,
     /// Arbitrary data to be used with the `--from-context` CLI option.
     pub extra: Option<Value>,
+    /// The type of version bump that was applied.
+    #[serde(rename = "bump_type")]
+    pub bump_type: Option<BumpType>,
     /// Contributors.
     #[cfg(feature = "github")]
     pub github: RemoteReleaseMetadata,
@@ -85,7 +88,7 @@ impl Release<'_> {
     ///
     /// It uses the default bump version configuration to calculate the next
     /// version.
-    pub fn calculate_next_version(&self) -> Result<String> {
+    pub fn calculate_next_version(&self) -> Result<NextVersion> {
         self.calculate_next_version_with_config(&Bump::default())
     }
 
@@ -104,7 +107,7 @@ impl Release<'_> {
     ///
     /// It uses the given bump version configuration to calculate the next
     /// version.
-    pub(super) fn calculate_next_version_with_config(&self, config: &Bump) -> Result<String> {
+    pub(super) fn calculate_next_version_with_config(&self, config: &Bump) -> Result<NextVersion> {
         match self
             .previous
             .as_ref()
@@ -146,31 +149,63 @@ impl Release<'_> {
                     next_version = next_version
                         .with_custom_minor_increment_regex(custom_minor_increment_regex)?;
                 }
-                let next_version = if let Some(bump_type) = &config.bump_type {
-                    match bump_type {
-                        BumpType::Major => semver?.increment_major().to_string(),
-                        BumpType::Minor => semver?.increment_minor().to_string(),
-                        BumpType::Patch => semver?.increment_patch().to_string(),
-                    }
-                } else {
-                    next_version
-                        .increment(
-                            &semver?,
+                let old_semver = semver?;
+                let (next_version, determined_bump_type) =
+                    if let Some(bump_type) = &config.bump_type {
+                        let v = match bump_type {
+                            BumpType::Major => old_semver.increment_major().to_string(),
+                            BumpType::Minor => old_semver.increment_minor().to_string(),
+                            BumpType::Patch => old_semver.increment_patch().to_string(),
+                        };
+                        (v, Some(*bump_type))
+                    } else {
+                        let new_semver = next_version.increment(
+                            &old_semver,
                             self.commits
                                 .iter()
                                 .map(|commit| commit.message.trim_end().to_string())
                                 .collect::<Vec<String>>(),
-                        )
-                        .to_string()
-                };
-                if let Some(prefix) = prefix {
-                    Ok(format!("{prefix}{next_version}"))
+                        );
+                        let bump_type = determine_bump_type(&old_semver, &new_semver);
+                        (new_semver.to_string(), bump_type)
+                    };
+                let version = if let Some(prefix) = prefix {
+                    format!("{prefix}{next_version}")
                 } else {
-                    Ok(next_version)
-                }
+                    next_version
+                };
+                Ok(NextVersion {
+                    version,
+                    bump_type: determined_bump_type,
+                })
             }
-            None => Ok(config.get_initial_tag()),
+            None => Ok(NextVersion {
+                version: config.get_initial_tag(),
+                bump_type: None,
+            }),
         }
+    }
+}
+
+/// Representation of a calculated next version.
+#[derive(Debug, Clone, PartialEq)]
+pub struct NextVersion {
+    /// Version string.
+    pub version: String,
+    /// Type of version bump that was applied.
+    pub bump_type: Option<BumpType>,
+}
+
+/// Determines the bump type by comparing two semver versions.
+fn determine_bump_type(old: &Version, new: &Version) -> Option<BumpType> {
+    if new.major != old.major {
+        Some(BumpType::Major)
+    } else if new.minor != old.minor {
+        Some(BumpType::Minor)
+    } else if new.patch != old.patch {
+        Some(BumpType::Patch)
+    } else {
+        None
     }
 }
 
@@ -214,6 +249,7 @@ mod test {
                 repository: Some(String::from("/root/repo")),
                 submodule_commits: HashMap::new(),
                 statistics: None,
+                bump_type: None,
                 #[cfg(feature = "github")]
                 github: crate::remote::RemoteReleaseMetadata {
                     contributors: vec![],
@@ -284,9 +320,11 @@ mod test {
             .iter(),
         ) {
             let release = build_release(version, commits);
-            let next_version = release.calculate_next_version()?;
+            let next_version = release.calculate_next_version()?.version;
             assert_eq!(expected_version, &next_version);
-            let next_version = release.calculate_next_version_with_config(&Bump::default())?;
+            let next_version = release
+                .calculate_next_version_with_config(&Bump::default())?
+                .version;
             assert_eq!(expected_version, &next_version);
         }
 
@@ -302,14 +340,16 @@ mod test {
             .iter(),
         ) {
             let release = build_release(version, commits);
-            let next_version = release.calculate_next_version_with_config(&Bump {
-                features_always_bump_minor: Some(false),
-                breaking_always_bump_major: Some(false),
-                initial_tag: None,
-                custom_major_increment_regex: None,
-                custom_minor_increment_regex: None,
-                bump_type: None,
-            })?;
+            let next_version = release
+                .calculate_next_version_with_config(&Bump {
+                    features_always_bump_minor: Some(false),
+                    breaking_always_bump_major: Some(false),
+                    initial_tag: None,
+                    custom_major_increment_regex: None,
+                    custom_minor_increment_regex: None,
+                    bump_type: None,
+                })?
+                .version;
             assert_eq!(expected_version, &next_version);
         }
 
@@ -325,14 +365,16 @@ mod test {
             .iter(),
         ) {
             let release = build_release(version, commits);
-            let next_version = release.calculate_next_version_with_config(&Bump {
-                features_always_bump_minor: Some(true),
-                breaking_always_bump_major: Some(false),
-                initial_tag: None,
-                custom_major_increment_regex: None,
-                custom_minor_increment_regex: None,
-                bump_type: None,
-            })?;
+            let next_version = release
+                .calculate_next_version_with_config(&Bump {
+                    features_always_bump_minor: Some(true),
+                    breaking_always_bump_major: Some(false),
+                    initial_tag: None,
+                    custom_major_increment_regex: None,
+                    custom_minor_increment_regex: None,
+                    bump_type: None,
+                })?
+                .version;
             assert_eq!(expected_version, &next_version);
         }
 
@@ -348,14 +390,16 @@ mod test {
             .iter(),
         ) {
             let release = build_release(version, commits);
-            let next_version = release.calculate_next_version_with_config(&Bump {
-                features_always_bump_minor: Some(false),
-                breaking_always_bump_major: Some(true),
-                initial_tag: None,
-                custom_major_increment_regex: None,
-                custom_minor_increment_regex: None,
-                bump_type: None,
-            })?;
+            let next_version = release
+                .calculate_next_version_with_config(&Bump {
+                    features_always_bump_minor: Some(false),
+                    breaking_always_bump_major: Some(true),
+                    initial_tag: None,
+                    custom_major_increment_regex: None,
+                    custom_minor_increment_regex: None,
+                    bump_type: None,
+                })?
+                .version;
             assert_eq!(expected_version, &next_version);
         }
 
@@ -366,22 +410,73 @@ mod test {
             })),
             ..Default::default()
         };
-        assert_eq!("0.1.0", empty_release.calculate_next_version()?);
+        let result = empty_release.calculate_next_version()?;
+        assert_eq!("0.1.0", result.version);
+        assert_eq!(None, result.bump_type);
         for (features_always_bump_minor, breaking_always_bump_major) in
             [(true, true), (true, false), (false, true), (false, false)]
         {
-            assert_eq!(
-                "0.1.0",
-                empty_release.calculate_next_version_with_config(&Bump {
-                    features_always_bump_minor: Some(features_always_bump_minor),
-                    breaking_always_bump_major: Some(breaking_always_bump_major),
-                    initial_tag: None,
-                    custom_major_increment_regex: None,
-                    custom_minor_increment_regex: None,
-                    bump_type: None,
-                })?
-            );
+            let result = empty_release.calculate_next_version_with_config(&Bump {
+                features_always_bump_minor: Some(features_always_bump_minor),
+                breaking_always_bump_major: Some(breaking_always_bump_major),
+                initial_tag: None,
+                custom_major_increment_regex: None,
+                custom_minor_increment_regex: None,
+                bump_type: None,
+            })?;
+            assert_eq!("0.1.0", result.version);
+            assert_eq!(None, result.bump_type);
         }
+        Ok(())
+    }
+
+    #[test]
+    fn bump_version_type() -> Result<()> {
+        fn build_release<'a>(version: &str, commits: &'a [&str]) -> Release<'a> {
+            Release {
+                version: None,
+                commits: commits
+                    .iter()
+                    .map(|v| Commit::from((*v).to_string()))
+                    .collect(),
+                previous: Some(Box::new(Release {
+                    version: Some(String::from(version)),
+                    ..Default::default()
+                })),
+                ..Default::default()
+            }
+        }
+
+        let release = build_release("1.0.0", &["fix: something"]);
+        let result = release.calculate_next_version()?;
+        assert_eq!(Some(BumpType::Patch), result.bump_type);
+
+        let release = build_release("1.0.0", &["feat: add xyz"]);
+        let result = release.calculate_next_version()?;
+        assert_eq!(Some(BumpType::Minor), result.bump_type);
+
+        let release = build_release("1.0.0", &["feat!: breaking change"]);
+        let result = release.calculate_next_version()?;
+        assert_eq!(Some(BumpType::Major), result.bump_type);
+
+        let release = build_release("1.0.0", &["fix: something"]);
+        let result = release.calculate_next_version_with_config(&Bump {
+            bump_type: Some(BumpType::Minor),
+            ..Default::default()
+        })?;
+        assert_eq!("1.1.0", result.version);
+        assert_eq!(Some(BumpType::Minor), result.bump_type);
+
+        let release = Release {
+            previous: Some(Box::new(Release {
+                version: None,
+                ..Default::default()
+            })),
+            ..Default::default()
+        };
+        let result = release.calculate_next_version()?;
+        assert_eq!(None, result.bump_type);
+
         Ok(())
     }
 
@@ -445,6 +540,7 @@ mod test {
             repository: Some(String::from("/root/repo")),
             submodule_commits: HashMap::new(),
             statistics: None,
+            bump_type: None,
             github: RemoteReleaseMetadata {
                 contributors: vec![],
             },
@@ -814,6 +910,7 @@ mod test {
             repository: Some(String::from("/root/repo")),
             submodule_commits: HashMap::new(),
             statistics: None,
+            bump_type: None,
             #[cfg(feature = "github")]
             github: RemoteReleaseMetadata {
                 contributors: vec![],
@@ -1186,6 +1283,7 @@ mod test {
             repository: Some(String::from("/root/repo")),
             submodule_commits: HashMap::new(),
             statistics: None,
+            bump_type: None,
             #[cfg(feature = "github")]
             github: RemoteReleaseMetadata {
                 contributors: vec![],
@@ -1531,6 +1629,7 @@ mod test {
             repository: Some(String::from("/root/repo")),
             submodule_commits: HashMap::new(),
             statistics: None,
+            bump_type: None,
             #[cfg(feature = "github")]
             github: RemoteReleaseMetadata {
                 contributors: vec![],
@@ -1829,6 +1928,7 @@ mod test {
             repository: Some(String::from("/root/repo")),
             submodule_commits: HashMap::new(),
             statistics: None,
+            bump_type: None,
             #[cfg(feature = "github")]
             github: RemoteReleaseMetadata {
                 contributors: vec![],

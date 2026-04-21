@@ -278,6 +278,7 @@ mod test {
             repository: Some(String::from("/root/repo")),
             submodule_commits: HashMap::new(),
             statistics: None,
+            bump_type: None,
             #[cfg(feature = "github")]
             github: crate::remote::RemoteReleaseMetadata {
                 contributors: vec![],

@@ -28,6 +28,9 @@ runs:
     - name: Install toolchain
       uses: dtolnay/rust-toolchain@nightly
 
+    - name: Cache Cargo dependencies
+      uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2
+
     - name: Install git-cliff
       run: cargo install --path git-cliff/ --profile dev
       shell: bash
