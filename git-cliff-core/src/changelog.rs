@@ -644,17 +644,17 @@ impl<'a> Changelog<'a> {
     pub fn bump_version(&mut self) -> Result<Option<String>> {
         if let Some(ref mut last_release) = self.releases.iter_mut().next() {
             if last_release.version.is_none() {
-                let next_version =
-                    last_release.calculate_next_version_with_config(&self.config.bump)?;
-                log::debug!("Bumping the version to {next_version}");
-                last_release.version = Some(next_version.clone());
+                let next = last_release.calculate_next_version_with_config(&self.config.bump)?;
+                log::debug!("Bumping the version to {}", next.version);
+                last_release.bump_type = next.bump_type;
+                last_release.version = Some(next.version.clone());
                 last_release.timestamp = Some(
                     SystemTime::now()
                         .duration_since(UNIX_EPOCH)?
                         .as_secs()
                         .try_into()?,
                 );
-                return Ok(Some(next_version));
+                return Ok(Some(next.version));
             }
         }
         Ok(None)
@@ -1193,6 +1193,7 @@ mod test {
                 ),
             ])]),
             statistics: None,
+            bump_type: None,
             #[cfg(feature = "github")]
             github: crate::remote::RemoteReleaseMetadata {
                 contributors: vec![],
@@ -1314,6 +1315,7 @@ mod test {
                     )]),
                 ]),
                 statistics: None,
+                bump_type: None,
                 #[cfg(feature = "github")]
                 github: crate::remote::RemoteReleaseMetadata {
                     contributors: vec![],
