@@ -137,17 +137,16 @@ If this field is omitted, **git-cliff** uses the legacy processing flow for back
 
 Supported step names:
 
-- `commit_preprocessors`
-- `split_commits`
-- `conventional_commits`
-- `commit_parsers`
-- `link_parsers`
+- [`commit_preprocessors`](#commit_preprocessors)
+- [`split_commits`](#split_commits)
+- [`conventional_commits`](#conventional_commits)
+- [`commit_parsers`](#commit_parsers)
+- [`link_parsers`](#link_parsers)
 
 The default processing order is:
 
 ```toml
 [git]
-split_commits = true
 processing_order = [
     "commit_preprocessors",
     "split_commits",
@@ -159,7 +158,7 @@ processing_order = [
 
 :::info
 
-This is useful when you want e.g. `split_commits` to happen before parser-based filtering, so each split line is parsed independently.
+This is useful when you want e.g. [`split_commits`](#split_commits) to happen before parser-based filtering, so each split line is parsed independently.
 
 :::
 
