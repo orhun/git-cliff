@@ -143,6 +143,8 @@ jobs:
             previous-release-timestamp: "2022-04-06 01:25:12"
           - fixtures-name: test-workdir-include-path
             command: v2.6.1..v2.7.0 --workdir .github/fixtures/
+          - fixtures-name: test-workdir-root
+            command: --workdir .
           - fixtures-name: test-fail-on-unmatched-commit
           # NOTE: The following four include-path tests all use identical
           # expected.md content. They verify that the same result is produced

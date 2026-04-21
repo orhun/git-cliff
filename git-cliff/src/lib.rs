@@ -13,7 +13,7 @@ pub mod logger;
 use std::env;
 use std::fs::{self, File};
 use std::io::{self, Write};
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use args::{BumpOption, Opt, Sort, Strip};
@@ -181,6 +181,53 @@ pub fn init_config(name: Option<&str>, config_path: &Path) -> Result<()> {
     Ok(())
 }
 
+fn normalize_path(path: &Path) -> PathBuf {
+    let mut normalized = PathBuf::new();
+
+    for component in path.components() {
+        match component {
+            Component::Prefix(prefix) => normalized.push(prefix.as_os_str()),
+            Component::RootDir => normalized.push(component.as_os_str()),
+            Component::CurDir => {}
+            Component::ParentDir => {
+                if normalized.as_os_str().is_empty() || !normalized.pop() {
+                    normalized.push(component.as_os_str());
+                }
+            }
+            Component::Normal(part) => normalized.push(part),
+        }
+    }
+
+    normalized
+}
+
+fn resolve_workdir_include_path(
+    root: &Path,
+    cwd: &Path,
+    workdir: &Path,
+) -> Result<Option<Pattern>> {
+    let resolved_workdir = if workdir.is_absolute() {
+        normalize_path(workdir)
+    } else {
+        normalize_path(&cwd.join(workdir))
+    };
+
+    if !resolved_workdir.starts_with(root) || resolved_workdir == root {
+        return Ok(None);
+    }
+
+    let path = resolved_workdir.join("**").join("*");
+    if let Ok(stripped) = path.strip_prefix(root) {
+        log::info!(
+            "Including changes from the workdir: {}",
+            resolved_workdir.display()
+        );
+        return Ok(Some(Pattern::new(stripped.to_string_lossy().as_ref())?));
+    }
+
+    Ok(None)
+}
+
 /// Processes the tags and commits for creating release entries for the
 /// changelog.
 ///
@@ -273,22 +320,15 @@ fn process_repository<'a>(
     // Parse commits.
     let commit_range = determine_commit_range(args, config, repository)?;
 
-    // Include only the current directory if not running from the root repository.
-    //
-    // NOTE:
-    // The conditions for including the current directory when not running from the root repository
-    // have grown quite complex. This may warrant additional documentation to explain the behavior.
-    //
-    // Current logic triggers when all of the following are true:
-    // - `cwd` is a child of the repository root but not the root itself
-    // - `args.repository` is either None or empty
-    // - `args.workdir` is None
-    // - `include_path` is currently empty
-    //
-    // Additionally, if `include_path` is already explicitly set, it might be preferable to append.
     let cwd = env::current_dir()?;
     let mut include_path = config.git.include_paths.clone();
     if let Ok(root) = repository.root_path() {
+        if let Some(workdir) = args.workdir.as_ref() {
+            if let Some(pattern) = resolve_workdir_include_path(&root, &cwd, workdir)? {
+                include_path.push(pattern);
+            }
+        }
+
         if cwd.starts_with(&root) &&
             cwd != root &&
             args.repository.as_ref().is_none_or(Vec::is_empty) &&
@@ -296,7 +336,7 @@ fn process_repository<'a>(
             include_path.is_empty()
         {
             let path = cwd.join("**").join("*");
-            if let Ok(stripped) = path.strip_prefix(root) {
+            if let Ok(stripped) = path.strip_prefix(&root) {
                 log::info!(
                     "Including changes from the current directory: {}",
                     cwd.display()
@@ -534,11 +574,6 @@ pub fn run_with_changelog_modifier<'a>(
         if let Some(changelog) = args.prepend {
             args.prepend = Some(workdir.join(changelog));
         }
-        // pushing an empty component force-adds a trailing path separator
-        // which is needed for correct glob expansion
-        args.include_path = Some(vec![Pattern::new(
-            workdir.join("").to_string_lossy().as_ref(),
-        )?]);
     }
 
     // Set path for the configuration file.
@@ -864,4 +899,53 @@ pub fn write_changelog<W: io::Write>(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn as_str(pattern: &Option<Pattern>) -> Option<&str> {
+        pattern.as_ref().map(Pattern::as_str)
+    }
+
+    #[test]
+    fn workdir_at_root_returns_none() {
+        let root = Path::new("/repo");
+        let cwd = Path::new("/repo");
+        let result = resolve_workdir_include_path(root, cwd, Path::new(".")).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn workdir_subdirectory_scopes_to_subdir() {
+        let root = Path::new("/repo");
+        let cwd = Path::new("/repo");
+        let result = resolve_workdir_include_path(root, cwd, Path::new("sub")).unwrap();
+        assert_eq!(as_str(&result), Some("sub/**/*"));
+    }
+
+    #[test]
+    fn relative_workdir_from_parent_repo_root_returns_none() {
+        let root = Path::new("/parent/repo");
+        let cwd = Path::new("/parent");
+        let result = resolve_workdir_include_path(root, cwd, Path::new("./")).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn relative_workdir_from_parent_subdirectory_scopes_to_subdir() {
+        let root = Path::new("/parent/repo");
+        let cwd = Path::new("/parent");
+        let result = resolve_workdir_include_path(root, cwd, Path::new("repo/sub")).unwrap();
+        assert_eq!(as_str(&result), Some("sub/**/*"));
+    }
+
+    #[test]
+    fn absolute_workdir_outside_repo_returns_none() {
+        let root = Path::new("/repo");
+        let workdir = Path::new("/other/path");
+        let result = resolve_workdir_include_path(root, Path::new("/tmp"), workdir).unwrap();
+        assert!(result.is_none());
+    }
 }
