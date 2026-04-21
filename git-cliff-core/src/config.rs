@@ -85,6 +85,11 @@ pub struct ChangelogConfig {
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct GitConfig {
+    /// Optional processing order for commit transformation steps.
+    ///
+    /// If unset, the legacy processing behavior is preserved for backwards
+    /// compatibility.
+    pub processing_order: Option<Vec<ProcessingStep>>,
     /// Parse commits according to the conventional commits specification.
     pub conventional_commits: bool,
     /// Require all commits to be conventional.
@@ -142,6 +147,25 @@ pub struct GitConfig {
     /// Exclude unrelated commits with changes at the specified paths.
     #[serde(with = "serde_pattern", default)]
     pub exclude_paths: Vec<Pattern>,
+}
+
+/// Processing steps for commits.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProcessingStep {
+    /// An array of regex based parsers to modify commit messages prior to
+    /// further processing.
+    CommitPreprocessors,
+    /// Split commits on newlines, treating each line as an individual commit.
+    SplitCommits,
+    /// Parse commits according to the conventional commits specification.
+    ConventionalCommits,
+    /// An array of regex based parsers for extracting data from the commit
+    /// message.
+    CommitParsers,
+    /// An array of regex based parsers to extract links from the commit
+    /// message and add them to the commit's context.
+    LinkParsers,
 }
 
 /// Serialize and deserialize implementation for [`glob::Pattern`].

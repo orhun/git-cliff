@@ -39,6 +39,7 @@ fn generate_changelog() -> Result<()> {
         output: None,
     };
     let git_config = GitConfig {
+        processing_order: None,
         conventional_commits: true,
         require_conventional: false,
         filter_unconventional: true,

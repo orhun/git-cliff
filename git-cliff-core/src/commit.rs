@@ -522,6 +522,7 @@ pub(crate) fn commits_to_conventional_commits<'de, 'a, D: Deserializer<'de>>(
 #[cfg(test)]
 mod test {
     use super::*;
+
     #[test]
     fn conventional_commit() -> Result<()> {
         let test_cases = vec![

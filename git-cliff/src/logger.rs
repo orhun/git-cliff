@@ -1,4 +1,5 @@
 use std::io::Write;
+#[cfg(feature = "remote")]
 use std::sync::LazyLock;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::{env, fmt};

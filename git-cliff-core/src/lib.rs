@@ -26,6 +26,8 @@ pub mod contributor;
 pub mod embed;
 /// Error handling.
 pub mod error;
+/// Commit processing pipeline.
+pub mod process;
 /// Common release type.
 pub mod release;
 /// Remote handler.

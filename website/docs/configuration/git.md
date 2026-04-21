@@ -31,6 +31,13 @@ link_parsers = [
     { pattern = "#(\\d+)", href = "https://github.com/orhun/git-cliff/issues/$1"},
     { pattern = "RFC(\\d+)", text = "ietf-rfc$1", href = "https://datatracker.ietf.org/doc/html/rfc$1"},
 ]
+processing_order = [
+    "commit_preprocessors",
+    "split_commits",
+    "conventional_commits",
+    "commit_parsers",
+    "link_parsers",
+]
 limit_commits = 42
 recurse_submodules = false
 include_paths = ["src/", "doc/**/*.md"]
@@ -121,6 +128,39 @@ With the configuration above, lines are parsed as conventional commits and uncon
 
 If `filter_unconventional = false`, every line will be processed as an unconventional commit, resulting in each line of
 a commit being treated as a changelog entry.
+
+### processing_order
+
+Defines a custom commit processing pipeline.
+
+If this field is omitted, **git-cliff** uses the legacy processing flow for backwards compatibility.
+
+Supported step names:
+
+- [`commit_preprocessors`](#commit_preprocessors)
+- [`split_commits`](#split_commits)
+- [`conventional_commits`](#conventional_commits)
+- [`commit_parsers`](#commit_parsers)
+- [`link_parsers`](#link_parsers)
+
+The default processing order is:
+
+```toml
+[git]
+processing_order = [
+    "commit_preprocessors",
+    "split_commits",
+    "conventional_commits",
+    "commit_parsers",
+    "link_parsers",
+]
+```
+
+:::info
+
+This is useful when you want e.g. [`split_commits`](#split_commits) to happen before parser-based filtering, so each split line is parsed independently.
+
+:::
 
 ### commit_preprocessors
 
