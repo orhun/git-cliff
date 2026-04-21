@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use next_version::{NextVersion, VersionUpdater};
+use next_version::{NextVersion as NextVersionTrait, VersionUpdater};
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use serde_json::value::Value;
@@ -88,7 +88,7 @@ impl Release<'_> {
     ///
     /// It uses the default bump version configuration to calculate the next
     /// version.
-    pub fn calculate_next_version(&self) -> Result<(String, Option<BumpType>)> {
+    pub fn calculate_next_version(&self) -> Result<NextVersion> {
         self.calculate_next_version_with_config(&Bump::default())
     }
 
@@ -107,10 +107,7 @@ impl Release<'_> {
     ///
     /// It uses the given bump version configuration to calculate the next
     /// version.
-    pub(super) fn calculate_next_version_with_config(
-        &self,
-        config: &Bump,
-    ) -> Result<(String, Option<BumpType>)> {
+    pub(super) fn calculate_next_version_with_config(&self, config: &Bump) -> Result<NextVersion> {
         match self
             .previous
             .as_ref()
@@ -172,15 +169,31 @@ impl Release<'_> {
                         let bump_type = determine_bump_type(&old_semver, &new_semver);
                         (new_semver.to_string(), bump_type)
                     };
-                if let Some(prefix) = prefix {
-                    Ok((format!("{prefix}{next_version}"), determined_bump_type))
+                let version = if let Some(prefix) = prefix {
+                    format!("{prefix}{next_version}")
                 } else {
-                    Ok((next_version, determined_bump_type))
-                }
+                    next_version
+                };
+                Ok(NextVersion {
+                    version,
+                    bump_type: determined_bump_type,
+                })
             }
-            None => Ok((config.get_initial_tag(), None)),
+            None => Ok(NextVersion {
+                version: config.get_initial_tag(),
+                bump_type: None,
+            }),
         }
     }
+}
+
+/// Representation of a calculated next version.
+#[derive(Debug, Clone, PartialEq)]
+pub struct NextVersion {
+    /// Version string.
+    pub version: String,
+    /// Type of version bump that was applied.
+    pub bump_type: Option<BumpType>,
 }
 
 /// Determines the bump type by comparing two semver versions.
@@ -307,9 +320,11 @@ mod test {
             .iter(),
         ) {
             let release = build_release(version, commits);
-            let (next_version, _) = release.calculate_next_version()?;
+            let next_version = release.calculate_next_version()?.version;
             assert_eq!(expected_version, &next_version);
-            let (next_version, _) = release.calculate_next_version_with_config(&Bump::default())?;
+            let next_version = release
+                .calculate_next_version_with_config(&Bump::default())?
+                .version;
             assert_eq!(expected_version, &next_version);
         }
 
@@ -325,14 +340,16 @@ mod test {
             .iter(),
         ) {
             let release = build_release(version, commits);
-            let (next_version, _) = release.calculate_next_version_with_config(&Bump {
-                features_always_bump_minor: Some(false),
-                breaking_always_bump_major: Some(false),
-                initial_tag: None,
-                custom_major_increment_regex: None,
-                custom_minor_increment_regex: None,
-                bump_type: None,
-            })?;
+            let next_version = release
+                .calculate_next_version_with_config(&Bump {
+                    features_always_bump_minor: Some(false),
+                    breaking_always_bump_major: Some(false),
+                    initial_tag: None,
+                    custom_major_increment_regex: None,
+                    custom_minor_increment_regex: None,
+                    bump_type: None,
+                })?
+                .version;
             assert_eq!(expected_version, &next_version);
         }
 
@@ -348,14 +365,16 @@ mod test {
             .iter(),
         ) {
             let release = build_release(version, commits);
-            let (next_version, _) = release.calculate_next_version_with_config(&Bump {
-                features_always_bump_minor: Some(true),
-                breaking_always_bump_major: Some(false),
-                initial_tag: None,
-                custom_major_increment_regex: None,
-                custom_minor_increment_regex: None,
-                bump_type: None,
-            })?;
+            let next_version = release
+                .calculate_next_version_with_config(&Bump {
+                    features_always_bump_minor: Some(true),
+                    breaking_always_bump_major: Some(false),
+                    initial_tag: None,
+                    custom_major_increment_regex: None,
+                    custom_minor_increment_regex: None,
+                    bump_type: None,
+                })?
+                .version;
             assert_eq!(expected_version, &next_version);
         }
 
@@ -371,14 +390,16 @@ mod test {
             .iter(),
         ) {
             let release = build_release(version, commits);
-            let (next_version, _) = release.calculate_next_version_with_config(&Bump {
-                features_always_bump_minor: Some(false),
-                breaking_always_bump_major: Some(true),
-                initial_tag: None,
-                custom_major_increment_regex: None,
-                custom_minor_increment_regex: None,
-                bump_type: None,
-            })?;
+            let next_version = release
+                .calculate_next_version_with_config(&Bump {
+                    features_always_bump_minor: Some(false),
+                    breaking_always_bump_major: Some(true),
+                    initial_tag: None,
+                    custom_major_increment_regex: None,
+                    custom_minor_increment_regex: None,
+                    bump_type: None,
+                })?
+                .version;
             assert_eq!(expected_version, &next_version);
         }
 
@@ -389,13 +410,13 @@ mod test {
             })),
             ..Default::default()
         };
-        let (version, bump) = empty_release.calculate_next_version()?;
-        assert_eq!("0.1.0", version);
-        assert_eq!(None, bump);
+        let result = empty_release.calculate_next_version()?;
+        assert_eq!("0.1.0", result.version);
+        assert_eq!(None, result.bump_type);
         for (features_always_bump_minor, breaking_always_bump_major) in
             [(true, true), (true, false), (false, true), (false, false)]
         {
-            let (version, bump) = empty_release.calculate_next_version_with_config(&Bump {
+            let result = empty_release.calculate_next_version_with_config(&Bump {
                 features_always_bump_minor: Some(features_always_bump_minor),
                 breaking_always_bump_major: Some(breaking_always_bump_major),
                 initial_tag: None,
@@ -403,8 +424,8 @@ mod test {
                 custom_minor_increment_regex: None,
                 bump_type: None,
             })?;
-            assert_eq!("0.1.0", version);
-            assert_eq!(None, bump);
+            assert_eq!("0.1.0", result.version);
+            assert_eq!(None, result.bump_type);
         }
         Ok(())
     }
@@ -426,31 +447,26 @@ mod test {
             }
         }
 
-        // auto-detected: patch
         let release = build_release("1.0.0", &["fix: something"]);
-        let (_, bump_type) = release.calculate_next_version()?;
-        assert_eq!(Some(BumpType::Patch), bump_type);
+        let result = release.calculate_next_version()?;
+        assert_eq!(Some(BumpType::Patch), result.bump_type);
 
-        // auto-detected: minor
         let release = build_release("1.0.0", &["feat: add xyz"]);
-        let (_, bump_type) = release.calculate_next_version()?;
-        assert_eq!(Some(BumpType::Minor), bump_type);
+        let result = release.calculate_next_version()?;
+        assert_eq!(Some(BumpType::Minor), result.bump_type);
 
-        // auto-detected: major
         let release = build_release("1.0.0", &["feat!: breaking change"]);
-        let (_, bump_type) = release.calculate_next_version()?;
-        assert_eq!(Some(BumpType::Major), bump_type);
+        let result = release.calculate_next_version()?;
+        assert_eq!(Some(BumpType::Major), result.bump_type);
 
-        // forced bump_type via config
         let release = build_release("1.0.0", &["fix: something"]);
-        let (version, bump_type) = release.calculate_next_version_with_config(&Bump {
+        let result = release.calculate_next_version_with_config(&Bump {
             bump_type: Some(BumpType::Minor),
             ..Default::default()
         })?;
-        assert_eq!("1.1.0", version);
-        assert_eq!(Some(BumpType::Minor), bump_type);
+        assert_eq!("1.1.0", result.version);
+        assert_eq!(Some(BumpType::Minor), result.bump_type);
 
-        // no previous version → None
         let release = Release {
             previous: Some(Box::new(Release {
                 version: None,
@@ -458,8 +474,8 @@ mod test {
             })),
             ..Default::default()
         };
-        let (_, bump_type) = release.calculate_next_version()?;
-        assert_eq!(None, bump_type);
+        let result = release.calculate_next_version()?;
+        assert_eq!(None, result.bump_type);
 
         Ok(())
     }
