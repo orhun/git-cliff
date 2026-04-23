@@ -499,6 +499,22 @@ impl Repository {
         None
     }
 
+    /// Resolves a revision string (tag, branch, SHA prefix, `HEAD`, etc.) to a
+    /// full commit SHA. Returns an error if the revision cannot be resolved.
+    pub fn resolve_rev(&self, rev: &str) -> Result<String> {
+        let obj = self.inner.revparse_single(rev)?;
+        let commit = obj.peel_to_commit()?;
+        Ok(commit.id().to_string())
+    }
+
+    /// Returns `true` if the given revision resolves to the root commit (a
+    /// commit with no parents).
+    pub fn is_root_commit(&self, rev: &str) -> Result<bool> {
+        let obj = self.inner.revparse_single(rev)?;
+        let commit = obj.peel_to_commit()?;
+        Ok(commit.parent_count() == 0)
+    }
+
     /// Decide whether to include tag.
     ///
     /// `head_commit` is the `latest` commit to generate changelog. It can be a
@@ -1168,5 +1184,35 @@ mod test {
             );
             assert!(!retain, "exclude: **/*.txt");
         }
+    }
+
+    #[test]
+    fn resolve_rev_resolves_head() -> Result<()> {
+        let repository = get_repository()?;
+        let sha = repository.resolve_rev("HEAD")?;
+        assert_eq!(sha, get_last_commit_hash()?);
+        Ok(())
+    }
+
+    #[test]
+    fn resolve_rev_errors_on_unknown() -> Result<()> {
+        let repository = get_repository()?;
+        assert!(repository.resolve_rev("this-ref-does-not-exist-xyz").is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn is_root_commit_true_for_root() -> Result<()> {
+        let repository = get_repository()?;
+        let root = get_root_commit_hash()?;
+        assert!(repository.is_root_commit(&root)?);
+        Ok(())
+    }
+
+    #[test]
+    fn is_root_commit_false_for_head() -> Result<()> {
+        let repository = get_repository()?;
+        assert!(!repository.is_root_commit("HEAD")?);
+        Ok(())
     }
 }
