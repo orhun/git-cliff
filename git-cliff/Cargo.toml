@@ -62,7 +62,7 @@ url.workspace = true
 pathdiff = "0.2.3"
 tracing.workspace = true
 tracing-subscriber = { version = "0.3.22", features = ["env-filter", "json"] }
-tracing-indicatif = { workspace = true }
+tracing-indicatif.workspace = true
 owo-colors = "4.2.3"
 
 [dependencies.git-cliff-core]
