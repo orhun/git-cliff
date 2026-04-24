@@ -238,6 +238,9 @@ pub struct Opt {
     /// Disables the external command execution.
     #[arg(long, help_heading = Some("FLAGS"))]
     pub no_exec: bool,
+    /// Prints the computed commit range and exits without rendering.
+    #[arg(long, help_heading = Some("FLAGS"))]
+    pub dry_run: bool,
     /// Prints changelog context as JSON.
     #[arg(short = 'x', long, help_heading = Some("FLAGS"))]
     pub context: bool,
@@ -702,6 +705,18 @@ mod tests {
         ])
         .expect_err("clap should reject");
         assert_eq!(err.kind(), clap::error::ErrorKind::ArgumentConflict);
+    }
+
+    #[test]
+    fn cli_parses_dry_run() {
+        let opt = Opt::try_parse_from(["git-cliff", "--dry-run"]).expect("parse");
+        assert!(opt.dry_run);
+    }
+
+    #[test]
+    fn cli_dry_run_defaults_to_false() {
+        let opt = Opt::try_parse_from(["git-cliff"]).expect("parse");
+        assert!(!opt.dry_run);
     }
 
     #[test]

@@ -1,4 +1,9 @@
-#[derive(Debug)]
+//! Canonical commit-range selection.
+//!
+//! Produced from CLI + config by `transform_range`; consumed by
+//! `execute_range` to emit a git revision-range string.
+
+#[derive(Debug, Clone)]
 pub(crate) struct Endpoint {
     pub rev:       String,
     pub inclusive: bool,
@@ -30,7 +35,10 @@ impl Endpoint {
     }
 }
 
-#[derive(Debug, Default)]
+/// Canonical commit-range selection. `None` on either side means the
+/// executor falls back to the default for that side (first commit on the
+/// left, HEAD on the right).
+#[derive(Debug, Clone, Default)]
 pub(crate) struct CommitRange {
     pub left:  Option<Endpoint>,
     pub right: Option<Endpoint>,
@@ -166,6 +174,25 @@ pub(crate) fn transform_range(
     Ok(CommitRange::default())
 }
 
+/// Render a `CommitRange` as a human-readable math interval (e.g.
+/// `[v1.0.0, HEAD)`). Used by the `--dry-run` output; not part of any
+/// behavioral pipeline.
+pub(crate) fn format_interval(range: &CommitRange) -> String {
+    let (lb, lv) = match &range.left {
+        None                                 => ('[', "first".to_string()),
+        Some(e) if e.inclusive               => ('[', e.rev.clone()),
+        Some(e)                              => ('(', e.rev.clone()),
+    };
+    let (rv, rb) = match &range.right {
+        None                                 => ("HEAD".to_string(), ']'),
+        Some(e) if e.inclusive               => (e.rev.clone(), ']'),
+        Some(e)                              => (e.rev.clone(), ')'),
+    };
+    format!("{lb}{lv}, {rv}{rb}")
+}
+
+/// Render a `CommitRange` into a git revision-range string, or `None` when
+/// both sides are unbounded (walk everything).
 pub(crate) fn execute_range(range: &CommitRange) -> Option<String> {
     match (&range.left, &range.right) {
         (None,    None)    => None,
@@ -557,6 +584,56 @@ mod tests {
             range.left.is_none(),
             "inclusive root should downgrade to None (no `root^`)"
         );
+    }
+
+    #[test]
+    fn format_interval_default_is_closed_first_to_head() {
+        assert_eq!(format_interval(&CommitRange::default()), "[first, HEAD]");
+    }
+
+    #[test]
+    fn format_interval_inclusive_left_uses_square_bracket() {
+        let r = CommitRange {
+            left:  Some(Endpoint::inclusive("v1.0.0")),
+            right: None,
+        };
+        assert_eq!(format_interval(&r), "[v1.0.0, HEAD]");
+    }
+
+    #[test]
+    fn format_interval_exclusive_left_uses_paren() {
+        let r = CommitRange {
+            left:  Some(Endpoint::exclusive("v1.0.0")),
+            right: None,
+        };
+        assert_eq!(format_interval(&r), "(v1.0.0, HEAD]");
+    }
+
+    #[test]
+    fn format_interval_inclusive_right_uses_square_bracket() {
+        let r = CommitRange {
+            left:  None,
+            right: Some(Endpoint::inclusive("v2.0.0")),
+        };
+        assert_eq!(format_interval(&r), "[first, v2.0.0]");
+    }
+
+    #[test]
+    fn format_interval_exclusive_right_uses_paren() {
+        let r = CommitRange {
+            left:  None,
+            right: Some(Endpoint::exclusive("v2.0.0")),
+        };
+        assert_eq!(format_interval(&r), "[first, v2.0.0)");
+    }
+
+    #[test]
+    fn format_interval_both_sides_bounded() {
+        let r = CommitRange {
+            left:  Some(Endpoint::exclusive("A")),
+            right: Some(Endpoint::exclusive("B")),
+        };
+        assert_eq!(format_interval(&r), "(A, B)");
     }
 
     #[test]
