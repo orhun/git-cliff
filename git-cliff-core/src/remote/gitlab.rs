@@ -7,12 +7,6 @@ use super::{Debug, MAX_PAGE_SIZE, RemoteClient, RemoteCommit, RemotePullRequest}
 use crate::config::Remote;
 use crate::error::{Error, Result};
 
-/// Log message to show while fetching data from GitLab.
-pub const START_FETCHING_MSG: &str = "Retrieving data from GitLab...";
-
-/// Log message to show when done fetching from GitLab.
-pub const FINISHED_FETCHING_MSG: &str = "Done fetching GitLab data.";
-
 /// Template variables related to this remote.
 pub(crate) const TEMPLATE_VARIABLES: &[&str] = &["gitlab", "commit.gitlab", "commit.remote"];
 
@@ -230,7 +224,9 @@ impl GitLabClient {
     }
 
     /// Looks up the project details.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub async fn get_project(&self) -> Result<GitLabProject> {
+        crate::set_progress_message!("Fetching the project details from GitLab");
         let url = Self::project_url(&self.api_url(), &self.remote());
         self.get_json::<GitLabProject>(&url).await
     }
@@ -238,12 +234,14 @@ impl GitLabClient {
     /// Fetches the complete list of commits.
     /// This is inefficient for large repositories; consider using
     /// `get_commit_stream` instead.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub async fn get_commits(
         &self,
         project_id: i64,
         ref_name: Option<&str>,
     ) -> Result<Vec<Box<dyn RemoteCommit>>> {
         use futures::TryStreamExt;
+        crate::set_progress_message!("Fetching all commits from GitLab");
         self.get_commit_stream(project_id, ref_name)
             .try_collect()
             .await
@@ -252,11 +250,13 @@ impl GitLabClient {
     /// Fetches the complete list of pull requests.
     /// This is inefficient for large repositories; consider using
     /// `get_pull_request_stream` instead.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub async fn get_pull_requests(
         &self,
         project_id: i64,
     ) -> Result<Vec<Box<dyn RemotePullRequest>>> {
         use futures::TryStreamExt;
+        crate::set_progress_message!("Fetching all pull requests from GitLab");
         self.get_pull_request_stream(project_id).try_collect().await
     }
 

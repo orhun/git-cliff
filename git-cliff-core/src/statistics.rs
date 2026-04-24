@@ -52,7 +52,7 @@ impl From<&Release<'_>> for Statistics {
     fn from(release: &Release) -> Self {
         let commit_count = release.commits.len();
         let commits_timespan = if release.commits.len() < 2 {
-            log::trace!(
+            tracing::trace!(
                 "Insufficient commits to calculate duration (found {})",
                 release.commits.len()
             );
@@ -107,7 +107,7 @@ impl From<&Release<'_>> for Statistics {
                 )
                 .map(|(curr, prev)| (curr.date_naive() - prev.date_naive()).num_days())
         } else {
-            log::trace!("Previous release not found");
+            tracing::trace!("Previous release not found");
             None
         };
         Self {

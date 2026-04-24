@@ -230,7 +230,17 @@ impl Commit<'_> {
     /// * converts commit to a conventional commit
     /// * sets the group for the commit
     /// * extracts links and generates URLs
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            skip_all,
+            fields(id = self.id)
+        )
+    )]
     pub fn process(&self, config: &GitConfig) -> Result<Self> {
+        crate::set_progress_message!(
+            "Converting the commit to conventional format, setting its group, and extracting links"
+        );
         let mut commit = self.clone();
         commit = commit.preprocess(&config.commit_preprocessors)?;
         if config.conventional_commits {
@@ -270,7 +280,15 @@ impl Commit<'_> {
     /// Modifies the commit [`message`] using regex or custom OS command.
     ///
     /// [`message`]: Commit::message
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            skip_all,
+            fields(id = self.id)
+        )
+    )]
     pub fn preprocess(mut self, preprocessors: &[TextProcessor]) -> Result<Self> {
+        crate::set_progress_message!("Preprocessing the commit message using text processors");
         preprocessors.iter().try_for_each(|preprocessor| {
             preprocessor.replace(&mut self.message, vec![("COMMIT_SHA", &self.id)])?;
             Ok::<(), AppError>(())
@@ -294,12 +312,20 @@ impl Commit<'_> {
     ///
     /// [`group`]: Commit::group
     /// [`scope`]: Commit::scope
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            skip_all,
+            fields(id = self.id)
+        )
+    )]
     pub fn parse(
         mut self,
         parsers: &[CommitParser],
         protect_breaking: bool,
         filter: bool,
     ) -> Result<Self> {
+        crate::set_progress_message!("Parsing the commit and setting its group and scope");
         let lookup_context = serde_json::to_value(&self).map_err(|e| {
             AppError::FieldError(format!("failed to convert context into value: {e}",))
         })?;
@@ -352,7 +378,7 @@ impl Commit<'_> {
                 match values {
                     Some(values) => {
                         if values.is_empty() {
-                            log::trace!("Field '{field_name}' is present but empty");
+                            tracing::trace!("Field '{field_name}' is present but empty");
                         } else {
                             for value in values {
                                 regex_checks.push((pattern_regex, value));
@@ -411,7 +437,15 @@ impl Commit<'_> {
     ///
     /// [`links`]: Commit::links
     #[must_use]
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            skip_all,
+            fields(id = self.id)
+        )
+    )]
     pub fn parse_links(mut self, parsers: &[LinkParser]) -> Self {
+        crate::set_progress_message!("Parsing links for the commit using link parsers");
         for parser in parsers {
             let regex = &parser.pattern;
             let replace = &parser.href;
@@ -523,9 +557,11 @@ impl Serialize for Commit<'_> {
 /// [`Commit::into_conventional`].
 ///
 /// This function is to be used only in [`crate::release::Release::commits`].
+#[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
 pub(crate) fn commits_to_conventional_commits<'de, 'a, D: Deserializer<'de>>(
     deserializer: D,
 ) -> std::result::Result<Vec<Commit<'a>>, D::Error> {
+    crate::set_progress_message!("Converting commits to conventional commits");
     let commits = Vec::<Commit<'a>>::deserialize(deserializer)?;
     let commits = commits
         .into_iter()

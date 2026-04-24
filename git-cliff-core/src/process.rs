@@ -198,11 +198,11 @@ impl<'cfg, 'sum> CommitProcessor<'cfg, 'sum> {
 
     /// Validates that all processed commits are conventional.
     fn check_conventional_commits(&self, commits: &[Commit<'_>]) -> Result<()> {
-        log::debug!("Verifying that all commits are conventional");
+        tracing::debug!("Verifying that all commits are conventional");
         let mut unconventional_count = 0;
         commits.iter().for_each(|commit| {
             if commit.conv.is_none() {
-                log::error!(
+                tracing::error!(
                     "Commit {id} is not conventional:\n{message}",
                     id = &commit.id[..7],
                     message = commit
@@ -224,12 +224,12 @@ impl<'cfg, 'sum> CommitProcessor<'cfg, 'sum> {
 
     /// Validates that all processed commits matched at least one parser.
     fn check_unmatched_commits(&self, commits: &[Commit<'_>]) -> Result<()> {
-        log::debug!("Verifying that no commits are unmatched by commit parsers");
+        tracing::debug!("Verifying that no commits are unmatched by commit parsers");
         let mut unmatched_count = 0;
         commits.iter().for_each(|commit| {
             let is_unmatched = commit.group.is_none();
             if is_unmatched {
-                log::error!(
+                tracing::error!(
                     "Commit {id} was not matched by any commit parser:\n{message}",
                     id = &commit.id[..7],
                     message = commit
@@ -253,7 +253,7 @@ impl<'cfg, 'sum> CommitProcessor<'cfg, 'sum> {
     fn on_processing_error(&self, commit: &Commit<'_>, error: &AppError) {
         let short_id = commit.id.chars().take(7).collect::<String>();
         let summary = commit.message.lines().next().unwrap_or_default().trim();
-        log::trace!("{short_id} - {error} ({summary})");
+        tracing::trace!("{short_id} - {error} ({summary})");
     }
 }
 

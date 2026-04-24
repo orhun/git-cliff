@@ -9,7 +9,7 @@ pub(crate) fn start_profiling() -> Option<pprof::ProfilerGuard<'static>> {
     {
         Ok(guard) => Some(guard),
         Err(e) => {
-            log::error!("Failed to build profiler guard: {e}");
+            tracing::error!("Failed to build profiler guard: {e}");
             None
         }
     }
@@ -32,17 +32,17 @@ pub(crate) fn finish_profiling(profiler_guard: Option<pprof::ProfilerGuard>) -> 
                     env!("CARGO_PKG_NAME"),
                 ))?;
                 if let Err(e) = report.flamegraph(file) {
-                    log::error!("Failed to create flamegraph file: {e}");
+                    tracing::error!("Failed to create flamegraph file: {e}");
                 }
             }
 
             #[cfg(not(feature = "profiler-flamegraph"))]
             {
-                log::info!("Report profiling: {:?}", &report);
+                tracing::info!("Report profiling: {:?}", &report);
             }
         }
         Err(e) => {
-            log::error!("Failed to build profiler report: {e}");
+            tracing::error!("Failed to build profiler report: {e}");
         }
     }
 

@@ -166,15 +166,15 @@ pub trait RemoteClient {
     /// This is the core HTTP request and JSON parsing logic shared by all API methods.
     /// Callers are responsible for any additional processing of the deserialized data.
     async fn get_json<T: DeserializeOwned>(&self, url: &str) -> Result<T> {
-        log::debug!("Sending request to: {url}");
+        tracing::debug!("Sending request to: {url}");
         let response = self.client().get(url).send().await?.error_for_status()?;
         let response_text = if response.status().is_success() {
             let text = response.text().await?;
-            log::trace!("Response: {text:?}");
+            tracing::trace!("Response: {text:?}");
             text
         } else {
             let text = response.text().await?;
-            log::error!("Request error: {text}");
+            tracing::error!("Request error: {text}");
             text
         };
         Ok(serde_json::from_str::<T>(&response_text)?)

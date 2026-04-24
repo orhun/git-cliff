@@ -397,10 +397,10 @@ impl Bump {
     #[must_use]
     pub fn get_initial_tag(&self) -> String {
         if let Some(tag) = self.initial_tag.clone() {
-            log::warn!("No releases found, using initial tag '{tag}' as the next version");
+            tracing::warn!("No releases found, using initial tag '{tag}' as the next version");
             tag
         } else {
-            log::warn!("No releases found, using {DEFAULT_INITIAL_TAG} as the next version");
+            tracing::warn!("No releases found, using {DEFAULT_INITIAL_TAG} as the next version");
             DEFAULT_INITIAL_TAG.into()
         }
     }
@@ -536,7 +536,7 @@ impl Config {
             if supported_path.exists() {
                 #[allow(clippy::unnecessary_debug_formatting)]
                 {
-                    log::debug!("Using configuration file from: {supported_path:?}");
+                    tracing::debug!("Using configuration file from: {supported_path:?}");
                 }
                 return Some(supported_path.clone());
             }
