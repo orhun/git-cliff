@@ -57,44 +57,21 @@ fn style_level(level: Level) -> Styled<&'static str> {
     }
 }
 
-/// Shortens the target string to fit within the specified width.
-/// TODO: This function is currently unused but kept for future.
-#[allow(dead_code)]
-fn shorten_target(target: &str, width: usize) -> String {
-    if target.len() <= width {
-        return target.to_string();
-    }
-    let parts: Vec<&str> = target.split("::").collect();
-    if parts.len() >= 2 {
-        format!("{}...{}", parts[0], parts[parts.len() - 1])
-    } else {
-        target.to_string()
-    }
-}
-
-/// Formats the elapsed time as `X.Ys` (sub-second precision).
-fn elapsed_subsec_key(state: &ProgressState, writer: &mut dyn fmt::Write) {
-    let seconds = state.elapsed().as_secs();
-    let sub_seconds = (state.elapsed().as_millis() % 1000) / 100;
-    let _ = write!(writer, "{seconds}.{sub_seconds}s");
-}
-
-/// Emits an ANSI color escape sequence for the spinner, based on elapsed time.
+/// Computes the spinner/elapsed color based on elapsed time.
 ///
 /// The color gradually transitions:
 /// - green  -> yellow (0–16s)
 /// - yellow -> red    (16–32s)
-fn color_start_key(state: &ProgressState, writer: &mut dyn fmt::Write) {
+fn progress_color(state: &ProgressState) -> (u8, u8, u8) {
     let elapsed = state.elapsed().as_secs_f32();
     let t = (elapsed / 32.0).min(1.0);
-    let (r, g, b) = if t < 0.5 {
+    if t < 0.5 {
         let nt = t * 2.0;
         (lerp(140, 230, nt), lerp(200, 210, nt), lerp(160, 150, nt))
     } else {
         let nt = (t - 0.5) * 2.0;
         (lerp(230, 230, nt), lerp(210, 140, nt), lerp(150, 140, nt))
-    };
-    let _ = write!(writer, "\x1b[38;2;{r};{g};{b}m");
+    }
 }
 
 /// Performs linear interpolation between two color components.
@@ -103,12 +80,37 @@ fn lerp(a: u8, b: u8, t: f32) -> u8 {
     ((f32::from(a) + (f32::from(b) - f32::from(a)) * t).clamp(0.0, 255.0)) as u8
 }
 
-/// Resets ANSI styling to the terminal default.
-///
-/// This must be paired with `color_start_key` to avoid leaking color state into subsequent log
-/// output.
-fn color_end_key(_: &ProgressState, writer: &mut dyn fmt::Write) {
-    let _ = writer.write_str("\x1b[0m");
+/// Formats the elapsed time as `X.Ys` (sub-second precision).
+fn elapsed_subsec_key(state: &ProgressState, writer: &mut dyn fmt::Write) {
+    let seconds = state.elapsed().as_secs();
+    let sub_seconds = (state.elapsed().as_millis() % 1000) / 100;
+    let (r, g, b) = progress_color(state);
+    let _ = write!(
+        writer,
+        "{}",
+        Style::new()
+            .truecolor(r, g, b)
+            .style(format!("{seconds}.{sub_seconds}s"))
+    );
+}
+
+/// Formats the current spinner tick and colors it based on elapsed time.
+fn spinner_key(state: &ProgressState, writer: &mut dyn fmt::Write, ticks: &'static [&'static str]) {
+    let index = ((state.elapsed().as_millis() / 100) as usize) % ticks.len();
+    let (r, g, b) = progress_color(state);
+    let _ = write!(
+        writer,
+        "{}",
+        Style::new().truecolor(r, g, b).style(ticks[index])
+    );
+}
+
+fn root_spinner_key(state: &ProgressState, writer: &mut dyn fmt::Write) {
+    spinner_key(state, writer, ROOT_SPINNER_TICKS);
+}
+
+fn child_spinner_key(state: &ProgressState, writer: &mut dyn fmt::Write) {
+    spinner_key(state, writer, CHILD_SPINNER_TICKS);
 }
 
 /// Builds the `indicatif::ProgressStyle` used for tracing spans.
@@ -118,16 +120,13 @@ fn color_end_key(_: &ProgressState, writer: &mut dyn fmt::Write) {
 /// - colorizes the spinner based on elapsed time
 /// - shows span name, fields, and wide messages
 /// - appends a sub-second elapsed timer
-fn indicatif_progress_style(ticks: &[&str]) -> ProgressStyle {
+fn indicatif_progress_style(spinner_key: fn(&ProgressState, &mut dyn fmt::Write)) -> ProgressStyle {
     ProgressStyle::with_template(
-        "{span_child_prefix}{color_start}{spinner}{color_end} {wide_msg} {span_name} \
-         {span_fields} [{color_start}{elapsed_subsec}{color_end}]",
+        "{span_child_prefix}{spinner} {wide_msg} {span_name} {span_fields} [{elapsed_subsec}]",
     )
     .unwrap()
     .with_key("elapsed_subsec", elapsed_subsec_key)
-    .with_key("color_start", color_start_key)
-    .with_key("color_end", color_end_key)
-    .tick_strings(ticks)
+    .with_key("spinner", spinner_key)
 }
 
 /// Applies different progress spinner styles to root and nested tracing spans.
@@ -139,9 +138,9 @@ where
 {
     fn on_enter(&self, id: &tracing::span::Id, ctx: Context<'_, S>) {
         let ticks = if ctx.span(id).is_some_and(|span| span.parent().is_some()) {
-            CHILD_SPINNER_TICKS
+            child_spinner_key
         } else {
-            ROOT_SPINNER_TICKS
+            root_spinner_key
         };
         Span::current().pb_set_style(&indicatif_progress_style(ticks));
     }
@@ -193,7 +192,7 @@ pub fn init() -> Result<()> {
     // Build EnvFilter from `RUST_LOG` or fallback to "info"
     let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into());
     let indicatif_layer = IndicatifLayer::new()
-        .with_progress_style(indicatif_progress_style(ROOT_SPINNER_TICKS))
+        .with_progress_style(indicatif_progress_style(root_spinner_key))
         .with_span_child_prefix_symbol("↳ ")
         .with_span_child_prefix_indent(" ");
     let fmt_layer = tracing_subscriber::fmt::layer()
