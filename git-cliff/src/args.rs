@@ -655,55 +655,39 @@ mod tests {
 
     #[test]
     fn cli_parses_start_at() {
-        let opt =
-            Opt::try_parse_from(["git-cliff", "--start-at", "v1.0.0"]).expect("parse");
+        let opt = Opt::try_parse_from(["git-cliff", "--start-at", "v1.0.0"]).expect("parse");
         assert_eq!(opt.start_at.as_deref(), Some("v1.0.0"));
     }
 
     #[test]
     fn cli_parses_start_after() {
-        let opt =
-            Opt::try_parse_from(["git-cliff", "--start-after", "v1.0.0"]).expect("parse");
+        let opt = Opt::try_parse_from(["git-cliff", "--start-after", "v1.0.0"]).expect("parse");
         assert_eq!(opt.start_after.as_deref(), Some("v1.0.0"));
     }
 
     #[test]
     fn cli_parses_end_at() {
-        let opt =
-            Opt::try_parse_from(["git-cliff", "--end-at", "v2.0.0"]).expect("parse");
+        let opt = Opt::try_parse_from(["git-cliff", "--end-at", "v2.0.0"]).expect("parse");
         assert_eq!(opt.end_at.as_deref(), Some("v2.0.0"));
     }
 
     #[test]
     fn cli_parses_end_before() {
-        let opt =
-            Opt::try_parse_from(["git-cliff", "--end-before", "v2.0.0"]).expect("parse");
+        let opt = Opt::try_parse_from(["git-cliff", "--end-before", "v2.0.0"]).expect("parse");
         assert_eq!(opt.end_before.as_deref(), Some("v2.0.0"));
     }
 
     #[test]
     fn cli_rejects_start_at_and_start_after_together() {
-        let err = Opt::try_parse_from([
-            "git-cliff",
-            "--start-at",
-            "A",
-            "--start-after",
-            "B",
-        ])
-        .expect_err("clap should reject");
+        let err = Opt::try_parse_from(["git-cliff", "--start-at", "A", "--start-after", "B"])
+            .expect_err("clap should reject");
         assert_eq!(err.kind(), clap::error::ErrorKind::ArgumentConflict);
     }
 
     #[test]
     fn cli_rejects_end_at_and_end_before_together() {
-        let err = Opt::try_parse_from([
-            "git-cliff",
-            "--end-at",
-            "A",
-            "--end-before",
-            "B",
-        ])
-        .expect_err("clap should reject");
+        let err = Opt::try_parse_from(["git-cliff", "--end-at", "A", "--end-before", "B"])
+            .expect_err("clap should reject");
         assert_eq!(err.kind(), clap::error::ErrorKind::ArgumentConflict);
     }
 
@@ -731,8 +715,8 @@ mod tests {
             &["git-cliff", "A..B", "--start-at", "C"],
         ];
         for argv in cases {
-            let err = Opt::try_parse_from(*argv)
-                .expect_err(&format!("clap should reject: {argv:?}"));
+            let err =
+                Opt::try_parse_from(*argv).expect_err(&format!("clap should reject: {argv:?}"));
             assert_eq!(
                 err.kind(),
                 clap::error::ErrorKind::ArgumentConflict,

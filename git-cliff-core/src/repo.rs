@@ -1197,7 +1197,11 @@ mod test {
     #[test]
     fn resolve_rev_errors_on_unknown() -> Result<()> {
         let repository = get_repository()?;
-        assert!(repository.resolve_rev("this-ref-does-not-exist-xyz").is_err());
+        assert!(
+            repository
+                .resolve_rev("this-ref-does-not-exist-xyz")
+                .is_err()
+        );
         Ok(())
     }
 

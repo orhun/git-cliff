@@ -69,12 +69,7 @@ fn determine_commit_range(
     let current_tag = repository.current_tag();
     let current_tag_name = current_tag.as_ref().map(|t| t.name.as_str());
 
-    let range = crate::range::transform_range(
-        args,
-        &config.git,
-        &tag_names,
-        current_tag_name,
-    )?;
+    let range = crate::range::transform_range(args, &config.git, &tag_names, current_tag_name)?;
     let mut resolved = range.clone();
     resolved.resolve_with(repository)?;
     Ok((range, crate::range::execute_range(&resolved)))
@@ -760,13 +755,21 @@ pub fn run_with_changelog_modifier<'a>(
 
             if args.dry_run {
                 let count = repository
-                    .commits(commit_range.as_deref(), None, None, config.git.topo_order_commits)?
+                    .commits(
+                        commit_range.as_deref(),
+                        None,
+                        None,
+                        config.git.topo_order_commits,
+                    )?
                     .len();
-                println!("range:    {}", crate::range::format_interval(&canonical_range));
+                println!(
+                    "range:    {}",
+                    crate::range::format_interval(&canonical_range)
+                );
                 println!("commits:  {count}");
                 match &commit_range {
                     Some(s) => println!("emitted:  {s}"),
-                    None    => println!("emitted:  (walk all ancestors of HEAD)"),
+                    None => println!("emitted:  (walk all ancestors of HEAD)"),
                 }
                 std::process::exit(0);
             }

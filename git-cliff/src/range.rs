@@ -5,17 +5,23 @@
 
 #[derive(Debug, Clone)]
 pub(crate) struct Endpoint {
-    pub rev:       String,
+    pub rev: String,
     pub inclusive: bool,
 }
 
 impl Endpoint {
     pub fn inclusive(rev: impl Into<String>) -> Self {
-        Self { rev: rev.into(), inclusive: true }
+        Self {
+            rev: rev.into(),
+            inclusive: true,
+        }
     }
 
     pub fn exclusive(rev: impl Into<String>) -> Self {
-        Self { rev: rev.into(), inclusive: false }
+        Self {
+            rev: rev.into(),
+            inclusive: false,
+        }
     }
 
     pub fn as_left(&self) -> String {
@@ -40,7 +46,7 @@ impl Endpoint {
 /// left, HEAD on the right).
 #[derive(Debug, Clone, Default)]
 pub(crate) struct CommitRange {
-    pub left:  Option<Endpoint>,
+    pub left: Option<Endpoint>,
     pub right: Option<Endpoint>,
 }
 
@@ -60,7 +66,7 @@ impl CommitRange {
         }
         if let Some(endpoint) = &self.left {
             if endpoint.inclusive && repository.is_root_commit(&endpoint.rev)? {
-                log::warn!(
+                tracing::warn!(
                     "{} is the root commit; left bound falls back to walking from the root",
                     endpoint.rev
                 );
@@ -77,10 +83,13 @@ pub(crate) fn transform_range(
     tag_names: &[String],
     current_tag: Option<&str>,
 ) -> git_cliff_core::error::Result<CommitRange> {
-    let start_at    = args.start_at   .as_ref().or(git_config.start_at   .as_ref());
-    let start_after = args.start_after.as_ref().or(git_config.start_after.as_ref());
-    let end_at      = args.end_at     .as_ref().or(git_config.end_at     .as_ref());
-    let end_before  = args.end_before .as_ref().or(git_config.end_before .as_ref());
+    let start_at = args.start_at.as_ref().or(git_config.start_at.as_ref());
+    let start_after = args
+        .start_after
+        .as_ref()
+        .or(git_config.start_after.as_ref());
+    let end_at = args.end_at.as_ref().or(git_config.end_at.as_ref());
+    let end_before = args.end_before.as_ref().or(git_config.end_before.as_ref());
     if start_at.is_some() && start_after.is_some() {
         return Err(git_cliff_core::error::Error::ArgumentError(String::from(
             "`start_at` and `start_after` are mutually exclusive",
@@ -93,10 +102,7 @@ pub(crate) fn transform_range(
     }
     let has_new_option =
         start_at.is_some() || start_after.is_some() || end_at.is_some() || end_before.is_some();
-    let has_legacy_flag = args.unreleased
-        || args.latest
-        || args.current
-        || args.range.is_some();
+    let has_legacy_flag = args.unreleased || args.latest || args.current || args.range.is_some();
     if has_new_option && has_legacy_flag {
         return Err(git_cliff_core::error::Error::ArgumentError(String::from(
             "the new range endpoint options cannot be combined with legacy range flags \
@@ -104,10 +110,14 @@ pub(crate) fn transform_range(
         )));
     }
     if has_new_option {
-        let new_left  = start_at.map(Endpoint::inclusive).or_else(|| start_after.map(Endpoint::exclusive));
-        let new_right = end_at  .map(Endpoint::inclusive).or_else(|| end_before .map(Endpoint::exclusive));
+        let new_left = start_at
+            .map(Endpoint::inclusive)
+            .or_else(|| start_after.map(Endpoint::exclusive));
+        let new_right = end_at
+            .map(Endpoint::inclusive)
+            .or_else(|| end_before.map(Endpoint::exclusive));
         return Ok(CommitRange {
-            left:  new_left,
+            left: new_left,
             right: new_right,
         });
     }
@@ -115,7 +125,7 @@ pub(crate) fn transform_range(
         let parts: Vec<&str> = range_str.splitn(2, "..").collect();
         if parts.len() == 2 && !parts[0].is_empty() && !parts[1].is_empty() {
             return Ok(CommitRange {
-                left:  Some(Endpoint::exclusive(parts[0])),
+                left: Some(Endpoint::exclusive(parts[0])),
                 right: Some(Endpoint::inclusive(parts[1])),
             });
         }
@@ -123,7 +133,7 @@ pub(crate) fn transform_range(
     if args.unreleased {
         if let Some(last_tag) = tag_names.last() {
             return Ok(CommitRange {
-                left:  Some(Endpoint::exclusive(last_tag)),
+                left: Some(Endpoint::exclusive(last_tag)),
                 right: None,
             });
         }
@@ -132,11 +142,11 @@ pub(crate) fn transform_range(
         return Ok(match tag_names.len() {
             0 => CommitRange::default(),
             1 => CommitRange {
-                left:  None,
+                left: None,
                 right: Some(Endpoint::inclusive(&tag_names[0])),
             },
             n => CommitRange {
-                left:  Some(Endpoint::exclusive(&tag_names[n - 2])),
+                left: Some(Endpoint::exclusive(&tag_names[n - 2])),
                 right: Some(Endpoint::inclusive(&tag_names[n - 1])),
             },
         });
@@ -146,7 +156,7 @@ pub(crate) fn transform_range(
             return Ok(match tag_names.len() {
                 0 => CommitRange::default(),
                 _ => CommitRange {
-                    left:  None,
+                    left: None,
                     right: Some(Endpoint::inclusive(&tag_names[0])),
                 },
             });
@@ -167,7 +177,7 @@ pub(crate) fn transform_range(
             ))
         })?;
         return Ok(CommitRange {
-            left:  Some(Endpoint::exclusive(&tag_names[prev])),
+            left: Some(Endpoint::exclusive(&tag_names[prev])),
             right: Some(Endpoint::inclusive(&tag_names[idx])),
         });
     }
@@ -179,14 +189,14 @@ pub(crate) fn transform_range(
 /// behavioral pipeline.
 pub(crate) fn format_interval(range: &CommitRange) -> String {
     let (lb, lv) = match &range.left {
-        None                                 => ('[', "first".to_string()),
-        Some(e) if e.inclusive               => ('[', e.rev.clone()),
-        Some(e)                              => ('(', e.rev.clone()),
+        None => ('[', "first".to_string()),
+        Some(e) if e.inclusive => ('[', e.rev.clone()),
+        Some(e) => ('(', e.rev.clone()),
     };
     let (rv, rb) = match &range.right {
-        None                                 => ("HEAD".to_string(), ']'),
-        Some(e) if e.inclusive               => (e.rev.clone(), ']'),
-        Some(e)                              => (e.rev.clone(), ')'),
+        None => ("HEAD".to_string(), ']'),
+        Some(e) if e.inclusive => (e.rev.clone(), ']'),
+        Some(e) => (e.rev.clone(), ')'),
     };
     format!("{lb}{lv}, {rv}{rb}")
 }
@@ -195,9 +205,9 @@ pub(crate) fn format_interval(range: &CommitRange) -> String {
 /// both sides are unbounded (walk everything).
 pub(crate) fn execute_range(range: &CommitRange) -> Option<String> {
     match (&range.left, &range.right) {
-        (None,    None)    => None,
-        (None,    Some(r)) => Some(r.as_right()),
-        (Some(l), None)    => Some(format!("{}..HEAD", l.as_left())),
+        (None, None) => None,
+        (None, Some(r)) => Some(r.as_right()),
+        (Some(l), None) => Some(format!("{}..HEAD", l.as_left())),
         (Some(l), Some(r)) => Some(format!("{}..{}", l.as_left(), r.as_right())),
     }
 }
@@ -254,25 +264,37 @@ mod tests {
 
     #[test]
     fn execute_emits_right_inclusive_bare() {
-        let r = CommitRange { left: None, right: Some(Endpoint::inclusive("B")) };
+        let r = CommitRange {
+            left: None,
+            right: Some(Endpoint::inclusive("B")),
+        };
         assert_eq!(execute_range(&r), Some("B".to_string()));
     }
 
     #[test]
     fn execute_emits_right_exclusive_with_caret() {
-        let r = CommitRange { left: None, right: Some(Endpoint::exclusive("B")) };
+        let r = CommitRange {
+            left: None,
+            right: Some(Endpoint::exclusive("B")),
+        };
         assert_eq!(execute_range(&r), Some("B^".to_string()));
     }
 
     #[test]
     fn execute_emits_left_exclusive_to_head() {
-        let r = CommitRange { left: Some(Endpoint::exclusive("A")), right: None };
+        let r = CommitRange {
+            left: Some(Endpoint::exclusive("A")),
+            right: None,
+        };
         assert_eq!(execute_range(&r), Some("A..HEAD".to_string()));
     }
 
     #[test]
     fn execute_emits_left_inclusive_to_head() {
-        let r = CommitRange { left: Some(Endpoint::inclusive("A")), right: None };
+        let r = CommitRange {
+            left: Some(Endpoint::inclusive("A")),
+            right: None,
+        };
         assert_eq!(execute_range(&r), Some("A^..HEAD".to_string()));
     }
 
@@ -285,7 +307,10 @@ mod tests {
             (Endpoint::inclusive("A"), Endpoint::exclusive("B"), "A^..B^"),
         ];
         for (left, right, expected) in cases {
-            let r = CommitRange { left: Some(left), right: Some(right) };
+            let r = CommitRange {
+                left: Some(left),
+                right: Some(right),
+            };
             assert_eq!(execute_range(&r).as_deref(), Some(expected));
         }
     }
@@ -355,8 +380,7 @@ mod tests {
             "v1.1.0".to_string(),
             "v1.2.0".to_string(),
         ];
-        let range =
-            transform_range(&args, &git_config, &tags, Some("v1.1.0")).expect("transform");
+        let range = transform_range(&args, &git_config, &tags, Some("v1.1.0")).expect("transform");
         let left = range.left.expect("left");
         assert_eq!(left.rev, "v1.0.0");
         assert!(!left.inclusive);
@@ -493,7 +517,10 @@ mod tests {
         let mut args = parse_opt(&["git-cliff", "--unreleased"]);
         args.start_at = Some("A".to_string());
         let err = transform_range(&args, &git_config, &["v1".to_string()], None).unwrap_err();
-        assert!(matches!(err, git_cliff_core::error::Error::ArgumentError(_)));
+        assert!(matches!(
+            err,
+            git_cliff_core::error::Error::ArgumentError(_)
+        ));
 
         let mut args = parse_opt(&["git-cliff", "--latest"]);
         args.end_at = Some("B".to_string());
@@ -504,7 +531,10 @@ mod tests {
             None,
         )
         .unwrap_err();
-        assert!(matches!(err, git_cliff_core::error::Error::ArgumentError(_)));
+        assert!(matches!(
+            err,
+            git_cliff_core::error::Error::ArgumentError(_)
+        ));
 
         let mut args = parse_opt(&["git-cliff", "--current"]);
         args.start_after = Some("A".to_string());
@@ -515,12 +545,18 @@ mod tests {
             Some("v2"),
         )
         .unwrap_err();
-        assert!(matches!(err, git_cliff_core::error::Error::ArgumentError(_)));
+        assert!(matches!(
+            err,
+            git_cliff_core::error::Error::ArgumentError(_)
+        ));
 
         let mut args = parse_opt(&["git-cliff", "v1..v2"]);
         args.end_before = Some("B".to_string());
         let err = transform_range(&args, &git_config, &[], None).unwrap_err();
-        assert!(matches!(err, git_cliff_core::error::Error::ArgumentError(_)));
+        assert!(matches!(
+            err,
+            git_cliff_core::error::Error::ArgumentError(_)
+        ));
     }
 
     #[test]
@@ -529,13 +565,16 @@ mod tests {
         let mut git_config = git_cliff_core::config::GitConfig::default();
         git_config.start_at = Some("A".to_string());
         let err = transform_range(&args, &git_config, &["v1".to_string()], None).unwrap_err();
-        assert!(matches!(err, git_cliff_core::error::Error::ArgumentError(_)));
+        assert!(matches!(
+            err,
+            git_cliff_core::error::Error::ArgumentError(_)
+        ));
     }
 
     fn test_repo() -> git_cliff_core::repo::Repository {
-        git_cliff_core::repo::Repository::discover(
-            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")),
-        )
+        git_cliff_core::repo::Repository::discover(std::path::PathBuf::from(env!(
+            "CARGO_MANIFEST_DIR"
+        )))
         .expect("discover")
     }
 
@@ -544,14 +583,17 @@ mod tests {
             .args(["rev-list", "--max-parents=0", "HEAD"])
             .output()
             .expect("git rev-list");
-        std::str::from_utf8(&out.stdout).expect("utf-8").trim().to_string()
+        std::str::from_utf8(&out.stdout)
+            .expect("utf-8")
+            .trim()
+            .to_string()
     }
 
     #[test]
     fn resolve_with_errors_on_unknown_left_ref() {
         let repo = test_repo();
         let mut range = CommitRange {
-            left:  Some(Endpoint::exclusive("this-ref-does-not-exist-xyz")),
+            left: Some(Endpoint::exclusive("this-ref-does-not-exist-xyz")),
             right: None,
         };
         let err = range.resolve_with(&repo).unwrap_err();
@@ -565,7 +607,7 @@ mod tests {
     fn resolve_with_accepts_valid_refs() {
         let repo = test_repo();
         let mut range = CommitRange {
-            left:  Some(Endpoint::exclusive("HEAD~1")),
+            left: Some(Endpoint::exclusive("HEAD~1")),
             right: Some(Endpoint::inclusive("HEAD")),
         };
         range.resolve_with(&repo).expect("resolve");
@@ -576,7 +618,7 @@ mod tests {
         let repo = test_repo();
         let root = root_sha();
         let mut range = CommitRange {
-            left:  Some(Endpoint::inclusive(&root)),
+            left: Some(Endpoint::inclusive(&root)),
             right: None,
         };
         range.resolve_with(&repo).expect("resolve");
@@ -594,7 +636,7 @@ mod tests {
     #[test]
     fn format_interval_inclusive_left_uses_square_bracket() {
         let r = CommitRange {
-            left:  Some(Endpoint::inclusive("v1.0.0")),
+            left: Some(Endpoint::inclusive("v1.0.0")),
             right: None,
         };
         assert_eq!(format_interval(&r), "[v1.0.0, HEAD]");
@@ -603,7 +645,7 @@ mod tests {
     #[test]
     fn format_interval_exclusive_left_uses_paren() {
         let r = CommitRange {
-            left:  Some(Endpoint::exclusive("v1.0.0")),
+            left: Some(Endpoint::exclusive("v1.0.0")),
             right: None,
         };
         assert_eq!(format_interval(&r), "(v1.0.0, HEAD]");
@@ -612,7 +654,7 @@ mod tests {
     #[test]
     fn format_interval_inclusive_right_uses_square_bracket() {
         let r = CommitRange {
-            left:  None,
+            left: None,
             right: Some(Endpoint::inclusive("v2.0.0")),
         };
         assert_eq!(format_interval(&r), "[first, v2.0.0]");
@@ -621,7 +663,7 @@ mod tests {
     #[test]
     fn format_interval_exclusive_right_uses_paren() {
         let r = CommitRange {
-            left:  None,
+            left: None,
             right: Some(Endpoint::exclusive("v2.0.0")),
         };
         assert_eq!(format_interval(&r), "[first, v2.0.0)");
@@ -630,7 +672,7 @@ mod tests {
     #[test]
     fn format_interval_both_sides_bounded() {
         let r = CommitRange {
-            left:  Some(Endpoint::exclusive("A")),
+            left: Some(Endpoint::exclusive("A")),
             right: Some(Endpoint::exclusive("B")),
         };
         assert_eq!(format_interval(&r), "(A, B)");
@@ -641,7 +683,7 @@ mod tests {
         let repo = test_repo();
         let root = root_sha();
         let mut range = CommitRange {
-            left:  Some(Endpoint::exclusive(&root)),
+            left: Some(Endpoint::exclusive(&root)),
             right: None,
         };
         range.resolve_with(&repo).expect("resolve");
