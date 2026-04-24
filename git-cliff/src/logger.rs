@@ -4,10 +4,12 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use git_cliff_core::error::{Error, Result};
 use indicatif::{ProgressState, ProgressStyle};
 use owo_colors::{OwoColorize, Style, Styled};
-use tracing::{Event, Level, Subscriber};
+use tracing::{Event, Level, Span, Subscriber};
 use tracing_indicatif::IndicatifLayer;
+use tracing_indicatif::span_ext::IndicatifSpanExt;
 use tracing_subscriber::fmt::FmtContext;
 use tracing_subscriber::fmt::format::{self, FormatEvent, FormatFields};
+use tracing_subscriber::layer::{Context, Layer};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::registry::LookupSpan;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -16,8 +18,10 @@ use tracing_subscriber::{EnvFilter, Registry};
 /// Global variable for storing the maximum width of the modules.
 static MAX_MODULE_WIDTH: AtomicUsize = AtomicUsize::new(0);
 
-/// Unicode braille spinner frames used by indicatif.
-const SPINNER_TICKS: &[&str] = &["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+/// Classic single-cell spinner frames used by indicatif.
+const ROOT_SPINNER_TICKS: &[&str] = &["◐", "◓", "◑", "◒"];
+/// The previous quarter-circle spinner for nested spans.
+const CHILD_SPINNER_TICKS: &[&str] = &["◴", "◷", "◶", "◵"];
 
 /// Wrapper for the padded values.
 struct Padded<T> {
@@ -114,7 +118,7 @@ fn color_end_key(_: &ProgressState, writer: &mut dyn fmt::Write) {
 /// - colorizes the spinner based on elapsed time
 /// - shows span name, fields, and wide messages
 /// - appends a sub-second elapsed timer
-fn indicatif_progress_style() -> ProgressStyle {
+fn indicatif_progress_style(ticks: &[&str]) -> ProgressStyle {
     ProgressStyle::with_template(
         "{span_child_prefix}{color_start}{spinner}{color_end} {wide_msg} {span_name} \
          {span_fields} [{color_start}{elapsed_subsec}{color_end}]",
@@ -123,7 +127,24 @@ fn indicatif_progress_style() -> ProgressStyle {
     .with_key("elapsed_subsec", elapsed_subsec_key)
     .with_key("color_start", color_start_key)
     .with_key("color_end", color_end_key)
-    .tick_strings(SPINNER_TICKS)
+    .tick_strings(ticks)
+}
+
+/// Applies different progress spinner styles to root and nested tracing spans.
+struct SpinnerStyleLayer;
+
+impl<S> Layer<S> for SpinnerStyleLayer
+where
+    S: Subscriber + for<'a> LookupSpan<'a>,
+{
+    fn on_enter(&self, id: &tracing::span::Id, ctx: Context<'_, S>) {
+        let ticks = if ctx.span(id).is_some_and(|span| span.parent().is_some()) {
+            CHILD_SPINNER_TICKS
+        } else {
+            ROOT_SPINNER_TICKS
+        };
+        Span::current().pb_set_style(&indicatif_progress_style(ticks));
+    }
 }
 
 /// Simple formatter. We format: "LEVEL TARGET > MESSAGE", with a basic padding for target.
@@ -172,7 +193,7 @@ pub fn init() -> Result<()> {
     // Build EnvFilter from `RUST_LOG` or fallback to "info"
     let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into());
     let indicatif_layer = IndicatifLayer::new()
-        .with_progress_style(indicatif_progress_style())
+        .with_progress_style(indicatif_progress_style(ROOT_SPINNER_TICKS))
         .with_span_child_prefix_symbol("↳ ")
         .with_span_child_prefix_indent(" ");
     let fmt_layer = tracing_subscriber::fmt::layer()
@@ -182,6 +203,7 @@ pub fn init() -> Result<()> {
     let subscriber = Registry::default()
         .with(env_filter)
         .with(indicatif_layer)
+        .with(SpinnerStyleLayer)
         .with(fmt_layer);
     subscriber
         .try_init()
