@@ -128,10 +128,7 @@ impl Release<'_> {
             )
         )
     )]
-    pub(super) fn calculate_next_version_with_config(
-        &self,
-        config: &Bump,
-    ) -> Result<NextVersion> {
+    pub(super) fn calculate_next_version_with_config(&self, config: &Bump) -> Result<NextVersion> {
         crate::set_progress_message!(
             "Calculating the next version from commits with custom bump rules"
         );
