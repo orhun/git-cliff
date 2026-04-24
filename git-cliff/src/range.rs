@@ -464,8 +464,10 @@ mod tests {
     fn transform_cli_start_at_wins_over_config_start_at() {
         let mut args = parse_opt(&["git-cliff"]);
         args.start_at = Some("cli-rev".to_string());
-        let mut git_config = git_cliff_core::config::GitConfig::default();
-        git_config.start_at = Some("config-rev".to_string());
+        let git_config = git_cliff_core::config::GitConfig {
+            start_at: Some("config-rev".to_string()),
+            ..Default::default()
+        };
         let range = transform_range(&args, &git_config, &[], None).expect("transform");
         let left = range.left.expect("left");
         assert_eq!(left.rev, "cli-rev");
@@ -475,8 +477,10 @@ mod tests {
     #[test]
     fn transform_config_start_at_applies_when_cli_unset() {
         let args = parse_opt(&["git-cliff"]);
-        let mut git_config = git_cliff_core::config::GitConfig::default();
-        git_config.start_at = Some("config-rev".to_string());
+        let git_config = git_cliff_core::config::GitConfig {
+            start_at: Some("config-rev".to_string()),
+            ..Default::default()
+        };
         let range = transform_range(&args, &git_config, &[], None).expect("transform");
         let left = range.left.expect("left");
         assert_eq!(left.rev, "config-rev");
@@ -562,8 +566,10 @@ mod tests {
     #[test]
     fn transform_rejects_config_new_option_with_legacy_cli_flag() {
         let args = parse_opt(&["git-cliff", "--unreleased"]);
-        let mut git_config = git_cliff_core::config::GitConfig::default();
-        git_config.start_at = Some("A".to_string());
+        let git_config = git_cliff_core::config::GitConfig {
+            start_at: Some("A".to_string()),
+            ..Default::default()
+        };
         let err = transform_range(&args, &git_config, &["v1".to_string()], None).unwrap_err();
         assert!(matches!(
             err,
