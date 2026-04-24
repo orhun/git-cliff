@@ -362,6 +362,18 @@ pub struct Opt {
     /// Sets the commit range to process.
     #[arg(value_name = "RANGE", help_heading = Some("ARGS"))]
     pub range: Option<String>,
+    /// Include this revision as the lower bound (walk forward from here).
+    #[arg(skip)]
+    pub start_at: Option<String>,
+    /// Exclude this revision; start walking forward from its successor.
+    #[arg(skip)]
+    pub start_after: Option<String>,
+    /// Include this revision as the upper bound (walk back from here).
+    #[arg(skip)]
+    pub end_at: Option<String>,
+    /// Exclude this revision; stop walking before reaching it.
+    #[arg(skip)]
+    pub end_before: Option<String>,
     /// Load TLS certificates from the native certificate store.
     #[arg(long, help_heading = Some("FLAGS"), hide = !cfg!(feature = "remote"))]
     pub use_native_tls: bool,
