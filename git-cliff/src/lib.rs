@@ -350,7 +350,8 @@ fn process_repository<'a>(
     let repository_path = repository.root_path()?.to_string_lossy().into_owned();
     for git_commit in commits.iter().rev() {
         let release = releases.last_mut().unwrap();
-        let commit = Commit::from(git_commit);
+        let mut commit = Commit::from(git_commit);
+        commit.statistics = repository.commit_statistics(git_commit)?;
         let commit_id = commit.id.clone();
         release.commits.push(commit);
         release.repository = Some(repository_path.clone());
