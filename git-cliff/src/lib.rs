@@ -10,6 +10,8 @@ pub mod args;
 /// Custom logger implementation.
 pub mod logger;
 
+mod range;
+
 use std::env;
 use std::fs::{self, File};
 use std::io::{self, Write};
