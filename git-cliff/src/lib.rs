@@ -49,7 +49,10 @@ pub fn check_new_version() {
 /// Produces a commit range on the format `BASE..HEAD`, derived from the
 /// command line arguments and repository tags.
 ///
-/// If no commit range could be determined, `None` is returned.
+/// The pipeline is: surface inputs (CLI + config + tag snapshot) go through
+/// `transform_range` to produce a canonical `CommitRange`; `resolve_with`
+/// validates every endpoint against the repo and rewrites the root-commit
+/// edge case; `execute_range` emits the final git range string.
 fn determine_commit_range(
     args: &Opt,
     config: &Config,
@@ -60,58 +63,18 @@ fn determine_commit_range(
         args.topo_order,
         args.use_branch_tags,
     )?;
+    let tag_names: Vec<String> = tags.values().map(|t| t.name.clone()).collect();
+    let current_tag = repository.current_tag();
+    let current_tag_name = current_tag.as_ref().map(|t| t.name.as_str());
 
-    let mut commit_range = args.range.clone();
-    if args.unreleased {
-        if let Some(last_tag) = tags.last().map(|(k, _)| k) {
-            commit_range = Some(format!("{last_tag}..HEAD"));
-        }
-    } else if args.latest || args.current {
-        if tags.len() < 2 {
-            let commits = repository.commits(None, None, None, config.git.topo_order_commits)?;
-            if let (Some(tag1), Some(tag2)) = (
-                commits.last().map(|c| c.id().to_string()),
-                tags.get_index(0).map(|(k, _)| k),
-            ) {
-                if tags.len() == 1 {
-                    commit_range = Some(tag2.to_owned());
-                } else {
-                    commit_range = Some(format!("{tag1}..{tag2}"));
-                }
-            }
-        } else {
-            let mut tag_index = tags.len() - 2;
-            if args.current {
-                if let Some(current_tag_index) = repository.current_tag().as_ref().and_then(|tag| {
-                    tags.iter()
-                        .enumerate()
-                        .find(|(_, (_, v))| v.name == tag.name)
-                        .map(|(i, _)| i)
-                }) {
-                    match current_tag_index.checked_sub(1) {
-                        Some(i) => tag_index = i,
-                        None => {
-                            return Err(Error::ChangelogError(String::from(
-                                "No suitable tags found. Maybe run with '--topo-order'?",
-                            )));
-                        }
-                    }
-                } else {
-                    return Err(Error::ChangelogError(String::from(
-                        "No tag exists for the current commit",
-                    )));
-                }
-            }
-            if let (Some(tag1), Some(tag2)) = (
-                tags.get_index(tag_index).map(|(k, _)| k),
-                tags.get_index(tag_index + 1).map(|(k, _)| k),
-            ) {
-                commit_range = Some(format!("{tag1}..{tag2}"));
-            }
-        }
-    }
-
-    Ok(commit_range)
+    let mut range = crate::range::transform_range(
+        args,
+        &config.git,
+        &tag_names,
+        current_tag_name,
+    )?;
+    range.resolve_with(repository)?;
+    Ok(crate::range::execute_range(&range))
 }
 
 /// Process submodules and add commits to release.
