@@ -12,6 +12,7 @@ use indexmap::IndexMap;
 use regex::Regex;
 use url::Url;
 
+use crate::commit::CommitStatistics;
 use crate::config::Remote;
 use crate::error::{Error, Result};
 use crate::tag::Tag;
@@ -207,6 +208,30 @@ impl Repository {
             });
         }
         Ok(commits)
+    }
+
+    /// Returns diff statistics for a single commit.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the commit tree, parent tree, diff, or diff
+    /// statistics cannot be read.
+    pub fn commit_statistics(&self, commit: &Commit<'_>) -> Result<CommitStatistics> {
+        let current_tree = commit.tree()?;
+        let previous_tree = commit
+            .parent(0)
+            .ok()
+            .map(|parent| parent.tree())
+            .transpose()?;
+        let diff =
+            self.inner
+                .diff_tree_to_tree(previous_tree.as_ref(), Some(&current_tree), None)?;
+        let stats = diff.stats()?;
+        Ok(CommitStatistics {
+            files_changed: stats.files_changed(),
+            additions: stats.insertions(),
+            deletions: stats.deletions(),
+        })
     }
 
     /// Returns submodule repositories for a given commit range.

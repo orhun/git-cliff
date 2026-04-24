@@ -78,6 +78,17 @@ impl<'a> From<CommitSignature<'a>> for Signature {
     }
 }
 
+/// Statistics about the changes in a single commit.
+#[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
+pub struct CommitStatistics {
+    /// Total number of files changed in the commit.
+    pub files_changed: usize,
+    /// Total number of inserted lines in the commit.
+    pub additions: usize,
+    /// Total number of deleted lines in the commit.
+    pub deletions: usize,
+}
+
 /// Commit range (from..to)
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Range {
@@ -124,6 +135,9 @@ pub struct Commit<'a> {
     pub committer: Signature,
     /// Whether if the commit has two or more parents.
     pub merge_commit: bool,
+    /// Per-commit diff statistics exposed to the template context.
+    #[serde(default)]
+    pub statistics: CommitStatistics,
     /// Arbitrary data to be used with the `--from-context` CLI option.
     pub extra: Option<Value>,
     /// Remote metadata of the commit.
@@ -448,7 +462,7 @@ impl Serialize for Commit<'_> {
             }
         }
 
-        let mut commit = serializer.serialize_struct("Commit", 20)?;
+        let mut commit = serializer.serialize_struct("Commit", 21)?;
         commit.serialize_field("id", &self.id)?;
         if let Some(conv) = &self.conv {
             commit.serialize_field("message", conv.description())?;
@@ -482,6 +496,7 @@ impl Serialize for Commit<'_> {
         commit.serialize_field("committer", &self.committer)?;
         commit.serialize_field("conventional", &self.conv.is_some())?;
         commit.serialize_field("merge_commit", &self.merge_commit)?;
+        commit.serialize_field("statistics", &self.statistics)?;
         commit.serialize_field("extra", &self.extra)?;
         #[cfg(feature = "github")]
         commit.serialize_field("github", &self.github)?;
