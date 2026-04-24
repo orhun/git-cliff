@@ -101,7 +101,7 @@ impl<'a> Changelog<'a> {
     )]
     fn process_commits(&mut self) -> Result<()> {
         crate::set_progress_message!("Processing commits for the changelog");
-        log::debug!("Processing the commits");
+        tracing::debug!("Processing the commits");
 
         let mut summary = Summary::default();
         for release in &mut self.releases {
@@ -111,7 +111,7 @@ impl<'a> Changelog<'a> {
             }
         }
 
-        log::debug!(
+        tracing::debug!(
             "Processed {} commit(s) in total (`split_commits` option may cause duplicates)",
             summary.processed
         );
@@ -123,9 +123,9 @@ impl<'a> Changelog<'a> {
                 "{count} commit(s) were skipped due to {kind}(s) (run with `-vv` for details)",
             );
             if kind.should_warn() {
-                log::warn!("{message}");
+                tracing::warn!("{message}");
             } else {
-                log::debug!("{message}");
+                tracing::debug!("{message}");
             }
         }
 
@@ -142,7 +142,7 @@ impl<'a> Changelog<'a> {
     )]
     fn process_releases(&mut self) {
         crate::set_progress_message!("Processing releases for the changelog");
-        log::debug!("Processing {} release(s)", self.releases.len());
+        tracing::debug!("Processing {} release(s)", self.releases.len());
         let skip_regex = self.config.git.skip_tags.as_ref();
         let mut skipped_tags = Vec::new();
         self.releases = self
@@ -154,13 +154,13 @@ impl<'a> Changelog<'a> {
                 if let Some(version) = &release.version {
                     if skip_regex.is_some_and(|r| r.is_match(version)) {
                         skipped_tags.push(version.clone());
-                        log::debug!("Skipping release: {version}");
+                        tracing::debug!("Skipping release: {version}");
                         return false;
                     }
                 }
                 if release.commits.is_empty() {
                     if let Some(version) = release.version.clone() {
-                        log::debug!("Release doesn't have any commits: {version}");
+                        tracing::debug!("Release doesn't have any commits: {version}");
                     }
                     match &release.previous {
                         Some(prev_release) if prev_release.commits.is_empty() => {
@@ -226,8 +226,8 @@ impl<'a> Changelog<'a> {
                         github_client.get_commits(ref_name),
                         github_client.get_pull_requests(),
                     )?;
-                    log::debug!("Number of GitHub commits: {}", commits.len());
-                    log::debug!("Number of GitHub pull requests: {}", pull_requests.len());
+                    tracing::debug!("Number of GitHub commits: {}", commits.len());
+                    tracing::debug!("Number of GitHub pull requests: {}", pull_requests.len());
                     Ok((commits, pull_requests))
                 })
         } else {
@@ -271,7 +271,7 @@ impl<'a> Changelog<'a> {
                     let project_id = match tokio::join!(gitlab_client.get_project()) {
                         (Ok(project),) => project.id,
                         (Err(err),) => {
-                            log::error!("Failed to lookup project: {err}");
+                            tracing::error!("Failed to lookup project: {err}");
                             return Err(err);
                         }
                     };
@@ -285,8 +285,8 @@ impl<'a> Changelog<'a> {
                             project_id.expect("Project id is required for git-cliff semantics")
                         ),
                     )?;
-                    log::debug!("Number of GitLab commits: {}", commits.len());
-                    log::debug!("Number of GitLab merge requests: {}", merge_requests.len());
+                    tracing::debug!("Number of GitLab commits: {}", commits.len());
+                    tracing::debug!("Number of GitLab merge requests: {}", merge_requests.len());
                     Ok((commits, merge_requests))
                 })
         } else {
@@ -328,8 +328,8 @@ impl<'a> Changelog<'a> {
                         gitea_client.get_commits(ref_name),
                         gitea_client.get_pull_requests(),
                     )?;
-                    log::debug!("Number of Gitea commits: {}", commits.len());
-                    log::debug!("Number of Gitea pull requests: {}", pull_requests.len());
+                    tracing::debug!("Number of Gitea commits: {}", commits.len());
+                    tracing::debug!("Number of Gitea pull requests: {}", pull_requests.len());
                     Ok((commits, pull_requests))
                 })
         } else {
@@ -376,8 +376,8 @@ impl<'a> Changelog<'a> {
                         bitbucket_client.get_commits(ref_name),
                         bitbucket_client.get_pull_requests()
                     )?;
-                    log::debug!("Number of Bitbucket commits: {}", commits.len());
-                    log::debug!("Number of Bitbucket pull requests: {}", pull_requests.len());
+                    tracing::debug!("Number of Bitbucket commits: {}", commits.len());
+                    tracing::debug!("Number of Bitbucket pull requests: {}", pull_requests.len());
                     Ok((commits, pull_requests))
                 })
         } else {
@@ -423,8 +423,8 @@ impl<'a> Changelog<'a> {
                         azure_devops_client.get_commits(ref_name),
                         azure_devops_client.get_pull_requests()
                     )?;
-                    log::debug!("Number of Azure DevOps commits: {}", commits.len());
-                    log::debug!(
+                    tracing::debug!("Number of Azure DevOps commits: {}", commits.len());
+                    tracing::debug!(
                         "Number of Azure DevOps pull requests: {}",
                         pull_requests.len()
                     );
@@ -477,7 +477,7 @@ impl<'a> Changelog<'a> {
                 remotes.join(", ")
             );
         }
-        log::debug!("Adding remote data");
+        tracing::debug!("Adding remote data");
 
         // Determine the ref at which to fetch remote commits, based on the commit
         // range
@@ -552,7 +552,7 @@ impl<'a> Changelog<'a> {
         if let Some(ref mut last_release) = self.releases.iter_mut().next() {
             if last_release.version.is_none() {
                 let next = last_release.calculate_next_version_with_config(&self.config.bump)?;
-                log::debug!("Bumping the version to {}", next.version);
+                tracing::debug!("Bumping the version to {}", next.version);
                 last_release.bump_type = next.bump_type;
                 last_release.version = Some(next.version.clone());
                 last_release.timestamp = Some(
@@ -571,7 +571,7 @@ impl<'a> Changelog<'a> {
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn generate<W: Write + ?Sized>(&self, out: &mut W) -> Result<()> {
         crate::set_progress_message!("Generating and writing the changelog");
-        log::debug!("Generating changelog");
+        tracing::debug!("Generating changelog");
         let postprocessors = self.config.changelog.postprocessors.clone();
 
         if let Some(header_template) = &self.header_template {
@@ -636,7 +636,7 @@ impl<'a> Changelog<'a> {
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn prepend<W: Write + ?Sized>(&self, mut changelog: String, out: &mut W) -> Result<()> {
         crate::set_progress_message!("Generating and prepending the changelog");
-        log::debug!("Generating changelog and prepending");
+        tracing::debug!("Generating changelog and prepending");
         if let Some(header) = &self.config.changelog.header {
             changelog = changelog.replacen(header, "", 1);
         }
@@ -668,7 +668,7 @@ fn get_body_template(config: &Config, trim: bool) -> Result<Template> {
         "commit.azure_devops",
     ];
     if template.contains_variable(&deprecated_vars) {
-        log::warn!(
+        tracing::warn!(
             "Variables {deprecated_vars:?} are deprecated and will be removed in the future. Use \
              `commit.remote` instead."
         );

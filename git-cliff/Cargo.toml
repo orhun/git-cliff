@@ -47,7 +47,6 @@ profiler-flamegraph = ["pprof/flamegraph"]
 [dependencies]
 glob.workspace = true
 regex.workspace = true
-log.workspace = true
 secrecy.workspace = true
 etcetera.workspace = true
 clap = { version = "4.5.53", features = ["derive", "env", "wrap_help", "cargo"] }
@@ -61,7 +60,7 @@ rand = { version = "0.9.2", optional = true }
 reqwest = { workspace = true, optional = true }
 url.workspace = true
 pathdiff = "0.2.3"
-tracing = { workspace = true, features = ["log"] }
+tracing.workspace = true
 tracing-subscriber = { version = "0.3.22", features = ["env-filter", "json"] }
 tracing-indicatif = { workspace = true }
 owo-colors = "4.2.3"

@@ -68,7 +68,7 @@ fn main() -> Result<()> {
     let exit_code = match git_cliff::write_changelog(&args, changelog, out) {
         Ok(()) => 0,
         Err(e) => {
-            log::error!("{e}");
+            tracing::error!("{e}");
             1
         }
     };

@@ -203,7 +203,7 @@ impl Template {
         for node in ast {
             Self::find_identifiers(node, &mut variables);
         }
-        log::trace!("Template variables for {name}: {variables:?}");
+        tracing::trace!("Template variables for {name}: {variables:?}");
         Ok(variables.into_iter().collect())
     }
 
