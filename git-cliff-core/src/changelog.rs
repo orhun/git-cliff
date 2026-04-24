@@ -2,9 +2,9 @@ use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::commit::Commit;
-use crate::config::{Config, GitConfig};
-use crate::error::{Error, Result};
+use crate::config::Config;
+use crate::error::Result;
+use crate::process::CommitProcessor;
 use crate::release::{Release, Releases};
 #[cfg(feature = "azure_devops")]
 use crate::remote::azure_devops::AzureDevOpsClient;
@@ -90,159 +90,6 @@ impl<'a> Changelog<'a> {
         Ok(())
     }
 
-    /// Processes a single commit and returns/logs the result.
-    #[cfg_attr(
-        feature = "tracing",
-        tracing::instrument(
-            skip_all,
-            fields(id = commit.id, pb.message = tracing::field::Empty)
-        )
-    )]
-    fn process_commit(
-        commit: &Commit<'a>,
-        git_config: &GitConfig,
-        summary: &mut Summary,
-    ) -> Option<Commit<'a>> {
-        crate::set_progress_message!("Processing a single commit");
-        match commit.process(git_config) {
-            Ok(commit) => {
-                summary.record_ok();
-                Some(commit)
-            }
-            Err(e) => {
-                summary.record_err(&e);
-                let short_id = commit.id.chars().take(7).collect::<String>();
-                let summary = commit.message.lines().next().unwrap_or_default().trim();
-                log::trace!("{short_id} - {e} ({summary})");
-                None
-            }
-        }
-    }
-
-    /// Checks the commits and returns an error if any unconventional commits
-    /// are found.
-    #[cfg_attr(
-        feature = "tracing",
-        tracing::instrument(
-            skip_all,
-            fields(commits = commits.len())
-        )
-    )]
-    fn check_conventional_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
-        crate::set_progress_message!(
-            "Checking whether commits included in a release are conventional"
-        );
-        log::debug!("Verifying that all commits are conventional");
-        let mut unconventional_count = 0;
-        commits.iter().for_each(|commit| {
-            if commit.conv.is_none() {
-                log::error!(
-                    "Commit {id} is not conventional:\n{message}",
-                    id = &commit.id[..7],
-                    message = commit
-                        .message
-                        .lines()
-                        .map(|line| { format!("    | {}", line.trim()) })
-                        .collect::<Vec<String>>()
-                        .join("\n")
-                );
-                unconventional_count += 1;
-            }
-        });
-
-        if unconventional_count > 0 {
-            return Err(Error::UnconventionalCommitsError(unconventional_count));
-        }
-
-        Ok(())
-    }
-
-    /// Checks the commits and returns an error if any commits are not matched
-    /// by any commit parser.
-    #[cfg_attr(
-        feature = "tracing",
-        tracing::instrument(
-            skip_all,
-            fields(commits = commits.len())
-        )
-    )]
-    fn check_unmatched_commits(commits: &Vec<Commit<'a>>) -> Result<()> {
-        crate::set_progress_message!(
-            "Checking whether commits in a release are unmatched by any parser"
-        );
-        log::debug!("Verifying that no commits are unmatched by commit parsers");
-        let mut unmatched_count = 0;
-        commits.iter().for_each(|commit| {
-            let is_unmatched = commit.group.is_none();
-            if is_unmatched {
-                log::error!(
-                    "Commit {id} was not matched by any commit parser:\n{message}",
-                    id = &commit.id[..7],
-                    message = commit
-                        .message
-                        .lines()
-                        .map(|line| { format!("    | {}", line.trim()) })
-                        .collect::<Vec<String>>()
-                        .join("\n")
-                );
-                unmatched_count += 1;
-            }
-        });
-
-        if unmatched_count > 0 {
-            return Err(Error::UnmatchedCommitsError(unmatched_count));
-        }
-
-        Ok(())
-    }
-
-    /// Processes a commit list by applying parsing, splitting, and validation rules.
-    #[cfg_attr(
-        feature = "tracing",
-        tracing::instrument(
-            skip_all,
-            fields(commits = commits.len(), pb.message = tracing::field::Empty)
-        )
-    )]
-    fn process_commit_list(
-        commits: &mut Vec<Commit<'a>>,
-        git_config: &GitConfig,
-        summary: &mut Summary,
-    ) -> Result<()> {
-        crate::set_progress_message!("Processing commits in a single release");
-        let mut processed = Vec::new();
-        for commit in commits.iter() {
-            if let Some(commit) = Self::process_commit(commit, git_config, summary) {
-                if git_config.split_commits {
-                    for line in commit.message.lines() {
-                        let mut c = commit.clone();
-                        c.message = line.to_string();
-                        c.links.clear();
-                        if c.message.is_empty() {
-                            continue;
-                        }
-                        if let Some(c) = Self::process_commit(&c, git_config, summary) {
-                            processed.push(c);
-                        }
-                    }
-                } else {
-                    processed.push(commit);
-                }
-            }
-        }
-        *commits = processed;
-
-        if git_config.require_conventional {
-            Self::check_conventional_commits(commits)?;
-        }
-
-        if git_config.fail_on_unmatched_commit {
-            Self::check_unmatched_commits(commits)?;
-        }
-
-        Ok(())
-    }
-
     /// Processes the commits and omits the ones that doesn't match the
     /// criteria set by configuration file.
     #[cfg_attr(
@@ -258,9 +105,9 @@ impl<'a> Changelog<'a> {
 
         let mut summary = Summary::default();
         for release in &mut self.releases {
-            Self::process_commit_list(&mut release.commits, &self.config.git, &mut summary)?;
+            CommitProcessor::new(&self.config.git, &mut summary).run(&mut release.commits)?;
             for submodule_commits in release.submodule_commits.values_mut() {
-                Self::process_commit_list(submodule_commits, &self.config.git, &mut summary)?;
+                CommitProcessor::new(&self.config.git, &mut summary).run(submodule_commits)?;
             }
         }
 
@@ -704,17 +551,17 @@ impl<'a> Changelog<'a> {
         crate::set_progress_message!("Bumping the version for unreleased changes");
         if let Some(ref mut last_release) = self.releases.iter_mut().next() {
             if last_release.version.is_none() {
-                let next_version =
-                    last_release.calculate_next_version_with_config(&self.config.bump)?;
-                log::debug!("Bumping the version to {next_version}");
-                last_release.version = Some(next_version.clone());
+                let next = last_release.calculate_next_version_with_config(&self.config.bump)?;
+                log::debug!("Bumping the version to {}", next.version);
+                last_release.bump_type = next.bump_type;
+                last_release.version = Some(next.version.clone());
                 last_release.timestamp = Some(
                     SystemTime::now()
                         .duration_since(UNIX_EPOCH)?
                         .as_secs()
                         .try_into()?,
                 );
-                return Ok(Some(next_version));
+                return Ok(Some(next.version));
             }
         }
         Ok(None)
@@ -837,9 +684,10 @@ mod test {
     use regex::Regex;
 
     use super::*;
-    use crate::commit::Signature;
+    use crate::commit::{Commit, Signature};
     use crate::config::{
-        Bump, ChangelogConfig, CommitParser, LinkParser, Remote, RemoteConfig, TextProcessor,
+        Bump, ChangelogConfig, CommitParser, GitConfig, LinkParser, Remote, RemoteConfig,
+        TextProcessor,
     };
 
     fn get_test_data() -> (Config, Vec<Release<'static>>) {
@@ -885,6 +733,7 @@ mod test {
                 output: None,
             },
             git: GitConfig {
+                processing_order: None,
                 conventional_commits: true,
                 require_conventional: false,
                 filter_unconventional: false,
@@ -1259,6 +1108,7 @@ mod test {
                 ),
             ])]),
             statistics: None,
+            bump_type: None,
             #[cfg(feature = "github")]
             github: crate::remote::RemoteReleaseMetadata {
                 contributors: vec![],
@@ -1380,6 +1230,7 @@ mod test {
                     )]),
                 ]),
                 statistics: None,
+                bump_type: None,
                 #[cfg(feature = "github")]
                 github: crate::remote::RemoteReleaseMetadata {
                     contributors: vec![],

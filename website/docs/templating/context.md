@@ -58,6 +58,11 @@ following context is generated to use for templating:
         "email": "user.email@example.com",
         "timestamp": 1660330071
       },
+      "statistics": {
+        "files_changed": 1,
+        "additions": 1,
+        "deletions": 0
+      },
       "raw_message": "<type>[scope]: <description>\n[body]\n[footer(s)]"
     }
   ],
@@ -89,6 +94,7 @@ following context is generated to use for templating:
     ],
     "days_passed_since_last_release": 0
   },
+  "bump_type": "minor",
   "previous": {
     "version": "previous release"
   }
@@ -179,6 +185,11 @@ If [`conventional_commits`](/docs/configuration/git#conventional_commits) is set
         "email": "user.email@example.com",
         "timestamp": 1660330071
       },
+      "statistics": {
+        "files_changed": 1,
+        "additions": 1,
+        "deletions": 0
+      },
       "raw_message": "(full commit message including description, footers, etc.)"
     }
   ],
@@ -202,6 +213,7 @@ If [`conventional_commits`](/docs/configuration/git#conventional_commits) is set
     ],
     "days_passed_since_last_release": 0
   },
+  "bump_type": "minor",
   "previous": {
     "version": "previous release"
   }
@@ -213,6 +225,23 @@ If [`conventional_commits`](/docs/configuration/git#conventional_commits) is set
 See the [GitHub integration](/docs/integration/github) for the additional values you can use in the template.
 
 :::
+
+## Commit statistics
+
+Each commit contains a `statistics` object with diff metrics for that commit.
+The following fields are available:
+
+- `files_changed`: Total number of files changed in the commit.
+- `additions`: Total number of inserted lines in the commit.
+- `deletions`: Total number of deleted lines in the commit.
+
+You can use these fields in your templates like so:
+
+```jinja2
+{% for commit in commits %}
+- {{ commit.message }} ({{ commit.statistics.files_changed }} files, +{{ commit.statistics.additions }}, -{{ commit.statistics.deletions }})
+{% endfor %}
+```
 
 ## Release statistics
 

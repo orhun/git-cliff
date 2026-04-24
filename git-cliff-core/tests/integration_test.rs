@@ -39,6 +39,7 @@ fn generate_changelog() -> Result<()> {
         output: None,
     };
     let git_config = GitConfig {
+        processing_order: None,
         conventional_commits: true,
         require_conventional: false,
         filter_unconventional: true,
@@ -227,6 +228,7 @@ fn generate_changelog() -> Result<()> {
             repository: Some(String::from("/root/repo")),
             submodule_commits: HashMap::new(),
             statistics: None,
+            bump_type: None,
             #[cfg(feature = "github")]
             github: git_cliff_core::remote::RemoteReleaseMetadata {
                 contributors: vec![],
@@ -260,6 +262,7 @@ fn generate_changelog() -> Result<()> {
             repository: Some(String::from("/root/repo")),
             submodule_commits: HashMap::new(),
             statistics: None,
+            bump_type: None,
             #[cfg(feature = "github")]
             github: git_cliff_core::remote::RemoteReleaseMetadata {
                 contributors: vec![],

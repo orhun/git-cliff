@@ -350,7 +350,8 @@ fn process_repository<'a>(
     let repository_path = repository.root_path()?.to_string_lossy().into_owned();
     for git_commit in commits.iter().rev() {
         let release = releases.last_mut().unwrap();
-        let commit = Commit::from(git_commit);
+        let mut commit = Commit::from(git_commit);
+        commit.statistics = repository.commit_statistics(git_commit)?;
         let commit_id = commit.id.clone();
         release.commits.push(commit);
         release.repository = Some(repository_path.clone());
@@ -544,7 +545,7 @@ pub fn run_with_changelog_modifier<'a>(
     // Set path for the configuration file.
     let mut path = args.config.clone();
     if !path.exists() {
-        if let Some(config_path) = Config::retrieve_config_path() {
+        if let Some(config_path) = Config::retrieve_user_config_path() {
             path = config_path;
         }
     }
@@ -569,10 +570,10 @@ pub fn run_with_changelog_modifier<'a>(
         Config::load(&path)?
     } else if let Some(contents) = Config::read_from_manifest()? {
         contents.parse()?
-    } else if let Some(discovered_path) = env::current_dir()?.ancestors().find_map(|dir| {
-        let path = dir.join(DEFAULT_CONFIG);
-        if path.is_file() { Some(path) } else { None }
-    }) {
+    } else if let Some(discovered_path) = env::current_dir()?
+        .ancestors()
+        .find_map(Config::retrieve_project_config_path)
+    {
         log::info!(
             "Using configuration from parent directory: {}",
             discovered_path.display()
@@ -809,7 +810,20 @@ pub fn write_changelog<W: io::Write>(
         .clone()
         .or(changelog.config.changelog.output.clone());
     if args.bump.is_some() || args.bumped_version {
+        let current_version = changelog.releases.first().and_then(|release| {
+            release.version.clone().or_else(|| {
+                release
+                    .previous
+                    .as_ref()
+                    .and_then(|previous| previous.version.clone())
+            })
+        });
         let next_version = if let Some(next_version) = changelog.bump_version()? {
+            if current_version.as_ref() == Some(&next_version) {
+                log::warn!(
+                    "The next version is the same as the current version, there is nothing to bump"
+                );
+            }
             next_version
         } else if let Some(last_version) =
             changelog.releases.first().cloned().and_then(|v| v.version)
