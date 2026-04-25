@@ -1,6 +1,6 @@
 ---
 slug: 2.12.0
-title: "What's new in 2.12.0? \U0001F195"
+title: "What's new in 2.12.0?"
 date: 2026-01-20T00:00:00.000Z
 authors: orhun
 tags:
