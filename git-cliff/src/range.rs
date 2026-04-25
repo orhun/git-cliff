@@ -233,16 +233,24 @@ fn changelog_error(msg: &'static str) -> Error {
     Error::ChangelogError(msg.into())
 }
 
-/// Print the `--dry-run` summary for a canonical range: the math-interval
+/// Render the `--dry-run` summary for a canonical range: the math-interval
 /// notation (with the user's refs), the commit count inside that range,
 /// and the git revision range actually handed to the walker.
+fn format_dry_run(canonical: &CommitRange, emitted: Option<&str>, commit_count: usize) -> String {
+    use std::fmt::Write;
+    let mut out = String::new();
+    let _ = writeln!(out, "range:    {}", format_interval(canonical));
+    let _ = writeln!(out, "commits:  {commit_count}");
+    let _ = match emitted {
+        Some(s) => writeln!(out, "emitted:  {s}"),
+        None => writeln!(out, "emitted:  (walk all ancestors of HEAD)"),
+    };
+    out
+}
+
+/// Print the `--dry-run` summary to stdout. Thin wrapper around `format_dry_run`
 pub(crate) fn print_dry_run(canonical: &CommitRange, emitted: Option<&str>, commit_count: usize) {
-    println!("range:    {}", format_interval(canonical));
-    println!("commits:  {commit_count}");
-    match emitted {
-        Some(s) => println!("emitted:  {s}"),
-        None => println!("emitted:  (walk all ancestors of HEAD)"),
-    }
+    print!("{}", format_dry_run(canonical, emitted, commit_count));
 }
 
 /// Render a `CommitRange` as a human-readable math interval (e.g.
