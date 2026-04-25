@@ -100,15 +100,13 @@ pub(crate) fn transform_range(
     current_tag: Option<&str>,
 ) -> Result<CommitRange> {
     let left = resolve_endpoint(
-        args.start_at.as_ref().or(git_config.start_at.as_ref()),
-        args.start_after
-            .as_ref()
-            .or(git_config.start_after.as_ref()),
+        args.start_at.as_deref().or(git_config.start_at.as_deref()),
+        args.start_after.as_deref().or(git_config.start_after.as_deref()),
         "`start_at` and `start_after` are mutually exclusive",
     )?;
     let right = resolve_endpoint(
-        args.end_at.as_ref().or(git_config.end_at.as_ref()),
-        args.end_before.as_ref().or(git_config.end_before.as_ref()),
+        args.end_at.as_deref().or(git_config.end_at.as_deref()),
+        args.end_before.as_deref().or(git_config.end_before.as_deref()),
         "`end_at` and `end_before` are mutually exclusive",
     )?;
 
@@ -144,8 +142,8 @@ pub(crate) fn transform_range(
 /// Collapse an `(inclusive, exclusive)` pair of optional revisions into a
 /// single `Endpoint`, erroring if both sides are set.
 fn resolve_endpoint(
-    inclusive: Option<&String>,
-    exclusive: Option<&String>,
+    inclusive: Option<&str>,
+    exclusive: Option<&str>,
     conflict_msg: &'static str,
 ) -> Result<Option<Endpoint>> {
     match (inclusive, exclusive) {
