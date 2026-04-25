@@ -83,105 +83,138 @@ pub(crate) fn transform_range(
     tag_names: &[String],
     current_tag: Option<&str>,
 ) -> git_cliff_core::error::Result<CommitRange> {
-    let start_at = args.start_at.as_ref().or(git_config.start_at.as_ref());
-    let start_after = args
-        .start_after
-        .as_ref()
-        .or(git_config.start_after.as_ref());
-    let end_at = args.end_at.as_ref().or(git_config.end_at.as_ref());
-    let end_before = args.end_before.as_ref().or(git_config.end_before.as_ref());
-    if start_at.is_some() && start_after.is_some() {
-        return Err(git_cliff_core::error::Error::ArgumentError(String::from(
-            "`start_at` and `start_after` are mutually exclusive",
-        )));
-    }
-    if end_at.is_some() && end_before.is_some() {
-        return Err(git_cliff_core::error::Error::ArgumentError(String::from(
-            "`end_at` and `end_before` are mutually exclusive",
-        )));
-    }
-    let has_new_option =
-        start_at.is_some() || start_after.is_some() || end_at.is_some() || end_before.is_some();
-    let has_legacy_flag = args.unreleased || args.latest || args.current || args.range.is_some();
-    if has_new_option && has_legacy_flag {
-        return Err(git_cliff_core::error::Error::ArgumentError(String::from(
+    let left = resolve_endpoint(
+        args.start_at.as_ref().or(git_config.start_at.as_ref()),
+        args.start_after.as_ref().or(git_config.start_after.as_ref()),
+        "`start_at` and `start_after` are mutually exclusive",
+    )?;
+    let right = resolve_endpoint(
+        args.end_at.as_ref().or(git_config.end_at.as_ref()),
+        args.end_before.as_ref().or(git_config.end_before.as_ref()),
+        "`end_at` and `end_before` are mutually exclusive",
+    )?;
+
+    let has_new_options = left.is_some() || right.is_some();
+    let has_legacy_flags =
+        args.unreleased || args.latest || args.current || args.range.is_some();
+
+    if has_new_options && has_legacy_flags {
+        return Err(arg_error(
             "the new range endpoint options cannot be combined with legacy range flags \
              (`--latest`, `--current`, `--unreleased`, positional `A..B`)",
-        )));
+        ));
     }
-    if has_new_option {
-        let new_left = start_at
-            .map(Endpoint::inclusive)
-            .or_else(|| start_after.map(Endpoint::exclusive));
-        let new_right = end_at
-            .map(Endpoint::inclusive)
-            .or_else(|| end_before.map(Endpoint::exclusive));
-        return Ok(CommitRange {
-            left: new_left,
-            right: new_right,
-        });
+
+    if has_new_options {
+        return Ok(CommitRange { left, right });
     }
-    if let Some(range_str) = &args.range {
-        let parts: Vec<&str> = range_str.splitn(2, "..").collect();
-        if parts.len() == 2 && !parts[0].is_empty() && !parts[1].is_empty() {
-            return Ok(CommitRange {
-                left: Some(Endpoint::exclusive(parts[0])),
-                right: Some(Endpoint::inclusive(parts[1])),
-            });
-        }
+
+    if let Some(range) = parse_legacy_range(args.range.as_deref()) {
+        return Ok(range);
     }
     if args.unreleased {
-        if let Some(last_tag) = tag_names.last() {
-            return Ok(CommitRange {
-                left: Some(Endpoint::exclusive(last_tag)),
-                right: None,
-            });
-        }
+        return Ok(unreleased_range(tag_names));
     }
     if args.latest {
-        return Ok(match tag_names.len() {
-            0 => CommitRange::default(),
-            1 => CommitRange {
-                left: None,
-                right: Some(Endpoint::inclusive(&tag_names[0])),
-            },
-            n => CommitRange {
-                left: Some(Endpoint::exclusive(&tag_names[n - 2])),
-                right: Some(Endpoint::inclusive(&tag_names[n - 1])),
-            },
-        });
+        return Ok(latest_range(tag_names));
     }
     if args.current {
-        if tag_names.len() < 2 {
-            return Ok(match tag_names.len() {
-                0 => CommitRange::default(),
-                _ => CommitRange {
-                    left: None,
-                    right: Some(Endpoint::inclusive(&tag_names[0])),
-                },
-            });
-        }
-        let current = current_tag.ok_or_else(|| {
-            git_cliff_core::error::Error::ChangelogError(String::from(
-                "No tag exists for the current commit",
-            ))
-        })?;
-        let idx = tag_names.iter().position(|t| t == current).ok_or_else(|| {
-            git_cliff_core::error::Error::ChangelogError(String::from(
-                "No tag exists for the current commit",
-            ))
-        })?;
-        let prev = idx.checked_sub(1).ok_or_else(|| {
-            git_cliff_core::error::Error::ChangelogError(String::from(
-                "No suitable tags found. Maybe run with '--topo-order'?",
-            ))
-        })?;
-        return Ok(CommitRange {
-            left: Some(Endpoint::exclusive(&tag_names[prev])),
-            right: Some(Endpoint::inclusive(&tag_names[idx])),
-        });
+        return current_range(tag_names, current_tag);
     }
     Ok(CommitRange::default())
+}
+
+/// Collapse an `(inclusive, exclusive)` pair of optional revisions into a
+/// single `Endpoint`, erroring if both sides are set.
+fn resolve_endpoint(
+    inclusive: Option<&String>,
+    exclusive: Option<&String>,
+    conflict_msg: &'static str,
+) -> git_cliff_core::error::Result<Option<Endpoint>> {
+    match (inclusive, exclusive) {
+        (Some(_), Some(_)) => Err(arg_error(conflict_msg)),
+        (Some(rev), None) => Ok(Some(Endpoint::inclusive(rev))),
+        (None, Some(rev)) => Ok(Some(Endpoint::exclusive(rev))),
+        (None, None) => Ok(None),
+    }
+}
+
+/// Parse a positional `A..B` range string into a canonical `CommitRange`,
+/// returning `None` for anything that doesn't match the `A..B` shape with
+/// non-empty endpoints.
+fn parse_legacy_range(range: Option<&str>) -> Option<CommitRange> {
+    let (left, right) = range?.split_once("..")?;
+    if left.is_empty() || right.is_empty() {
+        return None;
+    }
+    Some(CommitRange {
+        left:  Some(Endpoint::exclusive(left)),
+        right: Some(Endpoint::inclusive(right)),
+    })
+}
+
+/// `--unreleased` translates to `(last_tag, HEAD]`; with no tags, no range.
+fn unreleased_range(tag_names: &[String]) -> CommitRange {
+    match tag_names.last() {
+        Some(last_tag) => CommitRange {
+            left:  Some(Endpoint::exclusive(last_tag)),
+            right: None,
+        },
+        None => CommitRange::default(),
+    }
+}
+
+/// `--latest` anchors on the last tag. With 0 tags there is no range; with
+/// one tag the left defaults to the repo's first commit (inclusive tag on
+/// the right); with two or more, `(second-to-last, last]`.
+fn latest_range(tag_names: &[String]) -> CommitRange {
+    match tag_names {
+        [] => CommitRange::default(),
+        [tag] => CommitRange {
+            left:  None,
+            right: Some(Endpoint::inclusive(tag)),
+        },
+        [.., prev, last] => CommitRange {
+            left:  Some(Endpoint::exclusive(prev)),
+            right: Some(Endpoint::inclusive(last)),
+        },
+    }
+}
+
+/// `--current` anchors on the tag at HEAD. With fewer than two tags we
+/// fall through to `latest_range`'s fallback (preserving legacy behavior
+/// from `determine_commit_range`). Otherwise we require the current tag to
+/// be known, present in `tag_names`, and not be the very first tag.
+fn current_range(
+    tag_names: &[String],
+    current_tag: Option<&str>,
+) -> git_cliff_core::error::Result<CommitRange> {
+    if tag_names.len() < 2 {
+        return Ok(latest_range(tag_names));
+    }
+    let current = current_tag
+        .ok_or_else(|| changelog_error("No tag exists for the current commit"))?;
+    let idx = tag_names
+        .iter()
+        .position(|tag| tag == current)
+        .ok_or_else(|| changelog_error("No tag exists for the current commit"))?;
+    if idx == 0 {
+        return Err(changelog_error(
+            "No suitable tags found. Maybe run with '--topo-order'?",
+        ));
+    }
+    Ok(CommitRange {
+        left:  Some(Endpoint::exclusive(&tag_names[idx - 1])),
+        right: Some(Endpoint::inclusive(&tag_names[idx])),
+    })
+}
+
+fn arg_error(msg: &'static str) -> git_cliff_core::error::Error {
+    git_cliff_core::error::Error::ArgumentError(msg.into())
+}
+
+fn changelog_error(msg: &'static str) -> git_cliff_core::error::Error {
+    git_cliff_core::error::Error::ChangelogError(msg.into())
 }
 
 /// Render a `CommitRange` as a human-readable math interval (e.g.
