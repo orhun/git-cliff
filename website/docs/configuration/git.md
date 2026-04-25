@@ -42,6 +42,12 @@ limit_commits = 42
 recurse_submodules = false
 include_paths = ["src/", "doc/**/*.md"]
 exclude_paths = ["unrelated/"]
+
+# Range selection (optional; mutually exclusive with each other within a pair).
+# start_at    = "v1.0.0"   # include this revision as the lower bound
+# start_after = "v0.9.0"   # exclude this revision; walk forward from its successor
+# end_at      = "v2.0.0"   # include this revision as the upper bound
+# end_before  = "v2.1.0"   # exclude this revision; stop before it
 ```
 
 ### conventional_commits
@@ -373,3 +379,27 @@ This setting takes priority over `include_paths`.
 
 - If a commit touches both included and excluded paths, it **will be included**.
 - If a commit **only** modifies files that match both `include_paths` and `exclude_paths`, it **will be excluded**.
+
+## Range endpoints
+
+Four _optional_ string keys select the commit range explicitly. `start_at` / `start_after` set the lower bound (inclusive / exclusive); `end_at` / `end_before` set the upper bound (inclusive / exclusive). Within each pair, at most one may be set. Any unspecified side falls back to its default (first commit on the left, `HEAD` on the right).
+
+These config keys cannot be combined with the legacy range flags (`--latest`, `--current`, `--unreleased`, `--bump`, positional `A..B`). If a corresponding CLI option is passed, it takes precedence over the config key on the same side.
+
+See the [command-line reference](../usage/args.md#range-selection) for the full surface, including how legacy flags map to endpoint pairs.
+
+### start_at
+
+`start_at` includes the given revision as the lower bound (`[start_at, ...`). The revision itself is part of the output. Any commits before it are excluded.
+
+### start_after
+
+`start_after` excludes the given revision; the walk starts from its successor (`(start_after, ...`). Equivalent to git's `A..` range syntax.
+
+### end_at
+
+`end_at` includes the given revision as the upper bound (`..., end_at]`). The revision itself is part of the output; commits after it are excluded.
+
+### end_before
+
+`end_before` excludes the given revision; the walk stops at its parent (`..., end_before)`). Useful for "everything up to but not including a tag."
