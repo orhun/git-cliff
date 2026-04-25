@@ -271,7 +271,7 @@ jobs:
           args: --release --sdist --out wheels
           sccache: "true"
       - name: Build Python wheels (musl)
-        if: matrix.build.PYPI_PUBLISH == true && endsWith(matrix.build.OS, 'musl')
+        if: matrix.build.PYPI_PUBLISH == true && endsWith(matrix.build.NAME, 'musl')
         uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
         with:
           working-directory: pypi
