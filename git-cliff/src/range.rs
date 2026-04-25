@@ -766,4 +766,60 @@ mod tests {
         assert_eq!(left.rev, root);
         assert!(!left.inclusive);
     }
+
+    #[test]
+    fn parse_legacy_range_rejects_empty_left_endpoint() {
+        assert!(parse_legacy_range(Some("..HEAD")).is_none());
+    }
+
+    #[test]
+    fn parse_legacy_range_rejects_empty_right_endpoint() {
+        assert!(parse_legacy_range(Some("v1.0..")).is_none());
+    }
+
+    #[test]
+    fn unreleased_range_with_no_tags_is_empty() {
+        let range = unreleased_range(&[]);
+        assert!(range.left.is_none());
+        assert!(range.right.is_none());
+    }
+
+    #[test]
+    fn current_range_with_fewer_than_two_tags_falls_back_to_latest() {
+        let none_tags = current_range(&[], None).expect("ok");
+        assert!(none_tags.left.is_none() && none_tags.right.is_none());
+
+        let one_tag = current_range(&["v1.0".to_string()], None).expect("ok");
+        assert!(one_tag.left.is_none());
+        let right = one_tag.right.expect("right side anchored on the lone tag");
+        assert_eq!(right.rev, "v1.0");
+        assert!(right.inclusive);
+    }
+
+    #[test]
+    fn current_range_errors_when_current_tag_is_first_tag() {
+        let tags = vec!["v1.0".to_string(), "v2.0".to_string()];
+        let err = current_range(&tags, Some("v1.0")).unwrap_err();
+        assert!(matches!(err, Error::ChangelogError(_)));
+    }
+
+    #[test]
+    fn format_dry_run_renders_bounded_range_with_emitted_revspec() {
+        let range = CommitRange {
+            left: Some(Endpoint::exclusive("v1.0.0")),
+            right: Some(Endpoint::inclusive("HEAD")),
+        };
+        assert_eq!(
+            format_dry_run(&range, Some("v1.0.0..HEAD"), 7),
+            "range:    (v1.0.0, HEAD]\ncommits:  7\nemitted:  v1.0.0..HEAD\n"
+        );
+    }
+
+    #[test]
+    fn format_dry_run_emits_walk_message_when_no_revspec() {
+        assert_eq!(
+            format_dry_run(&CommitRange::default(), None, 0),
+            "range:    [first, HEAD]\ncommits:  0\nemitted:  (walk all ancestors of HEAD)\n"
+        );
+    }
 }
