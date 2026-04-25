@@ -300,23 +300,41 @@ mod tests {
     }
 
     #[test]
-    fn as_left_inclusive_appends_caret() {
-        assert_eq!(Endpoint::inclusive("v1.0.0").as_left(), "v1.0.0^");
-    }
-
-    #[test]
-    fn as_left_exclusive_is_bare() {
-        assert_eq!(Endpoint::exclusive("v1.0.0").as_left(), "v1.0.0");
-    }
-
-    #[test]
-    fn as_right_inclusive_is_bare() {
-        assert_eq!(Endpoint::inclusive("v1.0.0").as_right(), "v1.0.0");
-    }
-
-    #[test]
-    fn as_right_exclusive_appends_caret() {
-        assert_eq!(Endpoint::exclusive("v1.0.0").as_right(), "v1.0.0^");
+    fn endpoint_render_table() {
+        struct Case {
+            name: &'static str,
+            endpoint: Endpoint,
+            as_left: &'static str,
+            as_right: &'static str,
+        }
+        let cases = [
+            Case {
+                name: "inclusive: caret on the left, bare on the right",
+                endpoint: Endpoint::inclusive("v1.0.0"),
+                as_left: "v1.0.0^",
+                as_right: "v1.0.0",
+            },
+            Case {
+                name: "exclusive: bare on the left, caret on the right",
+                endpoint: Endpoint::exclusive("v1.0.0"),
+                as_left: "v1.0.0",
+                as_right: "v1.0.0^",
+            },
+        ];
+        for case in cases {
+            assert_eq!(
+                case.endpoint.as_left(),
+                case.as_left,
+                "as_left — {}",
+                case.name
+            );
+            assert_eq!(
+                case.endpoint.as_right(),
+                case.as_right,
+                "as_right — {}",
+                case.name
+            );
+        }
     }
 
     #[test]
@@ -326,61 +344,103 @@ mod tests {
         assert!(r.right.is_none());
     }
 
+    /// Cross product of `{None, inclusive, exclusive}` on each side of a
+    /// `CommitRange`, asserting both renderings (`format_interval` for the
+    /// human-readable math interval, `execute_range` for the git revision
+    /// string handed to the walker). Each row is one logical case; both
+    /// outputs share the same `(left, right)` shape, so colocating them
+    /// keeps the two rendering paths in lockstep.
     #[test]
-    fn execute_walks_everything_when_both_unbounded() {
-        assert_eq!(execute_range(&CommitRange::default()), None);
-    }
-
-    #[test]
-    fn execute_emits_right_inclusive_bare() {
-        let r = CommitRange {
-            left: None,
-            right: Some(Endpoint::inclusive("B")),
-        };
-        assert_eq!(execute_range(&r), Some("B".to_string()));
-    }
-
-    #[test]
-    fn execute_emits_right_exclusive_with_caret() {
-        let r = CommitRange {
-            left: None,
-            right: Some(Endpoint::exclusive("B")),
-        };
-        assert_eq!(execute_range(&r), Some("B^".to_string()));
-    }
-
-    #[test]
-    fn execute_emits_left_exclusive_to_head() {
-        let r = CommitRange {
-            left: Some(Endpoint::exclusive("A")),
-            right: None,
-        };
-        assert_eq!(execute_range(&r), Some("A..HEAD".to_string()));
-    }
-
-    #[test]
-    fn execute_emits_left_inclusive_to_head() {
-        let r = CommitRange {
-            left: Some(Endpoint::inclusive("A")),
-            right: None,
-        };
-        assert_eq!(execute_range(&r), Some("A^..HEAD".to_string()));
-    }
-
-    #[test]
-    fn execute_emits_full_range_for_both_bounded() {
-        let cases: [(Endpoint, Endpoint, &str); 4] = [
-            (Endpoint::exclusive("A"), Endpoint::inclusive("B"), "A..B"),
-            (Endpoint::exclusive("A"), Endpoint::exclusive("B"), "A..B^"),
-            (Endpoint::inclusive("A"), Endpoint::inclusive("B"), "A^..B"),
-            (Endpoint::inclusive("A"), Endpoint::exclusive("B"), "A^..B^"),
+    fn commit_range_render_table() {
+        struct Case {
+            name: &'static str,
+            left: Option<Endpoint>,
+            right: Option<Endpoint>,
+            interval: &'static str,
+            emitted: Option<&'static str>,
+        }
+        let cases = [
+            Case {
+                name: "both unbounded",
+                left: None,
+                right: None,
+                interval: "[first, HEAD]",
+                emitted: None,
+            },
+            Case {
+                name: "inclusive left only",
+                left: Some(Endpoint::inclusive("A")),
+                right: None,
+                interval: "[A, HEAD]",
+                emitted: Some("A^..HEAD"),
+            },
+            Case {
+                name: "exclusive left only",
+                left: Some(Endpoint::exclusive("A")),
+                right: None,
+                interval: "(A, HEAD]",
+                emitted: Some("A..HEAD"),
+            },
+            Case {
+                name: "inclusive right only",
+                left: None,
+                right: Some(Endpoint::inclusive("B")),
+                interval: "[first, B]",
+                emitted: Some("B"),
+            },
+            Case {
+                name: "exclusive right only",
+                left: None,
+                right: Some(Endpoint::exclusive("B")),
+                interval: "[first, B)",
+                emitted: Some("B^"),
+            },
+            Case {
+                name: "both inclusive",
+                left: Some(Endpoint::inclusive("A")),
+                right: Some(Endpoint::inclusive("B")),
+                interval: "[A, B]",
+                emitted: Some("A^..B"),
+            },
+            Case {
+                name: "inclusive left, exclusive right",
+                left: Some(Endpoint::inclusive("A")),
+                right: Some(Endpoint::exclusive("B")),
+                interval: "[A, B)",
+                emitted: Some("A^..B^"),
+            },
+            Case {
+                name: "exclusive left, inclusive right",
+                left: Some(Endpoint::exclusive("A")),
+                right: Some(Endpoint::inclusive("B")),
+                interval: "(A, B]",
+                emitted: Some("A..B"),
+            },
+            Case {
+                name: "both exclusive",
+                left: Some(Endpoint::exclusive("A")),
+                right: Some(Endpoint::exclusive("B")),
+                interval: "(A, B)",
+                emitted: Some("A..B^"),
+            },
         ];
-        for (left, right, expected) in cases {
-            let r = CommitRange {
-                left: Some(left),
-                right: Some(right),
+        for case in cases {
+            let range = CommitRange {
+                left: case.left,
+                right: case.right,
             };
-            assert_eq!(execute_range(&r).as_deref(), Some(expected));
+            assert_eq!(
+                format_interval(&range),
+                case.interval,
+                "format_interval — {}",
+                case.name
+            );
+            assert_eq!(
+                execute_range(&range).as_deref(),
+                case.emitted,
+                "execute_range — {}",
+                case.name
+            );
         }
     }
 
@@ -701,56 +761,6 @@ mod tests {
             range.left.is_none(),
             "inclusive root should downgrade to None (no `root^`)"
         );
-    }
-
-    #[test]
-    fn format_interval_default_is_closed_first_to_head() {
-        assert_eq!(format_interval(&CommitRange::default()), "[first, HEAD]");
-    }
-
-    #[test]
-    fn format_interval_inclusive_left_uses_square_bracket() {
-        let r = CommitRange {
-            left: Some(Endpoint::inclusive("v1.0.0")),
-            right: None,
-        };
-        assert_eq!(format_interval(&r), "[v1.0.0, HEAD]");
-    }
-
-    #[test]
-    fn format_interval_exclusive_left_uses_paren() {
-        let r = CommitRange {
-            left: Some(Endpoint::exclusive("v1.0.0")),
-            right: None,
-        };
-        assert_eq!(format_interval(&r), "(v1.0.0, HEAD]");
-    }
-
-    #[test]
-    fn format_interval_inclusive_right_uses_square_bracket() {
-        let r = CommitRange {
-            left: None,
-            right: Some(Endpoint::inclusive("v2.0.0")),
-        };
-        assert_eq!(format_interval(&r), "[first, v2.0.0]");
-    }
-
-    #[test]
-    fn format_interval_exclusive_right_uses_paren() {
-        let r = CommitRange {
-            left: None,
-            right: Some(Endpoint::exclusive("v2.0.0")),
-        };
-        assert_eq!(format_interval(&r), "[first, v2.0.0)");
-    }
-
-    #[test]
-    fn format_interval_both_sides_bounded() {
-        let r = CommitRange {
-            left: Some(Endpoint::exclusive("A")),
-            right: Some(Endpoint::exclusive("B")),
-        };
-        assert_eq!(format_interval(&r), "(A, B)");
     }
 
     #[test]
