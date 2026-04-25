@@ -3,6 +3,9 @@
 //! Produced from CLI + config by `transform_range`; consumed by
 //! `execute_range` to emit a git revision-range string.
 
+use git_cliff_core::config::GitConfig;
+use git_cliff_core::error::{Error, Result};
+
 #[derive(Debug, Clone)]
 pub(crate) struct Endpoint {
     pub rev: String,
@@ -54,13 +57,13 @@ impl CommitRange {
     pub(crate) fn resolve_with(
         &mut self,
         repository: &git_cliff_core::repo::Repository,
-    ) -> git_cliff_core::error::Result<()> {
+    ) -> Result<()> {
+        // Validate and normalize each endpoint to a full commit SHA so the
+        // emitted range is unambiguous downstream (Oid::from_str in
+        // set_commit_range rejects tag names on the single-ref path).
         for endpoint in self.left.iter_mut().chain(self.right.iter_mut()) {
             let sha = repository.resolve_rev(&endpoint.rev).map_err(|_| {
-                git_cliff_core::error::Error::ArgumentError(format!(
-                    "could not resolve revision: {}",
-                    endpoint.rev
-                ))
+                Error::ArgumentError(format!("could not resolve revision: {}", endpoint.rev))
             })?;
             endpoint.rev = sha;
         }
@@ -77,15 +80,30 @@ impl CommitRange {
     }
 }
 
+/// Paired result of `determine_commit_range`: the canonical form keeps the
+/// user's friendly refs for display, the emitted string is what the walker
+/// actually consumes (with refs resolved to full SHAs).
+pub(crate) struct RangeSelection {
+    pub canonical: CommitRange,
+    pub emitted: Option<String>,
+}
+
+/// Translate CLI args + git config into a canonical `CommitRange`.
+///
+/// Pure over string inputs: tag_names is the ordered list of tag names in
+/// the repo (oldest first), and current_tag is the name of the tag at
+/// HEAD if one exists. Revision validity is the orchestrator's concern.
 pub(crate) fn transform_range(
     args: &crate::args::Opt,
-    git_config: &git_cliff_core::config::GitConfig,
+    git_config: &GitConfig,
     tag_names: &[String],
     current_tag: Option<&str>,
-) -> git_cliff_core::error::Result<CommitRange> {
+) -> Result<CommitRange> {
     let left = resolve_endpoint(
         args.start_at.as_ref().or(git_config.start_at.as_ref()),
-        args.start_after.as_ref().or(git_config.start_after.as_ref()),
+        args.start_after
+            .as_ref()
+            .or(git_config.start_after.as_ref()),
         "`start_at` and `start_after` are mutually exclusive",
     )?;
     let right = resolve_endpoint(
@@ -95,8 +113,7 @@ pub(crate) fn transform_range(
     )?;
 
     let has_new_options = left.is_some() || right.is_some();
-    let has_legacy_flags =
-        args.unreleased || args.latest || args.current || args.range.is_some();
+    let has_legacy_flags = args.unreleased || args.latest || args.current || args.range.is_some();
 
     if has_new_options && has_legacy_flags {
         return Err(arg_error(
@@ -130,7 +147,7 @@ fn resolve_endpoint(
     inclusive: Option<&String>,
     exclusive: Option<&String>,
     conflict_msg: &'static str,
-) -> git_cliff_core::error::Result<Option<Endpoint>> {
+) -> Result<Option<Endpoint>> {
     match (inclusive, exclusive) {
         (Some(_), Some(_)) => Err(arg_error(conflict_msg)),
         (Some(rev), None) => Ok(Some(Endpoint::inclusive(rev))),
@@ -148,7 +165,7 @@ fn parse_legacy_range(range: Option<&str>) -> Option<CommitRange> {
         return None;
     }
     Some(CommitRange {
-        left:  Some(Endpoint::exclusive(left)),
+        left: Some(Endpoint::exclusive(left)),
         right: Some(Endpoint::inclusive(right)),
     })
 }
@@ -157,7 +174,7 @@ fn parse_legacy_range(range: Option<&str>) -> Option<CommitRange> {
 fn unreleased_range(tag_names: &[String]) -> CommitRange {
     match tag_names.last() {
         Some(last_tag) => CommitRange {
-            left:  Some(Endpoint::exclusive(last_tag)),
+            left: Some(Endpoint::exclusive(last_tag)),
             right: None,
         },
         None => CommitRange::default(),
@@ -171,11 +188,11 @@ fn latest_range(tag_names: &[String]) -> CommitRange {
     match tag_names {
         [] => CommitRange::default(),
         [tag] => CommitRange {
-            left:  None,
+            left: None,
             right: Some(Endpoint::inclusive(tag)),
         },
         [.., prev, last] => CommitRange {
-            left:  Some(Endpoint::exclusive(prev)),
+            left: Some(Endpoint::exclusive(prev)),
             right: Some(Endpoint::inclusive(last)),
         },
     }
@@ -185,15 +202,12 @@ fn latest_range(tag_names: &[String]) -> CommitRange {
 /// fall through to `latest_range`'s fallback (preserving legacy behavior
 /// from `determine_commit_range`). Otherwise we require the current tag to
 /// be known, present in `tag_names`, and not be the very first tag.
-fn current_range(
-    tag_names: &[String],
-    current_tag: Option<&str>,
-) -> git_cliff_core::error::Result<CommitRange> {
+fn current_range(tag_names: &[String], current_tag: Option<&str>) -> Result<CommitRange> {
     if tag_names.len() < 2 {
         return Ok(latest_range(tag_names));
     }
-    let current = current_tag
-        .ok_or_else(|| changelog_error("No tag exists for the current commit"))?;
+    let current =
+        current_tag.ok_or_else(|| changelog_error("No tag exists for the current commit"))?;
     let idx = tag_names
         .iter()
         .position(|tag| tag == current)
@@ -204,23 +218,35 @@ fn current_range(
         ));
     }
     Ok(CommitRange {
-        left:  Some(Endpoint::exclusive(&tag_names[idx - 1])),
+        left: Some(Endpoint::exclusive(&tag_names[idx - 1])),
         right: Some(Endpoint::inclusive(&tag_names[idx])),
     })
 }
 
-fn arg_error(msg: &'static str) -> git_cliff_core::error::Error {
-    git_cliff_core::error::Error::ArgumentError(msg.into())
+fn arg_error(msg: &'static str) -> Error {
+    Error::ArgumentError(msg.into())
 }
 
-fn changelog_error(msg: &'static str) -> git_cliff_core::error::Error {
-    git_cliff_core::error::Error::ChangelogError(msg.into())
+fn changelog_error(msg: &'static str) -> Error {
+    Error::ChangelogError(msg.into())
+}
+
+/// Print the `--dry-run` summary for a canonical range: the math-interval
+/// notation (with the user's refs), the commit count inside that range,
+/// and the git revision range actually handed to the walker.
+pub(crate) fn print_dry_run(canonical: &CommitRange, emitted: Option<&str>, commit_count: usize) {
+    println!("range:    {}", format_interval(canonical));
+    println!("commits:  {commit_count}");
+    match emitted {
+        Some(s) => println!("emitted:  {s}"),
+        None => println!("emitted:  (walk all ancestors of HEAD)"),
+    }
 }
 
 /// Render a `CommitRange` as a human-readable math interval (e.g.
 /// `[v1.0.0, HEAD)`). Used by the `--dry-run` output; not part of any
 /// behavioral pipeline.
-pub(crate) fn format_interval(range: &CommitRange) -> String {
+fn format_interval(range: &CommitRange) -> String {
     let (lb, lv) = match &range.left {
         None => ('[', "first".to_string()),
         Some(e) if e.inclusive => ('[', e.rev.clone()),

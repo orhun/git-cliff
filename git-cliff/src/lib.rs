@@ -59,7 +59,7 @@ fn determine_commit_range(
     args: &Opt,
     config: &Config,
     repository: &Repository,
-) -> Result<(crate::range::CommitRange, Option<String>)> {
+) -> Result<crate::range::RangeSelection> {
     let tags = repository.tags(
         &config.git.tag_pattern,
         args.topo_order,
@@ -69,10 +69,13 @@ fn determine_commit_range(
     let current_tag = repository.current_tag();
     let current_tag_name = current_tag.as_ref().map(|t| t.name.as_str());
 
-    let range = crate::range::transform_range(args, &config.git, &tag_names, current_tag_name)?;
-    let mut resolved = range.clone();
+    let canonical = crate::range::transform_range(args, &config.git, &tag_names, current_tag_name)?;
+    let mut resolved = canonical.clone();
     resolved.resolve_with(repository)?;
-    Ok((range, crate::range::execute_range(&resolved)))
+    Ok(crate::range::RangeSelection {
+        canonical,
+        emitted: crate::range::execute_range(&resolved),
+    })
 }
 
 /// Process submodules and add commits to release.
@@ -236,7 +239,7 @@ fn process_repository<'a>(
     tracing::trace!("Config: {config:#?}");
 
     // Parse commits.
-    let (_, commit_range) = determine_commit_range(args, config, repository)?;
+    let commit_range = determine_commit_range(args, config, repository)?.emitted;
 
     // Include only the current directory if not running from the root repository.
     //
@@ -749,9 +752,8 @@ pub fn run_with_changelog_modifier<'a>(
             // in the changelog, doesn't make sense if multiple repositories are
             // specified. As such, pick the commit range from the last given
             // repository.
-            let (canonical_range, emitted_range) =
-                determine_commit_range(&args, &config, &repository)?;
-            commit_range = emitted_range;
+            let selection = determine_commit_range(&args, &config, &repository)?;
+            commit_range = selection.emitted;
 
             if args.dry_run {
                 let count = repository
@@ -762,15 +764,7 @@ pub fn run_with_changelog_modifier<'a>(
                         config.git.topo_order_commits,
                     )?
                     .len();
-                println!(
-                    "range:    {}",
-                    crate::range::format_interval(&canonical_range)
-                );
-                println!("commits:  {count}");
-                match &commit_range {
-                    Some(s) => println!("emitted:  {s}"),
-                    None => println!("emitted:  (walk all ancestors of HEAD)"),
-                }
+                crate::range::print_dry_run(&selection.canonical, commit_range.as_deref(), count);
                 std::process::exit(0);
             }
 
