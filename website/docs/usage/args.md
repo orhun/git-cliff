@@ -94,7 +94,7 @@ Every git-cliff invocation selects a contiguous slice of history. The flags abov
 
 The naming convention: `*_at` is inclusive, `*_before` / `*_after` is exclusive. Within each pair, at most one may be set. The two pairs are independent, so any inclusivity combination is expressible. Unspecified sides fall back to the existing defaults (left = first commit, right = `HEAD`).
 
-CLI values override config values on the same side, so a shared team config can be locally overridden without editing the file.
+CLI overrides config one side at a time: setting either flag for a side replaces both config keys for that side. So `--start-at v1.0.0` on the CLI cleanly overrides `start_after = "v0.9.0"` from a shared team config (the left side becomes inclusive at `v1.0.0`); config's right side is untouched.
 
 ### Conflicts
 

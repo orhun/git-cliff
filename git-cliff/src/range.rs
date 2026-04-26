@@ -90,6 +90,10 @@ pub(crate) struct RangeSelection {
 
 /// Translate CLI args + git config into a canonical `CommitRange`.
 ///
+/// Precedence: config defines a baseline range; the CLI overrides each
+/// side independently. Setting either CLI flag for a side replaces both
+/// of the config's keys for that side.
+///
 /// Pure over string inputs: tag_names is the ordered list of tag names in
 /// the repo (oldest first), and current_tag is the name of the tag at
 /// HEAD if one exists. Revision validity is the orchestrator's concern.

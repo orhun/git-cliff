@@ -384,7 +384,7 @@ This setting takes priority over `include_paths`.
 
 Four _optional_ string keys select the commit range explicitly. `start_at` / `start_after` set the lower bound (inclusive / exclusive); `end_at` / `end_before` set the upper bound (inclusive / exclusive). Within each pair, at most one may be set. Any unspecified side falls back to its default (first commit on the left, `HEAD` on the right).
 
-These config keys cannot be combined with the legacy range flags (`--latest`, `--current`, `--unreleased`, `--bump`, positional `A..B`). If a corresponding CLI option is passed, it takes precedence over the config key on the same side.
+These config keys cannot be combined with the legacy range flags (`--latest`, `--current`, `--unreleased`, `--bump`, positional `A..B`). If any CLI endpoint flag is passed for a side, it replaces both config keys for that side (e.g. `--start-at` overrides both `start_at` and `start_after`); the other side keeps its config value.
 
 See the [command-line reference](../usage/args.md#range-selection) for the full surface, including how legacy flags map to endpoint pairs.
 
