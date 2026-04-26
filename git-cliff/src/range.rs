@@ -99,22 +99,27 @@ pub(crate) fn transform_range(
     tag_names: &[String],
     current_tag: Option<&str>,
 ) -> Result<CommitRange> {
-    let left = resolve_endpoint(
-        args.start_at.as_deref().or(git_config.start_at.as_deref()),
-        args.start_after
-            .as_deref()
-            .or(git_config.start_after.as_deref()),
-        "`start_at` and `start_after` are mutually exclusive",
-    )?;
-    let right = resolve_endpoint(
-        args.end_at.as_deref().or(git_config.end_at.as_deref()),
-        args.end_before
-            .as_deref()
-            .or(git_config.end_before.as_deref()),
-        "`end_at` and `end_before` are mutually exclusive",
-    )?;
+    // Precedence: config defines a baseline range; the CLI overrides each
+    // side independently. Setting `--start-at` or `--start-after` replaces
+    // both `start_at` and `start_after` from config (so `--start-at X` wins
+    // cleanly over `start_after = "Y"`); same for the right side.
+    let mut range = config_range(git_config)?;
+    if args.start_at.is_some() || args.start_after.is_some() {
+        range.left = resolve_endpoint(
+            args.start_at.as_deref(),
+            args.start_after.as_deref(),
+            "`start_at` and `start_after` are mutually exclusive",
+        )?;
+    }
+    if args.end_at.is_some() || args.end_before.is_some() {
+        range.right = resolve_endpoint(
+            args.end_at.as_deref(),
+            args.end_before.as_deref(),
+            "`end_at` and `end_before` are mutually exclusive",
+        )?;
+    }
 
-    let has_new_options = left.is_some() || right.is_some();
+    let has_new_options = range.left.is_some() || range.right.is_some();
     let has_legacy_flags = args.unreleased || args.latest || args.current || args.range.is_some();
 
     if has_new_options && has_legacy_flags {
@@ -125,11 +130,11 @@ pub(crate) fn transform_range(
     }
 
     if has_new_options {
-        return Ok(CommitRange { left, right });
+        return Ok(range);
     }
 
-    if let Some(range) = parse_legacy_range(args.range.as_deref()) {
-        return Ok(range);
+    if let Some(legacy_range) = parse_legacy_range(args.range.as_deref()) {
+        return Ok(legacy_range);
     }
     if args.unreleased {
         return Ok(unreleased_range(tag_names));
@@ -141,6 +146,22 @@ pub(crate) fn transform_range(
         return current_range(tag_names, current_tag);
     }
     Ok(CommitRange::default())
+}
+
+/// Resolve the range described by `cliff.toml` alone (no CLI input).
+fn config_range(git_config: &GitConfig) -> Result<CommitRange> {
+    Ok(CommitRange {
+        left: resolve_endpoint(
+            git_config.start_at.as_deref(),
+            git_config.start_after.as_deref(),
+            "`start_at` and `start_after` are mutually exclusive",
+        )?,
+        right: resolve_endpoint(
+            git_config.end_at.as_deref(),
+            git_config.end_before.as_deref(),
+            "`end_at` and `end_before` are mutually exclusive",
+        )?,
+    })
 }
 
 /// Collapse an `(inclusive, exclusive)` pair of optional revisions into a
@@ -622,6 +643,57 @@ mod tests {
         args.start_at = Some("A".to_string());
         args.start_after = Some("B".to_string());
         let git_config = git_cliff_core::config::GitConfig::default();
+        let err = transform_range(&args, &git_config, &[], None).unwrap_err();
+        assert!(
+            matches!(err, git_cliff_core::error::Error::ArgumentError(_)),
+            "expected ArgumentError, got: {err:?}"
+        );
+    }
+
+    #[test]
+    fn transform_cli_start_after_overrides_config_start_at() {
+        // CLI flag and config key target the same side but differ in
+        // inclusivity. The CLI wins and the resolved endpoint is exclusive.
+        let mut args = parse_opt(&["git-cliff"]);
+        args.start_after = Some("cli-rev".to_string());
+        let git_config = git_cliff_core::config::GitConfig {
+            start_at: Some("config-rev".to_string()),
+            ..Default::default()
+        };
+        let range = transform_range(&args, &git_config, &[], None).expect("transform");
+        let left = range.left.expect("left");
+        assert_eq!(left.rev, "cli-rev");
+        assert!(!left.inclusive);
+    }
+
+    #[test]
+    fn transform_cli_left_override_preserves_config_right() {
+        // CLI overrides only the left side; config's right side still applies.
+        let mut args = parse_opt(&["git-cliff"]);
+        args.start_at = Some("cli-left".to_string());
+        let git_config = git_cliff_core::config::GitConfig {
+            start_after: Some("ignored-config-left".to_string()),
+            end_at: Some("config-right".to_string()),
+            ..Default::default()
+        };
+        let range = transform_range(&args, &git_config, &[], None).expect("transform");
+        let left = range.left.expect("left");
+        assert_eq!(left.rev, "cli-left");
+        assert!(left.inclusive);
+        let right = range.right.expect("right");
+        assert_eq!(right.rev, "config-right");
+        assert!(right.inclusive);
+    }
+
+    #[test]
+    fn transform_rejects_config_start_at_and_start_after_together() {
+        // An internally inconsistent config errors even if no CLI flag is set.
+        let args = parse_opt(&["git-cliff"]);
+        let git_config = git_cliff_core::config::GitConfig {
+            start_at: Some("A".to_string()),
+            start_after: Some("B".to_string()),
+            ..Default::default()
+        };
         let err = transform_range(&args, &git_config, &[], None).unwrap_err();
         assert!(
             matches!(err, git_cliff_core::error::Error::ArgumentError(_)),
