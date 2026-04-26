@@ -897,6 +897,10 @@ mod test {
                 recurse_submodules: None,
                 include_paths: Vec::new(),
                 exclude_paths: Vec::new(),
+                start_at: None,
+                start_after: None,
+                end_at: None,
+                end_before: None,
             },
             remote: RemoteConfig {
                 offline: false,

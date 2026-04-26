@@ -26,6 +26,7 @@
           checkFlags = [
             "--skip=command"
             "--skip=repo"
+            "--skip=resolve_with"
           ];
           meta = with pkgs.lib; {
             description = "A highly customizable Changelog Generator that follows Conventional Commit specifications";

@@ -144,9 +144,12 @@ impl Repository {
 
     /// Sets the range for the commit search.
     ///
-    /// When a single SHA is provided as the range, start from the
-    /// root.
+    /// When the range is a single ref or revspec (anything without `..`),
+    /// it's resolved with `revparse_single` and used as the walk's starting
+    /// point. This accepts plain SHAs, tags, branches, and parent
+    /// expressions like `<sha>^` (which `Oid::from_str` would reject).
     fn set_commit_range(
+        &self,
         revwalk: &mut git2::Revwalk<'_>,
         range: Option<&str>,
     ) -> StdResult<(), git2::Error> {
@@ -154,7 +157,8 @@ impl Repository {
             if range.contains("..") {
                 revwalk.push_range(range)?;
             } else {
-                revwalk.push(Oid::from_str(range)?)?;
+                let oid = self.inner.revparse_single(range)?.id();
+                revwalk.push(oid)?;
             }
         } else {
             revwalk.push_head()?;
@@ -179,7 +183,7 @@ impl Repository {
             revwalk.set_sorting(Sort::TIME)?;
         }
 
-        Self::set_commit_range(&mut revwalk, range).map_err(|e| {
+        self.set_commit_range(&mut revwalk, range).map_err(|e| {
             Error::SetCommitRangeError(range.map_or_else(|| "?".to_string(), String::from), e)
         })?;
         let mut commits: Vec<Commit> = revwalk
@@ -497,6 +501,22 @@ impl Repository {
             }
         }
         None
+    }
+
+    /// Resolves a revision string (tag, branch, SHA prefix, `HEAD`, etc.) to a
+    /// full commit SHA. Returns an error if the revision cannot be resolved.
+    pub fn resolve_rev(&self, rev: &str) -> Result<String> {
+        let obj = self.inner.revparse_single(rev)?;
+        let commit = obj.peel_to_commit()?;
+        Ok(commit.id().to_string())
+    }
+
+    /// Returns `true` if the given revision resolves to the root commit (a
+    /// commit with no parents).
+    pub fn is_root_commit(&self, rev: &str) -> Result<bool> {
+        let obj = self.inner.revparse_single(rev)?;
+        let commit = obj.peel_to_commit()?;
+        Ok(commit.parent_count() == 0)
     }
 
     /// Decide whether to include tag.
@@ -1168,5 +1188,39 @@ mod test {
             );
             assert!(!retain, "exclude: **/*.txt");
         }
+    }
+
+    #[test]
+    fn resolve_rev_resolves_head() -> Result<()> {
+        let repository = get_repository()?;
+        let sha = repository.resolve_rev("HEAD")?;
+        assert_eq!(sha, get_last_commit_hash()?);
+        Ok(())
+    }
+
+    #[test]
+    fn resolve_rev_errors_on_unknown() -> Result<()> {
+        let repository = get_repository()?;
+        assert!(
+            repository
+                .resolve_rev("this-ref-does-not-exist-xyz")
+                .is_err()
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn is_root_commit_true_for_root() -> Result<()> {
+        let repository = get_repository()?;
+        let root = get_root_commit_hash()?;
+        assert!(repository.is_root_commit(&root)?);
+        Ok(())
+    }
+
+    #[test]
+    fn is_root_commit_false_for_head() -> Result<()> {
+        let repository = get_repository()?;
+        assert!(!repository.is_root_commit("HEAD")?);
+        Ok(())
     }
 }

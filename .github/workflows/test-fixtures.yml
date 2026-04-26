@@ -138,6 +138,12 @@ jobs:
           - fixtures-name: test-commit-range-with-sort-commits
           - fixtures-name: test-commit-range-with-given-range
             command: a140cef^..a9d4050 --ignore-tags "."
+          - fixtures-name: test-range-start-at-inclusive
+            command: --start-at v0.1.0 --end-at v0.2.0
+          - fixtures-name: test-range-end-before-exclusive
+            command: --start-after v0.1.0 --end-before v0.2.0
+          - fixtures-name: test-range-end-before-only
+            command: --end-before v0.2.0
           - fixtures-name: test-override-scope
           - fixtures-name: test-regex-json-array
           - fixtures-name: test-release-statistics

@@ -10,6 +10,8 @@ pub mod args;
 /// Custom logger implementation.
 pub mod logger;
 
+mod range;
+
 use std::env;
 use std::fs::{self, File};
 use std::io::{self, Write};
@@ -47,69 +49,33 @@ pub fn check_new_version() {
 /// Produces a commit range on the format `BASE..HEAD`, derived from the
 /// command line arguments and repository tags.
 ///
-/// If no commit range could be determined, `None` is returned.
+/// Returns the canonical `CommitRange` (with the user's friendly refs, for
+/// display purposes) alongside the emitted git-range string. The pipeline
+/// is: surface inputs (CLI + config + tag snapshot) go through
+/// `transform_range` to produce the canonical form; `resolve_with`
+/// validates every endpoint against the repo and rewrites the root-commit
+/// edge case; `execute_range` emits the final git range string.
 fn determine_commit_range(
     args: &Opt,
     config: &Config,
     repository: &Repository,
-) -> Result<Option<String>> {
+) -> Result<crate::range::RangeSelection> {
     let tags = repository.tags(
         &config.git.tag_pattern,
         args.topo_order,
         args.use_branch_tags,
     )?;
+    let tag_names: Vec<String> = tags.values().map(|t| t.name.clone()).collect();
+    let current_tag = repository.current_tag();
+    let current_tag_name = current_tag.as_ref().map(|t| t.name.as_str());
 
-    let mut commit_range = args.range.clone();
-    if args.unreleased {
-        if let Some(last_tag) = tags.last().map(|(k, _)| k) {
-            commit_range = Some(format!("{last_tag}..HEAD"));
-        }
-    } else if args.latest || args.current {
-        if tags.len() < 2 {
-            let commits = repository.commits(None, None, None, config.git.topo_order_commits)?;
-            if let (Some(tag1), Some(tag2)) = (
-                commits.last().map(|c| c.id().to_string()),
-                tags.get_index(0).map(|(k, _)| k),
-            ) {
-                if tags.len() == 1 {
-                    commit_range = Some(tag2.to_owned());
-                } else {
-                    commit_range = Some(format!("{tag1}..{tag2}"));
-                }
-            }
-        } else {
-            let mut tag_index = tags.len() - 2;
-            if args.current {
-                if let Some(current_tag_index) = repository.current_tag().as_ref().and_then(|tag| {
-                    tags.iter()
-                        .enumerate()
-                        .find(|(_, (_, v))| v.name == tag.name)
-                        .map(|(i, _)| i)
-                }) {
-                    match current_tag_index.checked_sub(1) {
-                        Some(i) => tag_index = i,
-                        None => {
-                            return Err(Error::ChangelogError(String::from(
-                                "No suitable tags found. Maybe run with '--topo-order'?",
-                            )));
-                        }
-                    }
-                } else {
-                    return Err(Error::ChangelogError(String::from(
-                        "No tag exists for the current commit",
-                    )));
-                }
-            }
-            if let (Some(tag1), Some(tag2)) = (
-                tags.get_index(tag_index).map(|(k, _)| k),
-                tags.get_index(tag_index + 1).map(|(k, _)| k),
-            ) {
-                commit_range = Some(format!("{tag1}..{tag2}"));
-            }
-        }
-    }
-
-    Ok(commit_range)
+    let canonical = crate::range::transform_range(args, &config.git, &tag_names, current_tag_name)?;
+    let mut resolved = canonical.clone();
+    resolved.resolve_with(repository)?;
+    Ok(crate::range::RangeSelection {
+        canonical,
+        emitted: crate::range::execute_range(&resolved),
+    })
 }
 
 /// Process submodules and add commits to release.
@@ -273,7 +239,7 @@ fn process_repository<'a>(
     tracing::trace!("Config: {config:#?}");
 
     // Parse commits.
-    let commit_range = determine_commit_range(args, config, repository)?;
+    let commit_range = determine_commit_range(args, config, repository)?.emitted;
 
     // Include only the current directory if not running from the root repository.
     //
@@ -786,7 +752,21 @@ pub fn run_with_changelog_modifier<'a>(
             // in the changelog, doesn't make sense if multiple repositories are
             // specified. As such, pick the commit range from the last given
             // repository.
-            commit_range = determine_commit_range(&args, &config, &repository)?;
+            let selection = determine_commit_range(&args, &config, &repository)?;
+            commit_range = selection.emitted;
+
+            if args.dry_run {
+                let count = repository
+                    .commits(
+                        commit_range.as_deref(),
+                        None,
+                        None,
+                        config.git.topo_order_commits,
+                    )?
+                    .len();
+                crate::range::print_dry_run(&selection.canonical, commit_range.as_deref(), count);
+                std::process::exit(0);
+            }
 
             releases.extend(process_repository(
                 Box::leak(Box::new(repository)),
