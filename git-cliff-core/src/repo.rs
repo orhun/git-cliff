@@ -144,9 +144,12 @@ impl Repository {
 
     /// Sets the range for the commit search.
     ///
-    /// When a single SHA is provided as the range, start from the
-    /// root.
+    /// When the range is a single ref or revspec (anything without `..`),
+    /// it's resolved with `revparse_single` and used as the walk's starting
+    /// point. This accepts plain SHAs, tags, branches, and parent
+    /// expressions like `<sha>^` (which `Oid::from_str` would reject).
     fn set_commit_range(
+        &self,
         revwalk: &mut git2::Revwalk<'_>,
         range: Option<&str>,
     ) -> StdResult<(), git2::Error> {
@@ -154,7 +157,8 @@ impl Repository {
             if range.contains("..") {
                 revwalk.push_range(range)?;
             } else {
-                revwalk.push(Oid::from_str(range)?)?;
+                let oid = self.inner.revparse_single(range)?.id();
+                revwalk.push(oid)?;
             }
         } else {
             revwalk.push_head()?;
@@ -179,7 +183,7 @@ impl Repository {
             revwalk.set_sorting(Sort::TIME)?;
         }
 
-        Self::set_commit_range(&mut revwalk, range).map_err(|e| {
+        self.set_commit_range(&mut revwalk, range).map_err(|e| {
             Error::SetCommitRangeError(range.map_or_else(|| "?".to_string(), String::from), e)
         })?;
         let mut commits: Vec<Commit> = revwalk

@@ -905,7 +905,8 @@ mod tests {
     fn format_dry_run_emits_walk_message_when_no_revspec() {
         assert_eq!(
             format_dry_run(&CommitRange::default(), None, 0),
-            "range:    [<first-commit>, HEAD]\ncommits:  0\nemitted:  (walk all ancestors of HEAD)\n"
+            "range:    [<first-commit>, HEAD]\ncommits:  0\nemitted:  (walk all ancestors of \
+             HEAD)\n"
         );
     }
 }
