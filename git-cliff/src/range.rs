@@ -258,7 +258,7 @@ pub(crate) fn print_dry_run(canonical: &CommitRange, emitted: Option<&str>, comm
 /// behavioral pipeline.
 fn format_interval(range: &CommitRange) -> String {
     let (lb, lv) = match &range.left {
-        None => ('[', "first".to_string()),
+        None => ('[', "<first-commit>".to_string()),
         Some(e) if e.inclusive => ('[', e.rev.clone()),
         Some(e) => ('(', e.rev.clone()),
     };
@@ -364,7 +364,7 @@ mod tests {
                 name: "both unbounded",
                 left: None,
                 right: None,
-                interval: "[first, HEAD]",
+                interval: "[<first-commit>, HEAD]",
                 emitted: None,
             },
             Case {
@@ -385,14 +385,14 @@ mod tests {
                 name: "inclusive right only",
                 left: None,
                 right: Some(Endpoint::inclusive("B")),
-                interval: "[first, B]",
+                interval: "[<first-commit>, B]",
                 emitted: Some("B"),
             },
             Case {
                 name: "exclusive right only",
                 left: None,
                 right: Some(Endpoint::exclusive("B")),
-                interval: "[first, B)",
+                interval: "[<first-commit>, B)",
                 emitted: Some("B^"),
             },
             Case {
@@ -829,7 +829,7 @@ mod tests {
     fn format_dry_run_emits_walk_message_when_no_revspec() {
         assert_eq!(
             format_dry_run(&CommitRange::default(), None, 0),
-            "range:    [first, HEAD]\ncommits:  0\nemitted:  (walk all ancestors of HEAD)\n"
+            "range:    [<first-commit>, HEAD]\ncommits:  0\nemitted:  (walk all ancestors of HEAD)\n"
         );
     }
 }
