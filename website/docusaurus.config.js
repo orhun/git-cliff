@@ -24,7 +24,7 @@ const config = {
   onBrokenLinks: "throw",
   markdown: {
     hooks: {
-      onBrokenMarkdownLinks: 'warn',
+      onBrokenMarkdownLinks: "warn",
     },
   },
 
@@ -39,10 +39,10 @@ const config = {
   themes: [
     [
       require.resolve("@easyops-cn/docusaurus-search-local"),
-      ({
+      {
         // `hashed` is recommended as long-term-cache of index file is possible.
         hashed: true,
-      }),
+      },
     ],
   ],
 
@@ -105,7 +105,7 @@ const config = {
         ],
       },
       announcementBar: {
-        content: `⛰️ <b><a target="_blank" href="https://git-cliff.org/blog/2.12.0">git-cliff v2.12.0</a> is now out!</b> 🥳️`,
+        content: `⛰️ <b><a target="_blank" href="https://git-cliff.org/blog/2.12.0">git-cliff v2.13.0</a> is now out!</b> 🥳️`,
         backgroundColor: "#243840",
         textColor: "#ffffff",
         isCloseable: true,
