@@ -895,6 +895,295 @@ mod test {
         Ok(())
     }
 
+    /// Tests that is_first_time is correctly set for a tagged release when
+    /// the contributor has historical commits outside the release range.
+    /// This simulates the --latest scenario where only one release is
+    /// processed but GitHub API returns full commit history.
+    ///
+    /// Regression test for https://github.com/orhun/git-cliff/issues/1096
+    #[cfg(feature = "github")]
+    #[test]
+    fn update_github_metadata_tagged_release_with_history() -> Result<()> {
+        use crate::remote::github::{
+            GitHubCommit, GitHubCommitAuthor, GitHubCommitDetails, GitHubCommitDetailsAuthor,
+            GitHubPullRequest,
+        };
+
+        // Simulate a tagged release (like --latest would produce):
+        // Release v2.0.0 has commits from "orhun" and "new_person".
+        // "orhun" has historical commits before this release.
+        // "new_person" does NOT have historical commits.
+        let mut release = Release {
+            version: Some(String::from("2.0.0")),
+            message: None,
+            extra: None,
+            commits: vec![
+                Commit::from(String::from(
+                    "aaaa000000000000000000000000000000000001 feat: new feature",
+                )),
+                Commit::from(String::from(
+                    "aaaa000000000000000000000000000000000002 fix: bug fix",
+                )),
+            ],
+            commit_range: None,
+            // commit_id is the tagged commit (last commit in the release)
+            commit_id: Some(String::from("aaaa000000000000000000000000000000000001")),
+            // Tagged release has a timestamp
+            timestamp: Some(1626613279),
+            previous: Some(Box::new(Release {
+                version: Some(String::from("1.0.0")),
+                ..Default::default()
+            })),
+            repository: Some(String::from("/root/repo")),
+            submodule_commits: HashMap::new(),
+            statistics: None,
+            bump_type: None,
+            github: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "gitlab")]
+            gitlab: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "gitea")]
+            gitea: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "bitbucket")]
+            bitbucket: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+        };
+
+        // GitHub API returns full commit history (both release + historical).
+        // This simulates what happens with --latest where ref_name = tag.
+        release.update_github_metadata(
+            vec![
+                // Release commits (will be matched and removed by retain):
+                GitHubCommit {
+                    sha: String::from("aaaa000000000000000000000000000000000001"),
+                    author: Some(GitHubCommitAuthor {
+                        login: Some(String::from("orhun")),
+                    }),
+                    commit: Some(GitHubCommitDetails {
+                        author: GitHubCommitDetailsAuthor {
+                            date: String::from("2021-07-18T15:14:39+03:00"),
+                        },
+                    }),
+                },
+                GitHubCommit {
+                    sha: String::from("aaaa000000000000000000000000000000000002"),
+                    author: Some(GitHubCommitAuthor {
+                        login: Some(String::from("new_person")),
+                    }),
+                    commit: Some(GitHubCommitDetails {
+                        author: GitHubCommitDetailsAuthor {
+                            date: String::from("2021-07-18T15:12:19+03:00"),
+                        },
+                    }),
+                },
+                // Historical commits (will remain after retain):
+                GitHubCommit {
+                    sha: String::from("bbbb000000000000000000000000000000000001"),
+                    author: Some(GitHubCommitAuthor {
+                        // orhun has a historical commit -> NOT first-time
+                        login: Some(String::from("orhun")),
+                    }),
+                    commit: Some(GitHubCommitDetails {
+                        author: GitHubCommitDetailsAuthor {
+                            date: String::from("2021-07-10T10:00:00+03:00"),
+                        },
+                    }),
+                },
+                GitHubCommit {
+                    sha: String::from("bbbb000000000000000000000000000000000002"),
+                    author: Some(GitHubCommitAuthor {
+                        login: Some(String::from("other_dev")),
+                    }),
+                    commit: Some(GitHubCommitDetails {
+                        author: GitHubCommitDetailsAuthor {
+                            date: String::from("2021-07-09T10:00:00+03:00"),
+                        },
+                    }),
+                },
+            ]
+            .into_iter()
+            .map(|v| Box::new(v) as Box<dyn RemoteCommit>)
+            .collect(),
+            vec![
+                GitHubPullRequest {
+                    title: Some(String::from("New feature")),
+                    number: 10,
+                    merge_commit_sha: Some(String::from(
+                        "aaaa000000000000000000000000000000000001",
+                    )),
+                    labels: vec![],
+                },
+                GitHubPullRequest {
+                    title: Some(String::from("Bug fix")),
+                    number: 11,
+                    merge_commit_sha: Some(String::from(
+                        "aaaa000000000000000000000000000000000002",
+                    )),
+                    labels: vec![],
+                },
+            ]
+            .into_iter()
+            .map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
+            .collect(),
+        )?;
+
+        release
+            .github
+            .contributors
+            .sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+
+        let expected_metadata = RemoteReleaseMetadata {
+            contributors: vec![
+                RemoteContributor {
+                    username: Some(String::from("orhun")),
+                    pr_title: Some(String::from("New feature")),
+                    pr_number: Some(10),
+                    pr_labels: vec![],
+                    // orhun has historical commit -> NOT first-time
+                    is_first_time: false,
+                },
+                RemoteContributor {
+                    username: Some(String::from("new_person")),
+                    pr_title: Some(String::from("Bug fix")),
+                    pr_number: Some(11),
+                    pr_labels: vec![],
+                    // new_person has NO historical commits -> IS first-time
+                    is_first_time: true,
+                },
+            ],
+        };
+        assert_eq!(expected_metadata, release.github);
+
+        Ok(())
+    }
+
+    /// Tests that is_first_time is correctly set when the release commit
+    /// is not present in GitHub API results (e.g., --tag with unpushed commit).
+    /// The release_commit_timestamp will be None, so the timestamp filter
+    /// should be skipped.
+    ///
+    /// Regression test for https://github.com/orhun/git-cliff/issues/1096
+    #[cfg(feature = "github")]
+    #[test]
+    fn update_github_metadata_missing_release_commit() -> Result<()> {
+        use crate::remote::github::{
+            GitHubCommit, GitHubCommitAuthor, GitHubCommitDetails, GitHubCommitDetailsAuthor,
+            GitHubPullRequest,
+        };
+
+        // The release commit_id points to a commit NOT in the GitHub API
+        // results (simulates --tag with a local-only commit).
+        let mut release = Release {
+            version: Some(String::from("2.0.0")),
+            message: None,
+            extra: None,
+            commits: vec![
+                // This commit IS on GitHub
+                Commit::from(String::from(
+                    "aaaa000000000000000000000000000000000002 fix: pushed fix",
+                )),
+            ],
+            commit_range: None,
+            // Points to a commit NOT in GitHub results
+            commit_id: Some(String::from("cccc000000000000000000000000000000000001")),
+            timestamp: Some(1626613279),
+            previous: Some(Box::new(Release {
+                version: Some(String::from("1.0.0")),
+                ..Default::default()
+            })),
+            repository: Some(String::from("/root/repo")),
+            submodule_commits: HashMap::new(),
+            statistics: None,
+            bump_type: None,
+            github: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "gitlab")]
+            gitlab: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "gitea")]
+            gitea: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "bitbucket")]
+            bitbucket: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+        };
+
+        release.update_github_metadata(
+            vec![
+                // Matches release commit
+                GitHubCommit {
+                    sha: String::from("aaaa000000000000000000000000000000000002"),
+                    author: Some(GitHubCommitAuthor {
+                        login: Some(String::from("returning_dev")),
+                    }),
+                    commit: Some(GitHubCommitDetails {
+                        author: GitHubCommitDetailsAuthor {
+                            date: String::from("2021-07-18T15:12:19+03:00"),
+                        },
+                    }),
+                },
+                // Historical commit from the same contributor
+                GitHubCommit {
+                    sha: String::from("bbbb000000000000000000000000000000000001"),
+                    author: Some(GitHubCommitAuthor {
+                        login: Some(String::from("returning_dev")),
+                    }),
+                    commit: Some(GitHubCommitDetails {
+                        author: GitHubCommitDetailsAuthor {
+                            date: String::from("2021-07-10T10:00:00+03:00"),
+                        },
+                    }),
+                },
+            ]
+            .into_iter()
+            .map(|v| Box::new(v) as Box<dyn RemoteCommit>)
+            .collect(),
+            vec![GitHubPullRequest {
+                title: Some(String::from("Pushed fix")),
+                number: 20,
+                merge_commit_sha: Some(String::from("aaaa000000000000000000000000000000000002")),
+                labels: vec![],
+            }]
+            .into_iter()
+            .map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
+            .collect(),
+        )?;
+
+        let expected_metadata = RemoteReleaseMetadata {
+            contributors: vec![RemoteContributor {
+                username: Some(String::from("returning_dev")),
+                pr_title: Some(String::from("Pushed fix")),
+                pr_number: Some(20),
+                pr_labels: vec![],
+                // returning_dev has a historical commit -> NOT first-time
+                // (release_commit_timestamp is None because commit_id
+                // doesn't match any GitHub commit, so filter is skipped)
+                is_first_time: false,
+            }],
+        };
+        assert_eq!(expected_metadata, release.github);
+
+        Ok(())
+    }
+
     #[cfg(feature = "gitlab")]
     #[test]
     fn update_gitlab_metadata() -> Result<()> {
