@@ -107,6 +107,17 @@ fn determine_commit_range(
                 commit_range = Some(format!("{tag1}..{tag2}"));
             }
         }
+    } else if commit_range.is_none() {
+        if let Some(tag_limit) = config.git.limit_tags.filter(|limit| *limit > 0) {
+            let tag_index = tags.len().saturating_sub(tag_limit);
+            if let (Some((tag1, _)), Some((tag2, _))) = (tags.get_index(tag_index), tags.last()) {
+                if tag1 == tag2 {
+                    commit_range = Some(tag2.to_owned());
+                } else {
+                    commit_range = Some(format!("{tag1}..{tag2}"));
+                }
+            }
+        }
     }
 
     Ok(commit_range)
@@ -713,6 +724,9 @@ pub fn run_with_changelog_modifier<'a>(
     }
     if args.count_tags.is_some() {
         config.git.count_tags.clone_from(&args.count_tags);
+    }
+    if args.limit_tags.is_some() {
+        config.git.limit_tags = args.limit_tags;
     }
     if let Some(include_path) = &args.include_path {
         config
