@@ -1,5 +1,12 @@
 [![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)
 
+## [2.13.1](https://github.com/orhun/git-cliff/compare/v2.13.0..v2.13.1) - 2026-04-26
+
+### 🐛 Bug Fixes
+
+- *(cd)* Prepare embedded assets before PyPI and crates.io packaging - ([b99a232](https://github.com/orhun/git-cliff/commit/b99a23250fe159c39a17d223359268611e8547e7))
+
+
 ## [2.13.0](https://github.com/orhun/git-cliff/compare/v2.12.0..v2.13.0) - 2026-04-26
 
 ### ⛰️  Features
