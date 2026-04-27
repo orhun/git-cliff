@@ -84,6 +84,20 @@ crate::update_release_metadata!(bitbucket, update_bitbucket_metadata);
 crate::update_release_metadata!(azure_devops, update_azure_devops_metadata);
 
 impl Release<'_> {
+    fn versioning_message(commit: &Commit<'_>) -> String {
+        if commit.conv.is_some() {
+            commit.message.trim_end().to_string()
+        } else {
+            commit
+                .message
+                .lines()
+                .next()
+                .unwrap_or_default()
+                .trim()
+                .to_string()
+        }
+    }
+
     /// Calculates the next version based on the commits.
     ///
     /// It uses the default bump version configuration to calculate the next
@@ -187,7 +201,7 @@ impl Release<'_> {
                             &old_semver,
                             self.commits
                                 .iter()
-                                .map(|commit| commit.message.trim_end().to_string())
+                                .map(Self::versioning_message)
                                 .collect::<Vec<String>>(),
                         );
                         let bump_type = determine_bump_type(&old_semver, &new_semver);
@@ -303,22 +317,28 @@ mod test {
             ("1.0.0", "2.0.0", vec!["feat!: add xyz", "feat: zzz"]),
             ("1.0.0", "2.0.0", vec!["feat!: add xyz\n", "feat: zzz\n"]),
             ("2.0.0", "2.0.1", vec!["fix: something"]),
-            ("foo/1.0.0", "foo/1.1.0", vec![
-                "feat: add xyz",
-                "fix: fix xyz",
-            ]),
-            ("bar/1.0.0", "bar/2.0.0", vec![
-                "fix: add xyz",
-                "fix!: aaaaaa",
-            ]),
-            ("zzz-123/test/1.0.0", "zzz-123/test/1.0.1", vec![
-                "fix: aaaaaa",
-            ]),
+            (
+                "foo/1.0.0",
+                "foo/1.1.0",
+                vec!["feat: add xyz", "fix: fix xyz"],
+            ),
+            (
+                "bar/1.0.0",
+                "bar/2.0.0",
+                vec!["fix: add xyz", "fix!: aaaaaa"],
+            ),
+            (
+                "zzz-123/test/1.0.0",
+                "zzz-123/test/1.0.1",
+                vec!["fix: aaaaaa"],
+            ),
             ("v100.0.0", "v101.0.0", vec!["feat!: something"]),
             ("v1.0.0-alpha.1", "v1.0.0-alpha.2", vec!["fix: minor"]),
-            ("testing/v1.0.0-beta.1", "testing/v1.0.0-beta.2", vec![
-                "feat: nice",
-            ]),
+            (
+                "testing/v1.0.0-beta.1",
+                "testing/v1.0.0-beta.2",
+                vec!["feat: nice"],
+            ),
             ("tauri-v1.5.4", "tauri-v1.6.0", vec!["feat: something"]),
             (
                 "rocket/rocket-v4.0.0-rc.1",
@@ -426,6 +446,34 @@ mod test {
                 .version;
             assert_eq!(expected_version, &next_version);
         }
+
+        let release = build_release(
+            "nati-1.0.0",
+            &["breaking: remove v1 endpoints\nThis removes the entire /v1 API surface."],
+        );
+        let next_version = release.calculate_next_version_with_config(&Bump {
+            features_always_bump_minor: Some(true),
+            breaking_always_bump_major: Some(true),
+            initial_tag: None,
+            custom_major_increment_regex: Some(String::from("^breaking")),
+            custom_minor_increment_regex: Some(String::from("^feat")),
+            bump_type: None,
+        })?;
+        assert_eq!("nati-2.0.0", next_version);
+
+        let release = build_release(
+            "nati-1.0.0",
+            &["feat: add v2 endpoint\nThis adds the new /v2 API surface."],
+        );
+        let next_version = release.calculate_next_version_with_config(&Bump {
+            features_always_bump_minor: Some(true),
+            breaking_always_bump_major: Some(true),
+            initial_tag: None,
+            custom_major_increment_regex: Some(String::from("^breaking")),
+            custom_minor_increment_regex: Some(String::from("^feat")),
+            bump_type: None,
+        })?;
+        assert_eq!("nati-1.1.0", next_version);
 
         let empty_release = Release {
             previous: Some(Box::new(Release {
