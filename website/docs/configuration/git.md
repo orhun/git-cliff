@@ -39,6 +39,7 @@ processing_order = [
     "link_parsers",
 ]
 limit_commits = 42
+limit_tags = 3
 recurse_submodules = false
 include_paths = ["src/", "doc/**/*.md"]
 exclude_paths = ["unrelated/"]
@@ -304,6 +305,16 @@ A regex for _counting in_ the matched tags in the final result.
 :::
 
 This value can be also overridden with using the `--count-tags` argument.
+
+### limit_tags
+
+`limit_tags` is an **optional** integer number that limits the number of tags used for generating the changelog.
+
+When no explicit commit range or `--latest`, `--current`, or `--unreleased` flag is provided, git-cliff uses the latest matched tags as a range window.
+
+Setting this value to `0` is equivalent to not setting a limit.
+
+This value can be also overridden with using the `--limit-tags` argument.
 
 ### topo_order
 
