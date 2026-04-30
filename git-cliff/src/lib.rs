@@ -291,6 +291,23 @@ fn process_repository<'a>(
     let cwd = env::current_dir()?;
     let mut include_path = config.git.include_paths.clone();
     if let Ok(root) = repository.root_path() {
+        if include_path.is_empty() {
+            if let Some(workdir) = args.workdir.as_ref() {
+                let resolved_workdir =
+                    fs::canonicalize(workdir).unwrap_or_else(|_| workdir.clone());
+                if resolved_workdir.starts_with(&root) && resolved_workdir != root {
+                    let path = resolved_workdir.join("**").join("*");
+                    if let Ok(stripped) = path.strip_prefix(&root) {
+                        log::info!(
+                            "Including changes from the workdir: {}",
+                            resolved_workdir.display()
+                        );
+                        include_path = vec![Pattern::new(stripped.to_string_lossy().as_ref())?];
+                    }
+                }
+            }
+        }
+
         if cwd.starts_with(&root) &&
             cwd != root &&
             args.repository.as_ref().is_none_or(Vec::is_empty) &&
@@ -537,11 +554,6 @@ pub fn run_with_changelog_modifier<'a>(
         if let Some(changelog) = args.prepend {
             args.prepend = Some(workdir.join(changelog));
         }
-        // pushing an empty component force-adds a trailing path separator
-        // which is needed for correct glob expansion
-        args.include_path = Some(vec![Pattern::new(
-            workdir.join("").to_string_lossy().as_ref(),
-        )?]);
     }
 
     // Set path for the configuration file.
