@@ -42,7 +42,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Check typos
-        uses: crate-ci/typos@02ea592e44b3a53c302f697cddca7641cd051c3d # master
+        uses: crate-ci/typos@bbaefadf97b0ec5fdc942684b647f1a6ab250274 # master
 
   test:
     name: Test suite
@@ -196,7 +196,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Install node
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 18
           registry-url: "https://registry.npmjs.org"
