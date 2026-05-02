@@ -68,7 +68,7 @@ serde_regex = "1.1.0"
 tera = "1.20.1"
 indexmap = { version = "2.13.0", features = ["serde"] }
 toml = "0.9.8"
-next_version = "0.2.26"
+next_version = "0.3.1"
 semver = "1.0.27"
 document-features = { version = "0.2.12", optional = true }
 reqwest = { workspace = true, optional = true }
