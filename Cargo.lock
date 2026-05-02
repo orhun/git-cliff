@@ -479,7 +479,7 @@ dependencies = [
  "pathdiff",
  "serde_core",
  "toml",
- "winnow",
+ "winnow 0.7.14",
  "yaml-rust2",
 ]
 
@@ -1034,7 +1034,7 @@ dependencies = [
  "etcetera 0.11.0",
  "expect-test",
  "futures",
- "git-conventional",
+ "git-conventional 1.1.0",
  "git2",
  "glob",
  "http-cache-reqwest",
@@ -1068,9 +1068,19 @@ version = "0.12.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f6a949b7fcc81df22526032dcddb006e78c8575e47b0e7ba57d9960570a57bc4"
 dependencies = [
+ "unicase",
+ "winnow 0.7.14",
+]
+
+[[package]]
+name = "git-conventional"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7079e0e98895b810e042ef90b667d8d0a28c172fb3212e777b2d279ec2b29f25"
+dependencies = [
  "serde",
  "unicase",
- "winnow",
+ "winnow 1.0.2",
 ]
 
 [[package]]
@@ -1824,7 +1834,7 @@ version = "0.2.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cc89399c10a3de3a18971b961e9fea788eb252d887c1c2f740f351a907088d0c"
 dependencies = [
- "git-conventional",
+ "git-conventional 0.12.9",
  "regex",
  "semver",
 ]
@@ -3182,7 +3192,7 @@ dependencies = [
  "toml_datetime",
  "toml_parser",
  "toml_writer",
- "winnow",
+ "winnow 0.7.14",
 ]
 
 [[package]]
@@ -3200,7 +3210,7 @@ version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c0cbe268d35bdb4bb5a56a2de88d0ad0eb70af5384a99d648cd4b3d04039800e"
 dependencies = [
- "winnow",
+ "winnow 0.7.14",
 ]
 
 [[package]]
@@ -3996,6 +4006,15 @@ name = "winnow"
 version = "0.7.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5a5364e9d77fcdeeaa6062ced926ee3381faa2ee02d3eb83a5c27a8825540829"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
+name = "winnow"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2ee1708bef14716a11bae175f579062d4554d95be2c6829f518df847b7b3fdd0"
 dependencies = [
  "memchr",
 ]
