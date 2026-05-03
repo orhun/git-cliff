@@ -220,7 +220,7 @@ fn resolve_workdir_include_path(
 
     let path = resolved_workdir.join("**").join("*");
     if let Ok(stripped) = path.strip_prefix(root) {
-        log::info!(
+        tracing::info!(
             "Including changes from the workdir: {}",
             resolved_workdir.display()
         );
