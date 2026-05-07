@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::{Read, Write};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -52,6 +52,19 @@ impl<'a> Changelog<'a> {
     /// Builds a changelog from releases and config.
     fn build(releases: Vec<Release<'a>>, config: Config) -> Result<Self> {
         let trim = config.changelog.trim;
+        let mut additional_context: HashMap<String, serde_json::Value> = HashMap::new();
+        let mut seen_groups = HashSet::new();
+        let parser_groups: Vec<String> = config
+            .git
+            .commit_parsers
+            .iter()
+            .filter_map(|p| p.group.clone())
+            .filter(|g| seen_groups.insert(g.clone()))
+            .collect();
+        additional_context.insert(
+            String::from("commit_parsers_groups"),
+            serde_json::to_value(parser_groups)?,
+        );
         Ok(Self {
             releases,
             header_template: match &config.changelog.header {
@@ -64,7 +77,7 @@ impl<'a> Changelog<'a> {
                 None => None,
             },
             config,
-            additional_context: HashMap::new(),
+            additional_context,
         })
     }
 
@@ -1548,6 +1561,86 @@ chore(deps): fix broken deps
             .replace("			", ""),
             str::from_utf8(&out).unwrap_or_default()
         );
+
+        Ok(())
+    }
+
+    /// Regression for <https://github.com/orhun/git-cliff/issues/9>: commit
+    /// groups should be rendered in the order in which they first appear in
+    /// `commit_parsers`, not alphabetically.
+    #[test]
+    fn changelog_group_order_matches_commit_parsers() -> Result<()> {
+        // This is the reproducer from the issue: a small `commit_parsers`
+        // list with named groups that would be alphabetized by the built-in
+        // `group_by` filter.
+        let config = Config {
+            changelog: ChangelogConfig {
+                header: None,
+                body: String::from(
+                    "{% for entry in commits | commit_groups(groups=commit_parsers_groups) %}### \
+                     {{ entry.name }}\n{% for commit in entry.commits %}- {{ commit.message \
+                     }}\n{% endfor %}{% endfor %}",
+                ),
+                footer: None,
+                trim: true,
+                postprocessors: Vec::new(),
+                render_always: false,
+                output: None,
+            },
+            git: GitConfig {
+                conventional_commits: true,
+                filter_unconventional: false,
+                commit_parsers: vec![
+                    CommitParser {
+                        message: Regex::new("^feat").ok(),
+                        group: Some(String::from(":rocket: New features")),
+                        ..Default::default()
+                    },
+                    CommitParser {
+                        message: Regex::new("^fix").ok(),
+                        group: Some(String::from(":bug: Bug fixes")),
+                        ..Default::default()
+                    },
+                    CommitParser {
+                        message: Regex::new("^perf").ok(),
+                        group: Some(String::from(":zap: Performance")),
+                        ..Default::default()
+                    },
+                    CommitParser {
+                        message: Regex::new("^chore").ok(),
+                        group: Some(String::from(":gear: Miscellaneous")),
+                        ..Default::default()
+                    },
+                ],
+                ..Default::default()
+            },
+            remote: RemoteConfig::default(),
+            bump: Bump::default(),
+        };
+
+        // Commits arrive in an order whose group names sort alphabetically
+        // (`:bug:` < `:gear:` < `:rocket:` < `:zap:`), which is the wrong
+        // order. The filter is expected to use the `commit_parsers` order
+        // instead.
+        let release = Release {
+            version: None,
+            commits: vec![
+                Commit::new(String::from("1"), String::from("chore: misc")),
+                Commit::new(String::from("2"), String::from("fix: a bug")),
+                Commit::new(String::from("3"), String::from("perf: faster")),
+                Commit::new(String::from("4"), String::from("feat: shiny new thing")),
+            ],
+            ..Default::default()
+        };
+
+        let changelog = Changelog::new(vec![release], config, None)?;
+        let mut out = Vec::new();
+        changelog.generate(&mut out)?;
+        let rendered = String::from_utf8(out).unwrap_or_default();
+
+        let expected = "### :rocket: New features\n- shiny new thing\n### :bug: Bug fixes\n- a \
+                        bug\n### :zap: Performance\n- faster\n### :gear: Miscellaneous\n- misc\n";
+        assert_eq!(expected, rendered);
 
         Ok(())
     }
