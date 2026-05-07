@@ -1577,10 +1577,9 @@ chore(deps): fix broken deps
             changelog: ChangelogConfig {
                 header: None,
                 body: String::from(
-                    "{% for entry in commits | commit_groups(groups=commit_parsers_groups) %}\
-                     ### {{ entry.name }}\n\
-                     {% for commit in entry.commits %}- {{ commit.message }}\n{% endfor %}\
-                     {% endfor %}",
+                    "{% for entry in commits | commit_groups(groups=commit_parsers_groups) %}### \
+                     {{ entry.name }}\n{% for commit in entry.commits %}- {{ commit.message \
+                     }}\n{% endfor %}{% endfor %}",
                 ),
                 footer: None,
                 trim: true,
@@ -1639,10 +1638,8 @@ chore(deps): fix broken deps
         changelog.generate(&mut out)?;
         let rendered = String::from_utf8(out).unwrap_or_default();
 
-        let expected = "### :rocket: New features\n- shiny new thing\n\
-                        ### :bug: Bug fixes\n- a bug\n\
-                        ### :zap: Performance\n- faster\n\
-                        ### :gear: Miscellaneous\n- misc\n";
+        let expected = "### :rocket: New features\n- shiny new thing\n### :bug: Bug fixes\n- a \
+                        bug\n### :zap: Performance\n- faster\n### :gear: Miscellaneous\n- misc\n";
         assert_eq!(expected, rendered);
 
         Ok(())

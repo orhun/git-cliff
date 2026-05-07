@@ -501,16 +501,12 @@ mod test {
 
     #[test]
     fn test_commit_groups_filter_preserves_first_appearance_when_no_groups() -> Result<()> {
-        let template = "{% for entry in commits | commit_groups %}\
-                        {{ entry.name }}|{{ entry.commits | length }};\
-                        {% endfor %}";
+        let template = "{% for entry in commits | commit_groups %}{{ entry.name }}|{{ \
+                        entry.commits | length }};{% endfor %}";
         let template = Template::new("test", template.to_string(), true)?;
         let release = release_with_emoji_groups();
-        let r = template.render(
-            &release,
-            Option::<HashMap<&str, String>>::None.as_ref(),
-            &[],
-        )?;
+        let r = template.render(&release, Option::<HashMap<&str, String>>::None.as_ref(), &[
+        ])?;
         assert_eq!(
             "\u{26A1} Performance|1;\u{1F41B} Bug Fixes|1;\u{1F680} Features|2;",
             r
@@ -520,20 +516,16 @@ mod test {
 
     #[test]
     fn test_commit_groups_filter_uses_groups_argument() -> Result<()> {
-        let template = "{% for entry in commits | commit_groups(groups=order) %}\
-                        {{ entry.name }}|{{ entry.commits | length }};\
-                        {% endfor %}";
+        let template = "{% for entry in commits | commit_groups(groups=order) %}{{ entry.name \
+                        }}|{{ entry.commits | length }};{% endfor %}";
         let template = Template::new("test", template.to_string(), true)?;
         let release = release_with_emoji_groups();
         let mut additional: HashMap<&str, Vec<&str>> = HashMap::new();
-        additional.insert(
-            "order",
-            vec![
-                "\u{1F680} Features",
-                "\u{1F41B} Bug Fixes",
-                "\u{26A1} Performance",
-            ],
-        );
+        additional.insert("order", vec![
+            "\u{1F680} Features",
+            "\u{1F41B} Bug Fixes",
+            "\u{26A1} Performance",
+        ]);
         let r = template.render(&release, Some(&additional), &[])?;
         assert_eq!(
             "\u{1F680} Features|2;\u{1F41B} Bug Fixes|1;\u{26A1} Performance|1;",
@@ -544,9 +536,8 @@ mod test {
 
     #[test]
     fn test_commit_groups_filter_appends_unknown_groups() -> Result<()> {
-        let template = "{% for entry in commits | commit_groups(groups=order) %}\
-                        {{ entry.name }};\
-                        {% endfor %}";
+        let template =
+            "{% for entry in commits | commit_groups(groups=order) %}{{ entry.name }};{% endfor %}";
         let template = Template::new("test", template.to_string(), true)?;
         let release = release_with_emoji_groups();
         let mut additional: HashMap<&str, Vec<&str>> = HashMap::new();
@@ -561,9 +552,8 @@ mod test {
 
     #[test]
     fn test_commit_groups_filter_skips_null_groups() -> Result<()> {
-        let template = "{% for entry in commits | commit_groups %}\
-                        {{ entry.name }}|{{ entry.commits | length }};\
-                        {% endfor %}";
+        let template = "{% for entry in commits | commit_groups %}{{ entry.name }}|{{ \
+                        entry.commits | length }};{% endfor %}";
         let template = Template::new("test", template.to_string(), true)?;
         let mut release = get_fake_release_data();
         release.commits = vec![
@@ -574,11 +564,8 @@ mod test {
             },
             Commit::new(String::from("b"), String::from("b")),
         ];
-        let r = template.render(
-            &release,
-            Option::<HashMap<&str, String>>::None.as_ref(),
-            &[],
-        )?;
+        let r = template.render(&release, Option::<HashMap<&str, String>>::None.as_ref(), &[
+        ])?;
         assert_eq!("kept|1;", r);
         Ok(())
     }
