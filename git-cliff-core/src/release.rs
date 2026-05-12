@@ -173,6 +173,9 @@ impl Release<'_> {
                     next_version = next_version
                         .with_custom_minor_increment_regex(custom_minor_increment_regex)?;
                 }
+                if let Some(no_increment_regex) = &config.no_increment_regex {
+                    next_version = next_version.with_no_increment_regex(no_increment_regex)?;
+                }
                 let old_semver = semver?;
                 let (next_version, determined_bump_type) =
                     if let Some(bump_type) = &config.bump_type {
@@ -371,6 +374,7 @@ mod test {
                     initial_tag: None,
                     custom_major_increment_regex: None,
                     custom_minor_increment_regex: None,
+                    no_increment_regex: None,
                     bump_type: None,
                 })?
                 .version;
@@ -396,6 +400,7 @@ mod test {
                     initial_tag: None,
                     custom_major_increment_regex: None,
                     custom_minor_increment_regex: None,
+                    no_increment_regex: None,
                     bump_type: None,
                 })?
                 .version;
@@ -421,6 +426,7 @@ mod test {
                     initial_tag: None,
                     custom_major_increment_regex: None,
                     custom_minor_increment_regex: None,
+                    no_increment_regex: None,
                     bump_type: None,
                 })?
                 .version;
@@ -446,11 +452,51 @@ mod test {
                 initial_tag: None,
                 custom_major_increment_regex: None,
                 custom_minor_increment_regex: None,
+                no_increment_regex: None,
                 bump_type: None,
             })?;
             assert_eq!("0.1.0", result.version);
             assert_eq!(None, result.bump_type);
         }
+        Ok(())
+    }
+
+    #[test]
+    fn no_increment_regex_skips_matching_commit_types() -> Result<()> {
+        fn build_release<'a>(version: &str, commits: &'a [&str]) -> Release<'a> {
+            Release {
+                version: None,
+                commits: commits
+                    .iter()
+                    .map(|v| Commit::from((*v).to_string()))
+                    .collect(),
+                previous: Some(Box::new(Release {
+                    version: Some(String::from(version)),
+                    ..Default::default()
+                })),
+                ..Default::default()
+            }
+        }
+
+        let release = build_release("1.0.0", &["chore: should not release"]);
+        let result = release.calculate_next_version_with_config(&Bump {
+            no_increment_regex: Some(String::from("^chore$")),
+            ..Default::default()
+        })?;
+        assert_eq!("1.0.0", result.version);
+        assert_eq!(None, result.bump_type);
+
+        let release = build_release(
+            "1.0.0",
+            &["docs: update readme", "feat: add a user-facing feature"],
+        );
+        let result = release.calculate_next_version_with_config(&Bump {
+            no_increment_regex: Some(String::from("^docs$")),
+            ..Default::default()
+        })?;
+        assert_eq!("1.1.0", result.version);
+        assert_eq!(Some(BumpType::Minor), result.bump_type);
+
         Ok(())
     }
 

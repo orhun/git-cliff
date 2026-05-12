@@ -386,6 +386,15 @@ pub struct Bump {
     /// `commit type` according to the spec is only `[a-zA-Z]+`
     pub custom_minor_increment_regex: Option<String>,
 
+    /// Configure a regex pattern for commit types that should not increment.
+    ///
+    /// This will check only the type of the commit against the given pattern.
+    ///
+    /// ### Note
+    ///
+    /// `commit type` according to the spec is only `[a-zA-Z]+`
+    pub no_increment_regex: Option<String>,
+
     /// Force to always bump in major, minor or patch.
     pub bump_type: Option<BumpType>,
 }

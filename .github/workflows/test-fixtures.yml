@@ -62,6 +62,8 @@ jobs:
             command: --bump
           - fixtures-name: test-bumped-version
             command: --bumped-version
+          - fixtures-name: test-bumped-version-no-increment
+            command: --bumped-version
           - fixtures-name: test-footer-template
           - fixtures-name: test-keep-a-changelog-links
           - fixtures-name: test-keep-a-changelog-links-current-arg
