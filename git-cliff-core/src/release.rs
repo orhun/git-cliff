@@ -486,10 +486,10 @@ mod test {
         assert_eq!("1.0.0", result.version);
         assert_eq!(None, result.bump_type);
 
-        let release = build_release(
-            "1.0.0",
-            &["docs: update readme", "feat: add a user-facing feature"],
-        );
+        let release = build_release("1.0.0", &[
+            "docs: update readme",
+            "feat: add a user-facing feature",
+        ]);
         let result = release.calculate_next_version_with_config(&Bump {
             no_increment_regex: Some(String::from("^docs$")),
             ..Default::default()
