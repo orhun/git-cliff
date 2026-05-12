@@ -19,7 +19,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use args::{BumpOption, Opt, Sort, Strip};
 use clap::ValueEnum;
 use git_cliff_core::changelog::Changelog;
-use git_cliff_core::commit::{Commit, Range};
+use git_cliff_core::commit::{Commit, CommitStatistics, Range};
 use git_cliff_core::config::{CommitParser, Config};
 use git_cliff_core::embed::{BuiltinConfig, EmbeddedConfig};
 use git_cliff_core::error::{Error, Result};
@@ -353,7 +353,22 @@ fn process_repository<'a>(
     for git_commit in commits.iter().rev() {
         let release = releases.last_mut().unwrap();
         let mut commit = Commit::from(git_commit);
-        commit.statistics = repository.commit_statistics(git_commit)?;
+        commit.statistics = match repository.commit_statistics(git_commit) {
+            Ok(statistics) => statistics,
+            Err(err)
+                if matches!(
+                    &err,
+                    Error::GitError(git_err) if git_err.message().contains("object not found")
+                ) =>
+            {
+                tracing::warn!(
+                    "Skipping diff statistics for commit {} because a Git object is missing: {err}",
+                    commit.id,
+                );
+                CommitStatistics::default()
+            }
+            Err(err) => return Err(err),
+        };
         let commit_id = commit.id.clone();
         release.commits.push(commit);
         release.repository = Some(repository_path.clone());
