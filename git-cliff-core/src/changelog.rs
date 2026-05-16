@@ -640,8 +640,21 @@ impl<'a> Changelog<'a> {
         if let Some(header) = &self.config.changelog.header {
             changelog = changelog.replacen(header, "", 1);
         }
-        self.generate(out)?;
-        write!(out, "{changelog}")?;
+
+        let mut generated = Vec::new();
+        self.generate(&mut generated)?;
+        let generated = std::str::from_utf8(&generated)?;
+        let changelog = changelog.trim_start_matches(|c| c == '\n' || c == '\r');
+        if changelog.is_empty() {
+            write!(out, "{generated}")?;
+        } else {
+            let generated = generated.trim_end_matches(|c| c == '\n' || c == '\r');
+            if generated.is_empty() {
+                write!(out, "{changelog}")?;
+            } else {
+                write!(out, "{generated}\n\n{changelog}")?;
+            }
+        }
         Ok(())
     }
 
@@ -1350,6 +1363,25 @@ mod test {
             .replace("			", ""),
             str::from_utf8(&out).unwrap_or_default()
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn changelog_prepend_inserts_blank_line_before_existing_content() -> Result<()> {
+        let (mut config, releases) = get_test_data();
+        config.changelog.header = None;
+        config.changelog.body = String::from("## New Release");
+        config.changelog.footer = None;
+        config.changelog.postprocessors = Vec::new();
+
+        let changelog = Changelog::build(vec![releases[0].clone()], config)?;
+        let mut out = Vec::new();
+        changelog.prepend(String::from("## Old Release"), &mut out)?;
+
+        let output = str::from_utf8(&out).unwrap_or_default();
+        assert!(output.contains("## New Release\n\n## Old Release"));
+        assert_eq!("## New Release\n\n## Old Release", output);
 
         Ok(())
     }
