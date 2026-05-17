@@ -899,10 +899,7 @@ mod test {
         ];
         assert_eq!(expected_commits, release.commits);
 
-        release
-            .github
-            .contributors
-            .sort_by_key(|a| a.pr_number);
+        release.github.contributors.sort_by_key(|a| a.pr_number);
 
         let expected_metadata = RemoteReleaseMetadata {
             contributors: vec![
@@ -1270,10 +1267,7 @@ mod test {
         ];
         assert_eq!(expected_commits, release.commits);
 
-        release
-            .github
-            .contributors
-            .sort_by_key(|a| a.pr_number);
+        release.github.contributors.sort_by_key(|a| a.pr_number);
 
         let expected_metadata = RemoteReleaseMetadata {
             contributors: vec![
@@ -1615,10 +1609,7 @@ mod test {
         ];
         assert_eq!(expected_commits, release.commits);
 
-        release
-            .gitea
-            .contributors
-            .sort_by_key(|a| a.pr_number);
+        release.gitea.contributors.sort_by_key(|a| a.pr_number);
 
         let expected_metadata = RemoteReleaseMetadata {
             contributors: vec![
@@ -1914,10 +1905,7 @@ mod test {
         ];
         assert_eq!(expected_commits, release.commits);
 
-        release
-            .bitbucket
-            .contributors
-            .sort_by_key(|a| a.pr_number);
+        release.bitbucket.contributors.sort_by_key(|a| a.pr_number);
 
         let expected_metadata = RemoteReleaseMetadata {
             contributors: vec![
