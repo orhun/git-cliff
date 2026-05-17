@@ -560,7 +560,7 @@ impl Repository {
             }
         }
         if !topo_order {
-            tags.sort_by(|a, b| a.0.time().seconds().cmp(&b.0.time().seconds()));
+            tags.sort_by_key(|a| a.0.time().seconds());
         }
         Ok(tags
             .into_iter()

@@ -902,7 +902,7 @@ mod test {
         release
             .github
             .contributors
-            .sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+            .sort_by_key(|a| a.pr_number);
 
         let expected_metadata = RemoteReleaseMetadata {
             contributors: vec![
@@ -1273,7 +1273,7 @@ mod test {
         release
             .github
             .contributors
-            .sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+            .sort_by_key(|a| a.pr_number);
 
         let expected_metadata = RemoteReleaseMetadata {
             contributors: vec![
@@ -1618,7 +1618,7 @@ mod test {
         release
             .gitea
             .contributors
-            .sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+            .sort_by_key(|a| a.pr_number);
 
         let expected_metadata = RemoteReleaseMetadata {
             contributors: vec![
@@ -1917,7 +1917,7 @@ mod test {
         release
             .bitbucket
             .contributors
-            .sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+            .sort_by_key(|a| a.pr_number);
 
         let expected_metadata = RemoteReleaseMetadata {
             contributors: vec![
@@ -2231,7 +2231,7 @@ mod test {
         release
             .azure_devops
             .contributors
-            .sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+            .sort_by_key(|a| a.pr_number);
 
         let expected_metadata = RemoteReleaseMetadata {
             contributors: vec![
