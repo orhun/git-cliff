@@ -2,8 +2,7 @@
 header = ""
 body = """
 {% if version %}\
-{% set clean_version = version | replace(from="v", to="") | replace(from="-stable", to="") %}\
-## [{{ clean_version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+## [{{ version | replace(from="v", to="") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
 {% else %}\
 ## [unreleased]
 {% endif %}\
@@ -23,4 +22,4 @@ commit_parsers = [
   { message = "^feat", group = "Features" },
   { message = "^fix", group = "Bug Fixes" },
 ]
-tag_pattern = "v.*-stable$"
+tag_pattern = "v.*"

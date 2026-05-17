@@ -816,7 +816,7 @@ mod test {
         let path = temp_dir.path();
 
         Command::new("git")
-            .args(["commit", "--allow-empty", "-m", "init"])
+            .args(["commit", "--allow-empty", "--no-gpg-sign", "-m", "init"])
             .current_dir(path)
             .output()?;
 
