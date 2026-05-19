@@ -1034,7 +1034,7 @@ dependencies = [
  "etcetera 0.11.0",
  "expect-test",
  "futures",
- "git-conventional 0.12.9",
+ "git-conventional",
  "git2",
  "glob",
  "http-cache-reqwest",
@@ -1064,21 +1064,11 @@ dependencies = [
 
 [[package]]
 name = "git-conventional"
-version = "0.12.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6a949b7fcc81df22526032dcddb006e78c8575e47b0e7ba57d9960570a57bc4"
-dependencies = [
- "serde",
- "unicase",
- "winnow 0.7.14",
-]
-
-[[package]]
-name = "git-conventional"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7079e0e98895b810e042ef90b667d8d0a28c172fb3212e777b2d279ec2b29f25"
 dependencies = [
+ "serde",
  "unicase",
  "winnow 1.0.2",
 ]
@@ -1834,7 +1824,7 @@ version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f4d5b15eae9d89526dcd42a9d3e3ebdf4a15664843348dd3e664b8102e42b7d5"
 dependencies = [
- "git-conventional 1.1.0",
+ "git-conventional",
  "regex",
  "semver",
 ]
