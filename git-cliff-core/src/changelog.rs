@@ -480,10 +480,12 @@ impl<'a> Changelog<'a> {
         tracing::debug!("Adding remote data");
 
         // Determine the ref at which to fetch remote commits, based on the commit
-        // range
+        // range. We always need full commit history for accurate first-time
+        // contributor detection, so pass None (fetch from default branch) when
+        // the range head is HEAD or empty.
         let range_head = range.and_then(|r| r.split("..").last());
         let ref_name = match range_head {
-            Some("HEAD") => None,
+            Some("HEAD") | Some("") | None => None,
             other => other,
         };
 
