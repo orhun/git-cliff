@@ -14,7 +14,7 @@ COPY . .
 RUN cargo build --release --locked --no-default-features --features github --features gitlab --features bitbucket
 RUN rm -f target/release/deps/git_cliff*
 
-FROM debian:bookworm-slim@sha256:f06537653ac770703bc45b4b113475bd402f451e85223f0f2837acbf89ab020a as runner
+FROM debian:bookworm-slim@sha256:f9c6a2fd2ddbc23e336b6257a5245e31f996953ef06cd13a59fa0a1df2d5c252 as runner
 
 # Install ca-certificates (required for `--use-native-tls` argument)
 RUN apt-get update \
