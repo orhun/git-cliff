@@ -48,6 +48,7 @@ jobs:
           - fixtures-name: test-conventional-commit
           - fixtures-name: test-custom-scope
           - fixtures-name: test-limit-commits
+          - fixtures-name: test-limit-tags
           - fixtures-name: test-skip-breaking-changes
           - fixtures-name: test-split-commits
           - fixtures-name: test-bump-version

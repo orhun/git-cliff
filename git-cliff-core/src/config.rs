@@ -129,6 +129,8 @@ pub struct GitConfig {
     /// Regex to count matched tags.
     #[serde(with = "serde_regex", default)]
     pub count_tags: Option<Regex>,
+    /// Limit the number of tags to process.
+    pub limit_tags: Option<usize>,
     /// Include only the tags that belong to the current branch.
     pub use_branch_tags: bool,
     /// Order releases topologically instead of chronologically.

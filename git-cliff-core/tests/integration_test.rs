@@ -118,6 +118,7 @@ fn generate_changelog() -> Result<()> {
         skip_tags: None,
         ignore_tags: None,
         count_tags: None,
+        limit_tags: None,
         use_branch_tags: false,
         topo_order: false,
         topo_order_commits: true,

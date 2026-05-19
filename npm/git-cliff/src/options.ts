@@ -55,6 +55,8 @@ export type Options = Partial<{
   ignoreTags: string | string[];
   /** Sets the tags to count in the changelog */
   countTags: string | string[];
+  /** Limits the number of tags to process */
+  limitTags: number;
   /** Sets commits that will be skipped in the changelog */
   skipCommit: string | string[];
   /** Prepends entries to the given changelog file */

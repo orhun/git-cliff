@@ -884,6 +884,7 @@ mod test {
                 skip_tags: Regex::new("v3.*").ok(),
                 ignore_tags: None,
                 count_tags: None,
+                limit_tags: None,
                 use_branch_tags: false,
                 topo_order: false,
                 topo_order_commits: true,
