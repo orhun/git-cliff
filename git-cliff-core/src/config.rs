@@ -147,6 +147,14 @@ pub struct GitConfig {
     /// Exclude unrelated commits with changes at the specified paths.
     #[serde(with = "serde_pattern", default)]
     pub exclude_paths: Vec<Pattern>,
+    /// Include this revision as the lower bound (inclusive left endpoint).
+    pub start_at: Option<String>,
+    /// Exclude this revision; start walking forward from its successor.
+    pub start_after: Option<String>,
+    /// Include this revision as the upper bound (inclusive right endpoint).
+    pub end_at: Option<String>,
+    /// Exclude this revision; stop walking before reaching it.
+    pub end_before: Option<String>,
 }
 
 /// Processing steps for commits.
