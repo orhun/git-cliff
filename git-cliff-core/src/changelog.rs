@@ -640,8 +640,26 @@ impl<'a> Changelog<'a> {
         if let Some(header) = &self.config.changelog.header {
             changelog = changelog.replacen(header, "", 1);
         }
-        self.generate(out)?;
-        write!(out, "{changelog}")?;
+        // Render the new section first so we can normalise the boundary
+        // between it and the existing changelog. Without this step the new
+        // section and the existing content can end up with no blank line
+        // between them when the body template ends without a trailing
+        // newline and the existing changelog has its leading newline
+        // stripped along with the header (#1524).
+        let mut generated = Vec::new();
+        self.generate(&mut generated)?;
+        let generated = std::str::from_utf8(&generated)?;
+        let existing = changelog.trim_start_matches(['\n', '\r']);
+        if existing.is_empty() {
+            write!(out, "{generated}")?;
+        } else {
+            let new_section = generated.trim_end_matches(['\n', '\r']);
+            if new_section.is_empty() {
+                write!(out, "{existing}")?;
+            } else {
+                write!(out, "{new_section}\n\n{existing}")?;
+            }
+        }
         Ok(())
     }
 
@@ -1635,6 +1653,43 @@ chore(deps): fix broken deps
     -- total releases: 2 --
 "]]
         .assert_eq(str::from_utf8(&out).unwrap_or_default());
+        Ok(())
+    }
+
+    #[test]
+    fn changelog_prepend_inserts_blank_line_before_existing_content() -> Result<()> {
+        let (mut config, releases) = get_test_data();
+        config.changelog.header = None;
+        config.changelog.body = String::from("## New Release");
+        config.changelog.footer = None;
+        config.changelog.postprocessors = Vec::new();
+
+        let changelog = Changelog::build(vec![releases[0].clone()], config)?;
+        let mut out = Vec::new();
+        changelog.prepend(String::from("## Old Release"), &mut out)?;
+
+        assert_eq!(
+            "## New Release\n\n## Old Release",
+            str::from_utf8(&out).unwrap_or_default()
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn changelog_prepend_handles_empty_existing_content() -> Result<()> {
+        let (mut config, releases) = get_test_data();
+        config.changelog.header = None;
+        config.changelog.body = String::from("## New Release");
+        config.changelog.footer = None;
+        config.changelog.postprocessors = Vec::new();
+
+        let changelog = Changelog::build(vec![releases[0].clone()], config)?;
+        let mut out = Vec::new();
+        changelog.prepend(String::new(), &mut out)?;
+
+        assert_eq!("## New Release", str::from_utf8(&out).unwrap_or_default());
+
         Ok(())
     }
 }
