@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 use std::io::{Read, Write};
+use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::config::Config;
 use crate::error::Result;
 use crate::process::CommitProcessor;
 use crate::release::{Release, Releases};
+use crate::repo::Repository;
 #[cfg(feature = "azure_devops")]
 use crate::remote::azure_devops::AzureDevOpsClient;
 #[cfg(feature = "bitbucket")]
@@ -444,6 +446,24 @@ impl<'a> Changelog<'a> {
         Ok(())
     }
 
+    fn remote_ref_name(&self, range: Option<&str>) -> Result<Option<String>> {
+        let range_head = range.and_then(|r| r.split("..").last());
+        match range_head {
+            Some("HEAD") => self.head_ref_from_releases(),
+            Some(other) => Ok(Some(other.to_string())),
+            None => Ok(None),
+        }
+    }
+
+    fn head_ref_from_releases(&self) -> Result<Option<String>> {
+        let Some(repo_path) = self.releases.iter().find_map(|release| release.repository.as_deref())
+        else {
+            return Ok(None);
+        };
+
+        Repository::discover(PathBuf::from(repo_path)).and_then(|repo| repo.head_ref_name())
+    }
+
     /// Adds remote data (e.g. GitHub commits) to the releases.
     #[allow(unused_variables)]
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
@@ -479,38 +499,32 @@ impl<'a> Changelog<'a> {
         }
         tracing::debug!("Adding remote data");
 
-        // Determine the ref at which to fetch remote commits, based on the commit
-        // range
-        let range_head = range.and_then(|r| r.split("..").last());
-        let ref_name = match range_head {
-            Some("HEAD") => None,
-            other => other,
-        };
+        let remote_ref = self.remote_ref_name(range)?;
 
         #[cfg(feature = "github")]
         let (github_commits, github_pull_requests) = if self.config.remote.github.is_set() {
-            self.get_github_metadata(ref_name)
+            self.get_github_metadata(remote_ref.as_deref())
                 .expect("Could not get github metadata")
         } else {
             (vec![], vec![])
         };
         #[cfg(feature = "gitlab")]
         let (gitlab_commits, gitlab_merge_request) = if self.config.remote.gitlab.is_set() {
-            self.get_gitlab_metadata(ref_name)
+            self.get_gitlab_metadata(remote_ref.as_deref())
                 .expect("Could not get gitlab metadata")
         } else {
             (vec![], vec![])
         };
         #[cfg(feature = "gitea")]
         let (gitea_commits, gitea_merge_request) = if self.config.remote.gitea.is_set() {
-            self.get_gitea_metadata(ref_name)
+            self.get_gitea_metadata(remote_ref.as_deref())
                 .expect("Could not get gitea metadata")
         } else {
             (vec![], vec![])
         };
         #[cfg(feature = "bitbucket")]
         let (bitbucket_commits, bitbucket_pull_request) = if self.config.remote.bitbucket.is_set() {
-            self.get_bitbucket_metadata(ref_name)
+            self.get_bitbucket_metadata(remote_ref.as_deref())
                 .expect("Could not get bitbucket metadata")
         } else {
             (vec![], vec![])
@@ -518,7 +532,7 @@ impl<'a> Changelog<'a> {
         #[cfg(feature = "azure_devops")]
         let (azure_devops_commits, azure_devops_pull_request) =
             if self.config.remote.azure_devops.is_set() {
-                self.get_azure_devops_metadata(ref_name)
+                self.get_azure_devops_metadata(remote_ref.as_deref())
                     .expect("Could not get azure_devops metadata")
             } else {
                 (vec![], vec![])

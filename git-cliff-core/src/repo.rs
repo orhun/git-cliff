@@ -601,6 +601,15 @@ impl Repository {
             "no remotes configured or HEAD is detached",
         )))
     }
+
+    /// Returns the branch name or commit SHA that HEAD currently points to.
+    pub fn head_ref_name(&self) -> Result<Option<String>> {
+        let head = self.inner.head()?;
+        if let Some(name) = head.shorthand() {
+            return Ok(Some(name.to_string()));
+        }
+        Ok(head.target().map(|oid| oid.to_string()))
+    }
 }
 
 fn find_remote(url: &str) -> Result<Remote> {
@@ -897,6 +906,22 @@ mod test {
         );
 
         (repo, temp_dir)
+    }
+
+    #[test]
+    fn head_ref_name_returns_current_branch() -> Result<()> {
+        let (_repo, temp_dir) = create_temp_repo();
+        let output = Command::new("git")
+            .args(["commit", "--allow-empty", "-m", "init"])
+            .current_dir(temp_dir.path())
+            .output()
+            .expect("failed to execute git commit");
+        assert!(output.status.success(), "git commit failed {output:?}");
+
+        let repo = Repository::discover(temp_dir.path().to_path_buf())?;
+        let head_ref = repo.head_ref_name()?.expect("expected branch name");
+        assert!(head_ref == "main" || head_ref == "master");
+        Ok(())
     }
 
     #[test]
