@@ -64,6 +64,13 @@ pub struct GitLabCommit {
     pub parent_ids: Vec<String>,
     /// Web Url
     pub web_url: Option<String>,
+    /// Resolved GitLab username.
+    ///
+    /// The commits API only returns `author_name`, which is the display name.
+    /// This field is populated by resolving the author via merge requests and
+    /// project members.
+    #[serde(default, skip)]
+    pub resolved_username: Option<String>,
 }
 
 impl RemoteCommit for GitLabCommit {
@@ -74,7 +81,7 @@ impl RemoteCommit for GitLabCommit {
     }
 
     fn username(&self) -> Option<String> {
-        self.author_name.clone()
+        self.resolved_username.clone()
     }
 
     fn timestamp(&self) -> Option<i64> {
@@ -156,6 +163,19 @@ pub struct GitLabUser {
     pub avatar_url: Option<String>,
     /// Web Url
     pub web_url: Option<String>,
+    /// Public email of the user.
+    pub public_email: Option<String>,
+}
+
+/// Representation of a GitLab project member.
+///
+/// <https://docs.gitlab.com/ee/api/project_members.html#list-all-members-of-a-project>
+#[derive(Debug, Default, Clone, Deserialize)]
+struct GitLabProjectMember {
+    /// Username
+    username: Option<String>,
+    /// Public email
+    public_email: Option<String>,
 }
 
 /// HTTP client for handling GitLab REST API requests.
@@ -223,6 +243,23 @@ impl GitLabClient {
         )
     }
 
+    /// Constructs the URL for GitLab project members API.
+    fn members_url(project_id: i64, api_url: &str, query: &str, page: i32) -> String {
+        format!(
+            "{api_url}/projects/{project_id}/members/all?per_page={MAX_PAGE_SIZE}&page={page}&\
+             query={}",
+            urlencoding::encode(query)
+        )
+    }
+
+    /// Constructs the URL for GitLab user search API.
+    fn users_search_url(api_url: &str, email: &str) -> String {
+        format!(
+            "{api_url}/users?per_page={MAX_PAGE_SIZE}&search={}",
+            urlencoding::encode(email)
+        )
+    }
+
     /// Looks up the project details.
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub async fn get_project(&self) -> Result<GitLabProject> {
@@ -233,38 +270,138 @@ impl GitLabClient {
 
     /// Fetches the complete list of commits.
     /// This is inefficient for large repositories; consider using
-    /// `get_commit_stream` instead.
+    /// `fetch_commits` instead.
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub async fn get_commits(
         &self,
         project_id: i64,
         ref_name: Option<&str>,
     ) -> Result<Vec<Box<dyn RemoteCommit>>> {
-        use futures::TryStreamExt;
-        crate::set_progress_message!("Fetching all commits from GitLab");
-        self.get_commit_stream(project_id, ref_name)
-            .try_collect()
-            .await
+        let commits = self.fetch_commits(project_id, ref_name).await?;
+        Ok(commits
+            .into_iter()
+            .map(|commit| Box::new(commit) as Box<dyn RemoteCommit>)
+            .collect())
     }
 
     /// Fetches the complete list of pull requests.
     /// This is inefficient for large repositories; consider using
-    /// `get_pull_request_stream` instead.
+    /// `fetch_merge_requests` instead.
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub async fn get_pull_requests(
         &self,
         project_id: i64,
     ) -> Result<Vec<Box<dyn RemotePullRequest>>> {
-        use futures::TryStreamExt;
-        crate::set_progress_message!("Fetching all pull requests from GitLab");
-        self.get_pull_request_stream(project_id).try_collect().await
+        let merge_requests = self.fetch_merge_requests(project_id).await?;
+        Ok(merge_requests
+            .into_iter()
+            .map(|merge_request| Box::new(merge_request) as Box<dyn RemotePullRequest>)
+            .collect())
     }
 
-    fn get_commit_stream(
+    /// Fetches the complete list of commits.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    pub async fn fetch_commits(
         &self,
         project_id: i64,
         ref_name: Option<&str>,
-    ) -> impl Stream<Item = Result<Box<dyn RemoteCommit>>> + '_ {
+    ) -> Result<Vec<GitLabCommit>> {
+        use futures::TryStreamExt;
+        crate::set_progress_message!("Fetching all commits from GitLab");
+        self.raw_commit_stream(project_id, ref_name)
+            .try_collect()
+            .await
+    }
+
+    /// Fetches the complete list of merge requests.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    pub async fn fetch_merge_requests(&self, project_id: i64) -> Result<Vec<GitLabMergeRequest>> {
+        use futures::TryStreamExt;
+        crate::set_progress_message!("Fetching all pull requests from GitLab");
+        self.raw_merge_request_stream(project_id)
+            .try_collect()
+            .await
+    }
+
+    /// Resolves GitLab usernames for commits.
+    ///
+    /// GitLab's commits API returns the author's display name instead of the
+    /// username. This function resolves usernames using merge request authors
+    /// and project member lookups by email.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    pub async fn resolve_commit_usernames(
+        &self,
+        project_id: i64,
+        commits: &mut [GitLabCommit],
+        merge_requests: &[GitLabMergeRequest],
+    ) -> Result<()> {
+        use std::collections::{HashMap, HashSet};
+
+        apply_merge_request_usernames(commits, merge_requests);
+
+        let emails: HashSet<String> = commits
+            .iter()
+            .filter(|commit| commit.resolved_username.is_none())
+            .filter_map(|commit| commit.author_email.clone())
+            .filter(|email| !email.is_empty())
+            .collect();
+
+        if emails.is_empty() {
+            return Ok(());
+        }
+
+        let mut email_to_username = HashMap::new();
+        for email in emails {
+            if email_to_username.contains_key(&email) {
+                continue;
+            }
+            if let Some(username) = self.lookup_username_by_email(project_id, &email).await? {
+                email_to_username.insert(email, username);
+            }
+        }
+
+        for commit in commits.iter_mut() {
+            if commit.resolved_username.is_some() {
+                continue;
+            }
+            if let Some(email) = &commit.author_email {
+                if let Some(username) = email_to_username.get(email) {
+                    commit.resolved_username = Some(username.clone());
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn lookup_username_by_email(
+        &self,
+        project_id: i64,
+        email: &str,
+    ) -> Result<Option<String>> {
+        let url = Self::members_url(project_id, &self.api_url(), email, 1);
+        let members: Vec<GitLabProjectMember> = self.get_json(&url).await?;
+        if let Some(username) = members
+            .iter()
+            .find(|member| member.public_email.as_deref() == Some(email))
+            .and_then(|member| member.username.clone())
+        {
+            return Ok(Some(username));
+        }
+
+        let users_url = Self::users_search_url(&self.api_url(), email);
+        let users: Vec<GitLabUser> = self.get_json(&users_url).await?;
+        Ok(users
+            .iter()
+            .find(|user| user.public_email.as_deref() == Some(email))
+            .and_then(|user| user.username.clone()))
+    }
+
+    fn raw_commit_stream(
+        &self,
+        project_id: i64,
+        ref_name: Option<&str>,
+    ) -> impl Stream<Item = Result<GitLabCommit>> + '_ {
         let ref_name = ref_name.map(ToString::to_string);
         async_stream! {
                 // GitLab pages are 1-indexed
@@ -288,7 +425,7 @@ impl GitLabClient {
                             }
 
                             for commit in commits {
-                                yield Ok(Box::new(commit) as Box<dyn RemoteCommit>);
+                                yield Ok(commit);
                             }
                         }
                         Err(e) => {
@@ -300,10 +437,10 @@ impl GitLabClient {
         }
     }
 
-    fn get_pull_request_stream(
+    fn raw_merge_request_stream(
         &self,
         project_id: i64,
-    ) -> impl Stream<Item = Result<Box<dyn RemotePullRequest>>> + '_ {
+    ) -> impl Stream<Item = Result<GitLabMergeRequest>> + '_ {
         async_stream! {
             // GitLab pages are 1-indexed
             let page_stream = stream::iter(1..)
@@ -323,7 +460,7 @@ impl GitLabClient {
                         }
 
                         for mr in mrs {
-                            yield Ok(Box::new(mr) as Box<dyn RemotePullRequest>);
+                            yield Ok(mr);
                         }
                     }
                     Err(e) => {
@@ -331,6 +468,42 @@ impl GitLabClient {
                         break;
                     }
                 }
+            }
+        }
+    }
+}
+
+/// Applies merge request author usernames to matching commits.
+fn apply_merge_request_usernames(
+    commits: &mut [GitLabCommit],
+    merge_requests: &[GitLabMergeRequest],
+) {
+    use std::collections::HashMap;
+
+    let mut sha_to_username = HashMap::new();
+    for merge_request in merge_requests {
+        let Some(username) = merge_request
+            .author
+            .as_ref()
+            .and_then(|author| author.username.clone())
+        else {
+            continue;
+        };
+        for sha in [
+            merge_request.merge_commit_sha.as_deref(),
+            merge_request.squash_commit_sha.as_deref(),
+            merge_request.sha.as_deref(),
+        ] {
+            if let Some(sha) = sha {
+                sha_to_username.insert(sha.to_string(), username.clone());
+            }
+        }
+    }
+
+    for commit in commits.iter_mut() {
+        if let Some(id) = &commit.id {
+            if let Some(username) = sha_to_username.get(id) {
+                commit.resolved_username = Some(username.clone());
             }
         }
     }
@@ -361,11 +534,57 @@ mod test {
         let remote_commit = GitLabCommit {
             id: Some(String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071")),
             author_name: Some(String::from("orhun")),
+            resolved_username: Some(String::from("orhun")),
             committed_date: Some(String::from("2021-07-18T15:14:39+03:00")),
             ..Default::default()
         };
 
         assert_eq!(Some(1_626_610_479), remote_commit.timestamp());
+    }
+
+    #[test]
+    fn username_uses_resolved_username() {
+        let remote_commit = GitLabCommit {
+            author_name: Some(String::from("Nathan Belsterling")),
+            resolved_username: Some(String::from("nbelste1")),
+            ..Default::default()
+        };
+
+        assert_eq!(Some(String::from("nbelste1")), remote_commit.username());
+    }
+
+    #[test]
+    fn apply_merge_request_usernames_maps_merge_commits() {
+        let mut commits = vec![GitLabCommit {
+            id: Some(String::from("abc123")),
+            author_name: Some(String::from("Display Name")),
+            ..Default::default()
+        }];
+        let merge_requests = vec![GitLabMergeRequest {
+            merge_commit_sha: Some(String::from("abc123")),
+            author: Some(GitLabUser {
+                username: Some(String::from("gitlab_user")),
+                ..Default::default()
+            }),
+            ..Default::default()
+        }];
+
+        apply_merge_request_usernames(&mut commits, &merge_requests);
+
+        assert_eq!(
+            Some(String::from("gitlab_user")),
+            commits[0].resolved_username
+        );
+    }
+
+    #[test]
+    fn members_url_encodes_query() {
+        let url =
+            GitLabClient::members_url(1, "https://gitlab.test.com/api/v4", "user@example.com", 1);
+        assert_eq!(
+            "https://gitlab.test.com/api/v4/projects/1/members/all?per_page=100&page=1&query=user%40example.com",
+            url
+        );
     }
 
     #[test]

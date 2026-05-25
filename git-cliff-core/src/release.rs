@@ -306,22 +306,28 @@ mod test {
             ("1.0.0", "2.0.0", vec!["feat!: add xyz", "feat: zzz"]),
             ("1.0.0", "2.0.0", vec!["feat!: add xyz\n", "feat: zzz\n"]),
             ("2.0.0", "2.0.1", vec!["fix: something"]),
-            ("foo/1.0.0", "foo/1.1.0", vec![
-                "feat: add xyz",
-                "fix: fix xyz",
-            ]),
-            ("bar/1.0.0", "bar/2.0.0", vec![
-                "fix: add xyz",
-                "fix!: aaaaaa",
-            ]),
-            ("zzz-123/test/1.0.0", "zzz-123/test/1.0.1", vec![
-                "fix: aaaaaa",
-            ]),
+            (
+                "foo/1.0.0",
+                "foo/1.1.0",
+                vec!["feat: add xyz", "fix: fix xyz"],
+            ),
+            (
+                "bar/1.0.0",
+                "bar/2.0.0",
+                vec!["fix: add xyz", "fix!: aaaaaa"],
+            ),
+            (
+                "zzz-123/test/1.0.0",
+                "zzz-123/test/1.0.1",
+                vec!["fix: aaaaaa"],
+            ),
             ("v100.0.0", "v101.0.0", vec!["feat!: something"]),
             ("v1.0.0-alpha.1", "v1.0.0-alpha.2", vec!["fix: minor"]),
-            ("testing/v1.0.0-beta.1", "testing/v1.0.0-beta.2", vec![
-                "feat: nice",
-            ]),
+            (
+                "testing/v1.0.0-beta.1",
+                "testing/v1.0.0-beta.2",
+                vec!["feat: nice"],
+            ),
             ("tauri-v1.5.4", "tauri-v1.6.0", vec!["feat: something"]),
             (
                 "rocket/rocket-v4.0.0-rc.1",
@@ -486,10 +492,10 @@ mod test {
         assert_eq!("1.0.0", result.version);
         assert_eq!(None, result.bump_type);
 
-        let release = build_release("1.0.0", &[
-            "docs: update readme",
-            "feat: add a user-facing feature",
-        ]);
+        let release = build_release(
+            "1.0.0",
+            &["docs: update readme", "feat: add a user-facing feature"],
+        );
         let result = release.calculate_next_version_with_config(&Bump {
             no_increment_regex: Some(String::from("^docs$")),
             ..Default::default()
@@ -1018,6 +1024,7 @@ mod test {
                     message: Some(String::new()),
                     parent_ids: vec![],
                     web_url: Some(String::new()),
+                    ..Default::default()
                 },
                 GitLabCommit {
                     id: Some(String::from("21f6aa587fcb772de13f2fde0e92697c51f84162")),
@@ -1033,6 +1040,7 @@ mod test {
                     message: Some(String::new()),
                     parent_ids: vec![],
                     web_url: Some(String::new()),
+                    ..Default::default()
                 },
                 GitLabCommit {
                     id: Some(String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973")),
@@ -1048,6 +1056,7 @@ mod test {
                     message: Some(String::new()),
                     parent_ids: vec![],
                     web_url: Some(String::new()),
+                    ..Default::default()
                 },
                 GitLabCommit {
                     id: Some(String::from("4d3ffe4753b923f4d7807c490e650e6624a12074")),
@@ -1063,6 +1072,7 @@ mod test {
                     message: Some(String::new()),
                     parent_ids: vec![],
                     web_url: Some(String::new()),
+                    ..Default::default()
                 },
                 GitLabCommit {
                     id: Some(String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05")),
@@ -1078,6 +1088,7 @@ mod test {
                     message: Some(String::new()),
                     parent_ids: vec![],
                     web_url: Some(String::new()),
+                    ..Default::default()
                 },
                 GitLabCommit {
                     id: Some(String::from("6c34967147560ea09658776d4901709139b4ad66")),
@@ -1093,6 +1104,7 @@ mod test {
                     message: Some(String::new()),
                     parent_ids: vec![],
                     web_url: Some(String::new()),
+                    ..Default::default()
                 },
                 GitLabCommit {
                     id: Some(String::from("0c34967147560e809658776d4901709139b4ad68")),
@@ -1108,6 +1120,7 @@ mod test {
                     message: Some(String::new()),
                     parent_ids: vec![],
                     web_url: Some(String::new()),
+                    ..Default::default()
                 },
                 GitLabCommit {
                     id: Some(String::from("kk34967147560e809658776d4901709139b4ad68")),
@@ -1123,10 +1136,14 @@ mod test {
                     message: Some(String::new()),
                     parent_ids: vec![],
                     web_url: Some(String::new()),
+                    ..Default::default()
                 },
             ]
             .into_iter()
-            .map(|v| Box::new(v) as Box<dyn RemoteCommit>)
+            .map(|mut commit| {
+                commit.resolved_username = commit.author_name.clone();
+                Box::new(commit) as Box<dyn RemoteCommit>
+            })
             .collect(),
             vec![Box::new(GitLabMergeRequest {
                 title: Some(String::from("1")),
@@ -1144,6 +1161,7 @@ mod test {
                     state: Some(String::from("42")),
                     avatar_url: None,
                     web_url: Some(String::from("42")),
+                    public_email: None,
                 }),
                 sha: Some(String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071")),
                 web_url: Some(String::new()),
@@ -1271,19 +1289,12 @@ mod test {
         assert_eq!(expected_commits, release.commits);
 
         release
-            .github
+            .gitlab
             .contributors
             .sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
 
         let expected_metadata = RemoteReleaseMetadata {
             contributors: vec![
-                RemoteContributor {
-                    username: Some(String::from("orhun")),
-                    pr_title: Some(String::from("1")),
-                    pr_number: Some(1),
-                    pr_labels: vec![String::from("rust")],
-                    is_first_time: false,
-                },
                 RemoteContributor {
                     username: Some(String::from("nuhro")),
                     pr_title: None,
@@ -1304,6 +1315,13 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: true,
+                },
+                RemoteContributor {
+                    username: Some(String::from("orhun")),
+                    pr_title: Some(String::from("1")),
+                    pr_number: Some(1),
+                    pr_labels: vec![String::from("rust")],
+                    is_first_time: false,
                 },
             ],
         };
