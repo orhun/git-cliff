@@ -60,6 +60,31 @@ pub const CONFIG_FILES: &[&str] = &["cliff.toml", ".cliff.toml", ".config/cliff.
 pub const DEFAULT_OUTPUT: &str = "CHANGELOG.md";
 /// Default ignore file.
 pub const IGNORE_FILE: &str = ".cliffignore";
+/// File containing commit hashes to ignore in git blame.
+pub const BLAME_IGNORE_REV_FILE: &str = ".git-blame-ignore-revs";
+
+/// Parses a newline-separated list of commit hashes, ignoring comments and blank lines.
+pub fn parse_hash_list(contents: &str) -> Vec<String> {
+    contents
+        .lines()
+        .filter(|line| !(line.starts_with('#') || line.trim().is_empty()))
+        .map(|line| String::from(line.trim()))
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_hash_list_ignores_comments_and_blank_lines() {
+        let contents = "# ignore formatting commits\n\nabc123\n  def456  \n# trailing\n";
+        assert_eq!(
+            vec![String::from("abc123"), String::from("def456")],
+            parse_hash_list(contents)
+        );
+    }
+}
 
 /// Sets a human-readable message on the current progress bar span.
 /// This macro only has effect if the `tracing-indicatif` feature is enabled.

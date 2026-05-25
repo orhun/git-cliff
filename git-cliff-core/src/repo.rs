@@ -17,6 +17,9 @@ use crate::config::Remote;
 use crate::error::{Error, Result};
 use crate::tag::Tag;
 
+/// Name of the file listing commits ignored by git blame.
+const BLAME_IGNORE_REV_FILE: &str = ".git-blame-ignore-revs";
+
 /// Regex for replacing the signature part of a tag message.
 static TAG_SIGNATURE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
@@ -186,6 +189,7 @@ impl Repository {
             .filter_map(StdResult::ok)
             .filter_map(|id| self.inner.find_commit(id).ok())
             .collect();
+        commits.retain(|commit| !self.only_modifies_blame_ignore_file(commit));
         if include_path.is_some() || exclude_path.is_some() {
             let include_patterns = include_path.map(|patterns| {
                 patterns
@@ -305,6 +309,15 @@ impl Repository {
             }
             None => star_added,
         }
+    }
+
+    /// Returns whether a commit only modifies `.git-blame-ignore-revs`.
+    fn only_modifies_blame_ignore_file(&self, commit: &Commit) -> bool {
+        let changed_files = self.commit_changed_files(commit);
+        !changed_files.is_empty()
+            && changed_files
+                .iter()
+                .all(|path| path.as_os_str() == BLAME_IGNORE_REV_FILE)
     }
 
     /// Calculates whether the commit should be retained or not.
@@ -1168,5 +1181,25 @@ mod test {
             );
             assert!(!retain, "exclude: **/*.txt");
         }
+    }
+
+    #[test]
+    fn only_modifies_blame_ignore_file() {
+        let (repo, _temp_dir) = create_temp_repo();
+        let _initial = create_commit_with_files(&repo, vec![("README.md", "hello")]);
+        let blame_only = create_commit_with_files(
+            &repo,
+            vec![(".git-blame-ignore-revs", "abc123\n")],
+        );
+        let mixed = create_commit_with_files(
+            &repo,
+            vec![
+                (".git-blame-ignore-revs", "abc123\ndef456\n"),
+                ("README.md", "updated"),
+            ],
+        );
+
+        assert!(repo.only_modifies_blame_ignore_file(&blame_only));
+        assert!(!repo.only_modifies_blame_ignore_file(&mixed));
     }
 }
