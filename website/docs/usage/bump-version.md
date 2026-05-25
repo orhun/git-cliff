@@ -7,7 +7,7 @@ sidebar_position: 4
 To calculate and set the next semantic version (i.e. _bump the version_) for the unreleased changes:
 
 ```bash
-git cliff --bump
+git-cliff --bump
 ```
 
 - Basic:
@@ -33,7 +33,7 @@ The next version is checked against the regex value set by [tag_pattern](/docs/c
 You can also calculate and print the next semantic version to `stdout`:
 
 ```bash
-git cliff --bumped-version
+git-cliff --bumped-version
 ```
 
 :::tip
@@ -41,7 +41,7 @@ git cliff --bumped-version
 You can also get the bumped version [from the context](/docs/usage/print-context) as follows:
 
 ```bash
-git cliff --unreleased --bump --context | jq -r .[0].version
+git-cliff --unreleased --bump --context | jq -r .[0].version
 ```
 
 :::
@@ -51,7 +51,7 @@ git cliff --unreleased --bump --context | jq -r .[0].version
 Optionally, you can specify a bump type in `--bump`:
 
 ```bash
-git cliff --bump [major|minor|patch]
+git-cliff --bump [major|minor|patch]
 ```
 
 ## Zero-based versioning scheme

@@ -56,7 +56,7 @@ runs:
         if [ -n '${{ inputs.include-path-env }}' ]; then
           export GIT_CLIFF_INCLUDE_PATH='${{ inputs.include-path-env }}'
         fi
-        git cliff --config cliff.toml ${{ inputs.command }} > output.md
+        git-cliff --config cliff.toml ${{ inputs.command }} > output.md
         echo "$?" > output.rc
         if [ -f output.md ]; then
           cat output.md

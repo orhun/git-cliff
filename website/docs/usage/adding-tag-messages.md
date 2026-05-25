@@ -30,7 +30,7 @@ So in the release's context, `message` will be "first release, yay!" (even if it
 If for some reason you don't want to have the message in the tag (or don't have a tag yet) but want to include it in the generated changelog, you can use the `--with-tag-message` flag:
 
 ```bash
-git cliff --bump --unreleased --with-tag-message "some text"
+git-cliff --bump --unreleased --with-tag-message "some text"
 ```
 
 In this case, you can only add a message to the latest release.

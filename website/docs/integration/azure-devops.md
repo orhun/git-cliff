@@ -58,7 +58,7 @@ To set an access token, you can use the [configuration file](/docs/configuration
 For example:
 
 ```bash
-AZURE_DEVOPS_TOKEN="***" git cliff --azure-devops-repo "myorg/myproject/myrepo"
+AZURE_DEVOPS_TOKEN="***" git-cliff --azure-devops-repo "myorg/myproject/myrepo"
 ```
 
 :::tip
