@@ -560,6 +560,17 @@ impl Config {
             if path.is_file() { Some(path) } else { None }
         })
     }
+
+    /// Returns whether changelog templates reference per-commit statistics.
+    pub fn needs_commit_statistics(&self) -> bool {
+        const VAR: &str = "commit.statistics";
+        self.changelog
+            .header
+            .iter()
+            .chain([&self.changelog.body])
+            .chain(self.changelog.footer.iter())
+            .any(|content| content.contains(VAR))
+    }
 }
 
 impl FromStr for Config {
@@ -642,6 +653,25 @@ mod test {
         assert!(!Remote::new("", "test").is_set());
         assert!(!Remote::new("test", "").is_set());
         assert!(!Remote::new("", "").is_set());
+    }
+
+    #[test]
+    fn needs_commit_statistics() -> Result<()> {
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .expect("parent directory not found")
+            .join("config")
+            .join(crate::DEFAULT_CONFIG);
+        let mut config = Config::load(&path)?;
+
+        assert!(!config.needs_commit_statistics());
+
+        config
+            .changelog
+            .body
+            .push_str("\n{{ commit.statistics.files_changed }}");
+        assert!(config.needs_commit_statistics());
+        Ok(())
     }
 
     #[test]

@@ -350,25 +350,28 @@ fn process_repository<'a>(
     let mut previous_release = Release::default();
     let mut first_processed_tag = None;
     let repository_path = repository.root_path()?.to_string_lossy().into_owned();
+    let collect_commit_statistics = config.needs_commit_statistics();
     for git_commit in commits.iter().rev() {
         let release = releases.last_mut().unwrap();
         let mut commit = Commit::from(git_commit);
-        commit.statistics = match repository.commit_statistics(git_commit) {
-            Ok(statistics) => statistics,
-            Err(err)
-                if matches!(
-                    &err,
-                    Error::GitError(git_err) if git_err.message().contains("object not found")
-                ) =>
-            {
-                tracing::warn!(
-                    "Skipping diff statistics for commit {} because a Git object is missing: {err}",
-                    commit.id,
-                );
-                CommitStatistics::default()
-            }
-            Err(err) => return Err(err),
-        };
+        if collect_commit_statistics {
+            commit.statistics = match repository.commit_statistics(git_commit) {
+                Ok(statistics) => statistics,
+                Err(err)
+                    if matches!(
+                        &err,
+                        Error::GitError(git_err) if git_err.message().contains("object not found")
+                    ) =>
+                {
+                    tracing::warn!(
+                        "Skipping diff statistics for commit {} because a Git object is missing: {err}",
+                        commit.id,
+                    );
+                    CommitStatistics::default()
+                }
+                Err(err) => return Err(err),
+            };
+        }
         let commit_id = commit.id.clone();
         release.commits.push(commit);
         release.repository = Some(repository_path.clone());
