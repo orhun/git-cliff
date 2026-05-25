@@ -43,6 +43,8 @@ pub mod statistics;
 pub mod summary;
 /// Git tag.
 pub mod tag;
+/// Markdown formatting helpers.
+pub mod markdown;
 /// Template engine.
 pub mod template;
 

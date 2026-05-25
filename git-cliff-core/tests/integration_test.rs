@@ -37,6 +37,7 @@ fn generate_changelog() -> Result<()> {
         render_always: false,
         postprocessors: [].to_vec(),
         output: None,
+        format: false,
     };
     let git_config = GitConfig {
         processing_order: None,

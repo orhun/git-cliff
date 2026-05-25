@@ -17,6 +17,8 @@ reqwest = { version = "0.12.28", default-features = false, features = [
 ] }
 tracing = "0.1.44"
 tracing-indicatif = "0.3.14"
+prettify = "0.3.0"
+prettify-markdown = "0.2.0"
 
 [profile.dev]
 opt-level = 0

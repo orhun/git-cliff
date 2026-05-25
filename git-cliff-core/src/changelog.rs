@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 use std::io::{Read, Write};
+use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::config::Config;
-use crate::error::Result;
+use crate::error::{Error, Result};
+use crate::markdown::{format_markdown_output, is_markdown_path};
 use crate::process::CommitProcessor;
 use crate::release::{Release, Releases};
 #[cfg(feature = "azure_devops")]
@@ -632,15 +634,42 @@ impl<'a> Changelog<'a> {
         Ok(())
     }
 
+    /// Generates the changelog and writes it to the given output.
+    ///
+    /// When [`Config::changelog`] has [`crate::config::ChangelogConfig::format`] enabled and
+    /// the output path ends with `.md`, the generated Markdown is formatted before writing.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    pub fn write_generate<W: Write + ?Sized>(
+        &self,
+        out: &mut W,
+        output: Option<&Path>,
+    ) -> Result<()> {
+        if self.config.changelog.format && is_markdown_path(output) {
+            let mut content = Vec::new();
+            self.generate(&mut content)?;
+            let content = String::from_utf8(content)
+                .map_err(|error| Error::ChangelogError(error.to_string()))?;
+            write!(out, "{}", format_markdown_output(&content)?)?;
+            return Ok(());
+        }
+
+        self.generate(out)
+    }
+
     /// Generates a changelog and prepends it to the given changelog.
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
-    pub fn prepend<W: Write + ?Sized>(&self, mut changelog: String, out: &mut W) -> Result<()> {
+    pub fn prepend<W: Write + ?Sized>(
+        &self,
+        mut changelog: String,
+        out: &mut W,
+        output: Option<&Path>,
+    ) -> Result<()> {
         crate::set_progress_message!("Generating and prepending the changelog");
         tracing::debug!("Generating changelog and prepending");
         if let Some(header) = &self.config.changelog.header {
             changelog = changelog.replacen(header, "", 1);
         }
-        self.generate(out)?;
+        self.write_generate(out, output)?;
         write!(out, "{changelog}")?;
         Ok(())
     }
@@ -731,6 +760,7 @@ mod test {
                 }],
                 render_always: false,
                 output: None,
+                format: false,
             },
             git: GitConfig {
                 processing_order: None,

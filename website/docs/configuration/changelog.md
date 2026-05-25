@@ -65,3 +65,9 @@ Internally postprocessors and preprocessors are the same. See [commit_preprocess
 ### output
 
 Output file path for the changelog. You can also use the `--output` argument to override this value.
+
+### format
+
+If set to `true`, the generated changelog is formatted when writing to a Markdown file (`.md` extension).
+
+This helps clean up spacing and structure produced by Tera templates without requiring an external formatter.

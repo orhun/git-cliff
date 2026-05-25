@@ -79,6 +79,9 @@ pub struct ChangelogConfig {
     pub postprocessors: Vec<TextProcessor>,
     /// Output file path.
     pub output: Option<PathBuf>,
+    /// Format the changelog when writing to a Markdown file.
+    #[serde(default)]
+    pub format: bool,
 }
 
 /// Git configuration
