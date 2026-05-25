@@ -82,6 +82,8 @@ jobs:
           - fixtures-name: test-keep-a-changelog-links-one-tag
           - fixtures-name: test-keep-a-changelog-links-tag-arg
             command: --tag v0.3.0
+          - fixtures-name: test-with-commit-tag-arg
+            command: --tag v0.3.0 --with-commit "chore(release): Release v0.3.0"
           - fixtures-name: test-keep-a-changelog-links-unreleased-arg
             command: --unreleased
           - fixtures-name: test-keep-a-changelog-links-unreleased-arg

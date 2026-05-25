@@ -412,13 +412,27 @@ fn process_repository<'a>(
         }
     }
 
-    // Add custom commit messages to the latest release.
+    // Add custom commit messages to the target release.
     if let Some(custom_commits) = &args.with_commit {
-        releases
-            .last_mut()
-            .unwrap()
-            .commits
-            .extend(custom_commits.iter().cloned().map(Commit::from));
+        let custom_commits = custom_commits
+            .iter()
+            .cloned()
+            .map(Commit::from)
+            .collect::<Vec<_>>();
+        if let Some(tag) = args.tag.as_deref() {
+            if let Some(release) = releases
+                .iter_mut()
+                .find(|release| release.version.as_deref() == Some(tag))
+            {
+                release.commits.extend(custom_commits);
+            } else {
+                tracing::warn!(
+                    "Custom commit messages were not added because no release matched tag '{tag}'"
+                );
+            }
+        } else if let Some(release) = releases.last_mut() {
+            release.commits.extend(custom_commits);
+        }
     }
 
     // Set the previous release if the first release does not have one set.
