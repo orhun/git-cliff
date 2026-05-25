@@ -216,17 +216,20 @@ macro_rules! update_release_metadata {
                         commit.$remote.pr_title = pull_request.and_then(|v| v.title().clone());
                         commit.$remote.pr_labels =
                             pull_request.map(|v| v.labels().clone()).unwrap_or_default();
-                        if !contributors
-                            .iter()
-                            .any(|v| commit.$remote.username == v.username)
+                        if let Some(contributor) = contributors
+                            .iter_mut()
+                            .find(|v| commit.$remote.username == v.username)
                         {
-                            contributors.push(RemoteContributor {
-                                username: commit.$remote.username.clone(),
-                                pr_title: commit.$remote.pr_title.clone(),
-                                pr_number: commit.$remote.pr_number,
-                                pr_labels: commit.$remote.pr_labels.clone(),
-                                is_first_time: false,
-                            });
+                            if let Some(pr_number) = commit.$remote.pr_number {
+                                contributor.track_pull_request(pr_number);
+                            }
+                        } else {
+                            contributors.push(RemoteContributor::from_pull_request(
+                                commit.$remote.username.clone(),
+                                commit.$remote.pr_title.clone(),
+                                commit.$remote.pr_number,
+                                commit.$remote.pr_labels.clone(),
+                            ));
                         }
                         commit.remote = Some(commit.$remote.clone());
                         // if remote commit is the release commit store timestamp for

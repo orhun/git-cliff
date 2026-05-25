@@ -786,6 +786,7 @@ Refs: #123
             pr_number: None,
             pr_labels: vec![String::from("feature"), String::from("deprecation")],
             is_first_time: true,
+                    ..Default::default()
         });
         let commit = commit.into_conventional()?;
         let commit = commit.parse_links(&[
@@ -847,6 +848,7 @@ Refs: #123
             pr_number: None,
             pr_labels: vec![String::from("feature"), String::from("deprecation")],
             is_first_time: true,
+                    ..Default::default()
         });
         let commit = commit.into_conventional()?;
         let commit = commit.parse_links(&[
@@ -1022,6 +1024,7 @@ Refs: #123
             pr_number: None,
             pr_labels: Vec::new(),
             is_first_time: true,
+                    ..Default::default()
         });
 
         let parsed_commit = commit.clone().parse(

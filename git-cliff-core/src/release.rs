@@ -791,6 +791,7 @@ mod test {
                     pr_number: Some(42),
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
@@ -798,6 +799,7 @@ mod test {
                     pr_number: Some(42),
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -810,6 +812,7 @@ mod test {
                     pr_number: Some(66),
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
@@ -817,6 +820,7 @@ mod test {
                     pr_number: Some(66),
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -829,6 +833,7 @@ mod test {
                     pr_number: Some(53),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("nuhro")),
@@ -836,6 +841,7 @@ mod test {
                     pr_number: Some(53),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -848,6 +854,7 @@ mod test {
                     pr_number: Some(1_000),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
@@ -855,6 +862,7 @@ mod test {
                     pr_number: Some(1_000),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -867,6 +875,7 @@ mod test {
                     pr_number: Some(999_999),
                     pr_labels: vec![String::from("github")],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
@@ -874,6 +883,7 @@ mod test {
                     pr_number: Some(999_999),
                     pr_labels: vec![String::from("github")],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -886,6 +896,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("someone")),
@@ -893,6 +904,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -912,6 +924,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: true,
+                    ..Default::default()
                 },
                 RemoteContributor {
                     username: Some(String::from("orhun")),
@@ -919,6 +932,8 @@ mod test {
                     pr_number: Some(42),
                     pr_labels: vec![String::from("rust")],
                     is_first_time: true,
+                    pr_number_first: Some(999_999),
+                    pr_numbers: vec![999_999, 66, 42],
                 },
                 RemoteContributor {
                     username: Some(String::from("nuhro")),
@@ -926,6 +941,8 @@ mod test {
                     pr_number: Some(53),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: true,
+                    pr_number_first: Some(53),
+                    pr_numbers: vec![53],
                 },
                 RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
@@ -933,6 +950,8 @@ mod test {
                     pr_number: Some(1_000),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: true,
+                    pr_number_first: Some(1_000),
+                    pr_numbers: vec![1_000],
                 },
             ],
         };
@@ -1162,6 +1181,7 @@ mod test {
                     pr_number: Some(1),
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
@@ -1169,6 +1189,7 @@ mod test {
                     pr_number: Some(1),
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -1181,6 +1202,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
@@ -1188,6 +1210,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -1200,6 +1223,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("nuhro")),
@@ -1207,6 +1231,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -1219,6 +1244,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
@@ -1226,6 +1252,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -1238,6 +1265,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
@@ -1245,6 +1273,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -1257,6 +1286,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("someone")),
@@ -1264,6 +1294,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -1283,6 +1314,8 @@ mod test {
                     pr_number: Some(1),
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
+                    pr_number_first: Some(1),
+                    pr_numbers: vec![1],
                 },
                 RemoteContributor {
                     username: Some(String::from("nuhro")),
@@ -1290,6 +1323,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: true,
+                    ..Default::default()
                 },
                 RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
@@ -1297,6 +1331,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: true,
+                    ..Default::default()
                 },
                 RemoteContributor {
                     username: Some(String::from("someone")),
@@ -1304,6 +1339,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: true,
+                    ..Default::default()
                 },
             ],
         };
@@ -1507,6 +1543,7 @@ mod test {
                     pr_number: Some(42),
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
@@ -1514,6 +1551,7 @@ mod test {
                     pr_number: Some(42),
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -1526,6 +1564,7 @@ mod test {
                     pr_number: Some(66),
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
@@ -1533,6 +1572,7 @@ mod test {
                     pr_number: Some(66),
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -1545,6 +1585,7 @@ mod test {
                     pr_number: Some(53),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("nuhro")),
@@ -1552,6 +1593,7 @@ mod test {
                     pr_number: Some(53),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -1564,6 +1606,7 @@ mod test {
                     pr_number: Some(1_000),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
@@ -1571,6 +1614,7 @@ mod test {
                     pr_number: Some(1_000),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -1583,6 +1627,7 @@ mod test {
                     pr_number: Some(999_999),
                     pr_labels: vec![String::from("github")],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
@@ -1590,6 +1635,7 @@ mod test {
                     pr_number: Some(999_999),
                     pr_labels: vec![String::from("github")],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -1602,6 +1648,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("someone")),
@@ -1609,6 +1656,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -1628,6 +1676,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: true,
+                    ..Default::default()
                 },
                 RemoteContributor {
                     username: Some(String::from("orhun")),
@@ -1635,6 +1684,8 @@ mod test {
                     pr_number: Some(42),
                     pr_labels: vec![String::from("rust")],
                     is_first_time: true,
+                    pr_number_first: Some(999_999),
+                    pr_numbers: vec![999_999, 66, 42],
                 },
                 RemoteContributor {
                     username: Some(String::from("nuhro")),
@@ -1642,6 +1693,8 @@ mod test {
                     pr_number: Some(53),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: true,
+                    pr_number_first: Some(53),
+                    pr_numbers: vec![53],
                 },
                 RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
@@ -1649,6 +1702,8 @@ mod test {
                     pr_number: Some(1_000),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: true,
+                    pr_number_first: Some(1_000),
+                    pr_numbers: vec![1_000],
                 },
             ],
         };
@@ -1806,6 +1861,7 @@ mod test {
                     pr_number: Some(1),
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
@@ -1813,6 +1869,7 @@ mod test {
                     pr_number: Some(1),
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -1825,6 +1882,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
@@ -1832,6 +1890,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -1844,6 +1903,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("nuhro")),
@@ -1851,6 +1911,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -1863,6 +1924,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
@@ -1870,6 +1932,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -1882,6 +1945,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
@@ -1889,6 +1953,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -1901,6 +1966,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("someone")),
@@ -1908,6 +1974,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -1927,6 +1994,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: true,
+                    ..Default::default()
                 },
                 RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
@@ -1934,6 +2002,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: true,
+                    ..Default::default()
                 },
                 RemoteContributor {
                     username: Some(String::from("someone")),
@@ -1941,6 +2010,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: true,
+                    ..Default::default()
                 },
                 RemoteContributor {
                     username: Some(String::from("orhun")),
@@ -1948,6 +2018,8 @@ mod test {
                     pr_number: Some(1),
                     pr_labels: vec![],
                     is_first_time: false,
+                    pr_number_first: Some(1),
+                    pr_numbers: vec![1],
                 },
             ],
         };
@@ -2120,6 +2192,7 @@ mod test {
                     pr_number: Some(42),
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
@@ -2127,6 +2200,7 @@ mod test {
                     pr_number: Some(42),
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -2139,6 +2213,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
@@ -2146,6 +2221,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -2158,6 +2234,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("nuhro")),
@@ -2165,6 +2242,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -2177,6 +2255,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
@@ -2184,6 +2263,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -2196,6 +2276,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
@@ -2203,6 +2284,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -2215,6 +2297,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("someone")),
@@ -2222,6 +2305,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: false,
+                    ..Default::default()
                 }),
                 ..Default::default()
             },
@@ -2241,6 +2325,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: true,
+                    ..Default::default()
                 },
                 RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
@@ -2248,6 +2333,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: true,
+                    ..Default::default()
                 },
                 RemoteContributor {
                     username: Some(String::from("someone")),
@@ -2255,6 +2341,7 @@ mod test {
                     pr_number: None,
                     pr_labels: vec![],
                     is_first_time: true,
+                    ..Default::default()
                 },
                 RemoteContributor {
                     username: Some(String::from("orhun")),
@@ -2262,6 +2349,8 @@ mod test {
                     pr_number: Some(42),
                     pr_labels: vec![],
                     is_first_time: false,
+                    pr_number_first: Some(42),
+                    pr_numbers: vec![42],
                 },
             ],
         };
