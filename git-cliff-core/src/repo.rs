@@ -521,7 +521,7 @@ impl Repository {
         topo_order: bool,
         use_branch_tags: bool,
     ) -> Result<IndexMap<String, Tag>> {
-        let mut tags: Vec<(Commit, Tag)> = Vec::new();
+        let mut tags: Vec<(Commit, Tag, i64)> = Vec::new();
         let tag_names = self.inner.tag_names(None)?;
         let head_commit = self.inner.head()?.peel_to_commit()?;
         for name in tag_names
@@ -536,10 +536,14 @@ impl Repository {
                     continue;
                 }
 
-                tags.push((commit, Tag {
-                    name,
-                    message: None,
-                }));
+                tags.push((
+                    commit.clone(),
+                    Tag {
+                        name,
+                        message: None,
+                    },
+                    commit.time().seconds(),
+                ));
             } else if let Some(tag) = obj.as_tag() {
                 if let Some(commit) = tag
                     .target()
@@ -549,21 +553,29 @@ impl Repository {
                     if use_branch_tags && !self.should_include_tag(&head_commit, &commit)? {
                         continue;
                     }
-                    tags.push((commit, Tag {
-                        name: tag.name().map(String::from).unwrap_or(name),
-                        message: tag
-                            .message()
-                            .map(|msg| TAG_SIGNATURE_REGEX.replace(msg, "").trim().to_owned()),
-                    }));
+                    let timestamp = tag
+                        .tagger()
+                        .map(|signature| signature.when().seconds())
+                        .unwrap_or_else(|| commit.time().seconds());
+                    tags.push((
+                        commit,
+                        Tag {
+                            name: tag.name().map(String::from).unwrap_or(name),
+                            message: tag
+                                .message()
+                                .map(|msg| TAG_SIGNATURE_REGEX.replace(msg, "").trim().to_owned()),
+                        },
+                        timestamp,
+                    ));
                 }
             }
         }
         if !topo_order {
-            tags.sort_by(|a, b| a.0.time().seconds().cmp(&b.0.time().seconds()));
+            tags.sort_by(|a, b| a.2.cmp(&b.2));
         }
         Ok(tags
             .into_iter()
-            .map(|(a, b)| (a.id().to_string(), b))
+            .map(|(commit, tag, _)| (commit.id().to_string(), tag))
             .collect())
     }
 
@@ -897,6 +909,51 @@ mod test {
         );
 
         (repo, temp_dir)
+    }
+
+    fn run_git(cwd: &Path, args: &[&str]) {
+        let output = Command::new("git")
+            .args(args)
+            .current_dir(cwd)
+            .output()
+            .unwrap_or_else(|err| panic!("failed to execute git {args:?}: {err}"));
+        assert!(
+            output.status.success(),
+            "git {args:?} failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    #[test]
+    fn tags_sort_annotated_tags_by_tagger_time() -> Result<()> {
+        let (repository, temp_dir) = create_temp_repo();
+        let cwd = temp_dir.path();
+
+        run_git(cwd, &["commit", "--allow-empty", "-m", "older commit"]);
+        let older_commit = str::from_utf8(
+            &Command::new("git")
+                .args(["rev-parse", "HEAD"])
+                .current_dir(cwd)
+                .output()?
+                .stdout,
+        )?
+        .trim()
+        .to_string();
+
+        run_git(cwd, &["commit", "--allow-empty", "-m", "newer commit"]);
+        run_git(cwd, &["tag", "v1.0"]);
+        run_git(
+            cwd,
+            &["tag", "-a", "v2.0", &older_commit, "-m", "late tag on old commit"],
+        );
+
+        let tags = repository.tags(&None, false, false)?;
+        assert_eq!(
+            tags.last().expect("expected a latest tag").1.name,
+            "v2.0"
+        );
+
+        Ok(())
     }
 
     #[test]
