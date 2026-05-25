@@ -3,6 +3,14 @@ use crate::config::{GitConfig, ProcessingStep};
 use crate::error::{Error as AppError, Result};
 use crate::summary::Summary;
 
+const DEFAULT_PROCESSING_ORDER: [ProcessingStep; 5] = [
+    ProcessingStep::CommitPreprocessors,
+    ProcessingStep::SplitCommits,
+    ProcessingStep::ConventionalCommits,
+    ProcessingStep::CommitParsers,
+    ProcessingStep::LinkParsers,
+];
+
 /// Stateful commit-processing pipeline.
 pub struct CommitProcessor<'cfg, 'sum> {
     config: &'cfg GitConfig,
@@ -20,6 +28,10 @@ impl<'cfg, 'sum> CommitProcessor<'cfg, 'sum> {
     pub fn run<'a>(&mut self, commits: &mut Vec<Commit<'a>>) -> Result<()> {
         if let Some(order) = &self.config.processing_order {
             self.run_with_order(commits, order);
+        } else if self.config.split_commits {
+            // Split lines before applying commit parsers so patterns like `^fix:`
+            // match individual lines instead of the full multiline message.
+            self.run_with_order(commits, &DEFAULT_PROCESSING_ORDER);
         } else {
             self.run_legacy(commits);
         }
@@ -265,7 +277,7 @@ mod test {
     use crate::config::{CommitParser, ProcessingStep};
 
     #[test]
-    fn list_keeps_legacy_behavior_when_order_is_unset() -> Result<()> {
+    fn split_commits_applies_parsers_per_line_when_order_is_unset() -> Result<()> {
         let mut commits = vec![Commit::new(
             String::from("123123"),
             String::from("chore(ci): update runner\nfix(ci): restore build"),
@@ -305,7 +317,44 @@ mod test {
         };
 
         CommitProcessor::new(&cfg, &mut Summary::default()).run(&mut commits)?;
-        assert!(commits.is_empty());
+        assert_eq!(commits.len(), 1);
+        assert_eq!(commits[0].group.as_deref(), Some("fix"));
+        assert_eq!(commits[0].message, "fix(ci): restore build");
+
+        Ok(())
+    }
+
+    #[test]
+    fn split_commits_supports_line_start_commit_parser() -> Result<()> {
+        let mut commits = vec![Commit::new(
+            String::from("123123"),
+            String::from("Unconventional commit\n\nfix: first line of the commit body"),
+        )];
+        let cfg = crate::config::GitConfig {
+            processing_order: None,
+            conventional_commits: false,
+            filter_unconventional: false,
+            split_commits: true,
+            filter_commits: true,
+            commit_parsers: vec![CommitParser {
+                sha: None,
+                message: Regex::new("^fix:").ok(),
+                body: None,
+                footer: None,
+                group: Some(String::from("Fixed")),
+                default_scope: None,
+                scope: None,
+                skip: None,
+                field: None,
+                pattern: None,
+            }],
+            ..Default::default()
+        };
+
+        CommitProcessor::new(&cfg, &mut Summary::default()).run(&mut commits)?;
+        assert_eq!(commits.len(), 1);
+        assert_eq!(commits[0].message, "fix: first line of the commit body");
+        assert_eq!(commits[0].group.as_deref(), Some("Fixed"));
 
         Ok(())
     }

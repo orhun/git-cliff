@@ -1530,6 +1530,8 @@ chore(deps): fix broken deps
 			#### other
 			- support unconventional commits
 			- this commit is preprocessed
+			- use footer
+			- footer text
 			- make awesome stuff look better
 
 			#### ui
@@ -1537,9 +1539,9 @@ chore(deps): fix broken deps
 
 			### Commit Statistics
 
-			- 18 commit(s) contributed to the release.
-			- 12 day(s) passed between the first and last commit.
-			- 17 commit(s) parsed as conventional.
+			- 20 commit(s) contributed to the release.
+			- 13 day(s) passed between the first and last commit.
+			- 19 commit(s) parsed as conventional.
 			- 1 linked issue(s) detected in commits.
 			  - [#3](https://github.com/3) (referenced 1 time(s))
 			-- total releases: 2 --
