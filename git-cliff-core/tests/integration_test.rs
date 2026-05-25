@@ -229,26 +229,7 @@ fn generate_changelog() -> Result<()> {
             submodule_commits: HashMap::new(),
             statistics: None,
             bump_type: None,
-            #[cfg(feature = "github")]
-            github: git_cliff_core::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
-            #[cfg(feature = "gitlab")]
-            gitlab: git_cliff_core::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
-            #[cfg(feature = "gitea")]
-            gitea: git_cliff_core::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
-            #[cfg(feature = "bitbucket")]
-            bitbucket: git_cliff_core::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
-            #[cfg(feature = "azure_devops")]
-            azure_devops: git_cliff_core::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
+            ..Default::default()
         },
         Release {
             version: Some(String::from("v1.0.0")),
@@ -263,26 +244,7 @@ fn generate_changelog() -> Result<()> {
             submodule_commits: HashMap::new(),
             statistics: None,
             bump_type: None,
-            #[cfg(feature = "github")]
-            github: git_cliff_core::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
-            #[cfg(feature = "gitlab")]
-            gitlab: git_cliff_core::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
-            #[cfg(feature = "gitea")]
-            gitea: git_cliff_core::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
-            #[cfg(feature = "bitbucket")]
-            bitbucket: git_cliff_core::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
-            #[cfg(feature = "azure_devops")]
-            azure_devops: git_cliff_core::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
+            ..Default::default()
         },
     ];
 

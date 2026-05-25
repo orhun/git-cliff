@@ -17,6 +17,13 @@ pub struct RemoteContributor {
     pub is_first_time: bool,
 }
 
+/// Metadata of a remote release.
+#[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
+pub struct RemoteReleaseMetadata {
+    /// Contributors.
+    pub contributors: Vec<RemoteContributor>,
+}
+
 impl Hash for RemoteContributor {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.username.hash(state);

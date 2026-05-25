@@ -7,12 +7,13 @@ use serde_json::value::Value;
 
 use crate::commit::{Commit, Range, commits_to_conventional_commits};
 use crate::config::{Bump, BumpType};
+use crate::contributor::RemoteReleaseMetadata;
 use crate::error::Result;
 use crate::statistics::Statistics;
 #[cfg(feature = "remote")]
 use crate::{
     contributor::RemoteContributor,
-    remote::{RemoteCommit, RemotePullRequest, RemoteReleaseMetadata},
+    remote::{RemoteCommit, RemotePullRequest},
 };
 
 /// Representation of a release.
@@ -51,19 +52,14 @@ pub struct Release<'a> {
     #[serde(rename = "bump_type")]
     pub bump_type: Option<BumpType>,
     /// Contributors.
-    #[cfg(feature = "github")]
     pub github: RemoteReleaseMetadata,
     /// Contributors.
-    #[cfg(feature = "gitlab")]
     pub gitlab: RemoteReleaseMetadata,
     /// Contributors.
-    #[cfg(feature = "gitea")]
     pub gitea: RemoteReleaseMetadata,
     /// Contributors.
-    #[cfg(feature = "bitbucket")]
     pub bitbucket: RemoteReleaseMetadata,
     /// Contributors.
-    #[cfg(feature = "azure_devops")]
     #[serde(rename = "azure_devops")]
     pub azure_devops: RemoteReleaseMetadata,
 }
@@ -277,26 +273,7 @@ mod test {
                 submodule_commits: HashMap::new(),
                 statistics: None,
                 bump_type: None,
-                #[cfg(feature = "github")]
-                github: crate::remote::RemoteReleaseMetadata {
-                    contributors: vec![],
-                },
-                #[cfg(feature = "gitlab")]
-                gitlab: crate::remote::RemoteReleaseMetadata {
-                    contributors: vec![],
-                },
-                #[cfg(feature = "gitea")]
-                gitea: crate::remote::RemoteReleaseMetadata {
-                    contributors: vec![],
-                },
-                #[cfg(feature = "bitbucket")]
-                bitbucket: crate::remote::RemoteReleaseMetadata {
-                    contributors: vec![],
-                },
-                #[cfg(feature = "azure_devops")]
-                azure_devops: crate::remote::RemoteReleaseMetadata {
-                    contributors: vec![],
-                },
+                ..Default::default()
             }
         }
 

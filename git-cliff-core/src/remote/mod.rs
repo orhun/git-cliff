@@ -38,6 +38,8 @@ use crate::config::Remote;
 use crate::contributor::RemoteContributor;
 use crate::error::{Error, Result};
 
+pub use crate::contributor::RemoteReleaseMetadata;
+
 /// User agent for interacting with the GitHub API.
 ///
 /// This is needed since GitHub API does not accept empty user agent.
@@ -86,13 +88,6 @@ dyn_clone::clone_trait_object!(RemotePullRequest);
 
 /// Result of a remote metadata.
 pub type RemoteMetadata = (Vec<Box<dyn RemoteCommit>>, Vec<Box<dyn RemotePullRequest>>);
-
-/// Metadata of a remote release.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize)]
-pub struct RemoteReleaseMetadata {
-    /// Contributors.
-    pub contributors: Vec<RemoteContributor>,
-}
 
 impl Remote {
     /// Creates a HTTP client for the remote.

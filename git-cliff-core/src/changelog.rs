@@ -55,12 +55,20 @@ impl<'a> Changelog<'a> {
         Ok(Self {
             releases,
             header_template: match &config.changelog.header {
-                Some(header) => Some(Template::new("header", header.clone(), trim)?),
+                Some(header) => {
+                    let template = Template::new("header", header.clone(), trim)?;
+                    warn_disabled_remote_template_variables(&template);
+                    Some(template)
+                }
                 None => None,
             },
             body_template: get_body_template(&config, trim)?,
             footer_template: match &config.changelog.footer {
-                Some(footer) => Some(Template::new("footer", footer.clone(), trim)?),
+                Some(footer) => {
+                    let template = Template::new("footer", footer.clone(), trim)?;
+                    warn_disabled_remote_template_variables(&template);
+                    Some(template)
+                }
                 None => None,
             },
             config,
@@ -660,6 +668,7 @@ impl<'a> Changelog<'a> {
 
 fn get_body_template(config: &Config, trim: bool) -> Result<Template> {
     let template = Template::new("body", config.changelog.body.clone(), trim)?;
+    warn_disabled_remote_template_variables(&template);
     let deprecated_vars = [
         "commit.github",
         "commit.gitea",
@@ -674,6 +683,44 @@ fn get_body_template(config: &Config, trim: bool) -> Result<Template> {
         );
     }
     Ok(template)
+}
+
+fn warn_disabled_remote_template_variables(template: &Template) {
+    #[cfg(not(feature = "github"))]
+    if template.contains_variable(&["github"]) {
+        tracing::warn!(
+            "Template uses GitHub-related variables but the GitHub feature is not enabled. \
+             Remote metadata will be empty."
+        );
+    }
+    #[cfg(not(feature = "gitlab"))]
+    if template.contains_variable(&["gitlab"]) {
+        tracing::warn!(
+            "Template uses GitLab-related variables but the GitLab feature is not enabled. \
+             Remote metadata will be empty."
+        );
+    }
+    #[cfg(not(feature = "gitea"))]
+    if template.contains_variable(&["gitea"]) {
+        tracing::warn!(
+            "Template uses Gitea-related variables but the Gitea feature is not enabled. \
+             Remote metadata will be empty."
+        );
+    }
+    #[cfg(not(feature = "bitbucket"))]
+    if template.contains_variable(&["bitbucket"]) {
+        tracing::warn!(
+            "Template uses Bitbucket-related variables but the Bitbucket feature is not enabled. \
+             Remote metadata will be empty."
+        );
+    }
+    #[cfg(not(feature = "azure_devops"))]
+    if template.contains_variable(&["azure_devops"]) {
+        tracing::warn!(
+            "Template uses Azure DevOps-related variables but the Azure DevOps feature is not \
+             enabled. Remote metadata will be empty."
+        );
+    }
 }
 
 #[cfg(test)]
@@ -1109,26 +1156,7 @@ mod test {
             ])]),
             statistics: None,
             bump_type: None,
-            #[cfg(feature = "github")]
-            github: crate::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
-            #[cfg(feature = "gitlab")]
-            gitlab: crate::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
-            #[cfg(feature = "gitea")]
-            gitea: crate::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
-            #[cfg(feature = "bitbucket")]
-            bitbucket: crate::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
-            #[cfg(feature = "azure_devops")]
-            azure_devops: crate::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
+            ..Default::default()
         };
         let releases = vec![
             test_release.clone(),
@@ -1231,26 +1259,7 @@ mod test {
                 ]),
                 statistics: None,
                 bump_type: None,
-                #[cfg(feature = "github")]
-                github: crate::remote::RemoteReleaseMetadata {
-                    contributors: vec![],
-                },
-                #[cfg(feature = "gitlab")]
-                gitlab: crate::remote::RemoteReleaseMetadata {
-                    contributors: vec![],
-                },
-                #[cfg(feature = "gitea")]
-                gitea: crate::remote::RemoteReleaseMetadata {
-                    contributors: vec![],
-                },
-                #[cfg(feature = "bitbucket")]
-                bitbucket: crate::remote::RemoteReleaseMetadata {
-                    contributors: vec![],
-                },
-                #[cfg(feature = "azure_devops")]
-                azure_devops: crate::remote::RemoteReleaseMetadata {
-                    contributors: vec![],
-                },
+                ..Default::default()
             },
         ];
         (config, releases)

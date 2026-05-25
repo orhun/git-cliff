@@ -279,26 +279,7 @@ mod test {
             submodule_commits: HashMap::new(),
             statistics: None,
             bump_type: None,
-            #[cfg(feature = "github")]
-            github: crate::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
-            #[cfg(feature = "gitlab")]
-            gitlab: crate::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
-            #[cfg(feature = "gitea")]
-            gitea: crate::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
-            #[cfg(feature = "bitbucket")]
-            bitbucket: crate::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
-            #[cfg(feature = "azure_devops")]
-            azure_devops: crate::remote::RemoteReleaseMetadata {
-                contributors: vec![],
-            },
+            ..Default::default()
         }
     }
 
@@ -354,6 +335,18 @@ mod test {
             ],)?
         );
         assert_eq!(vec![String::from("version"),], template.variables);
+        Ok(())
+    }
+
+    #[test]
+    fn render_template_with_disabled_github_feature() -> Result<()> {
+        let template = "{{ github.contributors | length }}";
+        let template = Template::new("test", template.to_string(), false)?;
+        let release = get_fake_release_data();
+        assert_eq!(
+            "0",
+            template.render(&release, Option::<HashMap<&str, String>>::None.as_ref(), &[])?,
+        );
         Ok(())
     }
 
