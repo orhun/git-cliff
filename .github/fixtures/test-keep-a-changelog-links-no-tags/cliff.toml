@@ -17,9 +17,9 @@ body = """
 {% if version %}\
     {% if previous %}\
       {% if previous.version %}\
-          ## [{{ version | trim_start_matches(pat="v") }}](https://github.com/dummy/dummy/compare/{{ previous.version }}...{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
+          ## [{{ version | trim_prefix(pat="v") }}](https://github.com/dummy/dummy/compare/{{ previous.version }}...{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
       {% else %}\
-          ## [{{ version | trim_start_matches(pat="v") }}](https://github.com/dummy/dummy/releases/tag/{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
+          ## [{{ version | trim_prefix(pat="v") }}](https://github.com/dummy/dummy/releases/tag/{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
       {% endif %}\
     {% endif %}\
 {% else %}\

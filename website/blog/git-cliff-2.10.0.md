@@ -141,7 +141,7 @@ This behavior has been reverted in this release and the default values for `[cha
 [changelog]
 body = """
 {% if version %}\
-    ## {{ version | trim_start_matches(pat="v") }} - {{ timestamp | date(format="%Y-%m-%d") }}\
+    ## {{ version | trim_prefix(pat="v") }} - {{ timestamp | date(format="%Y-%m-%d") }}\
 {% else %}\
     ## Unreleased\
 {% endif %}\

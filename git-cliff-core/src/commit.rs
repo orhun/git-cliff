@@ -302,8 +302,8 @@ impl Commit<'_> {
     /// and the commit is breaking, or the parser's `skip` field is None or
     /// `false`. Returns `true` otherwise.
     fn skip_commit(&self, parser: &CommitParser, protect_breaking: bool) -> bool {
-        parser.skip.unwrap_or(false) &&
-            !(self.conv.as_ref().is_some_and(ConventionalCommit::breaking) && protect_breaking)
+        parser.skip.unwrap_or(false)
+            && !(self.conv.as_ref().is_some_and(ConventionalCommit::breaking) && protect_breaking)
     }
 
     /// Parses the commit using [`CommitParser`]s.

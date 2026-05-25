@@ -120,9 +120,9 @@ impl<'cfg, 'sum> CommitProcessor<'cfg, 'sum> {
                 continue;
             }
 
-            if !self.config.require_conventional &&
-                self.config.filter_unconventional &&
-                !self.config.split_commits
+            if !self.config.require_conventional
+                && self.config.filter_unconventional
+                && !self.config.split_commits
             {
                 match commit.clone().into_conventional() {
                     Ok(commit) => {

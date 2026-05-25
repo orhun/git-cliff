@@ -6,7 +6,7 @@
 # See https://keats.github.io/tera/docs/#introduction
 body = """
 {% if version %}\
-    ## [{{ version | trim_start_matches(pat="v") }}]
+    ## [{{ version | trim_prefix(pat="v") }}]
 {% else %}\
     ## [unreleased]
 {% endif %}\

@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 # See https://keats.github.io/tera/docs/#introduction
 body = """
 {% if version -%}
-    ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+    ## [{{ version | trim_prefix(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
 {% else -%}
     ## [Unreleased]
 {% endif -%}
@@ -40,7 +40,7 @@ footer = """
 {% for release in releases -%}
     {% if release.version -%}
         {% if release.previous.version -%}
-            [{{ release.version | trim_start_matches(pat="v") }}]: \
+            [{{ release.version | trim_prefix(pat="v") }}]: \
                 https://dev.azure.com/{{ remote.azure_devops.owner }}\
                     /_git/{{ remote.azure_devops.repo }}/branchCompare?baseVersion=GT{{ release.previous.version }}&targetVersion=GT{{ release.version }}
         {% endif -%}

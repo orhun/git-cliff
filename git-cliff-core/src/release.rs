@@ -306,22 +306,28 @@ mod test {
             ("1.0.0", "2.0.0", vec!["feat!: add xyz", "feat: zzz"]),
             ("1.0.0", "2.0.0", vec!["feat!: add xyz\n", "feat: zzz\n"]),
             ("2.0.0", "2.0.1", vec!["fix: something"]),
-            ("foo/1.0.0", "foo/1.1.0", vec![
-                "feat: add xyz",
-                "fix: fix xyz",
-            ]),
-            ("bar/1.0.0", "bar/2.0.0", vec![
-                "fix: add xyz",
-                "fix!: aaaaaa",
-            ]),
-            ("zzz-123/test/1.0.0", "zzz-123/test/1.0.1", vec![
-                "fix: aaaaaa",
-            ]),
+            (
+                "foo/1.0.0",
+                "foo/1.1.0",
+                vec!["feat: add xyz", "fix: fix xyz"],
+            ),
+            (
+                "bar/1.0.0",
+                "bar/2.0.0",
+                vec!["fix: add xyz", "fix!: aaaaaa"],
+            ),
+            (
+                "zzz-123/test/1.0.0",
+                "zzz-123/test/1.0.1",
+                vec!["fix: aaaaaa"],
+            ),
             ("v100.0.0", "v101.0.0", vec!["feat!: something"]),
             ("v1.0.0-alpha.1", "v1.0.0-alpha.2", vec!["fix: minor"]),
-            ("testing/v1.0.0-beta.1", "testing/v1.0.0-beta.2", vec![
-                "feat: nice",
-            ]),
+            (
+                "testing/v1.0.0-beta.1",
+                "testing/v1.0.0-beta.2",
+                vec!["feat: nice"],
+            ),
             ("tauri-v1.5.4", "tauri-v1.6.0", vec!["feat: something"]),
             (
                 "rocket/rocket-v4.0.0-rc.1",
@@ -486,10 +492,10 @@ mod test {
         assert_eq!("1.0.0", result.version);
         assert_eq!(None, result.bump_type);
 
-        let release = build_release("1.0.0", &[
-            "docs: update readme",
-            "feat: add a user-facing feature",
-        ]);
+        let release = build_release(
+            "1.0.0",
+            &["docs: update readme", "feat: add a user-facing feature"],
+        );
         let result = release.calculate_next_version_with_config(&Bump {
             no_increment_regex: Some(String::from("^docs$")),
             ..Default::default()

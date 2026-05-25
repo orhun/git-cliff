@@ -3,7 +3,7 @@
 # https://keats.github.io/tera/docs/#introduction
 body = """
 {% if version %}\
-    ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}{% if extra.note %} - {{ extra.note }}{% endif %}
+    ## [{{ version | trim_prefix(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}{% if extra.note %} - {{ extra.note }}{% endif %}
 {% else %}\
     ## [unreleased]
 {% endif %}\

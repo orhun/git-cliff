@@ -40,6 +40,7 @@ impl Template {
         }
 
         tera.register_filter("upper_first", Self::upper_first_filter);
+        tera.register_filter("trim_prefix", Self::trim_prefix);
         tera.register_filter("split_regex", Self::split_regex);
         tera.register_filter("replace_regex", Self::replace_regex);
         tera.register_filter("find_regex", Self::find_regex);
@@ -49,6 +50,34 @@ impl Template {
             variables: Self::get_template_variables(name, &tera)?,
             tera,
         })
+    }
+
+    /// Strips a prefix from a string when it is followed by a version number.
+    ///
+    /// For example, `v1.2.3` becomes `1.2.3`, while `version/1.2.3` stays unchanged.
+    fn trim_prefix(value: &Value, args: &HashMap<String, Value>) -> TeraResult<Value> {
+        let s = tera::try_get_value!("trim_prefix", "value", String, value);
+        let pat = match args.get("pat") {
+            Some(val) => tera::try_get_value!("trim_prefix", "pat", String, val),
+            None => {
+                return Err(tera::Error::msg(
+                    "Filter `trim_prefix` expected an arg called `pat`",
+                ));
+            }
+        };
+
+        if s.starts_with(&pat) {
+            let remainder = &s[pat.len()..];
+            if remainder
+                .chars()
+                .next()
+                .is_some_and(|character| character.is_ascii_digit())
+            {
+                return Ok(tera::to_value(remainder)?);
+            }
+        }
+
+        Ok(tera::to_value(&s)?)
     }
 
     /// Filter for making the first character of a string uppercase.
@@ -315,13 +344,15 @@ mod test {
         assert_eq!(
             "\n\t\t## 1.0 - 2023\n\t\t\n\t\t### feat\n\t\t- Add xyz\n\t\t\n\t\t### fix\n\t\t- Fix \
              abc\n\t\t",
-            template.render(&release, Option::<HashMap<&str, String>>::None.as_ref(), &[
-                TextProcessor {
+            template.render(
+                &release,
+                Option::<HashMap<&str, String>>::None.as_ref(),
+                &[TextProcessor {
                     pattern: Regex::new("<DATE>").expect("failed to compile regex"),
                     replace: Some(String::from("2023")),
                     replace_command: None,
-                }
-            ],)?
+                }],
+            )?
         );
         template.variables.sort();
         assert_eq!(
@@ -350,8 +381,11 @@ mod test {
         let release = get_fake_release_data();
         assert_eq!(
             "\n##  1.0\n",
-            template.render(&release, Option::<HashMap<&str, String>>::None.as_ref(), &[
-            ],)?
+            template.render(
+                &release,
+                Option::<HashMap<&str, String>>::None.as_ref(),
+                &[],
+            )?
         );
         assert_eq!(vec![String::from("version"),], template.variables);
         Ok(())
@@ -362,8 +396,11 @@ mod test {
         let template = "{% set hello_variable = 'hello' %}{{ hello_variable | upper_first }}";
         let release = get_fake_release_data();
         let template = Template::new("test", template.to_string(), true)?;
-        let r = template.render(&release, Option::<HashMap<&str, String>>::None.as_ref(), &[
-        ])?;
+        let r = template.render(
+            &release,
+            Option::<HashMap<&str, String>>::None.as_ref(),
+            &[],
+        )?;
         assert_eq!("Hello", r);
         Ok(())
     }
@@ -374,8 +411,11 @@ mod test {
                         replace_regex(from='o', to='a') }}";
         let release = get_fake_release_data();
         let template = Template::new("test", template.to_string(), true)?;
-        let r = template.render(&release, Option::<HashMap<&str, String>>::None.as_ref(), &[
-        ])?;
+        let r = template.render(
+            &release,
+            Option::<HashMap<&str, String>>::None.as_ref(),
+            &[],
+        )?;
         assert_eq!("hella warld", r);
         Ok(())
     }
@@ -386,8 +426,11 @@ mod test {
                         | find_regex(pat='hello') }}";
         let release = get_fake_release_data();
         let template = Template::new("test", template.to_string(), true)?;
-        let r = template.render(&release, Option::<HashMap<&str, String>>::None.as_ref(), &[
-        ])?;
+        let r = template.render(
+            &release,
+            Option::<HashMap<&str, String>>::None.as_ref(),
+            &[],
+        )?;
         assert_eq!("[hello, hello]", r);
         Ok(())
     }
@@ -398,10 +441,37 @@ mod test {
                         | split_regex(pat=' ') }}";
         let release = get_fake_release_data();
         let template = Template::new("test", template.to_string(), true)?;
-        let r = template.render(&release, Option::<HashMap<&str, String>>::None.as_ref(), &[
-        ])?;
+        let r = template.render(
+            &release,
+            Option::<HashMap<&str, String>>::None.as_ref(),
+            &[],
+        )?;
 
         assert_eq!("[hello, world,, hello, universe]", r);
+        Ok(())
+    }
+
+    #[test]
+    fn test_trim_prefix_filter() -> Result<()> {
+        let cases = [
+            ("v1.2.3", "1.2.3"),
+            ("version/1.0.16", "version/1.0.16"),
+            ("testing/v1.0.0-beta.1", "testing/v1.0.0-beta.1"),
+            ("1.2.3", "1.2.3"),
+        ];
+
+        for (input, expected) in cases {
+            let template = format!("{{{{ '{input}' | trim_prefix(pat='v') }}}}");
+            let release = get_fake_release_data();
+            let template = Template::new("test", template, true)?;
+            let rendered = template.render(
+                &release,
+                Option::<HashMap<&str, String>>::None.as_ref(),
+                &[],
+            )?;
+            assert_eq!(expected, rendered, "input: {input}");
+        }
+
         Ok(())
     }
 }

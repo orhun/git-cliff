@@ -69,12 +69,12 @@ impl CommitProcessingErrorKind {
     pub fn should_warn(self) -> bool {
         matches!(
             self,
-            CommitProcessingErrorKind::Io |
-                CommitProcessingErrorKind::Parse |
-                CommitProcessingErrorKind::Json |
-                CommitProcessingErrorKind::Field |
-                CommitProcessingErrorKind::Group |
-                CommitProcessingErrorKind::Other
+            CommitProcessingErrorKind::Io
+                | CommitProcessingErrorKind::Parse
+                | CommitProcessingErrorKind::Json
+                | CommitProcessingErrorKind::Field
+                | CommitProcessingErrorKind::Group
+                | CommitProcessingErrorKind::Other
         )
     }
 }

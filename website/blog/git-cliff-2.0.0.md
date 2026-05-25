@@ -132,7 +132,7 @@ footer = """
 {% for release in releases -%}
     {% if release.version -%}
         {% if release.previous.version -%}
-            [{{ release.version | trim_start_matches(pat="v") }}]: \
+            [{{ release.version | trim_prefix(pat="v") }}]: \
                 https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}\
                     /compare/{{ release.previous.version }}..{{ release.version }}
         {% endif -%}

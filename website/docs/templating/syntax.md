@@ -27,6 +27,13 @@ See the [Tera Documentation](https://keats.github.io/tera/docs/#templates) for m
     {{ "hello" | upper_first }} →  Hello
   ```
 
+- `trim_prefix`: Strips a prefix from a string when it is followed by a version number.
+
+  ```jinja
+  {{ "v1.2.3" | trim_prefix(pat="v") }} →  1.2.3
+  {{ "version/1.2.3" | trim_prefix(pat="v") }} →  version/1.2.3
+  ```
+
 - `find_regex`: Finds all occurrences of a regex pattern in a string.
 
   ```jinja

@@ -19,7 +19,7 @@ body = """
 {%- endmacro -%}
 
 {% if version -%}
-    ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+    ## [{{ version | trim_prefix(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
 {% else -%}
     ## [Unreleased]
 {% endif -%}
@@ -59,7 +59,7 @@ footer = """
 {% for release in releases -%}
     {% if release.version -%}
         {% if release.previous.version -%}
-            [{{ release.version | trim_start_matches(pat="v") }}]: \
+            [{{ release.version | trim_prefix(pat="v") }}]: \
                 {{ self::remote_url() }}/compare/{{ release.previous.version }}...{{ release.version }}
         {% endif -%}
     {% else -%}

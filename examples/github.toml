@@ -12,7 +12,7 @@
 body = """
 ## What's Changed
 
-{%- if version %} in {{ version | trim_start_matches(pat="v") }}{%- endif -%}
+{%- if version %} in {{ version | trim_prefix(pat="v") }}{%- endif -%}
 {% for commit in commits %}
   {% if commit.remote.pr_title -%}
     {%- set commit_message = commit.remote.pr_title -%}
