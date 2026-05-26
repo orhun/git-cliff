@@ -365,7 +365,8 @@ fn process_repository<'a>(
                     ) =>
                 {
                     tracing::warn!(
-                        "Skipping diff statistics for commit {} because a Git object is missing: {err}",
+                        "Skipping diff statistics for commit {} because a Git object is missing: \
+                         {err}",
                         commit.id,
                     );
                     CommitStatistics::default()
