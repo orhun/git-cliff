@@ -11,9 +11,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::embed::EmbeddedConfig;
 use crate::error::Result;
-use crate::statistics;
 use crate::template::Template;
-use crate::{CONFIG_FILES, DEFAULT_CONFIG, command, error};
+use crate::{CONFIG_FILES, DEFAULT_CONFIG, command, error, statistics};
 
 /// Default initial tag.
 const DEFAULT_INITIAL_TAG: &str = "0.1.0";
