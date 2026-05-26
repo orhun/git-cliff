@@ -815,46 +815,22 @@ mod test {
         let (repo, temp_dir) = create_temp_repo();
         let path = temp_dir.path();
 
-        Command::new("git")
-            .args(["commit", "--allow-empty", "--no-gpg-sign", "-m", "init"])
-            .current_dir(path)
-            .output()?;
-
-        let commit = str::from_utf8(
-            Command::new("git")
-                .args(["rev-parse", "HEAD"])
-                .current_dir(path)
-                .output()?
-                .stdout
-                .as_ref(),
-        )?
-        .trim()
-        .to_string();
+        let commit = create_commit_with_files(&repo, vec![("initial.txt", "initial content")]);
 
         Command::new("git")
             .args(["tag", "-a", "v1.0.0-staging", "-m", "s"])
             .current_dir(path)
             .output()?;
-        let tag = str::from_utf8(
-            Command::new("git")
-                .args(["rev-parse", "v1.0.0-staging"])
-                .current_dir(path)
-                .output()?
-                .stdout
-                .as_ref(),
-        )?
-        .trim()
-        .to_string();
 
         // nested tag: v1.0.0-stable -> v1.0.0-staging -> commit
         Command::new("git")
-            .args(["tag", "-a", "v1.0.0-stable", "-m", "s", &tag])
+            .args(["tag", "-a", "v1.0.0-stable", "-m", "s", "v1.0.0-staging"])
             .current_dir(path)
             .output()?;
 
         let tags = repo.tags(&Some(Regex::new("v1.0.0-stable")?), false, false)?;
         assert_eq!(
-            tags.get(&commit)
+            tags.get(&commit.id().to_string())
                 .expect("nested tag should resolve to commit")
                 .name,
             "v1.0.0-stable"
