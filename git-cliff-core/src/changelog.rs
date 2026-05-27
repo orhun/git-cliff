@@ -660,29 +660,24 @@ impl<'a> Changelog<'a> {
     }
 }
 
-/// Emits a warning when a template references remote-specific variables
-/// (e.g. `github.contributors`) for a provider whose Cargo feature is not
-/// compiled in.  The render itself will fail later with a confusing
-/// "variable not found in context" message; this warning gives users a
-/// clear, actionable hint before that happens.
+/// Emits a warning when a template references remote-specific variables for a
+/// provider whose Cargo feature is not compiled in.
 fn warn_if_remote_template_variables_without_feature(changelog: &Changelog<'_>) {
-    let templates: Vec<&Template> = [
-        Some(&changelog.body_template),
-        changelog.header_template.as_ref(),
-        changelog.footer_template.as_ref(),
-    ]
-    .into_iter()
-    .flatten()
-    .collect();
-
     macro_rules! warn_missing_feature {
         ($feature:literal, $vars:expr, $example:literal) => {
             #[cfg(not(feature = $feature))]
-            if templates.iter().any(|t| t.contains_variable($vars)) {
+            if [
+                Some(&changelog.body_template),
+                changelog.header_template.as_ref(),
+                changelog.footer_template.as_ref(),
+            ]
+            .into_iter()
+            .flatten()
+            .any(|t| t.contains_variable($vars))
+            {
                 tracing::warn!(
-                    "Template uses a `{}` variable (e.g. `{}`) but the `{}` feature is not \
-                     enabled. Rebuild git-cliff with `--features {}` or use a binary that \
-                     includes all remote features.",
+                    "Template uses `{}` variables (e.g. `{}`) but the `{}` feature is not \
+                     enabled. Rebuild with `--features {}`.",
                     $feature,
                     $example,
                     $feature,
