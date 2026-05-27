@@ -52,7 +52,7 @@ impl<'a> Changelog<'a> {
     /// Builds a changelog from releases and config.
     fn build(releases: Vec<Release<'a>>, config: Config) -> Result<Self> {
         let trim = config.changelog.trim;
-        Ok(Self {
+        let changelog = Self {
             releases,
             header_template: match &config.changelog.header {
                 Some(header) => Some(Template::new("header", header.clone(), trim)?),
@@ -65,7 +65,9 @@ impl<'a> Changelog<'a> {
             },
             config,
             additional_context: HashMap::new(),
-        })
+        };
+        warn_if_remote_template_variables_without_feature(&changelog);
+        Ok(changelog)
     }
 
     /// Constructs an instance from a serialized context object.
@@ -656,6 +658,53 @@ impl<'a> Changelog<'a> {
         writeln!(out, "{output}")?;
         Ok(())
     }
+}
+
+/// Emits a warning when a template references remote-specific variables
+/// (e.g. `github.contributors`) for a provider whose Cargo feature is not
+/// compiled in.  The render itself will fail later with a confusing
+/// "variable not found in context" message; this warning gives users a
+/// clear, actionable hint before that happens.
+fn warn_if_remote_template_variables_without_feature(changelog: &Changelog<'_>) {
+    let templates: Vec<&Template> = [
+        Some(&changelog.body_template),
+        changelog.header_template.as_ref(),
+        changelog.footer_template.as_ref(),
+    ]
+    .into_iter()
+    .flatten()
+    .collect();
+
+    macro_rules! warn_missing_feature {
+        ($feature:literal, $vars:expr, $example:literal) => {
+            #[cfg(not(feature = $feature))]
+            if templates.iter().any(|t| t.contains_variable($vars)) {
+                tracing::warn!(
+                    "Template uses a `{}` variable (e.g. `{}`) but the `{}` feature is not \
+                     enabled. Rebuild git-cliff with `--features {}` or use a binary that \
+                     includes all remote features.",
+                    $feature,
+                    $example,
+                    $feature,
+                    $feature,
+                );
+            }
+        };
+    }
+
+    warn_missing_feature!("github", &["github", "commit.github"], "github.contributors");
+    warn_missing_feature!("gitlab", &["gitlab", "commit.gitlab"], "gitlab.contributors");
+    warn_missing_feature!("gitea", &["gitea", "commit.gitea"], "gitea.contributors");
+    warn_missing_feature!(
+        "bitbucket",
+        &["bitbucket", "commit.bitbucket"],
+        "bitbucket.contributors"
+    );
+    warn_missing_feature!(
+        "azure_devops",
+        &["azure_devops", "commit.azure_devops"],
+        "azure_devops.contributors"
+    );
 }
 
 fn get_body_template(config: &Config, trim: bool) -> Result<Template> {
