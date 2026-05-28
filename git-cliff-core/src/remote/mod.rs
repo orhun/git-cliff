@@ -230,11 +230,7 @@ macro_rules! update_release_metadata {
                                 username: commit.$remote.username.clone(),
                                 pr_title: commit.$remote.pr_title.clone(),
                                 pr_number: commit.$remote.pr_number,
-                                pr_numbers: commit
-                                    .$remote
-                                    .pr_number
-                                    .into_iter()
-                                    .collect(),
+                                pr_numbers: commit.$remote.pr_number.into_iter().collect(),
                                 pr_labels: commit.$remote.pr_labels.clone(),
                                 is_first_time: false,
                             });
