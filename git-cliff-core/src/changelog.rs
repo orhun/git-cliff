@@ -663,6 +663,9 @@ impl<'a> Changelog<'a> {
 /// Emits a warning when a template references remote-specific variables for a
 /// provider whose Cargo feature is not compiled in.
 fn warn_if_remote_template_variables_without_feature(changelog: &Changelog<'_>) {
+    // `changelog` is only referenced inside #[cfg(not(feature = "..."))] blocks;
+    // when all remote features are enabled every block is compiled out.
+    let _ = changelog;
     macro_rules! warn_missing_feature {
         ($feature:literal, $vars:expr, $example:literal) => {
             #[cfg(not(feature = $feature))]
@@ -687,8 +690,16 @@ fn warn_if_remote_template_variables_without_feature(changelog: &Changelog<'_>) 
         };
     }
 
-    warn_missing_feature!("github", &["github", "commit.github"], "github.contributors");
-    warn_missing_feature!("gitlab", &["gitlab", "commit.gitlab"], "gitlab.contributors");
+    warn_missing_feature!(
+        "github",
+        &["github", "commit.github"],
+        "github.contributors"
+    );
+    warn_missing_feature!(
+        "gitlab",
+        &["gitlab", "commit.gitlab"],
+        "gitlab.contributors"
+    );
     warn_missing_feature!("gitea", &["gitea", "commit.gitea"], "gitea.contributors");
     warn_missing_feature!(
         "bitbucket",
