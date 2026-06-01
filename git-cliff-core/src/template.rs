@@ -227,12 +227,16 @@ impl Template {
                 };
                 let key = scoped_version(&key, scope).unwrap_or(key);
 
-                grouped
+                let releases = grouped
                     .entry(key)
                     .or_insert_with(|| Value::Array(Vec::new()))
                     .as_array_mut()
-                    .unwrap()
-                    .push(release);
+                    .ok_or_else(|| {
+                        tera::Error::msg(
+                            "Filter `group_by_scope` expected grouped values to be arrays",
+                        )
+                    })?;
+                releases.push(release);
             }
         }
 
