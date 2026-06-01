@@ -3,8 +3,9 @@ use std::error::Error as ErrorImpl;
 
 use indexmap::IndexMap;
 use regex::Regex;
+use semver::Version;
 use serde::Serialize;
-use serde_json::json;
+use serde_json::{Map, json};
 use tera::{Context as TeraContext, Result as TeraResult, Tera, Value, ast};
 
 use crate::config::TextProcessor;
@@ -46,6 +47,7 @@ impl Template {
         tera.register_filter("replace_regex", Self::replace_regex);
         tera.register_filter("find_regex", Self::find_regex);
         tera.register_filter("commit_groups", Self::commit_groups);
+        tera.register_filter("group_by_scope", Self::group_by_scope);
 
         Ok(Self {
             name: name.to_string(),
@@ -202,6 +204,41 @@ impl Template {
         Ok(tera::to_value(result)?)
     }
 
+    /// Groups array values by the semantic version scope of an attribute.
+    fn group_by_scope(value: &Value, args: &HashMap<String, Value>) -> TeraResult<Value> {
+        let releases = tera::try_get_value!("group_by_scope", "value", Vec<Value>, value);
+        if releases.is_empty() {
+            return Ok(Map::new().into());
+        }
+
+        let attribute = match args.get("attribute") {
+            Some(value) => tera::try_get_value!("group_by_scope", "attribute", String, value),
+            None => String::from("version"),
+        };
+        let scope = VersionScope::from_args(args)?;
+
+        let mut grouped = Map::new();
+        for release in releases {
+            if let Some(key_value) = tera::dotted_pointer(&release, &attribute).cloned() {
+                let key = match key_value.as_str() {
+                    Some(key) => key.to_owned(),
+                    None if key_value.is_null() => String::new(), // For unreleased changes
+                    None => key_value.to_string(),
+                };
+                let key = scoped_version(&key, scope).unwrap_or(key);
+
+                grouped
+                    .entry(key)
+                    .or_insert_with(|| Value::Array(Vec::new()))
+                    .as_array_mut()
+                    .unwrap()
+                    .push(release);
+            }
+        }
+
+        Ok(grouped.into())
+    }
+
     /// Recursively finds the identifiers from the AST.
     fn find_identifiers(node: &ast::Node, names: &mut HashSet<String>) {
         match node {
@@ -316,12 +353,78 @@ impl Template {
     }
 }
 
+#[derive(Clone, Copy)]
+enum VersionScope {
+    Major,
+    Minor,
+    Patch,
+}
+
+impl VersionScope {
+    fn from_args(args: &HashMap<String, Value>) -> TeraResult<Self> {
+        let scope = match args.get("scope") {
+            Some(value) => tera::try_get_value!("group_by_scope", "scope", String, value),
+            None => String::from("minor"),
+        };
+        match scope.as_str() {
+            "major" => Ok(Self::Major),
+            "minor" => Ok(Self::Minor),
+            "patch" => Ok(Self::Patch),
+            _ => Err(tera::Error::msg(
+                "Filter `group_by_scope` expected `scope` to be `major`, `minor`, or `patch`",
+            )),
+        }
+    }
+}
+
+fn scoped_version(version: &str, scope: VersionScope) -> Option<String> {
+    if let Ok(version) = Version::parse(version) {
+        return Some(format_scoped_version("", &version, scope));
+    }
+    version
+        .char_indices()
+        .filter(|(_, c)| c.is_ascii_digit())
+        .find_map(|(index, _)| {
+            let (prefix, version) = version.split_at(index);
+            Version::parse(version)
+                .ok()
+                .map(|version| format_scoped_version(prefix, &version, scope))
+        })
+}
+
+fn format_scoped_version(prefix: &str, version: &Version, scope: VersionScope) -> String {
+    match scope {
+        VersionScope::Major => format!("{prefix}{}", version.major),
+        VersionScope::Minor => format!("{prefix}{}.{}", version.major, version.minor),
+        VersionScope::Patch => format!(
+            "{prefix}{}.{}.{}",
+            version.major, version.minor, version.patch
+        ),
+    }
+}
+
 #[cfg(test)]
 mod test {
 
     use super::*;
     use crate::commit::Commit;
     use crate::release::Release;
+
+    fn release_with_commits(version: Option<&str>, commits: &[&str]) -> Release<'static> {
+        Release {
+            version: version.map(String::from),
+            commits: commits
+                .iter()
+                .enumerate()
+                .filter_map(|(index, message)| {
+                    let mut commit = Commit::new(index.to_string(), String::from(*message));
+                    commit.committer.timestamp = index as i64;
+                    commit.into_conventional().ok()
+                })
+                .collect(),
+            ..Release::default()
+        }
+    }
 
     fn get_fake_release_data() -> Release<'static> {
         Release {
@@ -567,6 +670,27 @@ mod test {
         let r = template.render(&release, Option::<HashMap<&str, String>>::None.as_ref(), &[
         ])?;
         assert_eq!("kept|1;", r);
+        Ok(())
+    }
+
+    #[test]
+    fn test_group_by_scope_filter() -> Result<()> {
+        let releases = vec![
+            release_with_commits(Some("v1.0.2"), &["fix(api): fix endpoint"]),
+            release_with_commits(Some("v1.0.1"), &[
+                "feat(api): add endpoint",
+                "fix(ui): fix button",
+            ]),
+            release_with_commits(Some("v0.9.0"), &["docs: update docs"]),
+            release_with_commits(None, &["chore: unreleased change"]),
+        ];
+        let mut context = HashMap::new();
+        context.insert("releases", releases);
+        let template = r#"{% for version, releases in releases | group_by_scope %}{{ version }}={{ releases | length }}:{% set_global commits = [] %}{% for release in releases %}{% set_global commits = commits | concat(with=release.commits) %}{% endfor %}{{ commits | length }}:{% for group, commits in commits | group_by(attribute="group") %}{{ group }}={{ commits | length }},{% endfor %};{% endfor %}"#;
+        let template = Template::new("test", template.to_string(), true)?;
+        let r = template.render(&get_fake_release_data(), Some(&context), &[])?;
+
+        assert_eq!("=1:1:chore=1,;v0.9=1:1:docs=1,;v1.0=2:3:feat=1,fix=2,;", r);
         Ok(())
     }
 }

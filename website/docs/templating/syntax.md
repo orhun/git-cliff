@@ -57,3 +57,24 @@ See the [Tera Documentation](https://keats.github.io/tera/#templates) for more i
   The filter returns an array of objects like `{ group: "...", commits: [...] }`.
 
   When you use the `commit_parsers_groups` context field, the filter renders groups in the same order as the configured `commit_parsers` instead of sorting them alphabetically.
+
+- `group_by_scope`: Groups an array by the semantic version scope (`major`, `minor`, or `patch`) of an attribute.
+
+  ```jinja
+  {% for version, releases in releases | group_by_scope(attribute="version", scope="minor") %}
+    {% if version %}
+      ## {{ version }}
+    {% else %}
+      ## Unreleased
+    {% endif %}
+    {% set_global commits = [] %}
+    {% for release in releases %}
+      {% set_global commits = commits | concat(with=release.commits) %}
+    {% endfor %}
+    {% for group, commits in commits | group_by(attribute="group") %}
+      ### {{ group }}
+    {% endfor %}
+  {% endfor %}
+  ```
+
+  Use this in `header` or `footer`; `body` is rendered once per release and does not include the full `releases` array.
