@@ -175,7 +175,9 @@ pub struct Opt {
 	    long,
 	    env = "GIT_CLIFF_PREPEND",
 	    value_name = "PATH",
-	    value_parser = Opt::parse_dir
+	    value_parser = Opt::parse_dir,
+	    num_args = 0..=1,
+	    default_missing_value = DEFAULT_OUTPUT
 	)]
     pub prepend: Option<PathBuf>,
     /// Writes output to the given file.
