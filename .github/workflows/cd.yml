@@ -219,7 +219,7 @@ jobs:
           prerelease: true
       - name: Install node
         if: matrix.build.NPM_PUBLISH == true
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 18
           registry-url: "https://registry.npmjs.org"
@@ -256,7 +256,7 @@ jobs:
         run: bash .github/scripts/prepare-package-assets.sh
       - name: Build Python wheels (linux)
         if: matrix.build.PYPI_PUBLISH == true && startsWith(matrix.build.NAME, 'linux')
-        uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
         with:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
@@ -268,7 +268,7 @@ jobs:
         if: |
           matrix.build.PYPI_PUBLISH == true &&
           (startsWith(matrix.build.OS, 'macos') || startsWith(matrix.build.OS, 'windows'))
-        uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
         with:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
@@ -276,7 +276,7 @@ jobs:
           sccache: "true"
       - name: Build Python wheels (musl)
         if: matrix.build.PYPI_PUBLISH == true && endsWith(matrix.build.NAME, 'musl')
-        uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
         with:
           working-directory: pypi
           target: ${{ matrix.build.TARGET }}
@@ -298,7 +298,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Install node
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 18
           registry-url: "https://registry.npmjs.org"
@@ -332,7 +332,7 @@ jobs:
           pattern: wheels-*
           merge-multiple: true
       - name: Publish to PyPI
-        uses: PyO3/maturin-action@04ac600d27cdf7a9a280dadf7147097c42b757ad # v1.50.1
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
         env:
           MATURIN_PYPI_TOKEN: ${{ vars.USE_TESTPYPI == 'true' && secrets.TESTPYPI_API_TOKEN || secrets.PYPI_API_TOKEN }}
           MATURIN_REPOSITORY: ${{ vars.USE_TESTPYPI == 'true' && 'testpypi' || 'pypi' }}
