@@ -640,7 +640,23 @@ impl<'a> Changelog<'a> {
         if let Some(header) = &self.config.changelog.header {
             changelog = changelog.replacen(header, "", 1);
         }
-        self.generate(out)?;
+        let mut generated = Vec::new();
+        self.generate(&mut generated)?;
+        let generated = std::str::from_utf8(&generated)?;
+        write!(out, "{generated}")?;
+        // Both the rendered output and the existing content are written
+        // through unchanged so templates keep full control over their own
+        // whitespace. Only when there is no newline at all at the boundary
+        // (the rendered output does not end with one and the existing
+        // changelog does not start with one) a blank line is inserted to
+        // keep the two sections from running into each other.
+        if !generated.is_empty() &&
+            !changelog.is_empty() &&
+            !generated.ends_with('\n') &&
+            !changelog.starts_with(['\n', '\r'])
+        {
+            write!(out, "\n\n")?;
+        }
         write!(out, "{changelog}")?;
         Ok(())
     }
@@ -1635,6 +1651,63 @@ chore(deps): fix broken deps
     -- total releases: 2 --
 "]]
         .assert_eq(str::from_utf8(&out).unwrap_or_default());
+        Ok(())
+    }
+
+    #[test]
+    fn changelog_prepend_inserts_blank_line_before_existing_content() -> Result<()> {
+        let (mut config, releases) = get_test_data();
+        config.changelog.header = None;
+        config.changelog.body = String::from("## New Release");
+        config.changelog.footer = None;
+        config.changelog.postprocessors = Vec::new();
+
+        let changelog = Changelog::build(vec![releases[0].clone()], config)?;
+        let mut out = Vec::new();
+        changelog.prepend(String::from("## Old Release"), &mut out)?;
+
+        assert_eq!(
+            "## New Release\n\n## Old Release",
+            str::from_utf8(&out).unwrap_or_default()
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn changelog_prepend_handles_empty_existing_content() -> Result<()> {
+        let (mut config, releases) = get_test_data();
+        config.changelog.header = None;
+        config.changelog.body = String::from("## New Release");
+        config.changelog.footer = None;
+        config.changelog.postprocessors = Vec::new();
+
+        let changelog = Changelog::build(vec![releases[0].clone()], config)?;
+        let mut out = Vec::new();
+        changelog.prepend(String::new(), &mut out)?;
+
+        assert_eq!("## New Release", str::from_utf8(&out).unwrap_or_default());
+
+        Ok(())
+    }
+
+    #[test]
+    fn changelog_prepend_keeps_template_controlled_boundary() -> Result<()> {
+        let (mut config, releases) = get_test_data();
+        config.changelog.header = None;
+        config.changelog.body = String::from("## New Release");
+        config.changelog.footer = None;
+        config.changelog.postprocessors = Vec::new();
+
+        let changelog = Changelog::build(vec![releases[0].clone()], config)?;
+        let mut out = Vec::new();
+        changelog.prepend(String::from("\n## Old Release"), &mut out)?;
+
+        assert_eq!(
+            "## New Release\n## Old Release",
+            str::from_utf8(&out).unwrap_or_default()
+        );
+
         Ok(())
     }
 }
