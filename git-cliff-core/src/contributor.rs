@@ -11,6 +11,10 @@ pub struct RemoteContributor {
     pub pr_title: Option<String>,
     /// The pull request that the user created.
     pub pr_number: Option<i64>,
+    /// All pull requests that the user created in this release, sorted in
+    /// ascending order (lowest PR number first).
+    #[serde(default)]
+    pub pr_numbers: Vec<i64>,
     /// Labels of the pull request.
     pub pr_labels: Vec<String>,
     /// Whether if the user contributed for the first time.

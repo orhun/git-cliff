@@ -25,7 +25,7 @@ use git_cliff_core::embed::{BuiltinConfig, EmbeddedConfig};
 use git_cliff_core::error::{Error, Result};
 use git_cliff_core::release::Release;
 use git_cliff_core::repo::{Repository, SubmoduleRange};
-use git_cliff_core::{DEFAULT_CONFIG, IGNORE_FILE};
+use git_cliff_core::{BLAME_IGNORE_REVS_FILE, DEFAULT_CONFIG, IGNORE_FILE};
 use glob::Pattern;
 
 /// Checks for a new version on crates.io
@@ -779,6 +779,16 @@ pub fn run_with_changelog_modifier<'a>(
             let ignore_file = repository.root_path()?.join(IGNORE_FILE);
             if ignore_file.exists() {
                 let contents = fs::read_to_string(ignore_file)?;
+                let commits = contents
+                    .lines()
+                    .filter(|v| !(v.starts_with('#') || v.trim().is_empty()))
+                    .map(|v| String::from(v.trim()))
+                    .collect::<Vec<String>>();
+                skip_list.extend(commits);
+            }
+            let blame_ignore_file = repository.root_path()?.join(BLAME_IGNORE_REVS_FILE);
+            if blame_ignore_file.exists() {
+                let contents = fs::read_to_string(&blame_ignore_file)?;
                 let commits = contents
                     .lines()
                     .filter(|v| !(v.starts_with('#') || v.trim().is_empty()))

@@ -784,6 +784,7 @@ Refs: #123
             username: None,
             pr_title: Some("feat: do something".to_string()),
             pr_number: None,
+            pr_numbers: vec![],
             pr_labels: vec![String::from("feature"), String::from("deprecation")],
             is_first_time: true,
         });
@@ -845,6 +846,7 @@ Refs: #123
             username: None,
             pr_title: Some("feat: do something".to_string()),
             pr_number: None,
+            pr_numbers: vec![],
             pr_labels: vec![String::from("feature"), String::from("deprecation")],
             is_first_time: true,
         });
@@ -1020,6 +1022,7 @@ Refs: #123
             username: None,
             pr_title: Some("feat: do something".to_string()),
             pr_number: None,
+            pr_numbers: vec![],
             pr_labels: Vec::new(),
             is_first_time: true,
         });

@@ -60,6 +60,8 @@ pub const CONFIG_FILES: &[&str] = &["cliff.toml", ".cliff.toml", ".config/cliff.
 pub const DEFAULT_OUTPUT: &str = "CHANGELOG.md";
 /// Default ignore file.
 pub const IGNORE_FILE: &str = ".cliffignore";
+/// Git blame ignore revs file.
+pub const BLAME_IGNORE_REVS_FILE: &str = ".git-blame-ignore-revs";
 
 /// Sets a human-readable message on the current progress bar span.
 /// This macro only has effect if the `tracing-indicatif` feature is enabled.
