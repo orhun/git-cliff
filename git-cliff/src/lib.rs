@@ -637,6 +637,8 @@ pub fn run_with_changelog_modifier<'a>(
     }
     if let Some(body) = args.body.clone() {
         config.changelog.body = body;
+    } else if let Some(body_file) = args.body_file.clone() {
+        config.changelog.body = fs::read_to_string(body_file)?;
     }
     if args.sort == Sort::Oldest {
         args.sort = Sort::from_str(&config.git.sort_commits, true)
