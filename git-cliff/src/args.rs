@@ -219,9 +219,18 @@ pub struct Opt {
         long,
         env = "GIT_CLIFF_TEMPLATE",
         value_name = "TEMPLATE",
-        allow_hyphen_values = true
+        allow_hyphen_values = true,
+        conflicts_with = "body_file"
     )]
     pub body: Option<String>,
+    /// Sets the template for the changelog body from a file.
+    #[arg(
+        long,
+        env = "GIT_CLIFF_TEMPLATE_FILE",
+        value_name = "PATH",
+        value_parser = Opt::parse_dir
+    )]
+    pub body_file: Option<PathBuf>,
     /// Processes the commits starting from the latest tag.
     #[arg(short, long, help_heading = Some("FLAGS"))]
     pub latest: bool,
@@ -583,6 +592,30 @@ mod tests {
             bump_option_parser.parse_ref(&Opt::command(), None, OsStr::new("major"))?
         );
         Ok(())
+    }
+
+    #[test]
+    fn body_file_is_parsed_as_path() -> Result<(), Box<dyn std::error::Error>> {
+        let opt = Opt::try_parse_from(["git-cliff", "--body-file", "template.tera"])?;
+        assert_eq!(Some(PathBuf::from("template.tera")), opt.body_file);
+        assert_eq!(None, opt.body);
+        Ok(())
+    }
+
+    #[test]
+    fn body_and_body_file_conflict() {
+        let result = Opt::try_parse_from([
+            "git-cliff",
+            "--body",
+            "{{ version }}",
+            "--body-file",
+            "template.tera",
+        ]);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().kind(),
+            clap::error::ErrorKind::ArgumentConflict
+        );
     }
 
     // Environment variables are process-global, so tests that modify them must run exclusively and

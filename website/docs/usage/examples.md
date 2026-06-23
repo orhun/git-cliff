@@ -99,6 +99,12 @@ Set/remove the changelog parts:
 git cliff --body $template --strip footer
 ```
 
+Read the body template from a file (useful for multiline templates):
+
+```bash
+git cliff --body-file template.tera
+```
+
 Skip running the commands defined in [pre](/docs/configuration/git#commit_preprocessors)/[postprocessors](/docs/configuration/changelog#postprocessors).
 
 ```bash
