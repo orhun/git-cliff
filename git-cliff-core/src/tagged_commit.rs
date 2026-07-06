@@ -167,63 +167,61 @@ impl<'a> TaggedCommits<'a> {
 mod tests {
     use std::fs;
     use std::path::Path;
-    use std::process::Command;
 
+    use git2::{ObjectType, Repository as GitRepository, Signature, Time};
     use temp_dir::TempDir;
 
     use super::*;
 
-    fn run_git(path: &Path, args: &[&str]) -> String {
-        let output = Command::new("git")
-            .args(args)
-            .current_dir(path)
-            .output()
-            .expect("failed to execute git");
-        assert!(
-            output.status.success(),
-            "git {args:?} failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-        String::from_utf8(output.stdout).expect("git output should be valid UTF-8")
-    }
-
-    fn create_commit(path: &Path, name: &str, content: &str, second: u8) -> String {
+    fn create_commit(
+        repository: &GitRepository,
+        path: &Path,
+        name: &str,
+        content: &str,
+        second: i64,
+    ) -> Result<String> {
         fs::write(path.join(name), content).expect("failed to write test file");
-        run_git(path, &["add", "."]);
-        let date = format!("2024-01-01T00:00:{second:02}Z");
-        let output = Command::new("git")
-            .args(["commit", "--no-gpg-sign", "-m", name])
-            .env("GIT_AUTHOR_DATE", &date)
-            .env("GIT_COMMITTER_DATE", date)
-            .current_dir(path)
-            .output()
-            .expect("failed to execute git commit");
-        assert!(
-            output.status.success(),
-            "git commit failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-        run_git(path, &["rev-parse", "HEAD"])
-            .trim_ascii_end()
-            .to_string()
+        let mut index = repository.index()?;
+        index.add_path(Path::new(name))?;
+        index.write()?;
+        let tree_id = index.write_tree()?;
+        let tree = repository.find_tree(tree_id)?;
+        let signature = Signature::new("test", "test@example.com", &Time::new(second, 0))?;
+        let parents = repository
+            .head()
+            .ok()
+            .and_then(|head| head.peel_to_commit().ok())
+            .into_iter()
+            .collect::<Vec<_>>();
+        let parent_refs = parents.iter().collect::<Vec<_>>();
+        Ok(repository
+            .commit(
+                Some("HEAD"),
+                &signature,
+                &signature,
+                name,
+                &tree,
+                &parent_refs,
+            )?
+            .to_string())
     }
 
     fn create_tagged_repository() -> Result<(Repository, TempDir, Vec<String>)> {
         let temp_dir = TempDir::with_prefix("git-cliff-").expect("failed to create temp dir");
         let path = temp_dir.path();
-        run_git(path, &["init"]);
-        run_git(path, &["config", "user.email", "test@example.com"]);
-        run_git(path, &["config", "user.name", "test"]);
+        let git_repository = GitRepository::init(path)?;
 
         let commits = vec![
-            create_commit(path, "one", "one", 1),
-            create_commit(path, "two", "two", 2),
-            create_commit(path, "three", "three", 3),
-            create_commit(path, "four", "four", 4),
-            create_commit(path, "five", "five", 5),
+            create_commit(&git_repository, path, "one", "one", 1)?,
+            create_commit(&git_repository, path, "two", "two", 2)?,
+            create_commit(&git_repository, path, "three", "three", 3)?,
+            create_commit(&git_repository, path, "four", "four", 4)?,
+            create_commit(&git_repository, path, "five", "five", 5)?,
         ];
-        run_git(path, &["tag", "v1.0.0", &commits[0]]);
-        run_git(path, &["tag", "v2.0.0", &commits[3]]);
+        for (tag, commit) in [("v1.0.0", &commits[0]), ("v2.0.0", &commits[3])] {
+            let object = git_repository.find_object(commit.parse()?, Some(ObjectType::Commit))?;
+            git_repository.tag_lightweight(tag, &object, false)?;
+        }
 
         Ok((Repository::discover(path.to_path_buf())?, temp_dir, commits))
     }
@@ -270,10 +268,13 @@ mod tests {
         let (repository, _temp_dir, commits) = create_tagged_repository()?;
         let mut tags = repository.tags(&None, false, false)?;
 
-        tags.insert(commits[2].clone(), Tag {
-            name: String::from("v1.5.0"),
-            message: None,
-        });
+        tags.insert(
+            commits[2].clone(),
+            Tag {
+                name: String::from("v1.5.0"),
+                message: None,
+            },
+        );
 
         assert_eq!(tags.get_commit("v1.5.0"), Some(commits[2].as_str()));
         assert_eq!(

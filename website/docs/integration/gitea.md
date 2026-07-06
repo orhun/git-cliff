@@ -39,7 +39,7 @@ token = "***"
 
 :::tip
 
-[Gitea REST API](https://gitea.com/api/swagger) is being used to retrieve data from Gitea.
+[Gitea REST API](https://docs.gitea.com/api/1.24/) is being used to retrieve data from Gitea.
 It does not require authentication for public repositories. If your project uses a private
 repository, you need to create an access token under _Settings_ > _Applications_ > _Access tokens_.
 
