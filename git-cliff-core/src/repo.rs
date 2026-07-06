@@ -8,7 +8,6 @@ use git2::{
     Worktree,
 };
 use glob::Pattern;
-use indexmap::IndexMap;
 use regex::Regex;
 use url::Url;
 
@@ -16,6 +15,7 @@ use crate::commit::CommitStatistics;
 use crate::config::Remote;
 use crate::error::{Error, Result};
 use crate::tag::Tag;
+use crate::tagged_commit::TaggedCommits;
 
 /// Regex for replacing the signature part of a tag message.
 static TAG_SIGNATURE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
@@ -506,10 +506,11 @@ impl Repository {
     /// commit is in the descendant graph of the `head_commit` or is the
     /// `head_commit` itself, Changelog should include the tag.
     fn should_include_tag(&self, head_commit: &Commit, tag_commit: &Commit) -> Result<bool> {
-        Ok(self
-            .inner
-            .graph_descendant_of(head_commit.id(), tag_commit.id())? ||
-            head_commit.id() == tag_commit.id())
+        self.is_descendant_of(head_commit.id(), tag_commit.id())
+    }
+
+    pub(crate) fn is_descendant_of(&self, descendant: Oid, ancestor: Oid) -> Result<bool> {
+        Ok(descendant == ancestor || self.inner.graph_descendant_of(descendant, ancestor)?)
     }
 
     /// Parses and returns a commit-tag map.
@@ -520,7 +521,7 @@ impl Repository {
         pattern: &Option<Regex>,
         topo_order: bool,
         use_branch_tags: bool,
-    ) -> Result<IndexMap<String, Tag>> {
+    ) -> Result<TaggedCommits<'_>> {
         let mut tags: Vec<(Commit, Tag)> = Vec::new();
         let tag_names = self.inner.tag_names(None)?;
         let head_commit = self.inner.head()?.peel_to_commit()?;
@@ -562,10 +563,7 @@ impl Repository {
         if !topo_order {
             tags.sort_by_key(|a| a.0.time().seconds());
         }
-        Ok(tags
-            .into_iter()
-            .map(|(a, b)| (a.id().to_string(), b))
-            .collect())
+        TaggedCommits::new(self, tags)
     }
 
     /// Returns the remote of the upstream repository.
@@ -806,7 +804,7 @@ mod test {
                 .name,
             "v0.1.0"
         );
-        assert!(!tags.contains_key("4ddef08debfff48117586296e49d5caa0800d1b5"));
+        assert!(!tags.contains_commit("4ddef08debfff48117586296e49d5caa0800d1b5"));
         Ok(())
     }
 

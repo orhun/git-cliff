@@ -1,7 +1,7 @@
 /// Common tag object that is parsed from a repository.
 ///
 /// Lightweight tags will have `None` as message.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Tag {
     /// The name of the tag
     pub name: String,
