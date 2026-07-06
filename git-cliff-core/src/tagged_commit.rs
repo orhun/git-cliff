@@ -10,8 +10,8 @@ use crate::repo::Repository;
 use crate::tag::Tag;
 
 /// Stores which commits are tagged with which tags.
-#[derive(Debug)]
 pub struct TaggedCommits<'a> {
+    repository: &'a Repository,
     commits: IndexMap<String, Commit<'a>>,
     tags: IndexMap<String, Tag>,
     tag_indexes: Vec<usize>,
@@ -37,6 +37,7 @@ impl<'a> TaggedCommits<'a> {
             .map(|(commit, tag)| (commit.id().to_string(), tag))
             .collect();
         Ok(Self {
+            repository,
             commits,
             tags,
             tag_indexes,
@@ -56,14 +57,19 @@ impl<'a> TaggedCommits<'a> {
     }
 
     /// Returns an iterator over all the tags.
+    pub fn iter(&self) -> impl Iterator<Item = (&str, &Tag)> {
+        self.tags.iter().map(|(commit, tag)| (commit.as_str(), tag))
+    }
+
+    /// Returns an iterator over all the tags.
     pub fn tags(&self) -> impl Iterator<Item = &Tag> {
-        self.tags.iter().map(|(_, tag)| tag)
+        self.iter().map(|(_, tag)| tag)
     }
 
     /// Returns the last tag.
     #[must_use]
-    pub fn last(&self) -> Option<&Tag> {
-        self.tags().last()
+    pub fn last(&self) -> Option<(&str, &Tag)> {
+        self.iter().last()
     }
 
     /// Returns the tag of the given commit.
@@ -79,8 +85,10 @@ impl<'a> TaggedCommits<'a> {
     ///
     /// The index can be calculated with `tags().position()`.
     #[must_use]
-    pub fn get_index(&self, idx: usize) -> Option<&Tag> {
-        self.tags.get_index(idx).map(|(_, tag)| tag)
+    pub fn get_index(&self, idx: usize) -> Option<(&str, &Tag)> {
+        self.tags
+            .get_index(idx)
+            .map(|(commit, tag)| (commit.as_str(), tag))
     }
 
     /// Returns the tag closest to the given commit.
@@ -90,14 +98,20 @@ impl<'a> TaggedCommits<'a> {
             return Some(tagged);
         }
 
-        let index = self.commits.get_index_of(commit)?;
-        let tag_index = *self.tag_indexes.iter().find(|tag_idx| index >= **tag_idx)?;
-        self.get_tag_by_index(tag_index)
-    }
-
-    fn get_tag_by_index(&self, index: usize) -> Option<&Tag> {
-        let (commit_of_tag, _) = self.commits.get_index(index)?;
-        self.tags.get(commit_of_tag)
+        let commit = self.commits.get(commit)?;
+        for (tag_commit, tag) in &self.tags {
+            let Some(tag_commit) = self.commits.get(tag_commit) else {
+                continue;
+            };
+            if self
+                .repository
+                .is_descendant_of(tag_commit.id(), commit.id())
+                .ok()?
+            {
+                return Some(tag);
+            }
+        }
+        None
     }
 
     /// Returns the commit of the given tag.
@@ -117,10 +131,18 @@ impl<'a> TaggedCommits<'a> {
 
     /// Inserts a new tagged commit.
     pub fn insert(&mut self, commit: String, tag: Tag) {
-        if let Some(index) = self.commits.get_index_of(&commit) &&
-            let Err(idx) = self.binary_search(index)
-        {
-            self.tag_indexes.insert(idx, index);
+        if let Some(index) = self.commits.get_index_of(&commit) {
+            if let Err(idx) = self.binary_search(index) {
+                let insert_pos = self
+                    .tag_indexes
+                    .get(idx)
+                    .and_then(|tag_index| self.commits.get_index(*tag_index))
+                    .and_then(|(tag_commit, _)| self.tags.get_index_of(tag_commit))
+                    .unwrap_or(self.tags.len());
+                self.tag_indexes.insert(idx, index);
+                self.tags.shift_insert(insert_pos, commit, tag);
+                return;
+            }
         }
         self.tags.insert(commit, tag);
     }

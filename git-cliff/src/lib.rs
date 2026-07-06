@@ -62,7 +62,7 @@ fn determine_commit_range(
 
     let mut commit_range = args.range.clone();
     if args.unreleased {
-        if let Some(last_tag) = tags.last().map(|tag| &tag.name) {
+        if let Some((last_tag, _)) = tags.last() {
             commit_range = Some(format!("{last_tag}..HEAD"));
         }
     } else if args.latest || args.current {
@@ -70,7 +70,7 @@ fn determine_commit_range(
             let commits = repository.commits(None, None, None, config.git.topo_order_commits)?;
             if let (Some(tag1), Some(tag2)) = (
                 commits.last().map(|c| c.id().to_string()),
-                tags.get_index(0).map(|tag| &tag.name),
+                tags.get_index(0).map(|(commit, _)| commit),
             ) {
                 if tags.len() == 1 {
                     commit_range = Some(tag2.to_owned());
@@ -82,9 +82,9 @@ fn determine_commit_range(
             let mut tag_index = tags.len() - 2;
             if args.current {
                 if let Some(current_tag_index) = repository.current_tag().as_ref().and_then(|tag| {
-                    tags.tags()
+                    tags.iter()
                         .enumerate()
-                        .find(|(_, v)| v.name == tag.name)
+                        .find(|(_, (_, v))| v.name == tag.name)
                         .map(|(i, _)| i)
                 }) {
                     match current_tag_index.checked_sub(1) {
@@ -102,8 +102,8 @@ fn determine_commit_range(
                 }
             }
             if let (Some(tag1), Some(tag2)) = (
-                tags.get_index(tag_index).map(|tag| &tag.name),
-                tags.get_index(tag_index + 1).map(|tag| &tag.name),
+                tags.get_index(tag_index).map(|(commit, _)| commit),
+                tags.get_index(tag_index + 1).map(|(commit, _)| commit),
             ) {
                 commit_range = Some(format!("{tag1}..{tag2}"));
             }
@@ -360,34 +360,33 @@ fn process_repository<'a>(
                         tag: Option<&Tag>|
      -> Result<()> {
         release.repository = Some(repository_path.clone());
-        if let Some(tag) = tag &&
-            let Some(release_commit) = tags.get_commit(&tag.name)
-        {
-            release.version = Some(tag.name.clone());
-            release.message.clone_from(&tag.message);
-            release.commit_id = Some(release_commit.to_string());
-            release.timestamp = Some(if args.tag.as_deref() == Some(&tag.name) {
-                match tag_timestamp {
-                    Some(timestamp) => timestamp,
-                    None => SystemTime::now()
-                        .duration_since(UNIX_EPOCH)?
-                        .as_secs()
-                        .try_into()?,
-                }
-            } else {
-                repository
-                    .find_commit(release_commit)
-                    .map(|c| c.time().seconds())
-                    .unwrap_or_default()
-            });
+        if let Some(tag) = tag {
+            if let Some(release_commit) = tags.get_commit(&tag.name) {
+                release.version = Some(tag.name.clone());
+                release.message.clone_from(&tag.message);
+                release.commit_id = Some(release_commit.to_string());
+                release.timestamp = Some(if args.tag.as_deref() == Some(&tag.name) {
+                    match tag_timestamp {
+                        Some(timestamp) => timestamp,
+                        None => SystemTime::now()
+                            .duration_since(UNIX_EPOCH)?
+                            .as_secs()
+                            .try_into()?,
+                    }
+                } else {
+                    repository
+                        .find_commit(release_commit)
+                        .map(|c| c.time().seconds())
+                        .unwrap_or_default()
+                });
+            }
         }
         if release.commit_id.is_none() {
             release.commit_id = release.commits.last().map(|commit| commit.id.clone());
         }
-        if let Some(mut previous) = releases.last().cloned() {
-            previous.previous = None;
-            release.previous = Some(Box::new(previous));
-        }
+        let mut previous = releases.last().cloned().unwrap_or_default();
+        previous.previous = None;
+        release.previous = Some(Box::new(previous));
         releases.push(std::mem::take(release));
         Ok(())
     };
@@ -448,9 +447,9 @@ fn process_repository<'a>(
         // Get the previous tag of the first processed tag in the release loop.
         let first_tag = first_processed_tag
             .map(|tag| {
-                tags.tags()
+                tags.iter()
                     .enumerate()
-                    .find(|(_, v)| v.name == tag.name)
+                    .find(|(_, (_, v))| v.name == tag.name)
                     .and_then(|(i, _)| i.checked_sub(1))
                     .and_then(|i| tags.get_index(i))
             })
@@ -458,8 +457,7 @@ fn process_repository<'a>(
             .flatten();
 
         // Set the previous release if the first tag is found.
-        if let Some(tag) = first_tag {
-            let commit_id = tags.get_commit(&tag.name).unwrap();
+        if let Some((commit_id, tag)) = first_tag {
             let previous_release = Release {
                 commit_id: Some(commit_id.to_string()),
                 version: Some(tag.name.clone()),

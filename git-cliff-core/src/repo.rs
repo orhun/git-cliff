@@ -506,10 +506,11 @@ impl Repository {
     /// commit is in the descendant graph of the `head_commit` or is the
     /// `head_commit` itself, Changelog should include the tag.
     fn should_include_tag(&self, head_commit: &Commit, tag_commit: &Commit) -> Result<bool> {
-        Ok(self
-            .inner
-            .graph_descendant_of(head_commit.id(), tag_commit.id())? ||
-            head_commit.id() == tag_commit.id())
+        self.is_descendant_of(head_commit.id(), tag_commit.id())
+    }
+
+    pub(crate) fn is_descendant_of(&self, descendant: Oid, ancestor: Oid) -> Result<bool> {
+        Ok(descendant == ancestor || self.inner.graph_descendant_of(descendant, ancestor)?)
     }
 
     /// Parses and returns a commit-tag map.
@@ -768,7 +769,7 @@ mod test {
     fn get_latest_tag() -> Result<()> {
         let repository = get_repository()?;
         let tags = repository.tags(&None, false, false)?;
-        let latest = tags.last().expect("no tags found").name.clone();
+        let latest = tags.last().expect("no tags found").1.name.clone();
         assert_eq!(get_last_tag()?, latest);
 
         let current = repository.current_tag().expect("a current tag").name;
