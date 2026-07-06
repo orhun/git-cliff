@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use next_version::{NextVersion, VersionUpdater};
+use next_version::{NextVersion as NextVersionTrait, VersionUpdater};
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use serde_json::value::Value;
@@ -47,6 +47,9 @@ pub struct Release<'a> {
     pub statistics: Option<Statistics>,
     /// Arbitrary data to be used with the `--from-context` CLI option.
     pub extra: Option<Value>,
+    /// The type of version bump that was applied.
+    #[serde(rename = "bump_type")]
+    pub bump_type: Option<BumpType>,
     /// Contributors.
     #[cfg(feature = "github")]
     pub github: RemoteReleaseMetadata,
@@ -59,6 +62,10 @@ pub struct Release<'a> {
     /// Contributors.
     #[cfg(feature = "bitbucket")]
     pub bitbucket: RemoteReleaseMetadata,
+    /// Contributors.
+    #[cfg(feature = "azure_devops")]
+    #[serde(rename = "azure_devops")]
+    pub azure_devops: RemoteReleaseMetadata,
 }
 
 #[cfg(feature = "github")]
@@ -73,12 +80,26 @@ crate::update_release_metadata!(gitea, update_gitea_metadata);
 #[cfg(feature = "bitbucket")]
 crate::update_release_metadata!(bitbucket, update_bitbucket_metadata);
 
+#[cfg(feature = "azure_devops")]
+crate::update_release_metadata!(azure_devops, update_azure_devops_metadata);
+
 impl Release<'_> {
     /// Calculates the next version based on the commits.
     ///
     /// It uses the default bump version configuration to calculate the next
     /// version.
-    pub fn calculate_next_version(&self) -> Result<String> {
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            skip_all,
+            fields(
+                version = self.version.as_deref().unwrap_or("unreleased"),
+                commits = self.commits.len()
+            )
+        )
+    )]
+    pub fn calculate_next_version(&self) -> Result<NextVersion> {
+        crate::set_progress_message!("Calculating the next version from commits");
         self.calculate_next_version_with_config(&Bump::default())
     }
 
@@ -87,6 +108,7 @@ impl Release<'_> {
     /// This method computes various statistics from the release data and sets
     /// the `statistics` field. It does not modify the original release but
     /// returns a new instance with the computed statistics included.
+    #[must_use]
     pub fn with_statistics(mut self) -> Self {
         self.statistics = Some((&self).into());
         self
@@ -96,7 +118,20 @@ impl Release<'_> {
     ///
     /// It uses the given bump version configuration to calculate the next
     /// version.
-    pub(super) fn calculate_next_version_with_config(&self, config: &Bump) -> Result<String> {
+    #[cfg_attr(
+        feature = "tracing",
+        tracing::instrument(
+            skip_all,
+            fields(
+                version = self.version.as_deref().unwrap_or("unreleased"),
+                commits = self.commits.len()
+            )
+        )
+    )]
+    pub(super) fn calculate_next_version_with_config(&self, config: &Bump) -> Result<NextVersion> {
+        crate::set_progress_message!(
+            "Calculating the next version from commits with custom bump rules"
+        );
         match self
             .previous
             .as_ref()
@@ -138,31 +173,66 @@ impl Release<'_> {
                     next_version = next_version
                         .with_custom_minor_increment_regex(custom_minor_increment_regex)?;
                 }
-                let next_version = if let Some(bump_type) = &config.bump_type {
-                    match bump_type {
-                        BumpType::Major => semver?.increment_major().to_string(),
-                        BumpType::Minor => semver?.increment_minor().to_string(),
-                        BumpType::Patch => semver?.increment_patch().to_string(),
-                    }
-                } else {
-                    next_version
-                        .increment(
-                            &semver?,
+                if let Some(no_increment_regex) = &config.no_increment_regex {
+                    next_version = next_version.with_no_increment_regex(no_increment_regex)?;
+                }
+                let old_semver = semver?;
+                let (next_version, determined_bump_type) =
+                    if let Some(bump_type) = &config.bump_type {
+                        let v = match bump_type {
+                            BumpType::Major => old_semver.increment_major().to_string(),
+                            BumpType::Minor => old_semver.increment_minor().to_string(),
+                            BumpType::Patch => old_semver.increment_patch().to_string(),
+                        };
+                        (v, Some(*bump_type))
+                    } else {
+                        let new_semver = next_version.increment(
+                            &old_semver,
                             self.commits
                                 .iter()
                                 .map(|commit| commit.message.trim_end().to_string())
                                 .collect::<Vec<String>>(),
-                        )
-                        .to_string()
-                };
-                if let Some(prefix) = prefix {
-                    Ok(format!("{prefix}{next_version}"))
+                        );
+                        let bump_type = determine_bump_type(&old_semver, &new_semver);
+                        (new_semver.to_string(), bump_type)
+                    };
+                let version = if let Some(prefix) = prefix {
+                    format!("{prefix}{next_version}")
                 } else {
-                    Ok(next_version)
-                }
+                    next_version
+                };
+                Ok(NextVersion {
+                    version,
+                    bump_type: determined_bump_type,
+                })
             }
-            None => Ok(config.get_initial_tag()),
+            None => Ok(NextVersion {
+                version: config.get_initial_tag(),
+                bump_type: None,
+            }),
         }
+    }
+}
+
+/// Representation of a calculated next version.
+#[derive(Debug, Clone, PartialEq)]
+pub struct NextVersion {
+    /// Version string.
+    pub version: String,
+    /// Type of version bump that was applied.
+    pub bump_type: Option<BumpType>,
+}
+
+/// Determines the bump type by comparing two semver versions.
+fn determine_bump_type(old: &Version, new: &Version) -> Option<BumpType> {
+    if new.major != old.major {
+        Some(BumpType::Major)
+    } else if new.minor != old.minor {
+        Some(BumpType::Minor)
+    } else if new.patch != old.patch {
+        Some(BumpType::Patch)
+    } else {
+        None
     }
 }
 
@@ -194,7 +264,7 @@ mod test {
                 extra: None,
                 commits: commits
                     .iter()
-                    .map(|v| Commit::from(v.to_string()))
+                    .map(|v| Commit::from((*v).to_string()))
                     .collect(),
                 commit_range: None,
                 commit_id: None,
@@ -206,6 +276,7 @@ mod test {
                 repository: Some(String::from("/root/repo")),
                 submodule_commits: HashMap::new(),
                 statistics: None,
+                bump_type: None,
                 #[cfg(feature = "github")]
                 github: crate::remote::RemoteReleaseMetadata {
                     contributors: vec![],
@@ -220,6 +291,10 @@ mod test {
                 },
                 #[cfg(feature = "bitbucket")]
                 bitbucket: crate::remote::RemoteReleaseMetadata {
+                    contributors: vec![],
+                },
+                #[cfg(feature = "azure_devops")]
+                azure_devops: crate::remote::RemoteReleaseMetadata {
                     contributors: vec![],
                 },
             }
@@ -272,9 +347,11 @@ mod test {
             .iter(),
         ) {
             let release = build_release(version, commits);
-            let next_version = release.calculate_next_version()?;
+            let next_version = release.calculate_next_version()?.version;
             assert_eq!(expected_version, &next_version);
-            let next_version = release.calculate_next_version_with_config(&Bump::default())?;
+            let next_version = release
+                .calculate_next_version_with_config(&Bump::default())?
+                .version;
             assert_eq!(expected_version, &next_version);
         }
 
@@ -290,14 +367,17 @@ mod test {
             .iter(),
         ) {
             let release = build_release(version, commits);
-            let next_version = release.calculate_next_version_with_config(&Bump {
-                features_always_bump_minor: Some(false),
-                breaking_always_bump_major: Some(false),
-                initial_tag: None,
-                custom_major_increment_regex: None,
-                custom_minor_increment_regex: None,
-                bump_type: None,
-            })?;
+            let next_version = release
+                .calculate_next_version_with_config(&Bump {
+                    features_always_bump_minor: Some(false),
+                    breaking_always_bump_major: Some(false),
+                    initial_tag: None,
+                    custom_major_increment_regex: None,
+                    custom_minor_increment_regex: None,
+                    no_increment_regex: None,
+                    bump_type: None,
+                })?
+                .version;
             assert_eq!(expected_version, &next_version);
         }
 
@@ -313,14 +393,17 @@ mod test {
             .iter(),
         ) {
             let release = build_release(version, commits);
-            let next_version = release.calculate_next_version_with_config(&Bump {
-                features_always_bump_minor: Some(true),
-                breaking_always_bump_major: Some(false),
-                initial_tag: None,
-                custom_major_increment_regex: None,
-                custom_minor_increment_regex: None,
-                bump_type: None,
-            })?;
+            let next_version = release
+                .calculate_next_version_with_config(&Bump {
+                    features_always_bump_minor: Some(true),
+                    breaking_always_bump_major: Some(false),
+                    initial_tag: None,
+                    custom_major_increment_regex: None,
+                    custom_minor_increment_regex: None,
+                    no_increment_regex: None,
+                    bump_type: None,
+                })?
+                .version;
             assert_eq!(expected_version, &next_version);
         }
 
@@ -336,14 +419,17 @@ mod test {
             .iter(),
         ) {
             let release = build_release(version, commits);
-            let next_version = release.calculate_next_version_with_config(&Bump {
-                features_always_bump_minor: Some(false),
-                breaking_always_bump_major: Some(true),
-                initial_tag: None,
-                custom_major_increment_regex: None,
-                custom_minor_increment_regex: None,
-                bump_type: None,
-            })?;
+            let next_version = release
+                .calculate_next_version_with_config(&Bump {
+                    features_always_bump_minor: Some(false),
+                    breaking_always_bump_major: Some(true),
+                    initial_tag: None,
+                    custom_major_increment_regex: None,
+                    custom_minor_increment_regex: None,
+                    no_increment_regex: None,
+                    bump_type: None,
+                })?
+                .version;
             assert_eq!(expected_version, &next_version);
         }
 
@@ -354,32 +440,123 @@ mod test {
             })),
             ..Default::default()
         };
-        assert_eq!("0.1.0", empty_release.calculate_next_version()?);
+        let result = empty_release.calculate_next_version()?;
+        assert_eq!("0.1.0", result.version);
+        assert_eq!(None, result.bump_type);
         for (features_always_bump_minor, breaking_always_bump_major) in
             [(true, true), (true, false), (false, true), (false, false)]
         {
-            assert_eq!(
-                "0.1.0",
-                empty_release.calculate_next_version_with_config(&Bump {
-                    features_always_bump_minor: Some(features_always_bump_minor),
-                    breaking_always_bump_major: Some(breaking_always_bump_major),
-                    initial_tag: None,
-                    custom_major_increment_regex: None,
-                    custom_minor_increment_regex: None,
-                    bump_type: None,
-                })?
-            );
+            let result = empty_release.calculate_next_version_with_config(&Bump {
+                features_always_bump_minor: Some(features_always_bump_minor),
+                breaking_always_bump_major: Some(breaking_always_bump_major),
+                initial_tag: None,
+                custom_major_increment_regex: None,
+                custom_minor_increment_regex: None,
+                no_increment_regex: None,
+                bump_type: None,
+            })?;
+            assert_eq!("0.1.0", result.version);
+            assert_eq!(None, result.bump_type);
         }
         Ok(())
     }
 
     #[test]
-    fn with_statistics() -> Result<()> {
+    fn no_increment_regex_skips_matching_commit_types() -> Result<()> {
+        fn build_release<'a>(version: &str, commits: &'a [&str]) -> Release<'a> {
+            Release {
+                version: None,
+                commits: commits
+                    .iter()
+                    .map(|v| Commit::from((*v).to_string()))
+                    .collect(),
+                previous: Some(Box::new(Release {
+                    version: Some(String::from(version)),
+                    ..Default::default()
+                })),
+                ..Default::default()
+            }
+        }
+
+        let release = build_release("1.0.0", &["chore: should not release"]);
+        let result = release.calculate_next_version_with_config(&Bump {
+            no_increment_regex: Some(String::from("^chore$")),
+            ..Default::default()
+        })?;
+        assert_eq!("1.0.0", result.version);
+        assert_eq!(None, result.bump_type);
+
+        let release = build_release("1.0.0", &[
+            "docs: update readme",
+            "feat: add a user-facing feature",
+        ]);
+        let result = release.calculate_next_version_with_config(&Bump {
+            no_increment_regex: Some(String::from("^docs$")),
+            ..Default::default()
+        })?;
+        assert_eq!("1.1.0", result.version);
+        assert_eq!(Some(BumpType::Minor), result.bump_type);
+
+        Ok(())
+    }
+
+    #[test]
+    fn bump_version_type() -> Result<()> {
+        fn build_release<'a>(version: &str, commits: &'a [&str]) -> Release<'a> {
+            Release {
+                version: None,
+                commits: commits
+                    .iter()
+                    .map(|v| Commit::from((*v).to_string()))
+                    .collect(),
+                previous: Some(Box::new(Release {
+                    version: Some(String::from(version)),
+                    ..Default::default()
+                })),
+                ..Default::default()
+            }
+        }
+
+        let release = build_release("1.0.0", &["fix: something"]);
+        let result = release.calculate_next_version()?;
+        assert_eq!(Some(BumpType::Patch), result.bump_type);
+
+        let release = build_release("1.0.0", &["feat: add xyz"]);
+        let result = release.calculate_next_version()?;
+        assert_eq!(Some(BumpType::Minor), result.bump_type);
+
+        let release = build_release("1.0.0", &["feat!: breaking change"]);
+        let result = release.calculate_next_version()?;
+        assert_eq!(Some(BumpType::Major), result.bump_type);
+
+        let release = build_release("1.0.0", &["fix: something"]);
+        let result = release.calculate_next_version_with_config(&Bump {
+            bump_type: Some(BumpType::Minor),
+            ..Default::default()
+        })?;
+        assert_eq!("1.1.0", result.version);
+        assert_eq!(Some(BumpType::Minor), result.bump_type);
+
+        let release = Release {
+            previous: Some(Box::new(Release {
+                version: None,
+                ..Default::default()
+            })),
+            ..Default::default()
+        };
+        let result = release.calculate_next_version()?;
+        assert_eq!(None, result.bump_type);
+
+        Ok(())
+    }
+
+    #[test]
+    fn with_statistics() {
         let release = Release {
             commits: vec![],
-            timestamp: Some(1649373910),
+            timestamp: Some(1_649_373_910),
             previous: Some(Box::new(Release {
-                timestamp: Some(1649201110),
+                timestamp: Some(1_649_201_110),
                 ..Default::default()
             })),
             repository: Some(String::from("/root/repo")),
@@ -389,8 +566,6 @@ mod test {
         assert!(release.statistics.is_none());
         let release = release.with_statistics();
         assert!(release.statistics.is_some());
-
-        Ok(())
     }
 
     #[cfg(feature = "github")]
@@ -435,6 +610,7 @@ mod test {
             repository: Some(String::from("/root/repo")),
             submodule_commits: HashMap::new(),
             statistics: None,
+            bump_type: None,
             github: RemoteReleaseMetadata {
                 contributors: vec![],
             },
@@ -448,6 +624,10 @@ mod test {
             },
             #[cfg(feature = "bitbucket")]
             bitbucket: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: RemoteReleaseMetadata {
                 contributors: vec![],
             },
         };
@@ -577,7 +757,7 @@ mod test {
                 },
                 GitHubPullRequest {
                     title: Some(String::from("4")),
-                    number: 1000,
+                    number: 1_000,
                     merge_commit_sha: Some(String::from(
                         "4d3ffe4753b923f4d7807c490e650e6624a12074",
                     )),
@@ -587,7 +767,7 @@ mod test {
                 },
                 GitHubPullRequest {
                     title: Some(String::from("5")),
-                    number: 999999,
+                    number: 999_999,
                     merge_commit_sha: Some(String::from(
                         "5a55e92e5a62dc5bf9872ffb2566959fad98bd05",
                     )),
@@ -665,14 +845,14 @@ mod test {
                 github: RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: Some(String::from("4")),
-                    pr_number: Some(1000),
+                    pr_number: Some(1_000),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: Some(String::from("4")),
-                    pr_number: Some(1000),
+                    pr_number: Some(1_000),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
                 }),
@@ -684,14 +864,14 @@ mod test {
                 github: RemoteContributor {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("5")),
-                    pr_number: Some(999999),
+                    pr_number: Some(999_999),
                     pr_labels: vec![String::from("github")],
                     is_first_time: false,
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("5")),
-                    pr_number: Some(999999),
+                    pr_number: Some(999_999),
                     pr_labels: vec![String::from("github")],
                     is_first_time: false,
                 }),
@@ -719,10 +899,7 @@ mod test {
         ];
         assert_eq!(expected_commits, release.commits);
 
-        release
-            .github
-            .contributors
-            .sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+        release.github.contributors.sort_by_key(|a| a.pr_number);
 
         let expected_metadata = RemoteReleaseMetadata {
             contributors: vec![
@@ -750,7 +927,7 @@ mod test {
                 RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: Some(String::from("4")),
-                    pr_number: Some(1000),
+                    pr_number: Some(1_000),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: true,
                 },
@@ -800,6 +977,7 @@ mod test {
             repository: Some(String::from("/root/repo")),
             submodule_commits: HashMap::new(),
             statistics: None,
+            bump_type: None,
             #[cfg(feature = "github")]
             github: RemoteReleaseMetadata {
                 contributors: vec![],
@@ -816,152 +994,156 @@ mod test {
             bitbucket: RemoteReleaseMetadata {
                 contributors: vec![],
             },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
         };
         release.update_gitlab_metadata(
             vec![
                 GitLabCommit {
-                    id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
-                    author_name: String::from("orhun"),
-                    short_id: String::from(""),
-                    title: String::from(""),
-                    author_email: String::from(""),
-                    authored_date: String::from(""),
-                    committer_name: String::from(""),
-                    committer_email: String::from(""),
-                    committed_date: String::from(""),
-                    created_at: String::from(""),
-                    message: String::from(""),
+                    id: Some(String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071")),
+                    author_name: Some(String::from("orhun")),
+                    short_id: Some(String::new()),
+                    title: Some(String::new()),
+                    author_email: Some(String::new()),
+                    authored_date: Some(String::new()),
+                    committer_name: Some(String::new()),
+                    committer_email: Some(String::new()),
+                    committed_date: Some(String::new()),
+                    created_at: Some(String::new()),
+                    message: Some(String::new()),
                     parent_ids: vec![],
-                    web_url: String::from(""),
+                    web_url: Some(String::new()),
                 },
                 GitLabCommit {
-                    id: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
-                    author_name: String::from("orhun"),
-                    short_id: String::from(""),
-                    title: String::from(""),
-                    author_email: String::from(""),
-                    authored_date: String::from(""),
-                    committer_name: String::from(""),
-                    committer_email: String::from(""),
-                    committed_date: String::from(""),
-                    created_at: String::from(""),
-                    message: String::from(""),
+                    id: Some(String::from("21f6aa587fcb772de13f2fde0e92697c51f84162")),
+                    author_name: Some(String::from("orhun")),
+                    short_id: Some(String::new()),
+                    title: Some(String::new()),
+                    author_email: Some(String::new()),
+                    authored_date: Some(String::new()),
+                    committer_name: Some(String::new()),
+                    committer_email: Some(String::new()),
+                    committed_date: Some(String::new()),
+                    created_at: Some(String::new()),
+                    message: Some(String::new()),
                     parent_ids: vec![],
-                    web_url: String::from(""),
+                    web_url: Some(String::new()),
                 },
                 GitLabCommit {
-                    id: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
-                    author_name: String::from("nuhro"),
-                    short_id: String::from(""),
-                    title: String::from(""),
-                    author_email: String::from(""),
-                    authored_date: String::from(""),
-                    committer_name: String::from(""),
-                    committer_email: String::from(""),
-                    committed_date: String::from(""),
-                    created_at: String::from(""),
-                    message: String::from(""),
+                    id: Some(String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973")),
+                    author_name: Some(String::from("nuhro")),
+                    short_id: Some(String::new()),
+                    title: Some(String::new()),
+                    author_email: Some(String::new()),
+                    authored_date: Some(String::new()),
+                    committer_name: Some(String::new()),
+                    committer_email: Some(String::new()),
+                    committed_date: Some(String::new()),
+                    created_at: Some(String::new()),
+                    message: Some(String::new()),
                     parent_ids: vec![],
-                    web_url: String::from(""),
+                    web_url: Some(String::new()),
                 },
                 GitLabCommit {
-                    id: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
-                    author_name: String::from("awesome_contributor"),
-                    short_id: String::from(""),
-                    title: String::from(""),
-                    author_email: String::from(""),
-                    authored_date: String::from(""),
-                    committer_name: String::from(""),
-                    committer_email: String::from(""),
-                    committed_date: String::from(""),
-                    created_at: String::from(""),
-                    message: String::from(""),
+                    id: Some(String::from("4d3ffe4753b923f4d7807c490e650e6624a12074")),
+                    author_name: Some(String::from("awesome_contributor")),
+                    short_id: Some(String::new()),
+                    title: Some(String::new()),
+                    author_email: Some(String::new()),
+                    authored_date: Some(String::new()),
+                    committer_name: Some(String::new()),
+                    committer_email: Some(String::new()),
+                    committed_date: Some(String::new()),
+                    created_at: Some(String::new()),
+                    message: Some(String::new()),
                     parent_ids: vec![],
-                    web_url: String::from(""),
+                    web_url: Some(String::new()),
                 },
                 GitLabCommit {
-                    id: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
-                    author_name: String::from("orhun"),
-                    short_id: String::from(""),
-                    title: String::from(""),
-                    author_email: String::from(""),
-                    authored_date: String::from(""),
-                    committer_name: String::from(""),
-                    committer_email: String::from(""),
-                    committed_date: String::from(""),
-                    created_at: String::from(""),
-                    message: String::from(""),
+                    id: Some(String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05")),
+                    author_name: Some(String::from("orhun")),
+                    short_id: Some(String::new()),
+                    title: Some(String::new()),
+                    author_email: Some(String::new()),
+                    authored_date: Some(String::new()),
+                    committer_name: Some(String::new()),
+                    committer_email: Some(String::new()),
+                    committed_date: Some(String::new()),
+                    created_at: Some(String::new()),
+                    message: Some(String::new()),
                     parent_ids: vec![],
-                    web_url: String::from(""),
+                    web_url: Some(String::new()),
                 },
                 GitLabCommit {
-                    id: String::from("6c34967147560ea09658776d4901709139b4ad66"),
-                    author_name: String::from("someone"),
-                    short_id: String::from(""),
-                    title: String::from(""),
-                    author_email: String::from(""),
-                    authored_date: String::from(""),
-                    committer_name: String::from(""),
-                    committer_email: String::from(""),
-                    committed_date: String::from(""),
-                    created_at: String::from(""),
-                    message: String::from(""),
+                    id: Some(String::from("6c34967147560ea09658776d4901709139b4ad66")),
+                    author_name: Some(String::from("someone")),
+                    short_id: Some(String::new()),
+                    title: Some(String::new()),
+                    author_email: Some(String::new()),
+                    authored_date: Some(String::new()),
+                    committer_name: Some(String::new()),
+                    committer_email: Some(String::new()),
+                    committed_date: Some(String::new()),
+                    created_at: Some(String::new()),
+                    message: Some(String::new()),
                     parent_ids: vec![],
-                    web_url: String::from(""),
+                    web_url: Some(String::new()),
                 },
                 GitLabCommit {
-                    id: String::from("0c34967147560e809658776d4901709139b4ad68"),
-                    author_name: String::from("idk"),
-                    short_id: String::from(""),
-                    title: String::from(""),
-                    author_email: String::from(""),
-                    authored_date: String::from(""),
-                    committer_name: String::from(""),
-                    committer_email: String::from(""),
-                    committed_date: String::from(""),
-                    created_at: String::from(""),
-                    message: String::from(""),
+                    id: Some(String::from("0c34967147560e809658776d4901709139b4ad68")),
+                    author_name: Some(String::from("idk")),
+                    short_id: Some(String::new()),
+                    title: Some(String::new()),
+                    author_email: Some(String::new()),
+                    authored_date: Some(String::new()),
+                    committer_name: Some(String::new()),
+                    committer_email: Some(String::new()),
+                    committed_date: Some(String::new()),
+                    created_at: Some(String::new()),
+                    message: Some(String::new()),
                     parent_ids: vec![],
-                    web_url: String::from(""),
+                    web_url: Some(String::new()),
                 },
                 GitLabCommit {
-                    id: String::from("kk34967147560e809658776d4901709139b4ad68"),
-                    author_name: String::from("orhun"),
-                    short_id: String::from(""),
-                    title: String::from(""),
-                    author_email: String::from(""),
-                    authored_date: String::from(""),
-                    committer_name: String::from(""),
-                    committer_email: String::from(""),
-                    committed_date: String::from(""),
-                    created_at: String::from(""),
-                    message: String::from(""),
+                    id: Some(String::from("kk34967147560e809658776d4901709139b4ad68")),
+                    author_name: Some(String::from("orhun")),
+                    short_id: Some(String::new()),
+                    title: Some(String::new()),
+                    author_email: Some(String::new()),
+                    authored_date: Some(String::new()),
+                    committer_name: Some(String::new()),
+                    committer_email: Some(String::new()),
+                    committed_date: Some(String::new()),
+                    created_at: Some(String::new()),
+                    message: Some(String::new()),
                     parent_ids: vec![],
-                    web_url: String::from(""),
+                    web_url: Some(String::new()),
                 },
             ]
             .into_iter()
             .map(|v| Box::new(v) as Box<dyn RemoteCommit>)
             .collect(),
             vec![Box::new(GitLabMergeRequest {
-                title: String::from("1"),
+                title: Some(String::from("1")),
                 merge_commit_sha: Some(String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071")),
-                id: 1,
-                iid: 1,
-                project_id: 1,
-                description: String::from(""),
-                state: String::from(""),
-                created_at: String::from(""),
-                author: GitLabUser {
-                    id: 1,
-                    name: String::from("42"),
-                    username: String::from("42"),
-                    state: String::from("42"),
+                id: Some(1),
+                iid: Some(1),
+                project_id: Some(1),
+                description: Some(String::new()),
+                state: Some(String::new()),
+                created_at: Some(String::new()),
+                author: Some(GitLabUser {
+                    id: Some(1),
+                    name: Some(String::from("42")),
+                    username: Some(String::from("42")),
+                    state: Some(String::from("42")),
                     avatar_url: None,
-                    web_url: String::from("42"),
-                },
-                sha: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
-                web_url: String::from(""),
+                    web_url: Some(String::from("42")),
+                }),
+                sha: Some(String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071")),
+                web_url: Some(String::new()),
                 squash_commit_sha: None,
                 labels: vec![String::from("rust")],
             })],
@@ -1085,10 +1267,7 @@ mod test {
         ];
         assert_eq!(expected_commits, release.commits);
 
-        release
-            .github
-            .contributors
-            .sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+        release.github.contributors.sort_by_key(|a| a.pr_number);
 
         let expected_metadata = RemoteReleaseMetadata {
             contributors: vec![
@@ -1168,6 +1347,7 @@ mod test {
             repository: Some(String::from("/root/repo")),
             submodule_commits: HashMap::new(),
             statistics: None,
+            bump_type: None,
             #[cfg(feature = "github")]
             github: RemoteReleaseMetadata {
                 contributors: vec![],
@@ -1182,6 +1362,10 @@ mod test {
             },
             #[cfg(feature = "bitbucket")]
             bitbucket: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: RemoteReleaseMetadata {
                 contributors: vec![],
             },
         };
@@ -1283,7 +1467,7 @@ mod test {
                 },
                 GiteaPullRequest {
                     title: Some(String::from("4")),
-                    number: 1000,
+                    number: 1_000,
                     merge_commit_sha: Some(String::from(
                         "4d3ffe4753b923f4d7807c490e650e6624a12074",
                     )),
@@ -1293,7 +1477,7 @@ mod test {
                 },
                 GiteaPullRequest {
                     title: Some(String::from("5")),
-                    number: 999999,
+                    number: 999_999,
                     merge_commit_sha: Some(String::from(
                         "5a55e92e5a62dc5bf9872ffb2566959fad98bd05",
                     )),
@@ -1371,14 +1555,14 @@ mod test {
                 gitea: RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: Some(String::from("4")),
-                    pr_number: Some(1000),
+                    pr_number: Some(1_000),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: Some(String::from("4")),
-                    pr_number: Some(1000),
+                    pr_number: Some(1_000),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
                 }),
@@ -1390,14 +1574,14 @@ mod test {
                 gitea: RemoteContributor {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("5")),
-                    pr_number: Some(999999),
+                    pr_number: Some(999_999),
                     pr_labels: vec![String::from("github")],
                     is_first_time: false,
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("5")),
-                    pr_number: Some(999999),
+                    pr_number: Some(999_999),
                     pr_labels: vec![String::from("github")],
                     is_first_time: false,
                 }),
@@ -1425,10 +1609,7 @@ mod test {
         ];
         assert_eq!(expected_commits, release.commits);
 
-        release
-            .gitea
-            .contributors
-            .sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+        release.gitea.contributors.sort_by_key(|a| a.pr_number);
 
         let expected_metadata = RemoteReleaseMetadata {
             contributors: vec![
@@ -1456,7 +1637,7 @@ mod test {
                 RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: Some(String::from("4")),
-                    pr_number: Some(1000),
+                    pr_number: Some(1_000),
                     pr_labels: vec![String::from("deps")],
                     is_first_time: true,
                 },
@@ -1509,6 +1690,7 @@ mod test {
             repository: Some(String::from("/root/repo")),
             submodule_commits: HashMap::new(),
             statistics: None,
+            bump_type: None,
             #[cfg(feature = "github")]
             github: RemoteReleaseMetadata {
                 contributors: vec![],
@@ -1523,6 +1705,10 @@ mod test {
             },
             #[cfg(feature = "bitbucket")]
             bitbucket: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: RemoteReleaseMetadata {
                 contributors: vec![],
             },
         };
@@ -1719,10 +1905,7 @@ mod test {
         ];
         assert_eq!(expected_commits, release.commits);
 
-        release
-            .bitbucket
-            .contributors
-            .sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+        release.bitbucket.contributors.sort_by_key(|a| a.pr_number);
 
         let expected_metadata = RemoteReleaseMetadata {
             contributors: vec![
@@ -1757,6 +1940,320 @@ mod test {
             ],
         };
         assert_eq!(expected_metadata, release.bitbucket);
+
+        Ok(())
+    }
+
+    #[cfg(feature = "azure_devops")]
+    #[test]
+    fn update_azure_devops_metadata() -> Result<()> {
+        use crate::remote::azure_devops::{
+            AzureDevOpsCommit, AzureDevOpsCommitAuthor, AzureDevOpsCommitRef,
+            AzureDevOpsPullRequest,
+        };
+
+        let mut release = Release {
+            version: None,
+            message: None,
+            extra: None,
+            commits: vec![
+                Commit::from(String::from(
+                    "1d244937ee6ceb8e0314a4a201ba93a7a61f2071 add azure devops integration",
+                )),
+                Commit::from(String::from(
+                    "21f6aa587fcb772de13f2fde0e92697c51f84162 fix azure devops integration",
+                )),
+                Commit::from(String::from(
+                    "35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973 update metadata",
+                )),
+                Commit::from(String::from(
+                    "4d3ffe4753b923f4d7807c490e650e6624a12074 do some stuff",
+                )),
+                Commit::from(String::from(
+                    "5a55e92e5a62dc5bf9872ffb2566959fad98bd05 alright",
+                )),
+                Commit::from(String::from(
+                    "6c34967147560ea09658776d4901709139b4ad66 should be fine",
+                )),
+            ],
+            commit_range: None,
+            commit_id: None,
+            timestamp: None,
+            previous: Some(Box::new(Release {
+                version: Some(String::from("1.0.0")),
+                ..Default::default()
+            })),
+            repository: Some(String::from("/root/repo")),
+            submodule_commits: HashMap::new(),
+            statistics: None,
+            bump_type: None,
+            #[cfg(feature = "github")]
+            github: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "gitlab")]
+            gitlab: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "gitea")]
+            gitea: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "bitbucket")]
+            bitbucket: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+        };
+        release.update_azure_devops_metadata(
+            vec![
+                AzureDevOpsCommit {
+                    commit_id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+                    author: Some(AzureDevOpsCommitAuthor {
+                        name: Some(String::from("orhun")),
+                        email: Some(String::from("orhun@example.com")),
+                        date: Some(String::from("2021-07-18T15:14:39+03:00")),
+                    }),
+                    committer: None,
+                },
+                AzureDevOpsCommit {
+                    commit_id: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
+                    author: Some(AzureDevOpsCommitAuthor {
+                        name: Some(String::from("orhun")),
+                        email: Some(String::from("orhun@example.com")),
+                        date: Some(String::from("2021-07-18T15:12:19+03:00")),
+                    }),
+                    committer: None,
+                },
+                AzureDevOpsCommit {
+                    commit_id: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
+                    author: Some(AzureDevOpsCommitAuthor {
+                        name: Some(String::from("nuhro")),
+                        email: Some(String::from("nuhro@example.com")),
+                        date: Some(String::from("2021-07-18T15:07:23+03:00")),
+                    }),
+                    committer: None,
+                },
+                AzureDevOpsCommit {
+                    commit_id: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
+                    author: Some(AzureDevOpsCommitAuthor {
+                        name: Some(String::from("awesome_contributor")),
+                        email: Some(String::from("awesome@example.com")),
+                        date: Some(String::from("2021-07-18T15:05:10+03:00")),
+                    }),
+                    committer: None,
+                },
+                AzureDevOpsCommit {
+                    commit_id: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
+                    author: Some(AzureDevOpsCommitAuthor {
+                        name: Some(String::from("orhun")),
+                        email: Some(String::from("orhun@example.com")),
+                        date: Some(String::from("2021-07-18T15:03:30+03:00")),
+                    }),
+                    committer: None,
+                },
+                AzureDevOpsCommit {
+                    commit_id: String::from("6c34967147560ea09658776d4901709139b4ad66"),
+                    author: Some(AzureDevOpsCommitAuthor {
+                        name: Some(String::from("someone")),
+                        email: Some(String::from("someone@example.com")),
+                        date: Some(String::from("2021-07-18T15:00:38+03:00")),
+                    }),
+                    committer: None,
+                },
+                AzureDevOpsCommit {
+                    commit_id: String::from("0c34967147560e809658776d4901709139b4ad68"),
+                    author: Some(AzureDevOpsCommitAuthor {
+                        name: Some(String::from("idk")),
+                        email: Some(String::from("idk@example.com")),
+                        date: Some(String::from("2021-07-18T15:00:01+03:00")),
+                    }),
+                    committer: None,
+                },
+                AzureDevOpsCommit {
+                    commit_id: String::from("kk34967147560e809658776d4901709139b4ad68"),
+                    author: Some(AzureDevOpsCommitAuthor {
+                        name: Some(String::from("orhun")),
+                        email: Some(String::from("orhun@example.com")),
+                        date: Some(String::from("2021-07-14T21:25:24+03:00")),
+                    }),
+                    committer: None,
+                },
+            ]
+            .into_iter()
+            .map(|v| Box::new(v) as Box<dyn RemoteCommit>)
+            .collect(),
+            vec![Box::new(AzureDevOpsPullRequest {
+                pull_request_id: 42,
+                title: Some(String::from("1")),
+                status: String::from("completed"),
+                created_by: None,
+                last_merge_commit: Some(AzureDevOpsCommitRef {
+                    commit_id: Some(String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071")),
+                }),
+                labels: vec![],
+            })],
+        )?;
+        #[allow(deprecated)]
+        let expected_commits = vec![
+            Commit {
+                id: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
+                message: String::from("add azure devops integration"),
+                azure_devops: RemoteContributor {
+                    username: Some(String::from("orhun")),
+                    pr_title: Some(String::from("1")),
+                    pr_number: Some(42),
+                    pr_labels: vec![],
+                    is_first_time: false,
+                },
+                remote: Some(RemoteContributor {
+                    username: Some(String::from("orhun")),
+                    pr_title: Some(String::from("1")),
+                    pr_number: Some(42),
+                    pr_labels: vec![],
+                    is_first_time: false,
+                }),
+                ..Default::default()
+            },
+            Commit {
+                id: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
+                message: String::from("fix azure devops integration"),
+                azure_devops: RemoteContributor {
+                    username: Some(String::from("orhun")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: false,
+                },
+                remote: Some(RemoteContributor {
+                    username: Some(String::from("orhun")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: false,
+                }),
+                ..Default::default()
+            },
+            Commit {
+                id: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
+                message: String::from("update metadata"),
+                azure_devops: RemoteContributor {
+                    username: Some(String::from("nuhro")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: false,
+                },
+                remote: Some(RemoteContributor {
+                    username: Some(String::from("nuhro")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: false,
+                }),
+                ..Default::default()
+            },
+            Commit {
+                id: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
+                message: String::from("do some stuff"),
+                azure_devops: RemoteContributor {
+                    username: Some(String::from("awesome_contributor")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: false,
+                },
+                remote: Some(RemoteContributor {
+                    username: Some(String::from("awesome_contributor")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: false,
+                }),
+                ..Default::default()
+            },
+            Commit {
+                id: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
+                message: String::from("alright"),
+                azure_devops: RemoteContributor {
+                    username: Some(String::from("orhun")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: false,
+                },
+                remote: Some(RemoteContributor {
+                    username: Some(String::from("orhun")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: false,
+                }),
+                ..Default::default()
+            },
+            Commit {
+                id: String::from("6c34967147560ea09658776d4901709139b4ad66"),
+                message: String::from("should be fine"),
+                azure_devops: RemoteContributor {
+                    username: Some(String::from("someone")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: false,
+                },
+                remote: Some(RemoteContributor {
+                    username: Some(String::from("someone")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: false,
+                }),
+                ..Default::default()
+            },
+        ];
+        assert_eq!(expected_commits, release.commits);
+
+        release
+            .azure_devops
+            .contributors
+            .sort_by_key(|a| a.pr_number);
+
+        let expected_metadata = RemoteReleaseMetadata {
+            contributors: vec![
+                RemoteContributor {
+                    username: Some(String::from("nuhro")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: true,
+                },
+                RemoteContributor {
+                    username: Some(String::from("awesome_contributor")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: true,
+                },
+                RemoteContributor {
+                    username: Some(String::from("someone")),
+                    pr_title: None,
+                    pr_number: None,
+                    pr_labels: vec![],
+                    is_first_time: true,
+                },
+                RemoteContributor {
+                    username: Some(String::from("orhun")),
+                    pr_title: Some(String::from("1")),
+                    pr_number: Some(42),
+                    pr_labels: vec![],
+                    is_first_time: false,
+                },
+            ],
+        };
+        assert_eq!(expected_metadata, release.azure_devops);
 
         Ok(())
     }

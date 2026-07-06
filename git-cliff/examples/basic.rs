@@ -4,6 +4,7 @@ use git_cliff_core::error::Result;
 
 fn main() -> Result<()> {
     let args = Opt::parse();
-    git_cliff::run(args)?;
+    let changelog = git_cliff::run(args.clone())?;
+    git_cliff::write_changelog(&args, changelog, std::io::stdout())?;
     Ok(())
 }

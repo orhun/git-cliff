@@ -12,7 +12,7 @@
 body = """
 ## What's Changed
 
-{%- if version %} in {{ version }}{%- endif -%}
+{%- if version %} in {{ version | trim_start_matches(pat="v") }}{%- endif -%}
 {% for commit in commits %}
   {% if commit.remote.pr_title -%}
     {%- set commit_message = commit.remote.pr_title -%}
@@ -29,7 +29,7 @@ body = """
 {%- if github -%}
 {% if github.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
   {% raw %}\n{% endraw -%}
-  ## New Contributors
+  ### New Contributors
 {%- endif %}\
 {% for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
   * @{{ contributor.username }} made their first contribution

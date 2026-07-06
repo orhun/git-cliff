@@ -19,6 +19,7 @@ commit_parsers = [
 ]
 protect_breaking_commits = false
 filter_commits = false
+fail_on_unmatched_commit = false
 tag_pattern = "v[0-9].*"
 
 skip_tags = "v0.1.0-beta.1"
@@ -29,6 +30,13 @@ sort_commits = "oldest"
 link_parsers = [
     { pattern = "#(\\d+)", href = "https://github.com/orhun/git-cliff/issues/$1"},
     { pattern = "RFC(\\d+)", text = "ietf-rfc$1", href = "https://datatracker.ietf.org/doc/html/rfc$1"},
+]
+processing_order = [
+    "commit_preprocessors",
+    "split_commits",
+    "conventional_commits",
+    "commit_parsers",
+    "link_parsers",
 ]
 limit_commits = 42
 recurse_submodules = false
@@ -120,6 +128,39 @@ With the configuration above, lines are parsed as conventional commits and uncon
 
 If `filter_unconventional = false`, every line will be processed as an unconventional commit, resulting in each line of
 a commit being treated as a changelog entry.
+
+### processing_order
+
+Defines a custom commit processing pipeline.
+
+If this field is omitted, **git-cliff** uses the legacy processing flow for backwards compatibility.
+
+Supported step names:
+
+- [`commit_preprocessors`](#commit_preprocessors)
+- [`split_commits`](#split_commits)
+- [`conventional_commits`](#conventional_commits)
+- [`commit_parsers`](#commit_parsers)
+- [`link_parsers`](#link_parsers)
+
+The default processing order is:
+
+```toml
+[git]
+processing_order = [
+    "commit_preprocessors",
+    "split_commits",
+    "conventional_commits",
+    "commit_parsers",
+    "link_parsers",
+]
+```
+
+:::info
+
+This is useful when you want e.g. [`split_commits`](#split_commits) to happen before parser-based filtering, so each split line is parsed independently.
+
+:::
 
 ### commit_preprocessors
 
@@ -213,6 +254,18 @@ due to any commit parser.
 
 If set to `true`, commits that are not matched by [`commit_parsers`](#commit_parsers) are filtered out.
 
+### fail_on_unmatched_commit
+
+If set to `true`, **git-cliff** will fail (return a non-zero exit code) when any commit included in the changelog is not matched by any of the configured `commit_parsers`.
+
+This option is useful to enforce that all commits are classified and prevents silently omitting unknown commit types from release notes.
+
+:::note
+
+Commits that are explicitly skipped by a parser (for example `{ message = "^revert", skip = true }`) are not considered unmatched.
+
+:::
+
 ### tag_pattern
 
 A regular expression for matching the git tags.
@@ -222,6 +275,8 @@ This value can be also overridden with using the `--tag-pattern` argument.
 ### skip_tags
 
 A regex for skip processing the matched tags.
+
+This value can be also overridden with using the `--skip-tags` argument.
 
 ### ignore_tags
 

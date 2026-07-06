@@ -1,21 +1,13 @@
 /// Common tag object that is parsed from a repository.
 ///
 /// Lightweight tags will have `None` as message.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Tag {
     /// The name of the tag
     pub name: String,
     /// The message of the tag (only if it was annotated).
     pub message: Option<String>,
 }
-
-impl PartialEq for Tag {
-	fn eq(&self, other: &Self) -> bool {
-		self.name == other.name
-	}
-}
-
-impl Eq for Tag {}
 
 #[cfg(test)]
 mod test {
@@ -48,7 +40,7 @@ mod test {
             message: Some(String::from("Initial release")),
         };
         assert_eq!(
-            format!("{:?}", tag),
+            format!("{tag:?}"),
             "Tag { name: \"v1.0\", message: Some(\"Initial release\") }"
         );
     }

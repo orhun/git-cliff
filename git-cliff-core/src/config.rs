@@ -1,7 +1,9 @@
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use std::sync::LazyLock;
 use std::{fmt, fs};
 
+use etcetera::{BaseStrategy, choose_base_strategy};
 use glob::Pattern;
 use regex::{Regex, RegexBuilder};
 use secrecy::SecretString;
@@ -9,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::embed::EmbeddedConfig;
 use crate::error::Result;
-use crate::{command, error};
+use crate::{CONFIG_FILES, DEFAULT_CONFIG, command, error};
 
 /// Default initial tag.
 const DEFAULT_INITIAL_TAG: &str = "0.1.0";
@@ -23,17 +25,15 @@ struct ManifestInfo {
     regex: Regex,
 }
 
-lazy_static::lazy_static! {
-    /// Array containing manifest information for Rust and Python projects.
-    static ref MANIFEST_INFO: Vec<ManifestInfo> = vec![
+/// Array containing manifest information for Rust and Python projects.
+static MANIFEST_INFO: LazyLock<Vec<ManifestInfo>> = LazyLock::new(|| {
+    vec![
         ManifestInfo {
             path: PathBuf::from("Cargo.toml"),
-            regex: RegexBuilder::new(
-                r"^\[(?:workspace|package)\.metadata\.git\-cliff\.",
-            )
-            .multi_line(true)
-            .build()
-            .expect("failed to build regex"),
+            regex: RegexBuilder::new(r"^\[(?:workspace|package)\.metadata\.git\-cliff\.")
+                .multi_line(true)
+                .build()
+                .expect("failed to build regex"),
         },
         ManifestInfo {
             path: PathBuf::from("pyproject.toml"),
@@ -42,9 +42,8 @@ lazy_static::lazy_static! {
                 .build()
                 .expect("failed to build regex"),
         },
-    ];
-
-}
+    ]
+});
 
 /// Configuration values.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -84,11 +83,17 @@ pub struct ChangelogConfig {
 
 /// Git configuration
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct GitConfig {
+    /// Optional processing order for commit transformation steps.
+    ///
+    /// If unset, the legacy processing behavior is preserved for backwards
+    /// compatibility.
+    pub processing_order: Option<Vec<ProcessingStep>>,
     /// Parse commits according to the conventional commits specification.
     pub conventional_commits: bool,
     /// Require all commits to be conventional.
-    /// Takes precedence over filter_unconventional.
+    /// Takes precedence over `filter_unconventional`.
     pub require_conventional: bool,
     /// Exclude commits that do not match the conventional commits specification
     /// from the changelog.
@@ -110,13 +115,15 @@ pub struct GitConfig {
     pub link_parsers: Vec<LinkParser>,
     /// Exclude commits that are not matched by any commit parser.
     pub filter_commits: bool,
+    /// Fail on a commit that is not matched by any commit parser.
+    pub fail_on_unmatched_commit: bool,
     /// Regex to select git tags that represent releases.
     #[serde(with = "serde_regex", default)]
     pub tag_pattern: Option<Regex>,
     /// Regex to select git tags that do not represent proper releases.
     #[serde(with = "serde_regex", default)]
     pub skip_tags: Option<Regex>,
-    /// Regex to exclude git tags after applying the tag_pattern.
+    /// Regex to exclude git tags after applying the `tag_pattern`.
     #[serde(with = "serde_regex", default)]
     pub ignore_tags: Option<Regex>,
     /// Regex to count matched tags.
@@ -140,6 +147,25 @@ pub struct GitConfig {
     /// Exclude unrelated commits with changes at the specified paths.
     #[serde(with = "serde_pattern", default)]
     pub exclude_paths: Vec<Pattern>,
+}
+
+/// Processing steps for commits.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProcessingStep {
+    /// An array of regex based parsers to modify commit messages prior to
+    /// further processing.
+    CommitPreprocessors,
+    /// Split commits on newlines, treating each line as an individual commit.
+    SplitCommits,
+    /// Parse commits according to the conventional commits specification.
+    ConventionalCommits,
+    /// An array of regex based parsers for extracting data from the commit
+    /// message.
+    CommitParsers,
+    /// An array of regex based parsers to extract links from the commit
+    /// message and add them to the commit's context.
+    LinkParsers,
 }
 
 /// Serialize and deserialize implementation for [`glob::Pattern`].
@@ -175,6 +201,9 @@ mod serde_pattern {
 /// Remote configuration.
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct RemoteConfig {
+    /// Run in offline mode.
+    #[serde(default)]
+    pub offline: bool,
     /// GitHub remote.
     #[serde(default)]
     pub github: Remote,
@@ -187,10 +216,14 @@ pub struct RemoteConfig {
     /// Bitbucket remote.
     #[serde(default)]
     pub bitbucket: Remote,
+    /// Azure DevOps remote.
+    #[serde(default)]
+    pub azure_devops: Remote,
 }
 
 impl RemoteConfig {
     /// Returns `true` if any remote is set.
+    #[must_use]
     pub fn is_any_set(&self) -> bool {
         #[cfg(feature = "github")]
         if self.github.is_set() {
@@ -206,6 +239,10 @@ impl RemoteConfig {
         }
         #[cfg(feature = "bitbucket")]
         if self.bitbucket.is_set() {
+            return true;
+        }
+        #[cfg(feature = "azure_devops")]
+        if self.azure_devops.is_set() {
             return true;
         }
         false
@@ -228,6 +265,10 @@ impl RemoteConfig {
         #[cfg(feature = "bitbucket")]
         {
             self.bitbucket.native_tls = Some(true);
+        }
+        #[cfg(feature = "azure_devops")]
+        {
+            self.azure_devops.native_tls = Some(true);
         }
     }
 }
@@ -282,6 +323,7 @@ impl Remote {
     }
 
     /// Returns `true` if the remote has an owner and repo.
+    #[must_use]
     pub fn is_set(&self) -> bool {
         !self.owner.is_empty() && !self.repo.is_empty()
     }
@@ -344,6 +386,15 @@ pub struct Bump {
     /// `commit type` according to the spec is only `[a-zA-Z]+`
     pub custom_minor_increment_regex: Option<String>,
 
+    /// Configure a regex pattern for commit types that should not increment.
+    ///
+    /// This will check only the type of the commit against the given pattern.
+    ///
+    /// ### Note
+    ///
+    /// `commit type` according to the spec is only `[a-zA-Z]+`
+    pub no_increment_regex: Option<String>,
+
     /// Force to always bump in major, minor or patch.
     pub bump_type: Option<BumpType>,
 }
@@ -352,12 +403,13 @@ impl Bump {
     /// Returns the initial tag.
     ///
     /// This function also logs the returned value.
+    #[must_use]
     pub fn get_initial_tag(&self) -> String {
         if let Some(tag) = self.initial_tag.clone() {
-            warn!("No releases found, using initial tag '{tag}' as the next version.");
+            tracing::warn!("No releases found, using initial tag '{tag}' as the next version");
             tag
         } else {
-            warn!("No releases found, using {DEFAULT_INITIAL_TAG} as the next version.");
+            tracing::warn!("No releases found, using {DEFAULT_INITIAL_TAG} as the next version");
             DEFAULT_INITIAL_TAG.into()
         }
     }
@@ -411,7 +463,7 @@ impl TextProcessor {
             *rendered = self.pattern.replace_all(rendered, text).to_string();
         } else if let Some(command) = &self.replace_command {
             if self.pattern.is_match(rendered) {
-                *rendered = command::run(command, Some(rendered.to_string()), command_envs)?;
+                *rendered = command::run(command, Some(rendered.clone()), command_envs)?;
             }
         }
         Ok(())
@@ -469,6 +521,45 @@ impl Config {
             .build()?
             .try_deserialize()?)
     }
+
+    /// Find the path of the config file.
+    ///
+    /// If the config file is not found in its standard locations, [`None`] is returned.
+    #[must_use]
+    pub fn retrieve_user_config_path() -> Option<PathBuf> {
+        // cannot panic - see https://github.com/lunacookies/etcetera/issues/42
+        let strategy = choose_base_strategy()
+            .expect("cannot determine current OS's default strategy (layout)");
+        for supported_path in [
+            strategy.config_dir().join("git-cliff").join(DEFAULT_CONFIG),
+            // paths for backwards compatibility
+            #[cfg(target_os = "macos")]
+            strategy
+                .home_dir()
+                .to_path_buf()
+                .join("Library/Application Support/git-cliff")
+                .join(DEFAULT_CONFIG),
+        ]
+        .iter()
+        {
+            if supported_path.exists() {
+                #[allow(clippy::unnecessary_debug_formatting)]
+                {
+                    tracing::debug!("Using configuration file from: {supported_path:?}");
+                }
+                return Some(supported_path.clone());
+            }
+        }
+        None
+    }
+
+    /// Returns the first valid configuration file found in `dir`.
+    pub fn retrieve_project_config_path(dir: &Path) -> Option<PathBuf> {
+        CONFIG_FILES.iter().find_map(|file| {
+            let path = dir.join(file);
+            if path.is_file() { Some(path) } else { None }
+        })
+    }
 }
 
 impl FromStr for Config {
@@ -495,23 +586,25 @@ impl FromStr for Config {
 
 #[cfg(test)]
 mod test {
-    use std::env;
+    use std::{env, fs};
 
     use pretty_assertions::assert_eq;
+    use temp_dir::TempDir;
 
     use super::*;
+
     #[test]
     fn load() -> Result<()> {
+        const FOOTER_VALUE: &str = "test";
+        const TAG_PATTERN_VALUE: &str = ".*[0-9].*";
+        const IGNORE_TAGS_VALUE: &str = "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+";
+
         let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .parent()
             .expect("parent directory not found")
             .to_path_buf()
             .join("config")
             .join(crate::DEFAULT_CONFIG);
-
-        const FOOTER_VALUE: &str = "test";
-        const TAG_PATTERN_VALUE: &str = ".*[0-9].*";
-        const IGNORE_TAGS_VALUE: &str = "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+";
 
         unsafe {
             env::set_var("GIT_CLIFF__CHANGELOG__FOOTER", FOOTER_VALUE);
@@ -549,5 +642,30 @@ mod test {
         assert!(!Remote::new("", "test").is_set());
         assert!(!Remote::new("test", "").is_set());
         assert!(!Remote::new("", "").is_set());
+    }
+
+    #[test]
+    fn find_project_config_file() -> Result<()> {
+        let dir = TempDir::with_prefix("git-cliff-").expect("failed to create temp dir");
+
+        // Check config files in order of priority.
+        // cliff.toml has the highest priority to preserve
+        // Backward compatibility cliff.toml > .cliff.toml > ... > .config/cliff.toml
+        assert_eq!(Config::retrieve_project_config_path(dir.path()), None);
+
+        fs::create_dir(dir.path().join(".config"))?;
+        fs::write(dir.path().join(".config/cliff.toml"), "")?;
+        assert_eq!(
+            Config::retrieve_project_config_path(dir.path()),
+            Some(dir.path().join(".config/cliff.toml")),
+        );
+
+        fs::write(dir.path().join("cliff.toml"), "")?;
+        assert_eq!(
+            Config::retrieve_project_config_path(dir.path()),
+            Some(dir.path().join("cliff.toml")),
+        );
+
+        Ok(())
     }
 }

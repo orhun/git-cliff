@@ -1,26 +1,30 @@
-use std::cmp::Reverse;
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::{self, Path, PathBuf};
 use std::result::Result as StdResult;
+use std::sync::LazyLock;
 
 use git2::{
     BranchType, Commit, DescribeOptions, Oid, Repository as GitRepository, Sort, TreeWalkMode,
     Worktree,
 };
 use glob::Pattern;
-use indexmap::IndexMap;
-use lazy_regex::{Lazy, Regex, lazy_regex};
+use regex::Regex;
 use url::Url;
 
+use crate::commit::CommitStatistics;
 use crate::config::Remote;
 use crate::error::{Error, Result};
 use crate::tag::Tag;
+use crate::tagged_commit::TaggedCommits;
 
 /// Regex for replacing the signature part of a tag message.
-static TAG_SIGNATURE_REGEX: Lazy<Regex> = lazy_regex!(
-    // https://git-scm.com/docs/gitformat-signature#_description
-    r"(?s)-----BEGIN (PGP|SSH|SIGNED) (SIGNATURE|MESSAGE)-----(.*?)-----END (PGP|SSH|SIGNED) (SIGNATURE|MESSAGE)-----"
-);
+static TAG_SIGNATURE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+        // https://git-scm.com/docs/gitformat-signature#_description
+        r"(?s)-----BEGIN (PGP|SSH|SIGNED) (SIGNATURE|MESSAGE)-----(.*?)-----END (PGP|SSH|SIGNED) (SIGNATURE|MESSAGE)-----"
+    )
+    .expect("valid git tag signature regex")
+});
 
 /// Name of the cache file for changed files.
 const CHANGED_FILES_CACHE: &str = "changed_files_cache";
@@ -40,38 +44,79 @@ pub struct Repository {
 pub struct SubmoduleRange {
     /// Repository object to which this range belongs.
     pub repository: Repository,
-    /// Commit range in "<first_submodule_commit>..<last_submodule_commit>" or
-    /// "<last_submodule_commit>" format.
+    /// Commit range in "FIRST..LAST" or "LAST" format, where FIRST is
+    /// the first submodule commit and LAST is the last submodule commit.
     pub range: String,
 }
 
 impl Repository {
-    /// Initializes (opens) the repository.
-    pub fn init(path: PathBuf) -> Result<Self> {
-        if path.exists() {
-            let inner = GitRepository::discover(&path).or_else(|err| {
-                let jujutsu_path = path.join(".jj").join("repo").join("store").join("git");
-                if jujutsu_path.exists() {
-                    GitRepository::open_bare(&jujutsu_path)
+    /// Opens a repository from the given path.
+    ///
+    /// If `search_parents` is true, it will traverse up through parent
+    /// directories to find a repository.
+    fn open(path: PathBuf, search_parents: bool) -> Result<Self> {
+        if !path.exists() {
+            return Err(Error::IoError(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("repository path not found: {}", path.display()),
+            )));
+        }
+
+        let inner = GitRepository::open(&path)
+            .or_else(|err| {
+                // Optionally search for a Jujutsu repository layout
+                let mut current = Some(path.as_path());
+                while let Some(dir) = current {
+                    let jujutsu_path = dir.join(".jj/repo/store/git");
+                    if jujutsu_path.exists() {
+                        return GitRepository::open_bare(&jujutsu_path);
+                    }
+                    // Only continue searching if enabled
+                    if !search_parents {
+                        break;
+                    }
+                    current = dir.parent();
+                }
+                Err(err)
+            })
+            // If still not found, try discover if traversal is enabled
+            .or_else(|err| {
+                if search_parents {
+                    GitRepository::discover(&path)
                 } else {
                     Err(err)
                 }
             })?;
-            let changed_files_cache_path = inner
-                .path()
-                .join(env!("CARGO_PKG_NAME"))
-                .join(CHANGED_FILES_CACHE);
-            Ok(Self {
-                inner,
-                path,
-                changed_files_cache_path,
-            })
-        } else {
-            Err(Error::IoError(io::Error::new(
-                io::ErrorKind::NotFound,
-                "repository path not found",
-            )))
-        }
+
+        let changed_files_cache_path = inner
+            .path()
+            .join(env!("CARGO_PKG_NAME"))
+            .join(CHANGED_FILES_CACHE);
+
+        Ok(Self {
+            inner,
+            path,
+            changed_files_cache_path,
+        })
+    }
+
+    /// Discover a repository from the given path by traversing up through
+    /// parent directories.
+    ///
+    /// It first looks for a Git repository using [`GitRepository::discover`].
+    /// If no Git repository is found, it checks for a Jujutsu repository layout
+    /// (`.jj/repo/store/git`) in this directory and its parents.
+    pub fn discover(path: PathBuf) -> Result<Self> {
+        Self::open(path, true)
+    }
+
+    /// Attempts to open an already-existing repository at the given path.
+    ///
+    /// It tries to open the repository as a normal or bare Git repository located
+    /// exactly at `path`. If that fails, it falls back to checking for a Jujutsu
+    /// repository layout (`.jj/repo/store/git`) **only in the specified directory**.
+    pub fn init(path: PathBuf) -> Result<Self> {
+        Self::open(path, false)
     }
 
     /// Returns the path of the repository.
@@ -92,6 +137,7 @@ impl Repository {
     ///
     /// In case of a submodule this is the relative path to the toplevel
     /// repository.
+    #[must_use]
     pub fn path(&self) -> &PathBuf {
         &self.path
     }
@@ -134,25 +180,58 @@ impl Repository {
         }
 
         Self::set_commit_range(&mut revwalk, range).map_err(|e| {
-            Error::SetCommitRangeError(
-                range.map(String::from).unwrap_or_else(|| "?".to_string()),
-                e,
-            )
+            Error::SetCommitRangeError(range.map_or_else(|| "?".to_string(), String::from), e)
         })?;
         let mut commits: Vec<Commit> = revwalk
-            .filter_map(|id| id.ok())
+            .filter_map(StdResult::ok)
             .filter_map(|id| self.inner.find_commit(id).ok())
             .collect();
         if include_path.is_some() || exclude_path.is_some() {
-            let include_patterns = include_path
-                .map(|patterns| patterns.into_iter().map(Self::normalize_pattern).collect());
-            let exclude_patterns = exclude_path
-                .map(|patterns| patterns.into_iter().map(Self::normalize_pattern).collect());
+            let include_patterns = include_path.map(|patterns| {
+                patterns
+                    .into_iter()
+                    .map(Self::normalize_pattern)
+                    .collect::<Vec<_>>()
+            });
+            let exclude_patterns = exclude_path.map(|patterns| {
+                patterns
+                    .into_iter()
+                    .map(Self::normalize_pattern)
+                    .collect::<Vec<_>>()
+            });
             commits.retain(|commit| {
-                self.should_retain_commit(commit, &include_patterns, &exclude_patterns)
+                self.should_retain_commit(
+                    commit,
+                    include_patterns.as_ref(),
+                    exclude_patterns.as_ref(),
+                )
             });
         }
         Ok(commits)
+    }
+
+    /// Returns diff statistics for a single commit.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the commit tree, parent tree, diff, or diff
+    /// statistics cannot be read.
+    pub fn commit_statistics(&self, commit: &Commit<'_>) -> Result<CommitStatistics> {
+        let current_tree = commit.tree()?;
+        let previous_tree = commit
+            .parent(0)
+            .ok()
+            .map(|parent| parent.tree())
+            .transpose()?;
+        let diff =
+            self.inner
+                .diff_tree_to_tree(previous_tree.as_ref(), Some(&current_tree), None)?;
+        let stats = diff.stats()?;
+        Ok(CommitStatistics {
+            files_changed: stats.files_changed(),
+            additions: stats.insertions(),
+            deletions: stats.deletions(),
+        })
     }
 
     /// Returns submodule repositories for a given commit range.
@@ -168,8 +247,8 @@ impl Repository {
     /// [`Repository::commits`].
     pub fn submodules_range(
         &self,
-        old_commit: Option<Commit<'_>>,
-        new_commit: Commit<'_>,
+        old_commit: Option<&Commit<'_>>,
+        new_commit: &Commit<'_>,
     ) -> Result<Vec<SubmoduleRange>> {
         let old_tree = old_commit.and_then(|commit| commit.tree().ok());
         let new_tree = new_commit.tree().ok();
@@ -188,19 +267,23 @@ impl Repository {
                 Some(new_file_id.to_string())
             } else {
                 // submodule updated
-                Some(format!("{}..{}", old_file_id, new_file_id))
+                Some(format!("{old_file_id}..{new_file_id}"))
             };
-            trace!("Release commit range for submodules: {:?}", range);
+            tracing::trace!("Release commit range for submodules: {range:?}");
             delta.new_file().path().and_then(Path::to_str).zip(range)
         });
         // iterate through all path diffs and find corresponding submodule if
         // possible
         let submodule_range = before_and_after_deltas.filter_map(|(path, range)| {
+            // NOTE:
+            // libgit2 recommends using `git_submodule_open`, whereas `git_repository_discover` is
+            // used here. Since it seems to be working fine for now, we don't think we
+            // should change this. Just leaving this message as a reminder.
             let repository = self
                 .inner
                 .find_submodule(path)
                 .ok()
-                .and_then(|submodule| Self::init(submodule.path().into()).ok());
+                .and_then(|submodule| Self::discover(submodule.path().into()).ok());
             repository.map(|repository| SubmoduleRange { repository, range })
         });
         Ok(submodule_range.collect())
@@ -211,10 +294,10 @@ impl Repository {
     /// It removes the leading `./` and adds `**` to the end if the pattern is a
     /// directory.
     fn normalize_pattern(pattern: Pattern) -> Pattern {
-        let star_added = match pattern.as_str().chars().last() {
-            Some('/' | '\\') => Pattern::new(&format!("{pattern}**"))
-                .expect("failed to add '**' to the end of glob"),
-            _ => pattern,
+        let star_added = if pattern.as_str().ends_with(path::MAIN_SEPARATOR) {
+            Pattern::new(&format!("{pattern}**")).expect("failed to add '**' to the end of glob")
+        } else {
+            pattern
         };
         match star_added.as_str().strip_prefix("./") {
             Some(stripped) => {
@@ -231,8 +314,8 @@ impl Repository {
     fn should_retain_commit(
         &self,
         commit: &Commit,
-        include_patterns: &Option<Vec<Pattern>>,
-        exclude_patterns: &Option<Vec<Pattern>>,
+        include_patterns: Option<&Vec<Pattern>>,
+        exclude_patterns: Option<&Vec<Pattern>>,
     ) -> bool {
         let changed_files = self.commit_changed_files(commit);
         match (include_patterns, exclude_patterns) {
@@ -242,8 +325,8 @@ impl Repository {
                 changed_files.iter().any(|path| {
                     include_pattern
                         .iter()
-                        .any(|pattern| pattern.matches_path(path)) &&
-                        !exclude_pattern
+                        .any(|pattern| pattern.matches_path(path))
+                        && !exclude_pattern
                             .iter()
                             .any(|pattern| pattern.matches_path(path))
                 })
@@ -306,11 +389,17 @@ impl Repository {
                     cache_key,
                     v,
                 ) {
-                    error!("Failed to set cache for repo {:?}: {e}", self.path);
+                    #[allow(clippy::unnecessary_debug_formatting)]
+                    {
+                        tracing::error!("Failed to set cache for repo {:?}: {e}", self.path);
+                    }
                 }
             }
             Err(e) => {
-                error!("Failed to serialize cache for repo {:?}: {e}", self.path);
+                #[allow(clippy::unnecessary_debug_formatting)]
+                {
+                    tracing::error!("Failed to serialize cache for repo {:?}: {e}", self.path);
+                }
             }
         }
 
@@ -363,6 +452,7 @@ impl Repository {
     /// Returns the current tag.
     ///
     /// It is the same as running `git describe --tags`
+    #[must_use]
     pub fn current_tag(&self) -> Option<Tag> {
         self.inner
             .describe(DescribeOptions::new().describe_tags())
@@ -378,6 +468,7 @@ impl Repository {
     /// Returns the tag object of the given name.
     ///
     /// If given name doesn't exist, it still returns `Tag` with the given name.
+    #[must_use]
     pub fn resolve_tag(&self, name: &str) -> Tag {
         match self
             .inner
@@ -398,6 +489,7 @@ impl Repository {
     }
 
     /// Returns the commit object of the given ID.
+    #[must_use]
     pub fn find_commit(&self, id: &str) -> Option<Commit<'_>> {
         if let Ok(oid) = Oid::from_str(id) {
             if let Ok(commit) = self.inner.find_commit(oid) {
@@ -416,8 +508,8 @@ impl Repository {
     fn should_include_tag(&self, head_commit: &Commit, tag_commit: &Commit) -> Result<bool> {
         Ok(self
             .inner
-            .graph_descendant_of(head_commit.id(), tag_commit.id())? ||
-            head_commit.id() == tag_commit.id())
+            .graph_descendant_of(head_commit.id(), tag_commit.id())?
+            || head_commit.id() == tag_commit.id())
     }
 
     /// Parses and returns a commit-tag map.
@@ -444,32 +536,39 @@ impl Repository {
                     continue;
                 }
 
-                tags.push((commit, Tag {
-                    name,
-                    message: None,
-                }));
+                tags.push((
+                    commit,
+                    Tag {
+                        name,
+                        message: None,
+                    },
+                ));
             } else if let Some(tag) = obj.as_tag() {
-                if let Some(commit) = tag
-                    .target()
+                // Use peel to resolve nested tags to the final commit
+                if let Some(commit) = obj
+                    .peel(git2::ObjectType::Commit)
                     .ok()
-                    .and_then(|target| target.into_commit().ok())
+                    .and_then(|o| o.into_commit().ok())
                 {
                     if use_branch_tags && !self.should_include_tag(&head_commit, &commit)? {
                         continue;
                     }
-                    tags.push((commit, Tag {
-                        name: tag.name().map(String::from).unwrap_or(name),
-                        message: tag
-                            .message()
-                            .map(|msg| TAG_SIGNATURE_REGEX.replace(msg, "").trim().to_owned()),
-                    }));
+                    tags.push((
+                        commit,
+                        Tag {
+                            name: tag.name().map(String::from).unwrap_or(name),
+                            message: tag
+                                .message()
+                                .map(|msg| TAG_SIGNATURE_REGEX.replace(msg, "").trim().to_owned()),
+                        },
+                    ));
                 }
             }
         }
         if !topo_order {
-            tags.sort_by(|a, b| a.0.time().seconds().cmp(&b.0.time().seconds()));
+            tags.sort_by_key(|a| a.0.time().seconds());
         }
-        Ok(TaggedCommits::new(self, tags)?)
+        TaggedCommits::new(self, tags)
     }
 
     /// Returns the remote of the upstream repository.
@@ -498,7 +597,7 @@ impl Repository {
                     .url()
                     .ok_or_else(|| Error::RepoError(String::from("failed to get the remote URL")))?
                     .to_string();
-                trace!("Upstream URL: {url}");
+                tracing::trace!("Upstream URL: {url}");
                 return find_remote(&url);
             }
         }
@@ -508,146 +607,9 @@ impl Repository {
     }
 }
 
-/// Stores which commits are tagged with which tags.
-#[derive(Debug)]
-pub struct TaggedCommits<'a> {
-    /// All the commits in the repository.
-    pub commits: IndexMap<String, Commit<'a>>,
-    /// Commit ID to tag map.
-    tags: IndexMap<String, Tag>,
-    /// List of tags' commit indexes. Points into `commits`.
-    ///
-    /// Sorted in reverse order, meaning the first element is the latest tag.
-    ///
-    /// Used for lookups.
-    tag_indexes: Vec<usize>,
-}
-
-impl<'a> TaggedCommits<'a> {
-    fn new(repository: &'a Repository, tags: Vec<(Commit<'a>, Tag)>) -> Result<Self> {
-        let commits = repository.commits(None, None, None, false)?;
-        let commits: IndexMap<_, _> = commits
-            .into_iter()
-            .map(|c| (c.id().to_string(), c))
-            .collect();
-        let mut tag_ids: Vec<_> = tags
-            .iter()
-            .filter_map(|(commit, _tag)| {
-                let id = commit.id().to_string();
-                commits.get_index_of(&id)
-            })
-            .collect();
-        tag_ids.sort_by_key(|idx| Reverse(*idx));
-        let tags = tags
-            .into_iter()
-            .map(|(commit, tag)| (commit.id().to_string(), tag))
-            .collect();
-        Ok(Self {
-            commits,
-            tag_indexes: tag_ids,
-            tags,
-        })
-    }
-
-    /// Returns the number of tags.
-    pub fn len(&self) -> usize {
-        self.tags.len()
-    }
-
-    /// Returns `true` if there are no tags.
-    pub fn is_empty(&self) -> bool {
-        self.tags.is_empty()
-    }
-
-    /// Returns an iterator over all the tags.
-    pub fn tags(&self) -> impl Iterator<Item = &Tag> {
-        self.tags.iter().map(|(_, tag)| tag)
-    }
-
-    /// Returns the last tag.
-    pub fn last(&self) -> Option<&Tag> {
-        self.tags().last()
-    }
-
-    /// Returns the tag of the given commit.
-    ///
-    /// Note that this only searches for an exact match.
-    /// For a more general search, use [`get_closest`](Self::get_closest)
-    /// instead.
-    pub fn get(&self, commit: &str) -> Option<&Tag> {
-        self.tags.get(commit)
-    }
-
-    /// Returns the tag at the given index.
-    ///
-    /// The index can be calculated with `tags().position()`.
-    pub fn get_index(&self, idx: usize) -> Option<&Tag> {
-        self.tags.get_index(idx).map(|(_, tag)| tag)
-    }
-
-    /// Returns the tag closest to the given commit.
-    pub fn get_closest(&self, commit: &str) -> Option<&Tag> {
-        // Try exact match first.
-        if let Some(tagged) = self.get(commit) {
-            return Some(tagged);
-        }
-
-        let index = self.commits.get_index_of(commit)?;
-        let tag_index = *self.tag_indexes.iter().find(|tag_idx| index >= **tag_idx)?;
-        self.get_tag_by_id(tag_index)
-    }
-
-    fn get_tag_by_id(&self, id: usize) -> Option<&Tag> {
-        let (commit_of_tag, _) = self.commits.get_index(id)?;
-        self.tags.get(commit_of_tag)
-    }
-
-    /// Returns the commit of the given tag.
-    pub fn get_commit(&self, tag_name: &str) -> Option<&str> {
-        self.tags
-            .iter()
-            .find(|(_, t)| t.name == tag_name)
-            .map(|(commit, _)| commit.as_str())
-    }
-
-    /// Returns `true` if the given tag exists.
-    pub fn contains_commit(&self, commit: &str) -> bool {
-        self.tags.contains_key(commit)
-    }
-
-    /// Inserts a new tagged commit.
-    pub fn insert(&mut self, commit: String, tag: Tag) {
-        if let Some(index) = self.commits.get_index_of(&commit) {
-            if let Err(idx) = self.binary_search(index) {
-                self.tag_indexes.insert(idx, index);
-            }
-        }
-        self.tags.insert(commit, tag);
-    }
-
-    /// Retains only the tags specified by the predicate.
-    pub fn retain(&mut self, mut f: impl FnMut(&Tag) -> bool) {
-        self.tag_indexes.retain(|&idx| {
-            let panic_msg = "invalid TaggedCommits state";
-            let (commit_of_tag, _) = self.commits.get_index(idx).expect(panic_msg);
-            let tag = self.tags.get(commit_of_tag).expect(panic_msg);
-            let retain = f(tag);
-            if !retain {
-                self.tags.shift_remove(commit_of_tag);
-            }
-            retain
-        });
-    }
-
-    fn binary_search(&self, index: usize) -> std::result::Result<usize, usize> {
-        self.tag_indexes
-            .binary_search_by_key(&Reverse(index), |tag_idx| Reverse(*tag_idx))
-    }
-}
-
 fn find_remote(url: &str) -> Result<Remote> {
     url_path_segments(url).or_else(|err| {
-        if url.contains("@") && url.contains(":") && url.contains("/") {
+        if url.contains('@') && url.contains(':') && url.contains('/') {
             ssh_path_segments(url)
         } else {
             Err(err)
@@ -659,7 +621,9 @@ fn find_remote(url: &str) -> Result<Remote> {
 ///
 /// This function expects the URL to be in the following format:
 ///
-/// > https://hostname/query/path.git
+/// ```text
+/// https://hostname/query/path.git
+/// ```
 fn url_path_segments(url: &str) -> Result<Remote> {
     let parsed_url = Url::parse(url.strip_suffix(".git").unwrap_or(url))?;
     let segments: Vec<&str> = parsed_url
@@ -673,8 +637,8 @@ fn url_path_segments(url: &str) -> Result<Remote> {
         )));
     };
     Ok(Remote {
-        owner: owner.to_string(),
-        repo: repo.to_string(),
+        owner: (*owner).to_string(),
+        repo: (*repo).to_string(),
         token: None,
         is_custom: false,
         api_url: None,
@@ -691,14 +655,14 @@ fn ssh_path_segments(url: &str) -> Result<Remote> {
     let [_, owner_repo, ..] = url
         .strip_suffix(".git")
         .unwrap_or(url)
-        .split(":")
+        .split(':')
         .collect::<Vec<_>>()[..]
     else {
         return Err(Error::RepoError(String::from(
             "failed to get the owner and repo from ssh remote (:)",
         )));
     };
-    let [owner, repo] = owner_repo.split("/").collect::<Vec<_>>()[..] else {
+    let [owner, repo] = owner_repo.split('/').collect::<Vec<_>>()[..] else {
         return Err(Error::RepoError(String::from(
             "failed to get the owner and repo from ssh remote (/)",
         )));
@@ -716,7 +680,7 @@ fn ssh_path_segments(url: &str) -> Result<Remote> {
 #[cfg(test)]
 mod test {
     use std::process::Command;
-    use std::{env, fs, str};
+    use std::{env, fs, io, str};
 
     use temp_dir::TempDir;
 
@@ -760,7 +724,7 @@ mod test {
     }
 
     fn get_repository() -> Result<Repository> {
-        Repository::init(
+        Repository::discover(
             PathBuf::from(env!("CARGO_MANIFEST_DIR"))
                 .parent()
                 .expect("parent directory not found")
@@ -850,6 +814,34 @@ mod test {
     }
 
     #[test]
+    fn git_nested_tags() -> Result<()> {
+        let (repo, temp_dir) = create_temp_repo();
+        let path = temp_dir.path();
+
+        let commit = create_commit_with_files(&repo, vec![("initial.txt", "initial content")]);
+
+        Command::new("git")
+            .args(["tag", "-a", "v1.0.0-staging", "-m", "s"])
+            .current_dir(path)
+            .output()?;
+
+        // nested tag: v1.0.0-stable -> v1.0.0-staging -> commit
+        Command::new("git")
+            .args(["tag", "-a", "v1.0.0-stable", "-m", "s", "v1.0.0-staging"])
+            .current_dir(path)
+            .output()?;
+
+        let tags = repo.tags(&Some(Regex::new("v1.0.0-stable")?), false, false)?;
+        assert_eq!(
+            tags.get(&commit.id().to_string())
+                .expect("nested tag should resolve to commit")
+                .name,
+            "v1.0.0-stable"
+        );
+        Ok(())
+    }
+
+    #[test]
     fn git_upstream_remote() -> Result<()> {
         let repository = get_repository()?;
         let remote = repository.upstream_remote()?;
@@ -912,9 +904,10 @@ mod test {
             .current_dir(temp_dir.path())
             .output()
             .expect("failed to execute git init");
-        assert!(output.status.success(), "git init failed {:?}", output);
+        assert!(output.status.success(), "git init failed {output:?}");
 
-        let repo = Repository::init(temp_dir.path().to_path_buf()).expect("failed to init repo");
+        let repo =
+            Repository::discover(temp_dir.path().to_path_buf()).expect("failed to init repo");
         let output = Command::new("git")
             .args(["config", "user.email", "test@gmail.com"])
             .current_dir(temp_dir.path())
@@ -922,8 +915,7 @@ mod test {
             .expect("failed to execute git config user.email");
         assert!(
             output.status.success(),
-            "git config user.email failed {:?}",
-            output
+            "git config user.email failed {output:?}",
         );
 
         let output = Command::new("git")
@@ -933,15 +925,28 @@ mod test {
             .expect("failed to execute git config user.name");
         assert!(
             output.status.success(),
-            "git config user.name failed {:?}",
-            output
+            "git config user.name failed {output:?}",
         );
 
         (repo, temp_dir)
     }
 
     #[test]
-    fn open_jujutsu_repo() {
+    fn repository_path_not_found() {
+        let path = PathBuf::from("/this/path/should/not/exist/123456789");
+        let result = Repository::discover(path.clone());
+        assert!(result.is_err());
+        match result {
+            Err(Error::IoError(err)) => {
+                assert_eq!(err.kind(), io::ErrorKind::NotFound);
+                assert!(err.to_string().contains("repository path not found"));
+            }
+            _ => panic!("expected IoError(NotFound)"),
+        }
+    }
+
+    #[test]
+    fn discover_jujutsu_repo() {
         let (repo, _temp_dir) = create_temp_repo();
         // working copy is the directory that contains the .git directory:
         let working_copy = repo.path;
@@ -952,6 +957,76 @@ mod test {
             .current_dir(&working_copy)
             .status()
             .expect("failed to make git repo non-bare");
+        // Move the Git repo into jj
+        let store = working_copy.join(".jj").join("repo").join("store");
+        fs::create_dir_all(&store).expect("failed to create dir");
+        fs::rename(working_copy.join(".git"), store.join("git")).expect("failed to move git repo");
+
+        // Open repo from working copy, that contains the .jj directory
+        let repo = Repository::discover(working_copy).expect("failed to init repo");
+
+        // macOS canonical path for temp directories is in /private
+        // libgit2 forces the path to be canonical regardless of what we pass in
+        if repo.inner.path().starts_with("/private") {
+            assert_eq!(
+                repo.inner.path().strip_prefix("/private"),
+                store.join("git").strip_prefix("/"),
+                "open git repo in .jj/repo/store/"
+            );
+        } else {
+            assert_eq!(
+                repo.inner.path(),
+                store.join("git"),
+                "open git repo in .jj/repo/store/"
+            );
+        }
+    }
+
+    #[test]
+    fn propagate_error_if_no_repo_found() {
+        let temp_dir = TempDir::with_prefix("git-cliff-").expect("failed to create temp dir");
+
+        let path = temp_dir.path().to_path_buf();
+
+        let result = Repository::discover(path.clone());
+
+        assert!(result.is_err());
+        if let Err(error) = result {
+            assert!(
+                format!("{error:?}").contains(
+                    format!("could not find repository at '{}'", path.display()).as_str()
+                )
+            );
+        }
+    }
+
+    #[test]
+    fn repository_path_does_not_exist() {
+        let path = PathBuf::from("/this/path/should/not/exist/123456789");
+        let result = Repository::init(path.clone());
+        assert!(result.is_err());
+        match result {
+            Err(Error::IoError(err)) => {
+                assert_eq!(err.kind(), io::ErrorKind::NotFound);
+                assert!(err.to_string().contains("repository path not found"));
+            }
+            _ => panic!("expected IoError(NotFound)"),
+        }
+    }
+
+    #[test]
+    fn open_jujutsu_repo() {
+        let (repo, _temp_dir) = create_temp_repo();
+        // working copy is the directory that contains the .git directory:
+        let working_copy = repo.path;
+
+        // Make the Git repository bare and set HEAD
+        Command::new("git")
+            .args(["config", "core.bare", "true"])
+            .current_dir(&working_copy)
+            .status()
+            .expect("failed to make git repo non-bare");
+
         // Move the Git repo into jj
         let store = working_copy.join(".jj").join("repo").join("store");
         fs::create_dir_all(&store).expect("failed to create dir");
@@ -978,7 +1053,7 @@ mod test {
     }
 
     #[test]
-    fn propagate_error_if_no_repo_found() {
+    fn propagate_error_if_no_repo_exist() {
         let temp_dir = TempDir::with_prefix("git-cliff-").expect("failed to create temp dir");
 
         let path = temp_dir.path().to_path_buf();
@@ -991,7 +1066,7 @@ mod test {
                 format!("{error:?}").contains(
                     format!("could not find repository at '{}'", path.display()).as_str()
                 )
-            )
+            );
         }
     }
 
@@ -1011,14 +1086,14 @@ mod test {
             .current_dir(&repo.path)
             .output()
             .expect("failed to execute git add");
-        assert!(output.status.success(), "git add failed {:?}", output);
+        assert!(output.status.success(), "git add failed {output:?}");
 
         let output = Command::new("git")
             .args(["commit", "--no-gpg-sign", "-m", "test commit"])
             .current_dir(&repo.path)
             .output()
             .expect("failed to execute git commit");
-        assert!(output.status.success(), "git commit failed {:?}", output);
+        assert!(output.status.success(), "git commit failed {output:?}");
 
         repo.inner
             .head()
@@ -1034,80 +1109,101 @@ mod test {
             Repository::normalize_pattern(Pattern::new(input).expect("valid pattern"))
         };
 
-        let first_commit = create_commit_with_files(&repo, vec![
-            ("initial.txt", "initial content"),
-            ("dir/initial.txt", "initial content"),
-        ]);
+        let first_commit = create_commit_with_files(
+            &repo,
+            vec![
+                ("initial.txt", "initial content"),
+                ("dir/initial.txt", "initial content"),
+            ],
+        );
 
         {
-            let retain =
-                repo.should_retain_commit(&first_commit, &Some(vec![new_pattern("dir/")]), &None);
+            let retain = repo.should_retain_commit(
+                &first_commit,
+                Some(vec![new_pattern("dir/")]).as_ref(),
+                None,
+            );
             assert!(retain, "include: dir/");
         }
 
-        let commit = create_commit_with_files(&repo, vec![
-            ("file1.txt", "content1"),
-            ("file2.txt", "content2"),
-            ("dir/file3.txt", "content3"),
-            ("dir/subdir/file4.txt", "content4"),
-        ]);
+        let commit = create_commit_with_files(
+            &repo,
+            vec![
+                ("file1.txt", "content1"),
+                ("file2.txt", "content2"),
+                ("dir/file3.txt", "content3"),
+                ("dir/subdir/file4.txt", "content4"),
+            ],
+        );
 
         {
-            let retain = repo.should_retain_commit(&commit, &None, &None);
+            let retain = repo.should_retain_commit(&commit, None, None);
             assert!(retain, "no include/exclude patterns");
         }
 
         {
-            let retain = repo.should_retain_commit(&commit, &Some(vec![new_pattern("./")]), &None);
+            let retain =
+                repo.should_retain_commit(&commit, Some(vec![new_pattern("./")]).as_ref(), None);
             assert!(retain, "include: ./");
         }
 
         {
-            let retain = repo.should_retain_commit(&commit, &Some(vec![new_pattern("**")]), &None);
+            let retain =
+                repo.should_retain_commit(&commit, Some(vec![new_pattern("**")]).as_ref(), None);
             assert!(retain, "include: **");
         }
 
         {
-            let retain = repo.should_retain_commit(&commit, &Some(vec![new_pattern("*")]), &None);
+            let retain =
+                repo.should_retain_commit(&commit, Some(vec![new_pattern("*")]).as_ref(), None);
             assert!(retain, "include: *");
         }
 
         {
             let retain =
-                repo.should_retain_commit(&commit, &Some(vec![new_pattern("dir/")]), &None);
+                repo.should_retain_commit(&commit, Some(vec![new_pattern("dir/")]).as_ref(), None);
             assert!(retain, "include: dir/");
         }
 
         {
             let retain =
-                repo.should_retain_commit(&commit, &Some(vec![new_pattern("dir/*")]), &None);
+                repo.should_retain_commit(&commit, Some(vec![new_pattern("dir/*")]).as_ref(), None);
             assert!(retain, "include: dir/*");
         }
 
         {
-            let retain =
-                repo.should_retain_commit(&commit, &Some(vec![new_pattern("file1.txt")]), &None);
+            let retain = repo.should_retain_commit(
+                &commit,
+                Some(vec![new_pattern("file1.txt")]).as_ref(),
+                None,
+            );
             assert!(retain, "include: file1.txt");
         }
 
         {
-            let retain =
-                repo.should_retain_commit(&commit, &None, &Some(vec![new_pattern("file1.txt")]));
+            let retain = repo.should_retain_commit(
+                &commit,
+                None,
+                Some(vec![new_pattern("file1.txt")]).as_ref(),
+            );
             assert!(retain, "exclude: file1.txt");
         }
 
         {
             let retain = repo.should_retain_commit(
                 &commit,
-                &Some(vec![new_pattern("file1.txt")]),
-                &Some(vec![new_pattern("file2.txt")]),
+                Some(vec![new_pattern("file1.txt")]).as_ref(),
+                Some(vec![new_pattern("file2.txt")]).as_ref(),
             );
             assert!(retain, "include: file1.txt, exclude: file2.txt");
         }
 
         {
-            let retain =
-                repo.should_retain_commit(&commit, &None, &Some(vec![new_pattern("**/*.txt")]));
+            let retain = repo.should_retain_commit(
+                &commit,
+                None,
+                Some(vec![new_pattern("**/*.txt")]).as_ref(),
+            );
             assert!(!retain, "exclude: **/*.txt");
         }
     }

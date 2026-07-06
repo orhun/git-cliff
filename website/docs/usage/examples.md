@@ -85,7 +85,12 @@ Prepend new changes to an existing changelog file:
 # 1- changelog header is removed from CHANGELOG.md
 # 2- new entries are prepended to CHANGELOG.md without footer part
 # the --prepend option is incompatible with -o (output) if the file paths are equal
+
+# Set prepend path
 git cliff --unreleased --tag 1.0.0 --prepend CHANGELOG.md
+
+# Without path, the default is `CHANGELOG.md`
+git cliff --unreleased --tag 1.0.0 --prepend
 ```
 
 Set/remove the changelog parts:

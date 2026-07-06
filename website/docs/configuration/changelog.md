@@ -2,6 +2,8 @@
 
 This section contains the configuration options for changelog generation.
 
+### Example
+
 <!-- {% raw %} -->
 
 ```toml
@@ -48,7 +50,7 @@ See [Keep a Changelog configuration](/docs/templating/examples#keep-a-changelog)
 
 If set to `true`, leading and trailing whitespace are removed from the [`body`](#body).
 
-It is useful for adding indentation to the template for readability, as shown [in the example](#changelog).
+It is useful for adding indentation to the template for readability, as shown [in the example](#example).
 
 ### render_always
 

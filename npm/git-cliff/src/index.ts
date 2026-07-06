@@ -1,5 +1,4 @@
 import { execa, type Options as ExecaOptions, type ResultPromise } from "execa";
-import { fileURLToPath } from "node:url";
 import { getExePath } from "./getExePath.js";
 import type { Options } from "./options.js";
 import { optionsToStringArgs } from "./optionsToStringArgs.js";
@@ -63,8 +62,8 @@ export async function runGitCliff(
     ? argsOrOptions
     : optionsToStringArgs(argsOrOptions);
 
-  return execa(fileURLToPath(exePath), args, {
+  return execa(exePath, args, {
     stdio: "inherit",
-    ...execaOptions,
+    ...execaOptions
   });
 }

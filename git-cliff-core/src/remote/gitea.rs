@@ -1,15 +1,11 @@
+use async_stream::stream as async_stream;
+use futures::{Stream, StreamExt, stream};
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{Deserialize, Serialize};
 
-use super::*;
+use super::{Debug, MAX_PAGE_SIZE, RemoteClient, RemoteCommit, RemotePullRequest};
 use crate::config::Remote;
-use crate::error::*;
-
-/// Log message to show while fetching data from Gitea.
-pub const START_FETCHING_MSG: &str = "Retrieving data from Gitea...";
-
-/// Log message to show when done fetching from Gitea.
-pub const FINISHED_FETCHING_MSG: &str = "Done fetching Gitea data.";
+use crate::error::{Error, Result};
 
 /// Template variables related to this remote.
 pub(crate) const TEMPLATE_VARIABLES: &[&str] = &["gitea", "commit.gitea", "commit.remote"];
@@ -36,29 +32,6 @@ impl RemoteCommit for GiteaCommit {
 
     fn timestamp(&self) -> Option<i64> {
         Some(self.convert_to_unix_timestamp(self.created.clone().as_str()))
-    }
-}
-
-impl RemoteEntry for GiteaCommit {
-    fn url(_id: i64, api_url: &str, remote: &Remote, ref_name: Option<&str>, page: i32) -> String {
-        let mut url = format!(
-            "{}/api/v1/repos/{}/{}/commits?limit={MAX_PAGE_SIZE}&page={page}",
-            api_url, remote.owner, remote.repo
-        );
-
-        if let Some(ref_name) = ref_name {
-            url.push_str(&format!("&sha={}", ref_name));
-        }
-
-        url
-    }
-
-    fn buffer_size() -> usize {
-        10
-    }
-
-    fn early_exit(&self) -> bool {
-        false
     }
 }
 
@@ -108,23 +81,6 @@ impl RemotePullRequest for GiteaPullRequest {
     }
 }
 
-impl RemoteEntry for GiteaPullRequest {
-    fn url(_id: i64, api_url: &str, remote: &Remote, _ref_name: Option<&str>, page: i32) -> String {
-        format!(
-            "{}/api/v1/repos/{}/{}/pulls?limit={MAX_PAGE_SIZE}&page={page}&state=closed",
-            api_url, remote.owner, remote.repo
-        )
-    }
-
-    fn buffer_size() -> usize {
-        5
-    }
-
-    fn early_exit(&self) -> bool {
-        false
-    }
-}
-
 /// HTTP client for handling Gitea REST API requests.
 #[derive(Debug, Clone)]
 pub struct GiteaClient {
@@ -159,27 +115,117 @@ impl RemoteClient for GiteaClient {
 }
 
 impl GiteaClient {
-    /// Fetches the Gitea API and returns the commits.
-    pub async fn get_commits(&self, ref_name: Option<&str>) -> Result<Vec<Box<dyn RemoteCommit>>> {
-        Ok(self
-            .fetch::<GiteaCommit>(0, ref_name)
-            .await?
-            .into_iter()
-            .map(|v| Box::new(v) as Box<dyn RemoteCommit>)
-            .collect())
+    /// Constructs the URL for Gitea commits API.
+    fn commits_url(api_url: &str, remote: &Remote, ref_name: Option<&str>, page: i32) -> String {
+        let mut url = format!(
+            "{}/api/v1/repos/{}/{}/commits?limit={MAX_PAGE_SIZE}&page={page}",
+            api_url, remote.owner, remote.repo
+        );
+
+        if let Some(ref_name) = ref_name {
+            url.push_str(&format!("&sha={ref_name}"));
+        }
+
+        url
     }
 
-    /// Fetches the Gitea API and returns the pull requests.
-    pub async fn get_pull_requests(
+    /// Constructs the URL for Gitea pull requests API.
+    fn pull_requests_url(api_url: &str, remote: &Remote, page: i32) -> String {
+        format!(
+            "{}/api/v1/repos/{}/{}/pulls?limit={MAX_PAGE_SIZE}&page={page}&state=closed",
+            api_url, remote.owner, remote.repo
+        )
+    }
+
+    /// Fetches the complete list of commits.
+    /// This is inefficient for large repositories; consider using
+    /// `get_commit_stream` instead.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    pub async fn get_commits(&self, ref_name: Option<&str>) -> Result<Vec<Box<dyn RemoteCommit>>> {
+        use futures::TryStreamExt;
+        crate::set_progress_message!("Fetching all commits from Gitea");
+        self.get_commit_stream(ref_name).try_collect().await
+    }
+
+    /// Fetches the complete list of pull requests.
+    /// This is inefficient for large repositories; consider using
+    /// `get_pull_request_stream` instead.
+    #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
+    pub async fn get_pull_requests(&self) -> Result<Vec<Box<dyn RemotePullRequest>>> {
+        use futures::TryStreamExt;
+        crate::set_progress_message!("Fetching all pull requests from Gitea");
+        self.get_pull_request_stream().try_collect().await
+    }
+
+    fn get_commit_stream(
         &self,
         ref_name: Option<&str>,
-    ) -> Result<Vec<Box<dyn RemotePullRequest>>> {
-        Ok(self
-            .fetch::<GiteaPullRequest>(0, ref_name)
-            .await?
-            .into_iter()
-            .map(|v| Box::new(v) as Box<dyn RemotePullRequest>)
-            .collect())
+    ) -> impl Stream<Item = Result<Box<dyn RemoteCommit>>> + '_ {
+        let ref_name = ref_name.map(ToString::to_string);
+        async_stream! {
+            let page_stream = stream::iter(0..)
+                .map(|page| {
+                    let ref_name = ref_name.clone();
+                    async move {
+                        let url = Self::commits_url(&self.api_url(), &self.remote(), ref_name.as_deref(), page);
+                        self.get_json::<Vec<GiteaCommit>>(&url).await
+                    }
+                })
+                .buffered(10);
+
+            let mut page_stream = Box::pin(page_stream);
+
+            while let Some(page_result) = page_stream.next().await {
+                match page_result {
+                    Ok(commits) => {
+                        if commits.is_empty() {
+                            break;
+                        }
+
+                        for commit in commits {
+                            yield Ok(Box::new(commit) as Box<dyn RemoteCommit>);
+                        }
+                    }
+                    Err(e) => {
+                        yield Err(e);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    fn get_pull_request_stream(
+        &self,
+    ) -> impl Stream<Item = Result<Box<dyn RemotePullRequest>>> + '_ {
+        async_stream! {
+        let page_stream = stream::iter(0..)
+            .map(|page| async move {
+                let url = Self::pull_requests_url(&self.api_url(), &self.remote(), page);
+                self.get_json::<Vec<GiteaPullRequest>>(&url).await
+            })
+            .buffered(5);
+
+        let mut page_stream = Box::pin(page_stream);
+
+        while let Some(page_result) = page_stream.next().await {
+            match page_result {
+                Ok(prs) => {
+                    if prs.is_empty() {
+                        break;
+                    }
+
+                    for pr in prs {
+                        yield Ok(Box::new(pr) as Box<dyn RemotePullRequest>);
+                    }
+                }
+                Err(e) => {
+                    yield Err(e);
+                    break;
+                }
+            }
+        }
+            }
     }
 }
 
@@ -200,6 +246,6 @@ mod test {
             created: String::from("2021-07-18T15:14:39+03:00"),
         };
 
-        assert_eq!(Some(1626610479), remote_commit.timestamp());
+        assert_eq!(Some(1_626_610_479), remote_commit.timestamp());
     }
 }

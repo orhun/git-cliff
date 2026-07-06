@@ -1,6 +1,6 @@
 {
   "name": "git-cliff",
-  "version": "2.10.0",
+  "version": "2.13.1",
   "description": "A highly customizable Changelog Generator that follows Conventional Commit specifications ⛰️",
   "type": "module",
   "main": "lib/cjs/index.d.cts",
@@ -82,7 +82,7 @@
   "devDependencies": {
     "@eslint/js": "^9.32.0",
     "@swc/core": "^1.13.2",
-    "@types/node": "^24.1.0",
+    "@types/node": "^18.19",
     "@typescript-eslint/eslint-plugin": "^8.38.0",
     "@typescript-eslint/parser": "^8.38.0",
     "eslint": "^9.32.0",
@@ -91,18 +91,18 @@
     "typescript-eslint": "^8.38.0"
   },
   "optionalDependencies": {
-    "git-cliff-darwin-arm64": "2.10.0",
-    "git-cliff-darwin-x64": "2.10.0",
-    "git-cliff-linux-arm64": "2.10.0",
-    "git-cliff-linux-x64": "2.10.0",
-    "git-cliff-windows-arm64": "2.10.0",
-    "git-cliff-windows-x64": "2.10.0"
+    "git-cliff-darwin-arm64": "2.13.1",
+    "git-cliff-darwin-x64": "2.13.1",
+    "git-cliff-linux-arm64": "2.13.1",
+    "git-cliff-linux-x64": "2.13.1",
+    "git-cliff-windows-arm64": "2.13.1",
+    "git-cliff-windows-x64": "2.13.1"
   },
   "packageManager": "yarn@4.1.0",
   "publishConfig": {
     "access": "public"
   },
   "engines": {
-    "node": ">=18.19 || >=20.6 || >=21"
+    "node": "^18.19 || >=20.6"
   }
 }

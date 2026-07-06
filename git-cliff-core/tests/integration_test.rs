@@ -39,6 +39,7 @@ fn generate_changelog() -> Result<()> {
         output: None,
     };
     let git_config = GitConfig {
+        processing_order: None,
         conventional_commits: true,
         require_conventional: false,
         filter_unconventional: true,
@@ -112,6 +113,7 @@ fn generate_changelog() -> Result<()> {
         ],
         protect_breaking_commits: false,
         filter_commits: true,
+        fail_on_unmatched_commit: false,
         tag_pattern: None,
         skip_tags: None,
         ignore_tags: None,
@@ -167,7 +169,7 @@ fn generate_changelog() -> Result<()> {
         release_v1_commits.last().unwrap(),
     );
 
-    let release_v2_commits = vec![
+    let release_v2_commits = [
 				Commit::new(
 					String::from("000abc"),
 					String::from("Add unconventional commit"),
@@ -226,6 +228,7 @@ fn generate_changelog() -> Result<()> {
             repository: Some(String::from("/root/repo")),
             submodule_commits: HashMap::new(),
             statistics: None,
+            bump_type: None,
             #[cfg(feature = "github")]
             github: git_cliff_core::remote::RemoteReleaseMetadata {
                 contributors: vec![],
@@ -240,6 +243,10 @@ fn generate_changelog() -> Result<()> {
             },
             #[cfg(feature = "bitbucket")]
             bitbucket: git_cliff_core::remote::RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: git_cliff_core::remote::RemoteReleaseMetadata {
                 contributors: vec![],
             },
         },
@@ -255,6 +262,7 @@ fn generate_changelog() -> Result<()> {
             repository: Some(String::from("/root/repo")),
             submodule_commits: HashMap::new(),
             statistics: None,
+            bump_type: None,
             #[cfg(feature = "github")]
             github: git_cliff_core::remote::RemoteReleaseMetadata {
                 contributors: vec![],
@@ -269,6 +277,10 @@ fn generate_changelog() -> Result<()> {
             },
             #[cfg(feature = "bitbucket")]
             bitbucket: git_cliff_core::remote::RemoteReleaseMetadata {
+                contributors: vec![],
+            },
+            #[cfg(feature = "azure_devops")]
+            azure_devops: git_cliff_core::remote::RemoteReleaseMetadata {
                 contributors: vec![],
             },
         },
@@ -298,7 +310,7 @@ fn generate_changelog() -> Result<()> {
     writeln!(out, "{}", changelog_config.footer.unwrap()).unwrap();
 
     assert_eq!(
-        r#"this is a changelog
+        r"this is a changelog
 
 ## Release v2.0.0 - 2023
 
@@ -335,7 +347,7 @@ abc123..hjdfas32
 - fix stuff
 - fix more stuff
 eoc - end of changelog
-"#,
+",
         out
     );
 

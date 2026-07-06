@@ -52,7 +52,7 @@ impl BuiltinConfig {
         }
         let contents = match Self::get(&name) {
             Some(v) => Ok(str::from_utf8(&v.data)?.to_string()),
-            None => Err(Error::EmbeddedError(format!("config {} not found", name,))),
+            None => Err(Error::EmbeddedError(format!("config {name} not found"))),
         }?;
         Ok(contents)
     }
@@ -61,7 +61,7 @@ impl BuiltinConfig {
     ///
     /// [`Config`]: Config
     pub fn parse(name: String) -> Result<(Config, String)> {
-        let parsed = Self::get_config(name.to_string())?.parse()?;
+        let parsed = Self::get_config(name.clone())?.parse()?;
         Ok((parsed, name))
     }
 }
