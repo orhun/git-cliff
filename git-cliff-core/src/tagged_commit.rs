@@ -117,8 +117,8 @@ impl<'a> TaggedCommits<'a> {
 
     /// Inserts a new tagged commit.
     pub fn insert(&mut self, commit: String, tag: Tag) {
-        if let Some(index) = self.commits.get_index_of(&commit)
-            && let Err(idx) = self.binary_search(index)
+        if let Some(index) = self.commits.get_index_of(&commit) &&
+            let Err(idx) = self.binary_search(index)
         {
             self.tag_indexes.insert(idx, index);
         }
@@ -248,13 +248,10 @@ mod tests {
         let (repository, _temp_dir, commits) = create_tagged_repository()?;
         let mut tags = repository.tags(&None, false, false)?;
 
-        tags.insert(
-            commits[2].clone(),
-            Tag {
-                name: String::from("v1.5.0"),
-                message: None,
-            },
-        );
+        tags.insert(commits[2].clone(), Tag {
+            name: String::from("v1.5.0"),
+            message: None,
+        });
 
         assert_eq!(tags.get_commit("v1.5.0"), Some(commits[2].as_str()));
         assert_eq!(
