@@ -508,6 +508,14 @@ pub fn run<'a>(args: Opt) -> Result<Changelog<'a>> {
     run_with_changelog_modifier(args, |_| Ok(()))
 }
 
+fn changelog_body_arg(args: &Opt) -> Result<Option<String>> {
+    if let Some(body_file) = &args.body_file {
+        Ok(Some(fs::read_to_string(body_file)?))
+    } else {
+        Ok(args.body.clone())
+    }
+}
+
 /// Runs `git-cliff` with a changelog modifier.
 ///
 /// This is useful if you want to modify the [`Changelog`] before
@@ -551,6 +559,9 @@ pub fn run_with_changelog_modifier<'a>(
         }
         if let Some(changelog) = args.prepend {
             args.prepend = Some(workdir.join(changelog));
+        }
+        if let Some(body_file) = args.body_file {
+            args.body_file = Some(workdir.join(body_file));
         }
         // pushing an empty component force-adds a trailing path separator
         // which is needed for correct glob expansion
@@ -635,7 +646,7 @@ pub fn run_with_changelog_modifier<'a>(
             "'-o' and '-p' can only be used together if they point to different files",
         )));
     }
-    if let Some(body) = args.body.clone() {
+    if let Some(body) = changelog_body_arg(&args)? {
         config.changelog.body = body;
     }
     if args.sort == Sort::Oldest {
@@ -882,4 +893,32 @@ pub fn write_changelog<W: io::Write>(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use clap::Parser;
+
+    use super::*;
+
+    #[test]
+    fn changelog_body_arg_reads_body_file() -> Result<()> {
+        let path = env::temp_dir().join(format!(
+            "git-cliff-body-file-{}-{}.tera",
+            std::process::id(),
+            SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos()
+        ));
+        fs::write(&path, "line 1\nline 2\n")?;
+
+        let path_arg = path.to_string_lossy().into_owned();
+        let args = Opt::try_parse_from(["git-cliff", "--body-file", &path_arg])
+            .expect("body file argument should parse");
+        let body = changelog_body_arg(&args)?;
+
+        fs::remove_file(path)?;
+        assert_eq!(Some(String::from("line 1\nline 2\n")), body);
+        Ok(())
+    }
 }

@@ -96,7 +96,7 @@ git cliff --unreleased --tag 1.0.0 --prepend
 Set/remove the changelog parts:
 
 ```bash
-git cliff --body $template --strip footer
+git cliff --body-file template.md --strip footer
 ```
 
 Skip running the commands defined in [pre](/docs/configuration/git#commit_preprocessors)/[postprocessors](/docs/configuration/changelog#postprocessors).

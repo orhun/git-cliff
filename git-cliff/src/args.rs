@@ -222,6 +222,9 @@ pub struct Opt {
         allow_hyphen_values = true
     )]
     pub body: Option<String>,
+    /// Reads the template for the changelog body from a file.
+    #[arg(long, value_name = "PATH", value_parser = Opt::parse_dir)]
+    pub body_file: Option<PathBuf>,
     /// Processes the commits starting from the latest tag.
     #[arg(short, long, help_heading = Some("FLAGS"))]
     pub latest: bool,
@@ -582,6 +585,14 @@ mod tests {
             BumpOption::Specific(BumpType::Major),
             bump_option_parser.parse_ref(&Opt::command(), None, OsStr::new("major"))?
         );
+        Ok(())
+    }
+
+    #[test]
+    fn body_file_path_is_parsed() -> Result<(), clap::Error> {
+        let opt = Opt::try_parse_from(["git-cliff", "--body-file", "template.md"])?;
+
+        assert_eq!(Some(PathBuf::from("template.md")), opt.body_file);
         Ok(())
     }
 
