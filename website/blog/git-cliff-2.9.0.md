@@ -126,7 +126,7 @@ a140cef0405e0bcbfb5de44ff59e091527d91b38..a9d4050212a18f6b3bd76e2e41fbb9045d268b
 
 :::tip
 
-You can use the [`truncate`](https://keats.github.io/tera/docs/#truncate) filter to shorten the commit range:
+You can use the [`truncate`](https://keats.github.io/tera/#truncate) filter to shorten the commit range:
 
 ```jinja
 {{ commit_range.from | truncate(length=7, end="") }}..{{ commit_range.to | truncate(length=7, end="") }}

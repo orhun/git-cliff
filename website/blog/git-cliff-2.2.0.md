@@ -61,7 +61,7 @@ breaking_always_bump_major = true
 
 Template rendering errors are now more verbose!
 
-For example, let's throw an error in the template with using [throw](https://keats.github.io/tera/docs/#throw) function:
+For example, let's throw an error in the template with using [throw](https://keats.github.io/tera/#throw) function:
 
 ```toml
 [changelog]
