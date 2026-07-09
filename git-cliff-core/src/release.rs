@@ -190,7 +190,7 @@ impl Release<'_> {
                             &old_semver,
                             self.commits
                                 .iter()
-                                .map(|commit| commit.message.trim_end().to_string())
+                                .map(|commit| commit.raw_message().trim_end().to_string())
                                 .collect::<Vec<String>>(),
                         );
                         let bump_type = determine_bump_type(&old_semver, &new_semver);
@@ -496,6 +496,29 @@ mod test {
         })?;
         assert_eq!("1.1.0", result.version);
         assert_eq!(Some(BumpType::Minor), result.bump_type);
+
+        let release = Release {
+            version: None,
+            commits: vec![
+                Commit {
+                    message: String::from("test"),
+                    raw_message: Some(String::from("ci: test")),
+                    ..Default::default()
+                }
+                .into_conventional()?,
+            ],
+            previous: Some(Box::new(Release {
+                version: Some(String::from("1.0.0")),
+                ..Default::default()
+            })),
+            ..Default::default()
+        };
+        let result = release.calculate_next_version_with_config(&Bump {
+            no_increment_regex: Some(String::from("^ci$")),
+            ..Default::default()
+        })?;
+        assert_eq!("1.0.0", result.version);
+        assert_eq!(None, result.bump_type);
 
         Ok(())
     }
