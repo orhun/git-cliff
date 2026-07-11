@@ -38,4 +38,3 @@
 
 ### New Contributors
 * @sermuns made their first contribution in [#1373, #1486]
-
