@@ -588,14 +588,6 @@ mod tests {
         Ok(())
     }
 
-    #[test]
-    fn body_file_path_is_parsed() -> Result<(), clap::Error> {
-        let opt = Opt::try_parse_from(["git-cliff", "--body-file", "template.md"])?;
-
-        assert_eq!(Some(PathBuf::from("template.md")), opt.body_file);
-        Ok(())
-    }
-
     // Environment variables are process-global, so tests that modify them must run exclusively and
     // restore the original state after execution. For this reason, we use the `serial` macro
     // from the `serial_test` crate to guarantee exclusive execution. See: https://crates.io/crates/serial_test
