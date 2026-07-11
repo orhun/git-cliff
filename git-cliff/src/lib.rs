@@ -890,8 +890,3 @@ pub fn write_changelog<W: io::Write>(
 
     Ok(())
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-}
