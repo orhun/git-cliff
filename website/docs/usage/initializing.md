@@ -36,7 +36,7 @@ Here are the list of available templates:
 - [`github.toml`](https://github.com/orhun/git-cliff/tree/main/examples/github.toml): changelog in the [GitHub's format](https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes).
 - [`github-keepachangelog.toml`](https://github.com/orhun/git-cliff/tree/main/examples/github-keepachangelog.toml): combination of the previous two formats.
 - [`gitlab.toml`](https://github.com/orhun/git-cliff/tree/main/examples/gitlab.toml): release notes format tailored for GitLab Releases.
-- [`gitlab-keepachangelog.toml`](https://github.com/orhun/git-cliff/tree/main/examples/gitlab-keepachangelog.toml): combination of the previous two formats.
+- [`gitlab-keepachangelog.toml`](https://github.com/orhun/git-cliff/tree/main/examples/gitlab-keepachangelog.toml): combination of GitLab and Keep a Changelog format.
 - [`detailed.toml`](https://github.com/orhun/git-cliff/tree/main/examples/detailed.toml): changelog that contains links to the commits.
 - [`minimal.toml`](https://github.com/orhun/git-cliff/tree/main/examples/minimal.toml): minimal changelog.
 - [`scoped.toml`](https://github.com/orhun/git-cliff/tree/main/examples/scoped.toml): changelog with commits are grouped by their scopes.
