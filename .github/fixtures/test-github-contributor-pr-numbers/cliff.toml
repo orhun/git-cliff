@@ -21,4 +21,5 @@ body = """
 * @{{ contributor.username }} made their first contribution in [{% for number in contributor.pr_numbers %}#{{ number }}{% if not loop.last %}, {% endif %}{% endfor %}]
 {%- endif %}
 {%- endfor %}
+
 """
