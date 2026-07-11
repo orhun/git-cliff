@@ -114,6 +114,8 @@ jobs:
             command: --from-context context.json
           - fixtures-name: test-from-context-does-not-discard-fields
             command: --from-context context.json
+          - fixtures-name: test-github-contributor-pr-numbers
+            command: v2.12.0..v2.13.0
           - fixtures-name: test-always-render-unreleased
             command: --unreleased
           - fixtures-name: test-always-render
