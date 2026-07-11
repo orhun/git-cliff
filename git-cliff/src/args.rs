@@ -27,7 +27,6 @@ pub enum Sort {
 const STYLES: Styles = Styles::styled()
     .header(Ansi256Color(208).on_default().bold())
     .usage(Ansi256Color(208).on_default().bold())
-    .literal(AnsiColor::White.on_default())
     .placeholder(AnsiColor::Green.on_default());
 
 /// Command-line arguments to parse.
