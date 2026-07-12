@@ -12,7 +12,7 @@ body = """
     ## [unreleased]
 {% endif %}\
 {% for entry in commits | commit_groups(groups=commit_parsers_groups) %}
-    ### {{ entry.group | trim | upper_first }}
+    ### {{ entry.group | striptags | trim | upper_first }}
     {% for commit in entry.commits %}
         - {% if commit.scope %}*({{ commit.scope }})* {% endif %}\
             {% if commit.breaking %}[**breaking**] {% endif %}\
