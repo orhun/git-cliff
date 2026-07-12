@@ -37,7 +37,7 @@ If you are using the built-in [`commit_groups`](/docs/templating/syntax#custom-b
 
 ```jinja2
 {% for entry in commits | commit_groups(groups=commit_parsers_groups) %}
-  ### {{ entry.name | striptags | trim | upper_first }}
+  ### {{ entry.group | trim | upper_first }}
 {% endfor %}
 ```
 

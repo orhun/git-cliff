@@ -1649,7 +1649,7 @@ chore(deps): fix broken deps
                 header: None,
                 body: String::from(
                     "{% for entry in commits | commit_groups(groups=commit_parsers_groups) %}### \
-                     {{ entry.name }}\n{% for commit in entry.commits %}- {{ commit.message \
+                     {{ entry.group }}\n{% for commit in entry.commits %}- {{ commit.message \
                      }}\n{% endfor %}{% endfor %}",
                 ),
                 footer: None,

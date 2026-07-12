@@ -37,7 +37,7 @@ body = """
 {% endif %}\
 
 {% for entry in commits | commit_groups(groups=commit_parsers_groups) %}
-    ### {{ entry.name | trim | upper_first }}
+    ### {{ entry.group | trim | upper_first }}
     {% for commit in entry.commits
     | filter(attribute="scope")
     | sort(attribute="scope") %}

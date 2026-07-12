@@ -58,7 +58,7 @@ impl Template {
     ///
     /// Behaves like Tera's built-in `group_by(attribute="group")` filter, but
     /// yields entries as an array so iteration order is well-defined. Each
-    /// entry has a `name` (the group name) and `commits` (the matching
+    /// entry has a `group` (the group name) and `commits` (the matching
     /// commits, in their original order).
     ///
     /// When the optional `groups` argument is provided (an array of group
@@ -110,7 +110,7 @@ impl Template {
 
         let result: Vec<Value> = grouped
             .into_iter()
-            .map(|(name, commits)| json!({ "name": name, "commits": commits }))
+            .map(|(group, commits)| json!({ "group": group, "commits": commits }))
             .collect();
         Ok(tera::to_value(result)?)
     }
@@ -501,7 +501,7 @@ mod test {
 
     #[test]
     fn test_commit_groups_filter_preserves_first_appearance_when_no_groups() -> Result<()> {
-        let template = "{% for entry in commits | commit_groups %}{{ entry.name }}|{{ \
+        let template = "{% for entry in commits | commit_groups %}{{ entry.group }}|{{ \
                         entry.commits | length }};{% endfor %}";
         let template = Template::new("test", template.to_string(), true)?;
         let release = release_with_emoji_groups();
@@ -516,7 +516,7 @@ mod test {
 
     #[test]
     fn test_commit_groups_filter_uses_groups_argument() -> Result<()> {
-        let template = "{% for entry in commits | commit_groups(groups=order) %}{{ entry.name \
+        let template = "{% for entry in commits | commit_groups(groups=order) %}{{ entry.group \
                         }}|{{ entry.commits | length }};{% endfor %}";
         let template = Template::new("test", template.to_string(), true)?;
         let release = release_with_emoji_groups();
@@ -537,7 +537,7 @@ mod test {
     #[test]
     fn test_commit_groups_filter_appends_unknown_groups() -> Result<()> {
         let template =
-            "{% for entry in commits | commit_groups(groups=order) %}{{ entry.name }};{% endfor %}";
+            "{% for entry in commits | commit_groups(groups=order) %}{{ entry.group }};{% endfor %}";
         let template = Template::new("test", template.to_string(), true)?;
         let release = release_with_emoji_groups();
         let mut additional: HashMap<&str, Vec<&str>> = HashMap::new();
@@ -552,7 +552,7 @@ mod test {
 
     #[test]
     fn test_commit_groups_filter_skips_null_groups() -> Result<()> {
-        let template = "{% for entry in commits | commit_groups %}{{ entry.name }}|{{ \
+        let template = "{% for entry in commits | commit_groups %}{{ entry.group }}|{{ \
                         entry.commits | length }};{% endfor %}";
         let template = Template::new("test", template.to_string(), true)?;
         let mut release = get_fake_release_data();

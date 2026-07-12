@@ -50,8 +50,10 @@ See the [Tera Documentation](https://keats.github.io/tera/#templates) for more i
 
   ```jinja
   {% for entry in commits | commit_groups(groups=commit_parsers_groups) %}
-    ### {{ entry.name }}
+    ### {{ entry.group }}
   {% endfor %}
   ```
+
+  The filter returns an array of objects like `{ group: "...", commits: [...] }`.
 
   When you use the `commit_parsers_groups` context field, the filter renders groups in the same order as the configured `commit_parsers` instead of sorting them alphabetically.
