@@ -66,6 +66,7 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
     --bitbucket-repo <OWNER/REPO>     Sets the Bitbucket repository [env: BITBUCKET_REPO=]
     --azure-devops-token <TOKEN>      Sets the Azure DevOps API token [env: AZURE_DEVOPS_TOKEN]
     --azure-devops-repo <OWNER/REPO>  Sets the Azure DevOps repository [env: AZURE_DEVOPS_REPO=]
+    --http-timeout <SECS>             Sets the HTTP timeout for remote metadata requests [env: GIT_CLIFF_HTTP_TIMEOUT=]
     --offline                         Disable network access for remote repositories [env: GIT_CLIFF_OFFLINE]
 ```
 

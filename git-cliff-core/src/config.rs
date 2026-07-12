@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::LazyLock;
-use std::{fmt, fs};
+use std::{fmt, fs, time::Duration};
 
 use etcetera::{BaseStrategy, choose_base_strategy};
 use glob::Pattern;
@@ -288,6 +288,9 @@ pub struct Remote {
     pub is_custom: bool,
     /// Remote API URL.
     pub api_url: Option<String>,
+    /// HTTP request timeout.
+    #[serde(default = "default_http_timeout", with = "humantime_serde")]
+    pub http_timeout: Duration,
     /// Whether to use native TLS.
     pub native_tls: Option<bool>,
 }
@@ -295,6 +298,10 @@ pub struct Remote {
 /// Returns `true` for serde's `default` attribute.
 fn default_true() -> bool {
     true
+}
+
+fn default_http_timeout() -> Duration {
+    Duration::from_secs(30)
 }
 
 impl fmt::Display for Remote {
@@ -318,6 +325,7 @@ impl Remote {
             token: None,
             is_custom: false,
             api_url: None,
+            http_timeout: default_http_timeout(),
             native_tls: None,
         }
     }
@@ -642,6 +650,22 @@ mod test {
         assert!(!Remote::new("", "test").is_set());
         assert!(!Remote::new("test", "").is_set());
         assert!(!Remote::new("", "").is_set());
+        assert_eq!(Duration::from_secs(30), remote1.http_timeout);
+    }
+
+    #[test]
+    fn parse_remote_http_timeout() -> Result<()> {
+        let config = Config::from_str(
+            r#"
+                [remote.github]
+                owner = "orhun"
+                repo = "git-cliff"
+                http_timeout = "60s"
+            "#,
+        )?;
+
+        assert_eq!(Duration::from_secs(60), config.remote.github.http_timeout);
+        Ok(())
     }
 
     #[test]

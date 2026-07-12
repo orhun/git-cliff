@@ -325,6 +325,7 @@ mod test {
             token: None,
             is_custom: false,
             api_url: None,
+            http_timeout: std::time::Duration::from_secs(30),
             native_tls: None,
         };
 
@@ -344,6 +345,7 @@ mod test {
             token: None,
             is_custom: false,
             api_url: None,
+            http_timeout: std::time::Duration::from_secs(30),
             native_tls: None,
         };
 
@@ -362,6 +364,7 @@ mod test {
             token: None,
             is_custom: false,
             api_url: None,
+            http_timeout: std::time::Duration::from_secs(30),
             native_tls: None,
         };
 
@@ -379,6 +382,7 @@ mod test {
             token: None,
             is_custom: false,
             api_url: None,
+            http_timeout: std::time::Duration::from_secs(30),
             native_tls: None,
         };
 
@@ -398,6 +402,7 @@ mod test {
             token: None,
             is_custom: false,
             api_url: None,
+            http_timeout: std::time::Duration::from_secs(30),
             native_tls: None,
         };
 

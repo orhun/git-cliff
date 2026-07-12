@@ -990,6 +990,7 @@ mod test {
                     token: None,
                     is_custom: false,
                     api_url: None,
+                    http_timeout: std::time::Duration::from_secs(30),
                     native_tls: None,
                 },
                 gitlab: Remote {
@@ -998,6 +999,7 @@ mod test {
                     token: None,
                     is_custom: false,
                     api_url: None,
+                    http_timeout: std::time::Duration::from_secs(30),
                     native_tls: None,
                 },
                 gitea: Remote {
@@ -1006,6 +1008,7 @@ mod test {
                     token: None,
                     is_custom: false,
                     api_url: None,
+                    http_timeout: std::time::Duration::from_secs(30),
                     native_tls: None,
                 },
                 bitbucket: Remote {
@@ -1014,6 +1017,7 @@ mod test {
                     token: None,
                     is_custom: false,
                     api_url: None,
+                    http_timeout: std::time::Duration::from_secs(30),
                     native_tls: None,
                 },
                 azure_devops: Remote {
@@ -1022,6 +1026,7 @@ mod test {
                     token: None,
                     is_custom: false,
                     api_url: None,
+                    http_timeout: std::time::Duration::from_secs(30),
                     native_tls: None,
                 },
             },

@@ -639,6 +639,7 @@ fn url_path_segments(url: &str) -> Result<Remote> {
         token: None,
         is_custom: false,
         api_url: None,
+        http_timeout: std::time::Duration::from_secs(30),
         native_tls: None,
     })
 }
@@ -670,6 +671,7 @@ fn ssh_path_segments(url: &str) -> Result<Remote> {
         token: None,
         is_custom: false,
         api_url: None,
+        http_timeout: std::time::Duration::from_secs(30),
         native_tls: None,
     })
 }
@@ -849,6 +851,7 @@ mod test {
                 token: None,
                 is_custom: false,
                 api_url: remote.api_url.clone(),
+                http_timeout: std::time::Duration::from_secs(30),
                 native_tls: None,
             },
             remote

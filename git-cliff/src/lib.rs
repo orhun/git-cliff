@@ -680,6 +680,14 @@ pub fn run_with_changelog_modifier<'a>(
             .token
             .clone_from(&args.azure_devops_token);
     }
+    if let Some(http_timeout) = args.http_timeout {
+        let timeout = std::time::Duration::from_secs(http_timeout);
+        config.remote.github.http_timeout = timeout;
+        config.remote.gitlab.http_timeout = timeout;
+        config.remote.gitea.http_timeout = timeout;
+        config.remote.bitbucket.http_timeout = timeout;
+        config.remote.azure_devops.http_timeout = timeout;
+    }
     if args.offline {
         config.remote.offline = args.offline;
     }

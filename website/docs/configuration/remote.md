@@ -56,6 +56,19 @@ Same applies for GitLab/Bitbucket with `--gitlab-token`/`--gitea-token`/`--bitbu
 
 Sets the API URL for a particular remote.
 
+### http_timeout
+
+Sets the HTTP request timeout for remote metadata fetches.
+
+This value is a duration, for example:
+
+```toml
+[remote.github]
+http_timeout = "60s"
+```
+
+You can also override it from the CLI with `--http-timeout <SECS>` or via the `GIT_CLIFF_HTTP_TIMEOUT` environment variable.
+
 ### native_tls
 
 When set to `true`, the TLS certificates are loaded from the platform's native certificate store.
@@ -85,5 +98,6 @@ owner = "archlinux"
 repo = "arch-repro-status"
 api_url = "https://gitlab.archlinux.org/api/v4"
 token = "deadbeef"
+http_timeout = "60s"
 native_tls = false
 ```

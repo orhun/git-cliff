@@ -70,6 +70,7 @@ indexmap = { version = "2.13.0", features = ["serde"] }
 toml = "0.9.8"
 next_version = "0.3.2"
 semver = "1.0.27"
+humantime-serde = "1.1.1"
 document-features = { version = "0.2.12", optional = true }
 reqwest = { workspace = true, optional = true }
 http-cache-reqwest = { version = "0.15.0", optional = true }

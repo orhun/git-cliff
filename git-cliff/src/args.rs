@@ -363,6 +363,16 @@ pub struct Opt {
 		hide = !cfg!(feature = "azure_devops"),
 	)]
     pub azure_devops_repo: Option<RemoteValue>,
+    /// Sets the HTTP timeout for remote metadata requests in seconds.
+    #[arg(
+		long,
+		help_heading = "REMOTE OPTIONS",
+		env = "GIT_CLIFF_HTTP_TIMEOUT",
+		value_name = "SECS",
+		hide = !cfg!(feature = "remote"),
+		value_parser = clap::value_parser!(u64)
+	)]
+    pub http_timeout: Option<u64>,
     /// Sets the commit range to process.
     #[arg(value_name = "RANGE", help_heading = Some("ARGS"))]
     pub range: Option<String>,

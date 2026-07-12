@@ -43,9 +43,6 @@ use crate::error::{Error, Result};
 /// This is needed since GitHub API does not accept empty user agent.
 pub(crate) const USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
 
-/// Request timeout value in seconds.
-pub(crate) const REQUEST_TIMEOUT: u64 = 30;
-
 /// TCP keepalive value in seconds.
 pub(crate) const REQUEST_KEEP_ALIVE: u64 = 60;
 
@@ -116,7 +113,7 @@ impl Remote {
         }
         headers.insert(reqwest::header::USER_AGENT, USER_AGENT.parse()?);
         let client_builder = Client::builder()
-            .timeout(Duration::from_secs(REQUEST_TIMEOUT))
+            .timeout(self.http_timeout)
             .tcp_keepalive(Duration::from_secs(REQUEST_KEEP_ALIVE))
             .default_headers(headers)
             .tls_built_in_root_certs(false);
