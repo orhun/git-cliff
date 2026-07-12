@@ -1,7 +1,8 @@
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::LazyLock;
-use std::{fmt, fs, time::Duration};
+use std::time::Duration;
+use std::{fmt, fs};
 
 use etcetera::{BaseStrategy, choose_base_strategy};
 use glob::Pattern;
