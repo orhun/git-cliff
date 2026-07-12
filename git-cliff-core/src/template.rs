@@ -204,40 +204,37 @@ impl Template {
         Ok(tera::to_value(result)?)
     }
 
-    /// Groups array values by the semantic version scope of an attribute.
+    /// Groups releases by the semantic version scope of their `version` field.
     fn group_by_scope(value: &Value, args: &HashMap<String, Value>) -> TeraResult<Value> {
         let releases = tera::try_get_value!("group_by_scope", "value", Vec<Value>, value);
         if releases.is_empty() {
             return Ok(Map::new().into());
         }
 
-        let attribute = match args.get("attribute") {
-            Some(value) => tera::try_get_value!("group_by_scope", "attribute", String, value),
-            None => String::from("version"),
-        };
         let scope = VersionScope::from_args(args)?;
+        let prefix = match args.get("prefix") {
+            Some(value) => tera::try_get_value!("group_by_scope", "prefix", String, value),
+            None => String::new(),
+        };
 
         let mut grouped = Map::new();
         for release in releases {
-            if let Some(key_value) = tera::dotted_pointer(&release, &attribute).cloned() {
-                let key = match key_value.as_str() {
-                    Some(key) => key.to_owned(),
-                    None if key_value.is_null() => String::new(), // For unreleased changes
-                    None => key_value.to_string(),
-                };
-                let key = scoped_version(&key, scope).unwrap_or(key);
+            let key = match release.get("version") {
+                Some(Value::String(version)) => version.clone(),
+                Some(Value::Null) => String::new(), // For unreleased changes
+                Some(version) => version.to_string(),
+                None => continue,
+            };
+            let key = scoped_version(&key, &prefix, scope).unwrap_or(key);
 
-                let releases = grouped
-                    .entry(key)
-                    .or_insert_with(|| Value::Array(Vec::new()))
-                    .as_array_mut()
-                    .ok_or_else(|| {
-                        tera::Error::msg(
-                            "Filter `group_by_scope` expected grouped values to be arrays",
-                        )
-                    })?;
-                releases.push(release);
-            }
+            let releases = grouped
+                .entry(key)
+                .or_insert_with(|| Value::Array(Vec::new()))
+                .as_array_mut()
+                .ok_or_else(|| {
+                    tera::Error::msg("Filter `group_by_scope` expected grouped values to be arrays")
+                })?;
+            releases.push(release);
         }
 
         Ok(grouped.into())
@@ -381,19 +378,10 @@ impl VersionScope {
     }
 }
 
-fn scoped_version(version: &str, scope: VersionScope) -> Option<String> {
-    if let Ok(version) = Version::parse(version) {
-        return Some(format_scoped_version("", &version, scope));
-    }
-    version
-        .char_indices()
-        .filter(|(_, c)| c.is_ascii_digit())
-        .find_map(|(index, _)| {
-            let (prefix, version) = version.split_at(index);
-            Version::parse(version)
-                .ok()
-                .map(|version| format_scoped_version(prefix, &version, scope))
-        })
+fn scoped_version(version: &str, prefix: &str, scope: VersionScope) -> Option<String> {
+    let version = version.strip_prefix(prefix)?;
+    let version = Version::parse(version).ok()?;
+    Some(format_scoped_version(prefix, &version, scope))
 }
 
 fn format_scoped_version(prefix: &str, version: &Version, scope: VersionScope) -> String {
@@ -690,7 +678,7 @@ mod test {
         ];
         let mut context = HashMap::new();
         context.insert("releases", releases);
-        let template = r#"{% for version, releases in releases | group_by_scope %}{{ version }}={{ releases | length }}:{% set_global commits = [] %}{% for release in releases %}{% set_global commits = commits | concat(with=release.commits) %}{% endfor %}{{ commits | length }}:{% for group, commits in commits | group_by(attribute="group") %}{{ group }}={{ commits | length }},{% endfor %};{% endfor %}"#;
+        let template = r#"{% for version, releases in releases | group_by_scope(prefix="v") %}{{ version }}={{ releases | length }}:{% set_global commits = [] %}{% for release in releases %}{% set_global commits = commits | concat(with=release.commits) %}{% endfor %}{{ commits | length }}:{% for group, commits in commits | group_by(attribute="group") %}{{ group }}={{ commits | length }},{% endfor %};{% endfor %}"#;
         let template = Template::new("test", template.to_string(), true)?;
         let r = template.render(&get_fake_release_data(), Some(&context), &[])?;
 

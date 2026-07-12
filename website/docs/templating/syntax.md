@@ -58,10 +58,10 @@ See the [Tera Documentation](https://keats.github.io/tera/#templates) for more i
 
   When you use the `commit_parsers_groups` context field, the filter renders groups in the same order as the configured `commit_parsers` instead of sorting them alphabetically.
 
-- `group_by_scope`: Groups an array by the semantic version scope (`major`, `minor`, or `patch`) of an attribute.
+- `group_by_scope`: Groups releases by the semantic version scope (`major`, `minor`, or `patch`) of their `version` field.
 
   ```jinja
-  {% for version, releases in releases | group_by_scope(attribute="version", scope="minor") %}
+  {% for version, releases in releases | group_by_scope(scope="minor", prefix="v") %}
     {% if version %}
       ## {{ version }}
     {% else %}
@@ -76,5 +76,7 @@ See the [Tera Documentation](https://keats.github.io/tera/#templates) for more i
     {% endfor %}
   {% endfor %}
   ```
+
+  Set `prefix` for prefixed tags (for example, `prefix="v"`); otherwise, versions are parsed as-is. Unparsable versions are left unchanged.
 
   Use this in `header` or `footer`; `body` is rendered once per release and does not include the full `releases` array.
