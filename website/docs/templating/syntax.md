@@ -62,20 +62,20 @@ See the [Tera Documentation](https://keats.github.io/tera/#templates) for more i
 
   ```jinja
   {% for version, releases in releases | group_by_scope(scope="minor", prefix="v") %}
-    {% if version %}
-      ## {{ version }}
-    {% else %}
-      ## Unreleased
-    {% endif %}
-    {% set_global commits = [] %}
-    {% for release in releases %}
-      {% set_global commits = commits | concat(with=release.commits) %}
-    {% endfor %}
+  {% set_global commits = [] %}
+  {% for release in releases %}
+    {% set_global commits = commits | concat(with=release.commits) %}
+  {% endfor %}
     {% for group, commits in commits | group_by(attribute="group") %}
       ### {{ group }}
+      {% for commit in commits %}
+        - {{ commit.message }}
+      {% endfor %}
     {% endfor %}
   {% endfor %}
   ```
+
+  The filter returns an array of objects like `{ version: "...", releases: [...] }`.
 
   Set `prefix` for prefixed tags (for example, `prefix="v"`); otherwise, versions are parsed as-is. Unparsable versions are left unchanged.
 

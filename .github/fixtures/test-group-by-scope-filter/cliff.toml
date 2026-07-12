@@ -1,0 +1,33 @@
+# git-cliff ~ configuration file
+# https://git-cliff.org/docs/configuration
+
+[changelog]
+header = """
+{% for version, releases in releases | group_by_scope(scope="minor", prefix="v") -%}
+  {% if version -%}
+    ## {{ version }}
+  {%- else -%}
+    ## Unreleased
+  {%- endif %}
+  {% set_global commits = [] -%}
+  {% for release in releases -%}
+    {% set_global commits = commits | concat(with=release.commits) -%}
+  {% endfor -%}
+  {% for group, commits in commits | group_by(attribute="group") -%}
+    ### {{ group }}
+    {% for commit in commits %}
+    - {{ commit.message }}
+    {% endfor -%}
+  {% endfor %}
+{%- endfor -%}
+"""
+body = ""
+
+[git]
+# An array of regex based parsers for extracting data from the commit message.
+# Assigns commits to groups.
+# Optionally sets the commit's `scope` and can decide to exclude commits from further processing.
+commit_parsers = [
+    { message = "^feat", group = "Features", default_scope = "app" },
+    { message = "^fix", group = "Bug Fixes", scope = "cli" },
+]

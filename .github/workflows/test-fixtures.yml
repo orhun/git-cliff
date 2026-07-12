@@ -17,6 +17,7 @@ jobs:
       matrix:
         include:
           - fixtures-name: new-fixture-template
+          - fixtures-name: test-group-by-scope-filter
           - fixtures-name: test-github-integration
           - fixtures-name: test-github-integration-custom-range
             command: v1.0.0..v1.0.1
