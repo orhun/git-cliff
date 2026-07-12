@@ -27,7 +27,6 @@ pub enum Sort {
 const STYLES: Styles = Styles::styled()
     .header(Ansi256Color(208).on_default().bold())
     .usage(Ansi256Color(208).on_default().bold())
-    .literal(AnsiColor::White.on_default())
     .placeholder(AnsiColor::Green.on_default());
 
 /// Command-line arguments to parse.
@@ -175,7 +174,9 @@ pub struct Opt {
 	    long,
 	    env = "GIT_CLIFF_PREPEND",
 	    value_name = "PATH",
-	    value_parser = Opt::parse_dir
+	    value_parser = Opt::parse_dir,
+	    num_args = 0..=1,
+	    default_missing_value = DEFAULT_OUTPUT
 	)]
     pub prepend: Option<PathBuf>,
     /// Writes output to the given file.
@@ -220,6 +221,9 @@ pub struct Opt {
         allow_hyphen_values = true
     )]
     pub body: Option<String>,
+    /// Reads the template for the changelog body from a file.
+    #[arg(long, value_name = "PATH", value_parser = Opt::parse_dir)]
+    pub body_file: Option<PathBuf>,
     /// Processes the commits starting from the latest tag.
     #[arg(short, long, help_heading = Some("FLAGS"))]
     pub latest: bool,

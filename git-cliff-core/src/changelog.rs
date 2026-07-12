@@ -65,7 +65,7 @@ impl<'a> Changelog<'a> {
             String::from("commit_parsers_groups"),
             serde_json::to_value(parser_groups)?,
         );
-        Ok(Self {
+        let changelog = Self {
             releases,
             header_template: match &config.changelog.header {
                 Some(header) => Some(Template::new("header", header.clone(), trim)?),
@@ -78,7 +78,9 @@ impl<'a> Changelog<'a> {
             },
             config,
             additional_context,
-        })
+        };
+        warn_if_remote_template_variables_without_feature(&changelog);
+        Ok(changelog)
     }
 
     /// Constructs an instance from a serialized context object.
@@ -653,7 +655,23 @@ impl<'a> Changelog<'a> {
         if let Some(header) = &self.config.changelog.header {
             changelog = changelog.replacen(header, "", 1);
         }
-        self.generate(out)?;
+        let mut generated = Vec::new();
+        self.generate(&mut generated)?;
+        let generated = std::str::from_utf8(&generated)?;
+        write!(out, "{generated}")?;
+        // Both the rendered output and the existing content are written
+        // through unchanged so templates keep full control over their own
+        // whitespace. Only when there is no newline at all at the boundary
+        // (the rendered output does not end with one and the existing
+        // changelog does not start with one) a blank line is inserted to
+        // keep the two sections from running into each other.
+        if !generated.is_empty() &&
+            !changelog.is_empty() &&
+            !generated.ends_with('\n') &&
+            !changelog.starts_with(['\n', '\r'])
+        {
+            write!(out, "\n\n")?;
+        }
         write!(out, "{changelog}")?;
         Ok(())
     }
@@ -669,6 +687,59 @@ impl<'a> Changelog<'a> {
         writeln!(out, "{output}")?;
         Ok(())
     }
+}
+
+/// Emits a warning when a template references remote-specific variables for a
+/// provider whose Cargo feature is not compiled in.
+fn warn_if_remote_template_variables_without_feature(changelog: &Changelog<'_>) {
+    // `changelog` is only referenced inside #[cfg(not(feature = "..."))] blocks;
+    // when all remote features are enabled every block is compiled out.
+    let _ = changelog;
+    macro_rules! warn_missing_feature {
+        ($feature:literal, $vars:expr, $example:literal) => {
+            #[cfg(not(feature = $feature))]
+            if [
+                Some(&changelog.body_template),
+                changelog.header_template.as_ref(),
+                changelog.footer_template.as_ref(),
+            ]
+            .into_iter()
+            .flatten()
+            .any(|t| t.contains_variable($vars))
+            {
+                tracing::warn!(
+                    "Template uses `{}` variables (e.g. `{}`) but the `{}` feature is not \
+                     enabled. Rebuild with `--features {}`.",
+                    $feature,
+                    $example,
+                    $feature,
+                    $feature,
+                );
+            }
+        };
+    }
+
+    warn_missing_feature!(
+        "github",
+        &["github", "commit.github"],
+        "github.contributors"
+    );
+    warn_missing_feature!(
+        "gitlab",
+        &["gitlab", "commit.gitlab"],
+        "gitlab.contributors"
+    );
+    warn_missing_feature!("gitea", &["gitea", "commit.gitea"], "gitea.contributors");
+    warn_missing_feature!(
+        "bitbucket",
+        &["bitbucket", "commit.bitbucket"],
+        "bitbucket.contributors"
+    );
+    warn_missing_feature!(
+        "azure_devops",
+        &["azure_devops", "commit.azure_devops"],
+        "azure_devops.contributors"
+    );
 }
 
 fn get_body_template(config: &Config, trim: bool) -> Result<Template> {
@@ -1728,6 +1799,63 @@ chore(deps): fix broken deps
     -- total releases: 2 --
 "]]
         .assert_eq(str::from_utf8(&out).unwrap_or_default());
+        Ok(())
+    }
+
+    #[test]
+    fn changelog_prepend_inserts_blank_line_before_existing_content() -> Result<()> {
+        let (mut config, releases) = get_test_data();
+        config.changelog.header = None;
+        config.changelog.body = String::from("## New Release");
+        config.changelog.footer = None;
+        config.changelog.postprocessors = Vec::new();
+
+        let changelog = Changelog::build(vec![releases[0].clone()], config)?;
+        let mut out = Vec::new();
+        changelog.prepend(String::from("## Old Release"), &mut out)?;
+
+        assert_eq!(
+            "## New Release\n\n## Old Release",
+            str::from_utf8(&out).unwrap_or_default()
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn changelog_prepend_handles_empty_existing_content() -> Result<()> {
+        let (mut config, releases) = get_test_data();
+        config.changelog.header = None;
+        config.changelog.body = String::from("## New Release");
+        config.changelog.footer = None;
+        config.changelog.postprocessors = Vec::new();
+
+        let changelog = Changelog::build(vec![releases[0].clone()], config)?;
+        let mut out = Vec::new();
+        changelog.prepend(String::new(), &mut out)?;
+
+        assert_eq!("## New Release", str::from_utf8(&out).unwrap_or_default());
+
+        Ok(())
+    }
+
+    #[test]
+    fn changelog_prepend_keeps_template_controlled_boundary() -> Result<()> {
+        let (mut config, releases) = get_test_data();
+        config.changelog.header = None;
+        config.changelog.body = String::from("## New Release");
+        config.changelog.footer = None;
+        config.changelog.postprocessors = Vec::new();
+
+        let changelog = Changelog::build(vec![releases[0].clone()], config)?;
+        let mut out = Vec::new();
+        changelog.prepend(String::from("\n## Old Release"), &mut out)?;
+
+        assert_eq!(
+            "## New Release\n## Old Release",
+            str::from_utf8(&out).unwrap_or_default()
+        );
+
         Ok(())
     }
 }

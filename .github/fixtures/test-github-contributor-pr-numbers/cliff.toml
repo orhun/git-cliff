@@ -1,0 +1,25 @@
+# git-cliff ~ configuration file
+# https://git-cliff.org/docs/configuration
+
+[remote.github]
+owner = "orhun"
+repo = "git-cliff"
+
+[changelog]
+body = """
+## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+
+### Changes
+
+{%- for commit in commits %}
+* {{ commit.message | split(pat="\n") | first | trim }}
+{%- endfor %}
+
+### New Contributors
+{%- for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
+{%- if contributor.pr_numbers | length >= 2 %}
+* @{{ contributor.username }} made their first contribution in [{% for number in contributor.pr_numbers %}#{{ number }}{% if not loop.last %}, {% endif %}{% endfor %}]
+{%- endif %}
+{%- endfor %}
+
+"""

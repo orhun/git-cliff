@@ -541,10 +541,11 @@ impl Repository {
                     message: None,
                 }));
             } else if let Some(tag) = obj.as_tag() {
-                if let Some(commit) = tag
-                    .target()
+                // Use peel to resolve nested tags to the final commit
+                if let Some(commit) = obj
+                    .peel(git2::ObjectType::Commit)
                     .ok()
-                    .and_then(|target| target.into_commit().ok())
+                    .and_then(|o| o.into_commit().ok())
                 {
                     if use_branch_tags && !self.should_include_tag(&head_commit, &commit)? {
                         continue;
@@ -559,7 +560,7 @@ impl Repository {
             }
         }
         if !topo_order {
-            tags.sort_by(|a, b| a.0.time().seconds().cmp(&b.0.time().seconds()));
+            tags.sort_by_key(|a| a.0.time().seconds());
         }
         Ok(tags
             .into_iter()
@@ -806,6 +807,34 @@ mod test {
             "v0.1.0"
         );
         assert!(!tags.contains_key("4ddef08debfff48117586296e49d5caa0800d1b5"));
+        Ok(())
+    }
+
+    #[test]
+    fn git_nested_tags() -> Result<()> {
+        let (repo, temp_dir) = create_temp_repo();
+        let path = temp_dir.path();
+
+        let commit = create_commit_with_files(&repo, vec![("initial.txt", "initial content")]);
+
+        Command::new("git")
+            .args(["tag", "-a", "v1.0.0-staging", "-m", "s"])
+            .current_dir(path)
+            .output()?;
+
+        // nested tag: v1.0.0-stable -> v1.0.0-staging -> commit
+        Command::new("git")
+            .args(["tag", "-a", "v1.0.0-stable", "-m", "s", "v1.0.0-staging"])
+            .current_dir(path)
+            .output()?;
+
+        let tags = repo.tags(&Some(Regex::new("v1.0.0-stable")?), false, false)?;
+        assert_eq!(
+            tags.get(&commit.id().to_string())
+                .expect("nested tag should resolve to commit")
+                .name,
+            "v1.0.0-stable"
+        );
         Ok(())
     }
 

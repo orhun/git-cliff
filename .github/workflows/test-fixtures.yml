@@ -62,6 +62,8 @@ jobs:
             command: --bump
           - fixtures-name: test-bumped-version
             command: --bumped-version
+          - fixtures-name: test-bumped-version-no-increment
+            command: --bumped-version
           - fixtures-name: test-footer-template
           - fixtures-name: test-keep-a-changelog-links
           - fixtures-name: test-keep-a-changelog-links-current-arg
@@ -112,6 +114,8 @@ jobs:
             command: --from-context context.json
           - fixtures-name: test-from-context-does-not-discard-fields
             command: --from-context context.json
+          - fixtures-name: test-github-contributor-pr-numbers
+            command: v2.12.0..v2.13.0
           - fixtures-name: test-always-render-unreleased
             command: --unreleased
           - fixtures-name: test-always-render
@@ -164,6 +168,7 @@ jobs:
           - fixtures-name: test-include-path-env-var-github
             include-path-env: "website/**/* .github/**/*"
           - fixtures-name: test-offline
+          - fixtures-name: test-nested-tags
 
     steps:
       - name: Checkout

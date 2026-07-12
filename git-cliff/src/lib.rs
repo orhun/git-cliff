@@ -19,7 +19,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use args::{BumpOption, Opt, Sort, Strip};
 use clap::ValueEnum;
 use git_cliff_core::changelog::Changelog;
-use git_cliff_core::commit::{Commit, Range};
+use git_cliff_core::commit::{Commit, CommitStatistics, Range};
 use git_cliff_core::config::{CommitParser, Config};
 use git_cliff_core::embed::{BuiltinConfig, EmbeddedConfig};
 use git_cliff_core::error::{Error, Result};
@@ -353,7 +353,22 @@ fn process_repository<'a>(
     for git_commit in commits.iter().rev() {
         let release = releases.last_mut().unwrap();
         let mut commit = Commit::from(git_commit);
-        commit.statistics = repository.commit_statistics(git_commit)?;
+        commit.statistics = match repository.commit_statistics(git_commit) {
+            Ok(statistics) => statistics,
+            Err(err)
+                if matches!(
+                    &err,
+                    Error::GitError(git_err) if git_err.message().contains("object not found")
+                ) =>
+            {
+                tracing::warn!(
+                    "Skipping diff statistics for commit {} because a Git object is missing: {err}",
+                    commit.id,
+                );
+                CommitStatistics::default()
+            }
+            Err(err) => return Err(err),
+        };
         let commit_id = commit.id.clone();
         release.commits.push(commit);
         release.repository = Some(repository_path.clone());
@@ -537,6 +552,9 @@ pub fn run_with_changelog_modifier<'a>(
         if let Some(changelog) = args.prepend {
             args.prepend = Some(workdir.join(changelog));
         }
+        if let Some(body_file) = args.body_file {
+            args.body_file = Some(workdir.join(body_file));
+        }
         // pushing an empty component force-adds a trailing path separator
         // which is needed for correct glob expansion
         args.include_path = Some(vec![Pattern::new(
@@ -620,7 +638,11 @@ pub fn run_with_changelog_modifier<'a>(
             "'-o' and '-p' can only be used together if they point to different files",
         )));
     }
-    if let Some(body) = args.body.clone() {
+    if let Some(body) = if let Some(body_file) = &args.body_file {
+        Some(fs::read_to_string(body_file)?)
+    } else {
+        args.body.clone()
+    } {
         config.changelog.body = body;
     }
     if args.sort == Sort::Oldest {

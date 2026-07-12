@@ -173,6 +173,9 @@ impl Release<'_> {
                     next_version = next_version
                         .with_custom_minor_increment_regex(custom_minor_increment_regex)?;
                 }
+                if let Some(no_increment_regex) = &config.no_increment_regex {
+                    next_version = next_version.with_no_increment_regex(no_increment_regex)?;
+                }
                 let old_semver = semver?;
                 let (next_version, determined_bump_type) =
                     if let Some(bump_type) = &config.bump_type {
@@ -187,7 +190,7 @@ impl Release<'_> {
                             &old_semver,
                             self.commits
                                 .iter()
-                                .map(|commit| commit.message.trim_end().to_string())
+                                .map(|commit| commit.raw_message().trim_end().to_string())
                                 .collect::<Vec<String>>(),
                         );
                         let bump_type = determine_bump_type(&old_semver, &new_semver);
@@ -371,6 +374,7 @@ mod test {
                     initial_tag: None,
                     custom_major_increment_regex: None,
                     custom_minor_increment_regex: None,
+                    no_increment_regex: None,
                     bump_type: None,
                 })?
                 .version;
@@ -396,6 +400,7 @@ mod test {
                     initial_tag: None,
                     custom_major_increment_regex: None,
                     custom_minor_increment_regex: None,
+                    no_increment_regex: None,
                     bump_type: None,
                 })?
                 .version;
@@ -421,6 +426,7 @@ mod test {
                     initial_tag: None,
                     custom_major_increment_regex: None,
                     custom_minor_increment_regex: None,
+                    no_increment_regex: None,
                     bump_type: None,
                 })?
                 .version;
@@ -446,11 +452,74 @@ mod test {
                 initial_tag: None,
                 custom_major_increment_regex: None,
                 custom_minor_increment_regex: None,
+                no_increment_regex: None,
                 bump_type: None,
             })?;
             assert_eq!("0.1.0", result.version);
             assert_eq!(None, result.bump_type);
         }
+        Ok(())
+    }
+
+    #[test]
+    fn no_increment_regex_skips_matching_commit_types() -> Result<()> {
+        fn build_release<'a>(version: &str, commits: &'a [&str]) -> Release<'a> {
+            Release {
+                version: None,
+                commits: commits
+                    .iter()
+                    .map(|v| Commit::from((*v).to_string()))
+                    .collect(),
+                previous: Some(Box::new(Release {
+                    version: Some(String::from(version)),
+                    ..Default::default()
+                })),
+                ..Default::default()
+            }
+        }
+
+        let release = build_release("1.0.0", &["chore: should not release"]);
+        let result = release.calculate_next_version_with_config(&Bump {
+            no_increment_regex: Some(String::from("^chore$")),
+            ..Default::default()
+        })?;
+        assert_eq!("1.0.0", result.version);
+        assert_eq!(None, result.bump_type);
+
+        let release = build_release("1.0.0", &[
+            "docs: update readme",
+            "feat: add a user-facing feature",
+        ]);
+        let result = release.calculate_next_version_with_config(&Bump {
+            no_increment_regex: Some(String::from("^docs$")),
+            ..Default::default()
+        })?;
+        assert_eq!("1.1.0", result.version);
+        assert_eq!(Some(BumpType::Minor), result.bump_type);
+
+        let release = Release {
+            version: None,
+            commits: vec![
+                Commit {
+                    message: String::from("test"),
+                    raw_message: Some(String::from("ci: test")),
+                    ..Default::default()
+                }
+                .into_conventional()?,
+            ],
+            previous: Some(Box::new(Release {
+                version: Some(String::from("1.0.0")),
+                ..Default::default()
+            })),
+            ..Default::default()
+        };
+        let result = release.calculate_next_version_with_config(&Bump {
+            no_increment_regex: Some(String::from("^ci$")),
+            ..Default::default()
+        })?;
+        assert_eq!("1.0.0", result.version);
+        assert_eq!(None, result.bump_type);
+
         Ok(())
     }
 
@@ -743,6 +812,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(42),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
                 },
@@ -750,6 +820,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(42),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
                 }),
@@ -762,6 +833,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("2")),
                     pr_number: Some(66),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
                 },
@@ -769,6 +841,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("2")),
                     pr_number: Some(66),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
                 }),
@@ -781,6 +854,7 @@ mod test {
                     username: Some(String::from("nuhro")),
                     pr_title: Some(String::from("3")),
                     pr_number: Some(53),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
                 },
@@ -788,6 +862,7 @@ mod test {
                     username: Some(String::from("nuhro")),
                     pr_title: Some(String::from("3")),
                     pr_number: Some(53),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
                 }),
@@ -800,6 +875,7 @@ mod test {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: Some(String::from("4")),
                     pr_number: Some(1_000),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
                 },
@@ -807,6 +883,7 @@ mod test {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: Some(String::from("4")),
                     pr_number: Some(1_000),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
                 }),
@@ -819,6 +896,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("5")),
                     pr_number: Some(999_999),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("github")],
                     is_first_time: false,
                 },
@@ -826,6 +904,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("5")),
                     pr_number: Some(999_999),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("github")],
                     is_first_time: false,
                 }),
@@ -838,6 +917,7 @@ mod test {
                     username: Some(String::from("someone")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 },
@@ -845,6 +925,7 @@ mod test {
                     username: Some(String::from("someone")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 }),
@@ -853,10 +934,7 @@ mod test {
         ];
         assert_eq!(expected_commits, release.commits);
 
-        release
-            .github
-            .contributors
-            .sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+        release.github.contributors.sort_by_key(|a| a.pr_number);
 
         let expected_metadata = RemoteReleaseMetadata {
             contributors: vec![
@@ -864,6 +942,7 @@ mod test {
                     username: Some(String::from("someone")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: true,
                 },
@@ -871,6 +950,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(42),
+                    pr_numbers: vec![42, 66, 999_999],
                     pr_labels: vec![String::from("rust")],
                     is_first_time: true,
                 },
@@ -878,6 +958,7 @@ mod test {
                     username: Some(String::from("nuhro")),
                     pr_title: Some(String::from("3")),
                     pr_number: Some(53),
+                    pr_numbers: vec![53],
                     pr_labels: vec![String::from("deps")],
                     is_first_time: true,
                 },
@@ -885,6 +966,7 @@ mod test {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: Some(String::from("4")),
                     pr_number: Some(1_000),
+                    pr_numbers: vec![1_000],
                     pr_labels: vec![String::from("deps")],
                     is_first_time: true,
                 },
@@ -1114,6 +1196,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(1),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
                 },
@@ -1121,6 +1204,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(1),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
                 }),
@@ -1133,6 +1217,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 },
@@ -1140,6 +1225,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 }),
@@ -1152,6 +1238,7 @@ mod test {
                     username: Some(String::from("nuhro")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 },
@@ -1159,6 +1246,7 @@ mod test {
                     username: Some(String::from("nuhro")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 }),
@@ -1171,6 +1259,7 @@ mod test {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 },
@@ -1178,6 +1267,7 @@ mod test {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 }),
@@ -1190,6 +1280,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 },
@@ -1197,6 +1288,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 }),
@@ -1209,6 +1301,7 @@ mod test {
                     username: Some(String::from("someone")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 },
@@ -1216,6 +1309,7 @@ mod test {
                     username: Some(String::from("someone")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 }),
@@ -1224,10 +1318,7 @@ mod test {
         ];
         assert_eq!(expected_commits, release.commits);
 
-        release
-            .github
-            .contributors
-            .sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+        release.github.contributors.sort_by_key(|a| a.pr_number);
 
         let expected_metadata = RemoteReleaseMetadata {
             contributors: vec![
@@ -1235,6 +1326,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(1),
+                    pr_numbers: vec![1],
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
                 },
@@ -1242,6 +1334,7 @@ mod test {
                     username: Some(String::from("nuhro")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: true,
                 },
@@ -1249,6 +1342,7 @@ mod test {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: true,
                 },
@@ -1256,6 +1350,7 @@ mod test {
                     username: Some(String::from("someone")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: true,
                 },
@@ -1459,6 +1554,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(42),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
                 },
@@ -1466,6 +1562,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(42),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
                 }),
@@ -1478,6 +1575,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("2")),
                     pr_number: Some(66),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
                 },
@@ -1485,6 +1583,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("2")),
                     pr_number: Some(66),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("rust")],
                     is_first_time: false,
                 }),
@@ -1497,6 +1596,7 @@ mod test {
                     username: Some(String::from("nuhro")),
                     pr_title: Some(String::from("3")),
                     pr_number: Some(53),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
                 },
@@ -1504,6 +1604,7 @@ mod test {
                     username: Some(String::from("nuhro")),
                     pr_title: Some(String::from("3")),
                     pr_number: Some(53),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
                 }),
@@ -1516,6 +1617,7 @@ mod test {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: Some(String::from("4")),
                     pr_number: Some(1_000),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
                 },
@@ -1523,6 +1625,7 @@ mod test {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: Some(String::from("4")),
                     pr_number: Some(1_000),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("deps")],
                     is_first_time: false,
                 }),
@@ -1535,6 +1638,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("5")),
                     pr_number: Some(999_999),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("github")],
                     is_first_time: false,
                 },
@@ -1542,6 +1646,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("5")),
                     pr_number: Some(999_999),
+                    pr_numbers: vec![],
                     pr_labels: vec![String::from("github")],
                     is_first_time: false,
                 }),
@@ -1554,6 +1659,7 @@ mod test {
                     username: Some(String::from("someone")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 },
@@ -1561,6 +1667,7 @@ mod test {
                     username: Some(String::from("someone")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 }),
@@ -1569,10 +1676,7 @@ mod test {
         ];
         assert_eq!(expected_commits, release.commits);
 
-        release
-            .gitea
-            .contributors
-            .sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+        release.gitea.contributors.sort_by_key(|a| a.pr_number);
 
         let expected_metadata = RemoteReleaseMetadata {
             contributors: vec![
@@ -1580,6 +1684,7 @@ mod test {
                     username: Some(String::from("someone")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: true,
                 },
@@ -1587,6 +1692,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(42),
+                    pr_numbers: vec![42, 66, 999_999],
                     pr_labels: vec![String::from("rust")],
                     is_first_time: true,
                 },
@@ -1594,6 +1700,7 @@ mod test {
                     username: Some(String::from("nuhro")),
                     pr_title: Some(String::from("3")),
                     pr_number: Some(53),
+                    pr_numbers: vec![53],
                     pr_labels: vec![String::from("deps")],
                     is_first_time: true,
                 },
@@ -1601,6 +1708,7 @@ mod test {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: Some(String::from("4")),
                     pr_number: Some(1_000),
+                    pr_numbers: vec![1_000],
                     pr_labels: vec![String::from("deps")],
                     is_first_time: true,
                 },
@@ -1758,6 +1866,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(1),
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 },
@@ -1765,6 +1874,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(1),
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 }),
@@ -1777,6 +1887,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 },
@@ -1784,6 +1895,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 }),
@@ -1796,6 +1908,7 @@ mod test {
                     username: Some(String::from("nuhro")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 },
@@ -1803,6 +1916,7 @@ mod test {
                     username: Some(String::from("nuhro")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 }),
@@ -1815,6 +1929,7 @@ mod test {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 },
@@ -1822,6 +1937,7 @@ mod test {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 }),
@@ -1834,6 +1950,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 },
@@ -1841,6 +1958,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 }),
@@ -1853,6 +1971,7 @@ mod test {
                     username: Some(String::from("someone")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 },
@@ -1860,6 +1979,7 @@ mod test {
                     username: Some(String::from("someone")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 }),
@@ -1868,10 +1988,7 @@ mod test {
         ];
         assert_eq!(expected_commits, release.commits);
 
-        release
-            .bitbucket
-            .contributors
-            .sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+        release.bitbucket.contributors.sort_by_key(|a| a.pr_number);
 
         let expected_metadata = RemoteReleaseMetadata {
             contributors: vec![
@@ -1879,6 +1996,7 @@ mod test {
                     username: Some(String::from("nuhro")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: true,
                 },
@@ -1886,6 +2004,7 @@ mod test {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: true,
                 },
@@ -1893,6 +2012,7 @@ mod test {
                     username: Some(String::from("someone")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: true,
                 },
@@ -1900,6 +2020,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(1),
+                    pr_numbers: vec![1],
                     pr_labels: vec![],
                     is_first_time: false,
                 },
@@ -2072,6 +2193,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(42),
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 },
@@ -2079,6 +2201,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(42),
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 }),
@@ -2091,6 +2214,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 },
@@ -2098,6 +2222,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 }),
@@ -2110,6 +2235,7 @@ mod test {
                     username: Some(String::from("nuhro")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 },
@@ -2117,6 +2243,7 @@ mod test {
                     username: Some(String::from("nuhro")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 }),
@@ -2129,6 +2256,7 @@ mod test {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 },
@@ -2136,6 +2264,7 @@ mod test {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 }),
@@ -2148,6 +2277,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 },
@@ -2155,6 +2285,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 }),
@@ -2167,6 +2298,7 @@ mod test {
                     username: Some(String::from("someone")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 },
@@ -2174,6 +2306,7 @@ mod test {
                     username: Some(String::from("someone")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: false,
                 }),
@@ -2185,7 +2318,7 @@ mod test {
         release
             .azure_devops
             .contributors
-            .sort_by(|a, b| a.pr_number.cmp(&b.pr_number));
+            .sort_by_key(|a| a.pr_number);
 
         let expected_metadata = RemoteReleaseMetadata {
             contributors: vec![
@@ -2193,6 +2326,7 @@ mod test {
                     username: Some(String::from("nuhro")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: true,
                 },
@@ -2200,6 +2334,7 @@ mod test {
                     username: Some(String::from("awesome_contributor")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: true,
                 },
@@ -2207,6 +2342,7 @@ mod test {
                     username: Some(String::from("someone")),
                     pr_title: None,
                     pr_number: None,
+                    pr_numbers: vec![],
                     pr_labels: vec![],
                     is_first_time: true,
                 },
@@ -2214,6 +2350,7 @@ mod test {
                     username: Some(String::from("orhun")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(42),
+                    pr_numbers: vec![42],
                     pr_labels: vec![],
                     is_first_time: false,
                 },

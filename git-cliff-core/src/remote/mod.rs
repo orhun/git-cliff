@@ -216,14 +216,21 @@ macro_rules! update_release_metadata {
                         commit.$remote.pr_title = pull_request.and_then(|v| v.title().clone());
                         commit.$remote.pr_labels =
                             pull_request.map(|v| v.labels().clone()).unwrap_or_default();
-                        if !contributors
-                            .iter()
-                            .any(|v| commit.$remote.username == v.username)
+                        if let Some(existing) = contributors
+                            .iter_mut()
+                            .find(|v| commit.$remote.username == v.username)
                         {
+                            if let Some(pr_num) = commit.$remote.pr_number {
+                                if !existing.pr_numbers.contains(&pr_num) {
+                                    existing.pr_numbers.push(pr_num);
+                                }
+                            }
+                        } else {
                             contributors.push(RemoteContributor {
                                 username: commit.$remote.username.clone(),
                                 pr_title: commit.$remote.pr_title.clone(),
                                 pr_number: commit.$remote.pr_number,
+                                pr_numbers: commit.$remote.pr_number.into_iter().collect(),
                                 pr_labels: commit.$remote.pr_labels.clone(),
                                 is_first_time: false,
                             });
@@ -243,6 +250,7 @@ macro_rules! update_release_metadata {
                 self.$remote.contributors = contributors
                     .into_iter()
                     .map(|mut v| {
+                        v.pr_numbers.sort_unstable();
                         v.is_first_time = !commits
                             .iter()
                             .filter(|commit| {
