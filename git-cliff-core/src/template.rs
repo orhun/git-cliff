@@ -536,8 +536,8 @@ mod test {
 
     #[test]
     fn test_commit_groups_filter_appends_unknown_groups() -> Result<()> {
-        let template =
-            "{% for entry in commits | commit_groups(groups=order) %}{{ entry.group }};{% endfor %}";
+        let template = "{% for entry in commits | commit_groups(groups=order) %}{{ entry.group \
+                        }};{% endfor %}";
         let template = Template::new("test", template.to_string(), true)?;
         let release = release_with_emoji_groups();
         let mut additional: HashMap<&str, Vec<&str>> = HashMap::new();
