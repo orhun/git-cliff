@@ -31,6 +31,45 @@ Then strip the tags in the template with the series of filters:
 ### {{ group | striptags | trim | upper_first }}
 ```
 
+:::info
+
+If you are using the built-in [`commit_groups`](/docs/templating/syntax#custom-built-in-filters) filter, you can also pass the `commit_parsers_groups` context field to keep the parser order without embedding ordering tags:
+
+```jinja2
+{% for entry in commits | commit_groups(groups=commit_parsers_groups) %}
+  ### {{ entry.name | striptags | trim | upper_first }}
+{% endfor %}
+```
+
+For example, given these [`commit_parsers`](/docs/configuration/git#commit_parsers) and the custom [`commit_groups`](/docs/templating/syntax#custom-built-in-filters) filter:
+
+```toml
+[git]
+commit_parsers = [
+  { message = "^feat", group = "New features" },
+  { message = "^fix", group = "Bug fixes" },
+  { message = "^perf", group = "Performance" },
+]
+```
+
+The template above renders:
+
+```md
+### New features
+
+- feat: add parser-order docs
+
+### Bug fixes
+
+- fix: keep group order stable
+
+### Performance
+
+- perf: speed up changelog rendering
+```
+
+:::
+
 ## Discard duplicate commits
 
 ```jinja2

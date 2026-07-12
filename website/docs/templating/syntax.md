@@ -1,6 +1,7 @@
 ---
 sidebar_position: 2
 ---
+
 # Syntax
 
 **git-cliff** uses [Tera](https://github.com/Keats/tera) as the template engine. It has a syntax based on [Jinja2](http://jinja.pocoo.org/) and [Django](https://docs.djangoproject.com/en/3.1/topics/templates/) templates.
@@ -44,3 +45,13 @@ See the [Tera Documentation](https://keats.github.io/tera/#templates) for more i
   ```jinja
   {{ "hello world, hello universe" | split_regex(pat=" ") }} →  [hello, world,, hello, universe]
   ```
+
+- `commit_groups`: Groups commits by their `group` field while preserving a custom order.
+
+  ```jinja
+  {% for entry in commits | commit_groups(groups=commit_parsers_groups) %}
+    ### {{ entry.name }}
+  {% endfor %}
+  ```
+
+  When you use the `commit_parsers_groups` context field, the filter renders groups in the same order as the configured `commit_parsers` instead of sorting them alphabetically.
