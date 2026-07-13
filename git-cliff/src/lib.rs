@@ -160,17 +160,15 @@ fn process_submodules(
 }
 
 /// Initializes the configuration file.
-pub fn init_config(name: Option<&str>, config_path: &Path) -> Result<()> {
+pub fn init_config(name: Option<&str>, config_path: Option<&Path>) -> Result<()> {
     let contents = match name {
         Some(name) => BuiltinConfig::get_config(name.to_string())?,
         None => EmbeddedConfig::get_config()?,
     };
 
-    let config_path = if config_path == Path::new(DEFAULT_CONFIG) {
-        PathBuf::from(DEFAULT_CONFIG)
-    } else {
-        config_path.to_path_buf()
-    };
+    let config_path = config_path
+        .map(Path::to_path_buf)
+        .unwrap_or_else(|| PathBuf::from(DEFAULT_CONFIG));
 
     tracing::info!(
         "Saving the configuration file{} to {}",
@@ -537,11 +535,16 @@ pub fn run_with_changelog_modifier<'a>(
     changelog_modifier: impl FnOnce(&mut Changelog) -> Result<()>,
 ) -> Result<Changelog<'a>> {
     // Retrieve the built-in configuration.
-    let builtin_config = BuiltinConfig::parse(args.config.to_string_lossy().to_string());
+    let builtin_config = args
+        .config
+        .as_ref()
+        .map(|config| BuiltinConfig::parse(config.to_string_lossy().to_string()));
 
     // Set the working directory.
     if let Some(ref workdir) = args.workdir {
-        args.config = workdir.join(args.config);
+        if let Some(config) = &args.config {
+            args.config = Some(workdir.join(config));
+        }
         match args.repository.as_mut() {
             Some(repository) => {
                 repository
@@ -563,8 +566,13 @@ pub fn run_with_changelog_modifier<'a>(
         )?]);
     }
 
-    // Set path for the configuration file.
-    let mut path = args.config.clone();
+    // Set path for the configuration file. When `--config` is not given, fall
+    // back to the default file name so the existing discovery order (project
+    // config, then user config directory) is preserved.
+    let mut path = args
+        .config
+        .clone()
+        .unwrap_or_else(|| PathBuf::from(DEFAULT_CONFIG));
     if !path.exists() {
         if let Some(config_path) = Config::retrieve_user_config_path() {
             path = config_path;
@@ -584,7 +592,7 @@ pub fn run_with_changelog_modifier<'a>(
         }
         #[cfg(not(feature = "remote"))]
         unreachable!("This option is not available without the 'remote' build-time feature");
-    } else if let Ok((config, name)) = builtin_config {
+    } else if let Some(Ok((config, name))) = builtin_config {
         tracing::info!("Using built-in configuration file: {name}");
         config
     } else if path.exists() {
@@ -605,7 +613,7 @@ pub fn run_with_changelog_modifier<'a>(
         if !args.context {
             tracing::warn!(
                 "{:?} is not found, using the default configuration",
-                args.config
+                args.config.as_deref().unwrap_or(Path::new(DEFAULT_CONFIG))
             );
         }
         EmbeddedConfig::parse()?

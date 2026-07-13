@@ -42,7 +42,7 @@ fn main() -> Result<()> {
 
     // Create the configuration file if init flag is given.
     if let Some(path) = &args.init {
-        init_config(path.as_deref(), &args.config)?;
+        init_config(path.as_deref(), args.config.as_deref())?;
         return Ok(());
     }
 

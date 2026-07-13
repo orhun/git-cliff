@@ -4,8 +4,8 @@ use clap::builder::styling::{Ansi256Color, AnsiColor};
 use clap::builder::{Styles, TypedValueParser, ValueParserFactory};
 use clap::error::{ContextKind, ContextValue, ErrorKind};
 use clap::{ArgAction, Parser, ValueEnum};
+use git_cliff_core::DEFAULT_OUTPUT;
 use git_cliff_core::config::{BumpType, Remote};
-use git_cliff_core::{DEFAULT_CONFIG, DEFAULT_OUTPUT};
 use glob::Pattern;
 use regex::Regex;
 use secrecy::SecretString;
@@ -83,15 +83,18 @@ pub struct Opt {
 	)]
     pub init: Option<Option<String>>,
     /// Sets the configuration file.
+    ///
+    /// When omitted, the configuration is discovered automatically (a project
+    /// `cliff.toml` / `.cliff.toml` / `.config/cliff.toml`, then the user
+    /// configuration directory), falling back to the built-in default.
     #[arg(
 	    short,
 	    long,
 	    env = "GIT_CLIFF_CONFIG",
 	    value_name = "PATH",
-	    default_value = DEFAULT_CONFIG,
 	    value_parser = Opt::parse_dir
 	)]
-    pub config: PathBuf,
+    pub config: Option<PathBuf>,
     /// Sets the URL for the configuration file.
     #[arg(long, env = "GIT_CLIFF_CONFIG_URL", value_name = "URL", hide = !cfg!(feature = "remote"))]
     pub config_url: Option<Url>,
