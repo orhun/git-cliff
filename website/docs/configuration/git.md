@@ -42,6 +42,7 @@ limit_commits = 42
 recurse_submodules = false
 include_paths = ["src/", "doc/**/*.md"]
 exclude_paths = ["unrelated/"]
+use_git_blame_ignore_revs = false
 ```
 
 ### conventional_commits
@@ -373,3 +374,12 @@ This setting takes priority over `include_paths`.
 
 - If a commit touches both included and excluded paths, it **will be included**.
 - If a commit **only** modifies files that match both `include_paths` and `exclude_paths`, it **will be excluded**.
+
+### use_git_blame_ignore_revs
+
+`use_git_blame_ignore_revs` is an _optional_ boolean value that, when set to `true`, excludes:
+
+- commits whose hash (full or abbreviated) is listed in the repository's [`.git-blame-ignore-revs`](https://git-scm.com/docs/git-blame#Documentation/git-blame.txt---ignore-revs-fileltfilegt) file, and
+- commits that **only** modify that file.
+
+This is useful for keeping large, non-semantic commits (e.g. mass reformatting) out of the changelog, mirroring what `git blame --ignore-revs-file` already does for blame output. Does nothing if the file does not exist.

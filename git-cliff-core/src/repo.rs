@@ -29,6 +29,11 @@ static TAG_SIGNATURE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
 /// Name of the cache file for changed files.
 const CHANGED_FILES_CACHE: &str = "changed_files_cache";
 
+/// Name of the file listing commit hashes for `git blame` to ignore.
+///
+/// <https://git-scm.com/docs/git-blame#Documentation/git-blame.txt---ignore-revs-fileltfilegt>
+const GIT_BLAME_IGNORE_REVS_FILE: &str = ".git-blame-ignore-revs";
+
 /// Wrapper for [`Repository`] type from git2.
 ///
 /// [`Repository`]: GitRepository
@@ -208,6 +213,37 @@ impl Repository {
             });
         }
         Ok(commits)
+    }
+
+    /// Filters out commits listed in the repository's `.git-blame-ignore-revs`
+    /// file, as well as commits that only modify that file.
+    ///
+    /// Mirrors the file `git blame --ignore-revs-file` reads: one commit
+    /// hash per line, blank lines and `#`-comments ignored. Hashes may be
+    /// abbreviated. Does nothing if the file does not exist.
+    pub fn filter_git_blame_ignore_revs(&self, commits: &mut Vec<Commit<'_>>) {
+        let Ok(root) = self.root_path() else {
+            return;
+        };
+        let Ok(contents) = std::fs::read_to_string(root.join(GIT_BLAME_IGNORE_REVS_FILE)) else {
+            return;
+        };
+        let ignored_ids: Vec<&str> = contents
+            .lines()
+            .map(str::trim)
+            .filter(|line| !line.is_empty() && !line.starts_with('#'))
+            .collect();
+        if ignored_ids.is_empty() {
+            return;
+        }
+        commits.retain(|commit| {
+            let id = commit.id().to_string();
+            if ignored_ids.iter().any(|ignored| id.starts_with(ignored)) {
+                return false;
+            }
+            let changed_files = self.commit_changed_files(commit);
+            !(changed_files.len() == 1 && changed_files[0] == Path::new(GIT_BLAME_IGNORE_REVS_FILE))
+        });
     }
 
     /// Returns diff statistics for a single commit.
@@ -1099,6 +1135,62 @@ mod test {
             .head()
             .and_then(|head| head.peel_to_commit())
             .expect("failed to get the last commit")
+    }
+
+    #[test]
+    fn filter_git_blame_ignore_revs_removes_listed_and_ignore_file_only_commits() {
+        let (repo, _temp_dir) = create_temp_repo();
+
+        let normal_commit_1 = create_commit_with_files(&repo, vec![("file1.txt", "content1")]);
+        let ignored_commit = create_commit_with_files(&repo, vec![("file2.txt", "content2")]);
+        let normal_commit_2 = create_commit_with_files(&repo, vec![("file3.txt", "content3")]);
+
+        // A commit that only adds/updates the ignore file itself should also
+        // be filtered out, regardless of whether it lists itself.
+        let ignore_file_contents = format!("# comment\n{}\n", ignored_commit.id());
+        let ignore_file_commit = create_commit_with_files(&repo, vec![(
+            ".git-blame-ignore-revs",
+            ignore_file_contents.as_str(),
+        )]);
+
+        let mut commits = repo
+            .commits(None, None, None, false)
+            .expect("failed to get commits");
+        assert_eq!(commits.len(), 4, "sanity check before filtering");
+
+        repo.filter_git_blame_ignore_revs(&mut commits);
+
+        let remaining_ids: Vec<_> = commits.iter().map(git2::Commit::id).collect();
+        assert!(remaining_ids.contains(&normal_commit_1.id()));
+        assert!(remaining_ids.contains(&normal_commit_2.id()));
+        assert!(
+            !remaining_ids.contains(&ignored_commit.id()),
+            "commit listed in .git-blame-ignore-revs should be filtered out"
+        );
+        assert!(
+            !remaining_ids.contains(&ignore_file_commit.id()),
+            "commit that only touches .git-blame-ignore-revs should be filtered out"
+        );
+        assert_eq!(commits.len(), 2);
+    }
+
+    #[test]
+    fn filter_git_blame_ignore_revs_is_a_no_op_without_the_file() {
+        let (repo, _temp_dir) = create_temp_repo();
+        create_commit_with_files(&repo, vec![("file1.txt", "content1")]);
+
+        let mut commits = repo
+            .commits(None, None, None, false)
+            .expect("failed to get commits");
+        let before = commits.len();
+
+        repo.filter_git_blame_ignore_revs(&mut commits);
+
+        assert_eq!(
+            commits.len(),
+            before,
+            "no .git-blame-ignore-revs file present"
+        );
     }
 
     #[test]
