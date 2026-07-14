@@ -566,21 +566,23 @@ pub fn run_with_changelog_modifier<'a>(
         )?]);
     }
 
-    // Set path for the configuration file. When `--config` is not given, fall
-    // back to the default file name so the existing discovery order (project
-    // config, then user config directory) is preserved.
-    let mut path = args
-        .config
-        .clone()
-        .unwrap_or_else(|| PathBuf::from(DEFAULT_CONFIG));
-    if !path.exists() {
-        if let Some(config_path) = Config::retrieve_user_config_path() {
-            path = config_path;
-        }
-    }
+    // Determine the configuration file path. An explicit `--config` is used
+    // as given (falling back to the user configuration directory when the path
+    // does not exist); when `--config` is omitted, the configuration file is
+    // discovered automatically — a project `cliff.toml` / `.cliff.toml` /
+    // `.config/cliff.toml` (searched up the directory tree), then the user
+    // configuration directory.
+    let config_path = match &args.config {
+        Some(config_path) if config_path.exists() => Some(config_path.clone()),
+        Some(_) => Config::retrieve_user_config_path(),
+        None => env::current_dir()?
+            .ancestors()
+            .find_map(Config::retrieve_project_config_path)
+            .or_else(Config::retrieve_user_config_path),
+    };
 
-    // Parse the configuration file.
-    // Load the default configuration if necessary.
+    // Parse the configuration file, loading the default configuration if none
+    // is found.
     let mut config = if let Some(url) = &args.config_url {
         tracing::debug!("Using configuration file from: {url}");
         #[cfg(feature = "remote")]
@@ -595,19 +597,14 @@ pub fn run_with_changelog_modifier<'a>(
     } else if let Some(Ok((config, name))) = builtin_config {
         tracing::info!("Using built-in configuration file: {name}");
         config
-    } else if path.exists() {
-        Config::load(&path)?
+    } else if let Some(config_path) = config_path {
+        #[allow(clippy::unnecessary_debug_formatting)]
+        {
+            tracing::info!("Using configuration from: {}", config_path.display());
+        }
+        Config::load(&config_path)?
     } else if let Some(contents) = Config::read_from_manifest()? {
         contents.parse()?
-    } else if let Some(discovered_path) = env::current_dir()?
-        .ancestors()
-        .find_map(Config::retrieve_project_config_path)
-    {
-        tracing::info!(
-            "Using configuration from parent directory: {}",
-            discovered_path.display()
-        );
-        Config::load(&discovered_path)?
     } else {
         #[allow(clippy::unnecessary_debug_formatting)]
         if !args.context {
