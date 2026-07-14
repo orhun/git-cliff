@@ -317,9 +317,7 @@ fn process_repository<'a>(
         exclude_path,
         config.git.topo_order_commits,
     )?;
-    if config.git.use_git_blame_ignore_revs {
-        repository.filter_git_blame_ignore_revs(&mut commits);
-    }
+    repository.filter_git_blame_ignore_revs(&mut commits);
     if let Some(commit_limit_value) = config.git.limit_commits {
         commits.truncate(commit_limit_value);
     }

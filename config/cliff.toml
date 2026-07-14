@@ -92,6 +92,3 @@ topo_order_commits = true
 sort_commits = "oldest"
 # Process submodules commits
 recurse_submodules = false
-# Ignore commits listed in the repository's `.git-blame-ignore-revs` file,
-# as well as commits that only modify that file.
-use_git_blame_ignore_revs = false

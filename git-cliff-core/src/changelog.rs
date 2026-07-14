@@ -981,7 +981,6 @@ mod test {
                 recurse_submodules: None,
                 include_paths: Vec::new(),
                 exclude_paths: Vec::new(),
-                use_git_blame_ignore_revs: false,
             },
             remote: RemoteConfig {
                 offline: false,

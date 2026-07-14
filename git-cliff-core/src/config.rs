@@ -148,9 +148,6 @@ pub struct GitConfig {
     /// Exclude unrelated commits with changes at the specified paths.
     #[serde(with = "serde_pattern", default)]
     pub exclude_paths: Vec<Pattern>,
-    /// Ignore commits listed in the repository's `.git-blame-ignore-revs`
-    /// file, as well as commits that only modify that file.
-    pub use_git_blame_ignore_revs: bool,
 }
 
 /// Processing steps for commits.
