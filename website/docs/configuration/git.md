@@ -373,12 +373,3 @@ This setting takes priority over `include_paths`.
 
 - If a commit touches both included and excluded paths, it **will be included**.
 - If a commit **only** modifies files that match both `include_paths` and `exclude_paths`, it **will be excluded**.
-
-### `.git-blame-ignore-revs` support
-
-If the repository has a [`.git-blame-ignore-revs`](https://git-scm.com/docs/git-blame#Documentation/git-blame.txt---ignore-revs-fileltfilegt) file, **git-cliff** automatically excludes:
-
-- commits whose hash (full or abbreviated) is listed in that file, and
-- commits that **only** modify that file.
-
-This mirrors what `git blame --ignore-revs-file` already does for blame output, keeping large, non-semantic commits (e.g. mass reformatting) out of the changelog. This has no effect if the file does not exist.
