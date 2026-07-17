@@ -20,3 +20,21 @@ For example:
 4f88dda8c746173ea59f920b7579b7f6c74bd6c8
 10c3194381f2cc4f93eb97404369568882ed8677
 ```
+
+## Using `.git-blame-ignore-revs` file
+
+As an alternative, if the repository has a [`.git-blame-ignore-revs`](https://git-scm.com/docs/git-blame#Documentation/git-blame.txt---ignore-revs-fileltfilegt) file, **git-cliff** automatically excludes:
+
+- commits whose hash (full or abbreviated) is listed in that file, and
+- commits that **only** modify that file.
+
+For example:
+
+```bash
+# contents of .git-blame-ignore-revs
+
+4f88dda8c746173ea59f920b7579b7f6c74bd6c8
+10c3194381f2cc4f93eb97404369568882ed8677
+```
+
+This mirrors what `git blame --ignore-revs-file` already does for blame output, keeping large, non-semantic commits (e.g. mass reformatting) out of the changelog. This has no effect if the file does not exist.
