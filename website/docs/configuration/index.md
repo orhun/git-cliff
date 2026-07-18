@@ -16,24 +16,29 @@ The configuration schema is published on [SchemaStore](https://www.schemastore.o
 
 :::
 
-It looks for the following configuration files in this order:
+It looks for the following project configuration files in this order:
 
 - `cliff.toml`
 - `.cliff.toml`
 - `.config/cliff.toml`
-- `$HOME/cliff.toml`
-- `$HOME/.cliff.toml`
-- `$HOME/.config/cliff.toml`
 
 If no configuration file is found in the current directory, it will search the parent directories.
 
-### Home Directory
+### Global Configuration
 
-The `$HOME` directory is dependent on the platform. For example:
+The global configuration file is located at:
 
-- on Linux: `/home/<user>`
-- on Windows: `C:\Users\<user>\AppData\Roaming`
-- on macOS: `/Users/<user>/Library/Application Support`
+```text
+<CONFIG_DIR>/git-cliff/cliff.toml
+```
+
+`<CONFIG_DIR>` is the `config_dir()` returned by [`etcetera`](https://github.com/lunacookies/etcetera)'s default base strategy and depends on the platform:
+
+- Linux: `$XDG_CONFIG_HOME`, or `~/.config`
+- macOS: `$XDG_CONFIG_HOME`, or `~/.config`
+- Windows: `%APPDATA%` (typically `~\AppData\Roaming`)
+
+On macOS, the legacy `~/Library/Application Support/git-cliff/cliff.toml` path is also supported for backwards compatibility.
 
 ## Environment Configuration Overrides
 
