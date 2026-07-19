@@ -190,6 +190,7 @@ impl Release<'_> {
                             &old_semver,
                             self.commits
                                 .iter()
+                                .filter(|commit| commit.should_include_in_bump())
                                 .map(|commit| commit.raw_message().trim_end().to_string())
                                 .collect::<Vec<String>>(),
                         );

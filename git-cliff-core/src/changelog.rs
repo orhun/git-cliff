@@ -609,11 +609,15 @@ impl<'a> Changelog<'a> {
         }
 
         for release in &self.releases {
+            let mut release_for_changelog = release.clone();
+            release_for_changelog
+                .commits
+                .retain(|commit| commit.should_include_in_changelog());
             let write_result = write!(
                 out,
                 "{}",
                 self.body_template.render(
-                    &release,
+                    &release_for_changelog,
                     Some(&self.additional_context),
                     &postprocessors
                 )?
@@ -837,6 +841,8 @@ mod test {
                         default_scope: None,
                         scope: None,
                         skip: None,
+                        bump: None,
+                        include_in_changelog: None,
                         field: None,
                         pattern: None,
                     },
@@ -849,6 +855,8 @@ mod test {
                         default_scope: None,
                         scope: None,
                         skip: Some(true),
+                        bump: None,
+                        include_in_changelog: None,
                         field: None,
                         pattern: None,
                     },
@@ -861,6 +869,8 @@ mod test {
                         default_scope: None,
                         scope: None,
                         skip: Some(true),
+                        bump: None,
+                        include_in_changelog: None,
                         field: None,
                         pattern: None,
                     },
@@ -873,6 +883,8 @@ mod test {
                         default_scope: None,
                         scope: None,
                         skip: Some(true),
+                        bump: None,
+                        include_in_changelog: None,
                         field: None,
                         pattern: None,
                     },
@@ -885,6 +897,8 @@ mod test {
                         default_scope: Some(String::from("other")),
                         scope: None,
                         skip: None,
+                        bump: None,
+                        include_in_changelog: None,
                         field: None,
                         pattern: None,
                     },
@@ -897,6 +911,8 @@ mod test {
                         default_scope: None,
                         scope: None,
                         skip: None,
+                        bump: None,
+                        include_in_changelog: None,
                         field: None,
                         pattern: None,
                     },
@@ -909,6 +925,8 @@ mod test {
                         default_scope: None,
                         scope: Some(String::from("documentation")),
                         skip: None,
+                        bump: None,
+                        include_in_changelog: None,
                         field: None,
                         pattern: None,
                     },
@@ -921,6 +939,8 @@ mod test {
                         default_scope: None,
                         scope: Some(String::from("documentation")),
                         skip: None,
+                        bump: None,
+                        include_in_changelog: None,
                         field: None,
                         pattern: None,
                     },
@@ -933,6 +953,8 @@ mod test {
                         default_scope: None,
                         scope: None,
                         skip: None,
+                        bump: None,
+                        include_in_changelog: None,
                         field: None,
                         pattern: None,
                     },
@@ -945,6 +967,8 @@ mod test {
                         default_scope: None,
                         scope: Some(String::from("footer")),
                         skip: None,
+                        bump: None,
+                        include_in_changelog: None,
                         field: None,
                         pattern: None,
                     },
@@ -957,6 +981,8 @@ mod test {
                         default_scope: Some(String::from("other")),
                         scope: None,
                         skip: None,
+                        bump: None,
+                        include_in_changelog: None,
                         field: None,
                         pattern: None,
                     },

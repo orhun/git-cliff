@@ -227,6 +227,8 @@ Examples:
   - Skip processing the commit if the commit message (description) starts with "revert".
 - `{ message = "^doc", group = "Documentation", default_scope = "other" },`
   - If the commit starts with "doc", group the commit as "Documentation" and set the default scope to "other". (e.g. `docs: xyz` will be processed as `docs(other): xyz`)
+- `{ message = "^docs", include_in_changelog = false }`
+  - Match `docs` commits so they still satisfy `filter_commits` and contribute to version bumping, but omit them from the changelog. Use `bump = false` for the inverse (show in changelog, exclude from bump).
 - `{ message = "(www)", scope = "Application" }`
   - If the commit contains "(www)", override the scope with "Application". Scoping order is: scope specification, conventional commit's scope and default scope.
 - `{ sha = "f6f2472bdf0bbb5f9fcaf2d72c1fa9f98f772bb2", skip = true }`
