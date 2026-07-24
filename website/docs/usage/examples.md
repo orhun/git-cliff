@@ -45,6 +45,37 @@ git cliff v2.2.1..
 git cliff v0.1.0..HEAD
 ```
 
+Select a range with explicit endpoint inclusivity (`*-at` is inclusive; `*-after` / `*-before` is exclusive):
+
+```bash
+# include v1.0.0 itself; walk forward to HEAD
+git cliff --start-at v1.0.0
+
+# everything since v1.0.0, but not v1.0.0 itself
+git cliff --start-after v1.0.0
+
+# everything up to and including v2.0.0
+git cliff --end-at v2.0.0
+
+# strictly between two tags, both excluded
+git cliff --start-after v1.0.0 --end-before v2.0.0
+```
+
+These options can also be set in `cliff.toml` under `[git]`:
+
+```toml
+[git]
+start_after = "v1.0.0"
+end_at      = "v2.0.0"
+```
+
+Preview the selection before rendering with `--dry-run`:
+
+```bash
+# prints the interval, commit count, and emitted git range; no changelog is written
+git cliff --start-at v1.0.0 --end-at v2.0.0 --dry-run
+```
+
 Only include the tags from the current branch:
 
 ```bash
