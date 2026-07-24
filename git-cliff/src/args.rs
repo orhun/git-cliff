@@ -145,12 +145,7 @@ pub struct Opt {
     // `value_delimiter` here: a commit message legitimately contains spaces
     // (`--with-commit "<sha> feat: add X"` is a documented form), so repeated
     // flags are the only multi-value form.
-    #[arg(
-        long,
-        env = "GIT_CLIFF_WITH_COMMIT",
-        value_name = "MSG",
-        num_args(1)
-    )]
+    #[arg(long, env = "GIT_CLIFF_WITH_COMMIT", value_name = "MSG", num_args(1))]
     pub with_commit: Option<Vec<String>>,
     /// Sets custom message for the latest release.
     #[arg(
@@ -173,12 +168,7 @@ pub struct Opt {
     // Same one-value-per-occurrence constraint. A `value_delimiter` would be
     // safe here (SHA1s contain no spaces) but that is new behavior, not a fix,
     // so repeated flags stay the multi-value form.
-    #[arg(
-        long,
-        env = "GIT_CLIFF_SKIP_COMMIT",
-        value_name = "SHA1",
-        num_args(1)
-    )]
+    #[arg(long, env = "GIT_CLIFF_SKIP_COMMIT", value_name = "SHA1", num_args(1))]
     pub skip_commit: Option<Vec<String>>,
     /// Prepends entries to the given changelog file.
     #[arg(
