@@ -254,6 +254,9 @@ pub struct Opt {
     /// Disables the external command execution.
     #[arg(long, help_heading = Some("FLAGS"))]
     pub no_exec: bool,
+    /// Prints the computed commit range and exits without rendering.
+    #[arg(long, help_heading = Some("FLAGS"))]
+    pub dry_run: bool,
     /// Prints changelog context as JSON.
     #[arg(short = 'x', long, help_heading = Some("FLAGS"))]
     pub context: bool,
@@ -388,6 +391,44 @@ pub struct Opt {
     /// Sets the commit range to process.
     #[arg(value_name = "RANGE", help_heading = Some("ARGS"))]
     pub range: Option<String>,
+    /// Include this revision as the lower bound (walk forward from here).
+    #[arg(
+        long,
+        env = "GIT_CLIFF_START_AT",
+        value_name = "REV",
+        help_heading = Some("OPTIONS"),
+        conflicts_with = "start_after",
+        conflicts_with_all = ["latest", "current", "unreleased", "bump", "range"],
+    )]
+    pub start_at: Option<String>,
+    /// Exclude this revision; start walking forward from its successor.
+    #[arg(
+        long,
+        env = "GIT_CLIFF_START_AFTER",
+        value_name = "REV",
+        help_heading = Some("OPTIONS"),
+        conflicts_with_all = ["latest", "current", "unreleased", "bump", "range"],
+    )]
+    pub start_after: Option<String>,
+    /// Include this revision as the upper bound (walk back from here).
+    #[arg(
+        long,
+        env = "GIT_CLIFF_END_AT",
+        value_name = "REV",
+        help_heading = Some("OPTIONS"),
+        conflicts_with = "end_before",
+        conflicts_with_all = ["latest", "current", "unreleased", "bump", "range"],
+    )]
+    pub end_at: Option<String>,
+    /// Exclude this revision; stop walking before reaching it.
+    #[arg(
+        long,
+        env = "GIT_CLIFF_END_BEFORE",
+        value_name = "REV",
+        help_heading = Some("OPTIONS"),
+        conflicts_with_all = ["latest", "current", "unreleased", "bump", "range"],
+    )]
+    pub end_before: Option<String>,
     /// Load TLS certificates from the native certificate store.
     #[arg(long, help_heading = Some("FLAGS"), hide = !cfg!(feature = "remote"))]
     pub use_native_tls: bool,
@@ -639,6 +680,56 @@ mod tests {
     }
 
     #[test]
+    fn cli_parses_start_at() {
+        let opt = Opt::try_parse_from(["git-cliff", "--start-at", "v1.0.0"]).expect("parse");
+        assert_eq!(opt.start_at.as_deref(), Some("v1.0.0"));
+    }
+
+    #[test]
+    fn cli_parses_start_after() {
+        let opt = Opt::try_parse_from(["git-cliff", "--start-after", "v1.0.0"]).expect("parse");
+        assert_eq!(opt.start_after.as_deref(), Some("v1.0.0"));
+    }
+
+    #[test]
+    fn cli_parses_end_at() {
+        let opt = Opt::try_parse_from(["git-cliff", "--end-at", "v2.0.0"]).expect("parse");
+        assert_eq!(opt.end_at.as_deref(), Some("v2.0.0"));
+    }
+
+    #[test]
+    fn cli_parses_end_before() {
+        let opt = Opt::try_parse_from(["git-cliff", "--end-before", "v2.0.0"]).expect("parse");
+        assert_eq!(opt.end_before.as_deref(), Some("v2.0.0"));
+    }
+
+    #[test]
+    fn cli_rejects_start_at_and_start_after_together() {
+        let err = Opt::try_parse_from(["git-cliff", "--start-at", "A", "--start-after", "B"])
+            .expect_err("clap should reject");
+        assert_eq!(err.kind(), clap::error::ErrorKind::ArgumentConflict);
+    }
+
+    #[test]
+    fn cli_rejects_end_at_and_end_before_together() {
+        let err = Opt::try_parse_from(["git-cliff", "--end-at", "A", "--end-before", "B"])
+            .expect_err("clap should reject");
+        assert_eq!(err.kind(), clap::error::ErrorKind::ArgumentConflict);
+    }
+
+    #[test]
+    fn cli_parses_dry_run() {
+        let opt = Opt::try_parse_from(["git-cliff", "--dry-run"]).expect("parse");
+        assert!(opt.dry_run);
+    }
+
+    #[test]
+    fn cli_dry_run_defaults_to_false() {
+        let opt = Opt::try_parse_from(["git-cliff"]).expect("parse");
+        assert!(!opt.dry_run);
+    }
+
+    #[test]
     fn cli_include_path_does_not_swallow_trailing_positional_range() {
         // `--include-path` takes exactly one value per occurrence, so a
         // trailing positional RANGE lands in the RANGE slot instead of being
@@ -820,5 +911,62 @@ mod tests {
             opt.skip_commit,
             Some(vec!["aaaaaaa".to_string(), "bbbbbbb".to_string()])
         );
+    }
+
+    #[test]
+    fn cli_endpoint_flags_parse_order_independently_with_include_path() {
+        // Each endpoint flag takes exactly one value, so unlike the positional
+        // RANGE there is no greedy list for it to fall into: both orderings
+        // must express the same intent.
+        let before = Opt::try_parse_from([
+            "git-cliff",
+            "--start-after",
+            "pkg/v1.0.0",
+            "--end-at",
+            "pkg/v1.1.0",
+            "--include-path",
+            "pkg/**",
+        ])
+        .expect("parse");
+        let after = Opt::try_parse_from([
+            "git-cliff",
+            "--include-path",
+            "pkg/**",
+            "--start-after",
+            "pkg/v1.0.0",
+            "--end-at",
+            "pkg/v1.1.0",
+        ])
+        .expect("parse");
+        for opt in [&before, &after] {
+            assert_eq!(opt.start_after.as_deref(), Some("pkg/v1.0.0"));
+            assert_eq!(opt.end_at.as_deref(), Some("pkg/v1.1.0"));
+            assert_eq!(
+                opt.include_path,
+                Some(vec![Pattern::new("pkg/**").expect("pattern")])
+            );
+        }
+    }
+
+    #[test]
+    fn cli_rejects_new_range_option_combined_with_legacy_flag() {
+        // Spot-check the cross product: each legacy flag must conflict with
+        // each new endpoint option.
+        let cases: &[&[&str]] = &[
+            &["git-cliff", "--latest", "--start-at", "A"],
+            &["git-cliff", "--current", "--start-after", "A"],
+            &["git-cliff", "--unreleased", "--end-at", "B"],
+            &["git-cliff", "--bump", "--end-before", "B"],
+            &["git-cliff", "A..B", "--start-at", "C"],
+        ];
+        for argv in cases {
+            let err =
+                Opt::try_parse_from(*argv).expect_err(&format!("clap should reject: {argv:?}"));
+            assert_eq!(
+                err.kind(),
+                clap::error::ErrorKind::ArgumentConflict,
+                "wrong error kind for {argv:?}"
+            );
+        }
     }
 }
