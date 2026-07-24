@@ -115,22 +115,27 @@ pub struct Opt {
 	)]
     pub repository: Option<Vec<PathBuf>>,
     /// Sets the path to include related commits.
+    // One value per occurrence: a greedy `num_args(1..)` here would absorb a
+    // trailing positional RANGE as one more pattern, silently dropping the
+    // range. Multiple patterns come via repeated flags or one
+    // space-delimited value.
     #[arg(
-		long,
-		env = "GIT_CLIFF_INCLUDE_PATH",
-		value_name = "PATTERN",
-		value_delimiter = ' ',
-		num_args(1..)
-	)]
+        long,
+        env = "GIT_CLIFF_INCLUDE_PATH",
+        value_name = "PATTERN",
+        value_delimiter = ' ',
+        num_args(1)
+    )]
     pub include_path: Option<Vec<Pattern>>,
     /// Sets the path to exclude related commits.
+    // Same one-value-per-occurrence constraint as `include_path` above.
     #[arg(
-		long,
-		env = "GIT_CLIFF_EXCLUDE_PATH",
-		value_name = "PATTERN",
-		value_delimiter = ' ',
-		num_args(1..)
-	)]
+        long,
+        env = "GIT_CLIFF_EXCLUDE_PATH",
+        value_name = "PATTERN",
+        value_delimiter = ' ',
+        num_args(1)
+    )]
     pub exclude_path: Option<Vec<Pattern>>,
     /// Sets the regex for matching git tags.
     #[arg(long, env = "GIT_CLIFF_TAG_PATTERN", value_name = "PATTERN")]
@@ -624,5 +629,117 @@ mod tests {
         );
 
         Ok(())
+    }
+
+    #[test]
+    fn cli_include_path_does_not_swallow_trailing_positional_range() {
+        // `--include-path` takes exactly one value per occurrence, so a
+        // trailing positional RANGE lands in the RANGE slot instead of being
+        // absorbed as one more glob. Under the old greedy `num_args(1..)`
+        // declaration this exact argv silently lost the range and emitted the
+        // whole (path-filtered) history.
+        let opt = Opt::try_parse_from([
+            "git-cliff",
+            "--include-path",
+            "pkg/**",
+            "pkg/v1.0.0..pkg/v1.1.0",
+        ])
+        .expect("parse");
+        assert_eq!(opt.range.as_deref(), Some("pkg/v1.0.0..pkg/v1.1.0"));
+        assert_eq!(
+            opt.include_path,
+            Some(vec![Pattern::new("pkg/**").expect("pattern")])
+        );
+    }
+
+    #[test]
+    fn cli_exclude_path_does_not_swallow_trailing_positional_range() {
+        let opt = Opt::try_parse_from([
+            "git-cliff",
+            "--exclude-path",
+            "pkg/**",
+            "pkg/v1.0.0..pkg/v1.1.0",
+        ])
+        .expect("parse");
+        assert_eq!(opt.range.as_deref(), Some("pkg/v1.0.0..pkg/v1.1.0"));
+        assert_eq!(
+            opt.exclude_path,
+            Some(vec![Pattern::new("pkg/**").expect("pattern")])
+        );
+    }
+
+    #[test]
+    fn cli_include_path_multiple_patterns_still_parse() {
+        // The two supported multi-pattern forms: repeated flags, and a single
+        // space-delimited value (what the space-separated fixture passes).
+        let repeated = Opt::try_parse_from([
+            "git-cliff",
+            "--include-path",
+            "website/**/*",
+            "--include-path",
+            "docs/**/*",
+        ])
+        .expect("parse");
+        let delimited =
+            Opt::try_parse_from(["git-cliff", "--include-path", "website/**/* docs/**/*"])
+                .expect("parse");
+        for opt in [&repeated, &delimited] {
+            assert_eq!(
+                opt.include_path,
+                Some(vec![
+                    Pattern::new("website/**/*").expect("pattern"),
+                    Pattern::new("docs/**/*").expect("pattern"),
+                ])
+            );
+        }
+    }
+
+    #[test]
+    fn cli_include_path_unquoted_second_token_falls_to_range_slot() {
+        // Characterization of the compatibility trade-off: the unquoted
+        // multi-token form (`--include-path a b`, no quotes) used to be
+        // absorbed greedily; now the second token lands in the positional
+        // RANGE slot and fails loudly at revparse instead of silently
+        // producing a wrong changelog.
+        let opt = Opt::try_parse_from(["git-cliff", "--include-path", "website/**/*", "docs/**/*"])
+            .expect("parse");
+        assert_eq!(
+            opt.include_path,
+            Some(vec![Pattern::new("website/**/*").expect("pattern")])
+        );
+        assert_eq!(opt.range.as_deref(), Some("docs/**/*"));
+    }
+
+    #[test]
+    fn cli_positional_range_before_include_path_is_not_swallowed() {
+        let opt = Opt::try_parse_from([
+            "git-cliff",
+            "pkg/v1.0.0..pkg/v1.1.0",
+            "--include-path",
+            "pkg/**",
+        ])
+        .expect("parse");
+        assert_eq!(opt.range.as_deref(), Some("pkg/v1.0.0..pkg/v1.1.0"));
+        assert_eq!(
+            opt.include_path,
+            Some(vec![Pattern::new("pkg/**").expect("pattern")])
+        );
+    }
+
+    #[test]
+    fn cli_double_dash_protects_trailing_positional_range() {
+        let opt = Opt::try_parse_from([
+            "git-cliff",
+            "--include-path",
+            "pkg/**",
+            "--",
+            "pkg/v1.0.0..pkg/v1.1.0",
+        ])
+        .expect("parse");
+        assert_eq!(opt.range.as_deref(), Some("pkg/v1.0.0..pkg/v1.1.0"));
+        assert_eq!(
+            opt.include_path,
+            Some(vec![Pattern::new("pkg/**").expect("pattern")])
+        );
     }
 }
