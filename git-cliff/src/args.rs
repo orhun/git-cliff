@@ -141,12 +141,16 @@ pub struct Opt {
     #[arg(long, env = "GIT_CLIFF_TAG_PATTERN", value_name = "PATTERN")]
     pub tag_pattern: Option<Regex>,
     /// Sets custom commit messages to include in the changelog.
+    // One value per occurrence, same reasoning as `include_path`. No
+    // `value_delimiter` here: a commit message legitimately contains spaces
+    // (`--with-commit "<sha> feat: add X"` is a documented form), so repeated
+    // flags are the only multi-value form.
     #[arg(
-		long,
-		env = "GIT_CLIFF_WITH_COMMIT",
-		value_name = "MSG",
-		num_args(1..)
-	)]
+        long,
+        env = "GIT_CLIFF_WITH_COMMIT",
+        value_name = "MSG",
+        num_args(1)
+    )]
     pub with_commit: Option<Vec<String>>,
     /// Sets custom message for the latest release.
     #[arg(
@@ -166,12 +170,15 @@ pub struct Opt {
     #[arg(long, env = "GIT_CLIFF_COUNT_TAGS", value_name = "PATTERN")]
     pub count_tags: Option<Regex>,
     /// Sets commits that will be skipped in the changelog.
+    // Same one-value-per-occurrence constraint. A `value_delimiter` would be
+    // safe here (SHA1s contain no spaces) but that is new behavior, not a fix,
+    // so repeated flags stay the multi-value form.
     #[arg(
-		long,
-		env = "GIT_CLIFF_SKIP_COMMIT",
-		value_name = "SHA1",
-		num_args(1..)
-	)]
+        long,
+        env = "GIT_CLIFF_SKIP_COMMIT",
+        value_name = "SHA1",
+        num_args(1)
+    )]
     pub skip_commit: Option<Vec<String>>,
     /// Prepends entries to the given changelog file.
     #[arg(
@@ -740,6 +747,78 @@ mod tests {
         assert_eq!(
             opt.include_path,
             Some(vec![Pattern::new("pkg/**").expect("pattern")])
+        );
+    }
+
+    #[test]
+    fn cli_with_commit_does_not_swallow_trailing_positional_range() {
+        let opt = Opt::try_parse_from([
+            "git-cliff",
+            "--with-commit",
+            "feat: add x",
+            "v1.0.0..v1.1.0",
+        ])
+        .expect("parse");
+        assert_eq!(opt.range.as_deref(), Some("v1.0.0..v1.1.0"));
+        assert_eq!(opt.with_commit, Some(vec!["feat: add x".to_string()]));
+    }
+
+    #[test]
+    fn cli_skip_commit_does_not_swallow_trailing_positional_range() {
+        let opt = Opt::try_parse_from([
+            "git-cliff",
+            "--skip-commit",
+            "a78bc368e9ee382a3016c0c4bab41f7de4503bcd",
+            "v1.0.0..v1.1.0",
+        ])
+        .expect("parse");
+        assert_eq!(opt.range.as_deref(), Some("v1.0.0..v1.1.0"));
+        assert_eq!(
+            opt.skip_commit,
+            Some(vec!["a78bc368e9ee382a3016c0c4bab41f7de4503bcd".to_string()])
+        );
+    }
+
+    #[test]
+    fn cli_with_commit_keeps_whitespace_inside_one_value() {
+        // No `value_delimiter` on this flag, so the documented
+        // "<sha> <message>" form stays a single value rather than splitting
+        // into two patterns the way the path flags do.
+        let opt = Opt::try_parse_from([
+            "git-cliff",
+            "--with-commit",
+            "8f55e69eba6e6ce811ace32bd84cc82215673cb6 feat: add X",
+        ])
+        .expect("parse");
+        assert_eq!(
+            opt.with_commit,
+            Some(vec![
+                "8f55e69eba6e6ce811ace32bd84cc82215673cb6 feat: add X".to_string()
+            ])
+        );
+    }
+
+    #[test]
+    fn cli_repeated_flags_remain_the_multi_value_form() {
+        let opt = Opt::try_parse_from([
+            "git-cliff",
+            "--with-commit",
+            "feat: a",
+            "--with-commit",
+            "feat: b",
+            "--skip-commit",
+            "aaaaaaa",
+            "--skip-commit",
+            "bbbbbbb",
+        ])
+        .expect("parse");
+        assert_eq!(
+            opt.with_commit,
+            Some(vec!["feat: a".to_string(), "feat: b".to_string()])
+        );
+        assert_eq!(
+            opt.skip_commit,
+            Some(vec!["aaaaaaa".to_string(), "bbbbbbb".to_string()])
         );
     }
 }
