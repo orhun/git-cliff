@@ -1,5 +1,5 @@
 use std::io;
-use std::path::{self, Path, PathBuf};
+use std::path::{Path, PathBuf};
 use std::result::Result as StdResult;
 use std::sync::LazyLock;
 
@@ -330,7 +330,9 @@ impl Repository {
     /// It removes the leading `./` and adds `**` to the end if the pattern is a
     /// directory.
     fn normalize_pattern(pattern: Pattern) -> Pattern {
-        let star_added = if pattern.as_str().ends_with(path::MAIN_SEPARATOR) {
+        // glob patterns and git's diff paths always use '/', whatever the host
+        // OS, so this must not be `path::MAIN_SEPARATOR`
+        let star_added = if pattern.as_str().ends_with('/') {
             Pattern::new(&format!("{pattern}**")).expect("failed to add '**' to the end of glob")
         } else {
             pattern
@@ -1191,6 +1193,20 @@ mod test {
             before,
             "no .git-blame-ignore-revs file present"
         );
+    }
+
+    #[test]
+    fn test_normalize_pattern() {
+        let normalize = |input: &str| {
+            Repository::normalize_pattern(Pattern::new(input).expect("valid pattern"))
+                .as_str()
+                .to_string()
+        };
+
+        assert_eq!(normalize("dir/"), "dir/**");
+        assert_eq!(normalize("./dir/"), "dir/**");
+        assert_eq!(normalize("./file.txt"), "file.txt");
+        assert_eq!(normalize("dir/file.txt"), "dir/file.txt");
     }
 
     #[test]
