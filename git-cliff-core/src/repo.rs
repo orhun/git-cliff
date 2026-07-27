@@ -618,7 +618,7 @@ impl Repository {
             if branch.is_head() {
                 let upstream = &self.inner.branch_upstream_remote(&format!(
                     "refs/heads/{}",
-                    &branch.name()?.ok_or_else(|| Error::RepoError(String::from(
+                    branch.name()?.ok_or_else(|| Error::RepoError(String::from(
                         "branch name is not valid"
                     )))?
                 ))?;
