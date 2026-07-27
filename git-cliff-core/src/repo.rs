@@ -1031,7 +1031,7 @@ mod test {
         assert!(result.is_err());
         if let Err(error) = result {
             assert!(
-                format!("{error:?}").contains(
+                error.to_string().contains(
                     format!("could not find repository at '{}'", path.display()).as_str()
                 )
             );
@@ -1101,7 +1101,7 @@ mod test {
         assert!(result.is_err());
         if let Err(error) = result {
             assert!(
-                format!("{error:?}").contains(
+                error.to_string().contains(
                     format!("could not find repository at '{}'", path.display()).as_str()
                 )
             );
