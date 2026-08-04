@@ -275,7 +275,7 @@ impl RemoteConfig {
 }
 
 /// A single remote.
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Remote {
     /// Owner of the remote.
     pub owner: String,
@@ -305,6 +305,22 @@ fn default_http_timeout() -> Duration {
     Duration::from_secs(30)
 }
 
+/// This is implemented manually to avoid deriving a zero [`Remote::http_timeout`]
+/// which would make every request time out immediately.
+impl Default for Remote {
+    fn default() -> Self {
+        Self {
+            owner: String::new(),
+            repo: String::new(),
+            token: None,
+            is_custom: false,
+            api_url: None,
+            http_timeout: default_http_timeout(),
+            native_tls: None,
+        }
+    }
+}
+
 impl fmt::Display for Remote {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}/{}", self.owner, self.repo)
@@ -323,11 +339,7 @@ impl Remote {
         Self {
             owner: owner.into(),
             repo: repo.into(),
-            token: None,
-            is_custom: false,
-            api_url: None,
-            http_timeout: default_http_timeout(),
-            native_tls: None,
+            ..Default::default()
         }
     }
 
@@ -652,6 +664,23 @@ mod test {
         assert!(!Remote::new("test", "").is_set());
         assert!(!Remote::new("", "").is_set());
         assert_eq!(Duration::from_secs(30), remote1.http_timeout);
+    }
+
+    #[test]
+    fn default_remote_http_timeout() -> Result<()> {
+        assert_eq!(default_http_timeout(), Remote::default().http_timeout);
+
+        // remotes that are not present in the configuration file are still
+        // expected to have a usable timeout.
+        let config = Config::from_str(
+            r#"
+                [changelog]
+                body = "test"
+            "#,
+        )?;
+        assert_eq!(default_http_timeout(), config.remote.github.http_timeout);
+        assert_eq!(default_http_timeout(), config.remote.gitlab.http_timeout);
+        Ok(())
     }
 
     #[test]
