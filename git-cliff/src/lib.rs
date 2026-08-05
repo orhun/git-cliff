@@ -202,6 +202,7 @@ fn process_repository<'a>(
     let ignore_regex = config.git.ignore_tags.as_ref();
     let count_tags = config.git.count_tags.as_ref();
     let recurse_submodules = config.git.recurse_submodules.unwrap_or(false);
+    let compute_commit_statistics = config.uses_commit_statistics()?;
     tags.retain(|_, tag| {
         let name = &tag.name;
 
@@ -354,22 +355,25 @@ fn process_repository<'a>(
     for git_commit in commits.iter().rev() {
         let release = releases.last_mut().unwrap();
         let mut commit = Commit::from(git_commit);
-        commit.statistics = match repository.commit_statistics(git_commit) {
-            Ok(statistics) => statistics,
-            Err(err)
-                if matches!(
-                    &err,
-                    Error::GitError(git_err) if git_err.message().contains("object not found")
-                ) =>
-            {
-                tracing::warn!(
-                    "Skipping diff statistics for commit {} because a Git object is missing: {err}",
-                    commit.id,
-                );
-                CommitStatistics::default()
+        if compute_commit_statistics {
+            commit.statistics = match repository.commit_statistics(git_commit) {
+                Ok(statistics) => statistics,
+                Err(err)
+                    if matches!(
+                        &err,
+                        Error::GitError(git_err) if git_err.message().contains("object not found")
+                    ) =>
+                {
+                    tracing::warn!(
+                        "Skipping diff statistics for commit {} because a Git object is missing: \
+                         {err}",
+                        commit.id,
+                    );
+                    CommitStatistics::default()
+                }
+                Err(err) => return Err(err),
             }
-            Err(err) => return Err(err),
-        };
+        }
         let commit_id = commit.id.clone();
         release.commits.push(commit);
         release.repository = Some(repository_path.clone());

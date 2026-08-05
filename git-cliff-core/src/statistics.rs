@@ -5,6 +5,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::release::Release;
 
+/// Template variables related to statistics context.
+pub(crate) const TEMPLATE_VARIABLES: &[&str] = &["commit.statistics"];
+
 /// Aggregated information about how many times a specific link appeared in
 /// commit messages.
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
