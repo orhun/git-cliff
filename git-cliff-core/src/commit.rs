@@ -170,6 +170,19 @@ pub struct Commit<'a> {
     /// In fact, it is pre-processed by [`Commit::preprocess`], and only be
     /// generated when serializing into `context` the first time.
     pub raw_message: Option<String>,
+
+    /// Whether this commit should contribute to version bumping.
+    ///
+    /// `None` means include (default). Set by matching [`CommitParser::bump`].
+    #[serde(default)]
+    pub include_in_bump: Option<bool>,
+
+    /// Whether this commit should appear in the changelog.
+    ///
+    /// `None` means include (default). Set by matching
+    /// [`CommitParser::include_in_changelog`].
+    #[serde(default)]
+    pub include_in_changelog: Option<bool>,
 }
 
 impl From<String> for Commit<'_> {
@@ -306,6 +319,26 @@ impl Commit<'_> {
             !(self.conv.as_ref().is_some_and(ConventionalCommit::breaking) && protect_breaking)
     }
 
+    /// Apply bump / changelog inclusion flags from a matching parser.
+    fn apply_parser_inclusion(&mut self, parser: &CommitParser) {
+        if parser.bump.is_some() {
+            self.include_in_bump = parser.bump;
+        }
+        if parser.include_in_changelog.is_some() {
+            self.include_in_changelog = parser.include_in_changelog;
+        }
+    }
+
+    /// Whether this commit should contribute to version bumping.
+    pub fn should_include_in_bump(&self) -> bool {
+        self.include_in_bump.unwrap_or(true)
+    }
+
+    /// Whether this commit should appear in the changelog.
+    pub fn should_include_in_changelog(&self) -> bool {
+        self.include_in_changelog.unwrap_or(true)
+    }
+
     /// Parses the commit using [`CommitParser`]s.
     ///
     /// Sets the [`group`] and [`scope`] of the commit.
@@ -400,6 +433,7 @@ impl Commit<'_> {
                     self.group = parser.group.clone().or(self.group);
                     self.scope = parser.scope.clone().or(self.scope);
                     self.default_scope = parser.default_scope.clone().or(self.default_scope);
+                    self.apply_parser_inclusion(parser);
                     return Ok(self);
                 }
             }
@@ -417,6 +451,7 @@ impl Commit<'_> {
                         self.group = parser.group.clone().map(regex_replace);
                         self.scope = parser.scope.clone().map(regex_replace);
                         self.default_scope.clone_from(&parser.default_scope);
+                        self.apply_parser_inclusion(parser);
                         return Ok(self);
                     }
                 }
@@ -604,6 +639,8 @@ mod test {
                 default_scope: Some(String::from("test_scope")),
                 scope: None,
                 skip: None,
+                bump: None,
+                include_in_changelog: None,
                 field: None,
                 pattern: None,
             }],
@@ -762,6 +799,37 @@ mod test {
     }
 
     #[test]
+    fn parse_commit_inclusion_flags() -> Result<()> {
+        let docs = Commit::new(String::from("abc"), String::from("docs: update readme")).parse(
+            &[CommitParser {
+                message: Regex::new("^docs").ok(),
+                include_in_changelog: Some(false),
+                ..Default::default()
+            }],
+            false,
+            true,
+        )?;
+        assert!(docs.should_include_in_bump());
+        assert!(!docs.should_include_in_changelog());
+
+        let chore = Commit::new(String::from("def"), String::from("chore: tidy")).parse(
+            &[CommitParser {
+                message: Regex::new("^chore").ok(),
+                bump: Some(false),
+                group: Some(String::from("Other")),
+                ..Default::default()
+            }],
+            false,
+            true,
+        )?;
+        assert!(!chore.should_include_in_bump());
+        assert!(chore.should_include_in_changelog());
+        assert_eq!(chore.group.as_deref(), Some("Other"));
+
+        Ok(())
+    }
+
+    #[test]
     fn parse_body() -> Result<()> {
         let mut commit = Commit::new(
             String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
@@ -812,6 +880,8 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                bump: None,
+                include_in_changelog: None,
                 field: None,
                 pattern: None,
             }],
@@ -874,6 +944,8 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                bump: None,
+                include_in_changelog: None,
                 field: Some(String::from("author.name")),
                 pattern: Regex::new("John Doe").ok(),
             }],
@@ -892,6 +964,8 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                bump: None,
+                include_in_changelog: None,
                 field: Some(String::from("remote.pr_title")),
                 pattern: Regex::new("feat: do something").ok(),
             }],
@@ -910,6 +984,8 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                bump: None,
+                include_in_changelog: None,
                 field: Some(String::from("body")),
                 pattern: Regex::new("something great").ok(),
             }],
@@ -928,6 +1004,8 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                bump: None,
+                include_in_changelog: None,
                 field: Some(String::from("remote.pr_labels")),
                 pattern: Regex::new("feature|deprecation").ok(),
             }],
@@ -946,6 +1024,8 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                bump: None,
+                include_in_changelog: None,
                 field: Some(String::from("links")),
                 pattern: Regex::new(".*").ok(),
             }],
@@ -964,6 +1044,8 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                bump: None,
+                include_in_changelog: None,
                 field: Some(String::from("remote")),
                 pattern: Regex::new(".*").ok(),
             }],
@@ -995,6 +1077,8 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: Some(true),
+                bump: None,
+                include_in_changelog: None,
                 field: None,
                 pattern: None,
             }],
@@ -1037,6 +1121,8 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                bump: None,
+                include_in_changelog: None,
                 field: Some(String::from("author.name")),
                 pattern: Regex::new("^John Doe$").ok(),
             }],
@@ -1055,6 +1141,8 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                bump: None,
+                include_in_changelog: None,
                 field: Some(String::from("remote.pr_title")),
                 pattern: Regex::new("^feat(\\([^)]+\\))?").ok(),
             }],
@@ -1073,6 +1161,8 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                bump: None,
+                include_in_changelog: None,
                 field: Some(String::from("author.name")),
                 pattern: Regex::new("Something else").ok(),
             }],

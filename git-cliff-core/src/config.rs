@@ -458,6 +458,17 @@ pub struct CommitParser {
     pub scope: Option<String>,
     /// Whether to skip this commit group.
     pub skip: Option<bool>,
+    /// Whether this matched commit should contribute to version bumping.
+    ///
+    /// Defaults to `true` when unset. Set to `false` to keep the commit in the
+    /// changelog while excluding it from `--bump` / `--bumped-version`.
+    pub bump: Option<bool>,
+    /// Whether this matched commit should appear in the changelog.
+    ///
+    /// Defaults to `true` when unset. Set to `false` to keep the commit for
+    /// version bumping while omitting it from changelog output. Matched
+    /// commits still satisfy `filter_commits`.
+    pub include_in_changelog: Option<bool>,
     /// Field name of the commit to match the regex against.
     pub field: Option<String>,
     /// Regex for matching the field value.
