@@ -10,6 +10,7 @@ pub mod args;
 /// Custom logger implementation.
 pub mod logger;
 
+use std::collections::HashSet;
 use std::env;
 use std::fs::{self, File};
 use std::io::{self, Write};
@@ -347,11 +348,46 @@ fn process_repository<'a>(
         }
     }
 
+    // Assign commits to releases by graph reachability instead of their
+    // position in the linearized log (https://github.com/orhun/git-cliff/issues/498).
+    // Only tags present in the walk can be release boundaries.
+    let commit_ids: HashSet<String> = commits
+        .iter()
+        .map(|commit| commit.id().to_string())
+        .collect();
+    let ownership = repository.commit_tag_ownership(&tags, &commit_ids)?;
+
+    // Group commits by owning tag (oldest to newest), then unreleased, keeping
+    // each group oldest-first so the loop below closes releases in order.
+    let mut ordered_commits = Vec::with_capacity(commits.len());
+    for tag_id in tags.keys() {
+        let mut group: Vec<_> = commits
+            .iter()
+            .rev()
+            .filter(|commit| ownership.get(&commit.id().to_string()) == Some(tag_id))
+            .collect();
+        // The tagged commit is the release tip, so close the group with it.
+        if let Some(pos) = group
+            .iter()
+            .position(|commit| commit.id().to_string() == *tag_id)
+        {
+            let tag_commit = group.remove(pos);
+            group.push(tag_commit);
+        }
+        ordered_commits.extend(group);
+    }
+    ordered_commits.extend(
+        commits
+            .iter()
+            .rev()
+            .filter(|commit| !ownership.contains_key(&commit.id().to_string())),
+    );
+
     // Process releases.
     let mut previous_release = Release::default();
     let mut first_processed_tag = None;
     let repository_path = repository.root_path()?.to_string_lossy().into_owned();
-    for git_commit in commits.iter().rev() {
+    for git_commit in ordered_commits {
         let release = releases.last_mut().unwrap();
         let mut commit = Commit::from(git_commit);
         commit.statistics = match repository.commit_statistics(git_commit) {
