@@ -351,10 +351,14 @@ impl Commit<'_> {
             if let (Some(field_name), Some(pattern_regex)) =
                 (parser.field.as_ref(), parser.pattern.as_ref())
             {
+                let field_present;
                 let values = if field_name == "body" {
+                    field_present = true;
                     vec![body.clone()].into_iter().collect()
                 } else {
-                    tera::dotted_pointer(&lookup_context, field_name).and_then(|v| match v {
+                    let field_value = tera::dotted_pointer(&lookup_context, field_name);
+                    field_present = field_value.is_some();
+                    field_value.and_then(|v| match v {
                         Value::String(s) => Some(vec![s.clone()]),
                         Value::Number(_) | Value::Bool(_) | Value::Null => {
                             Some(vec![v.to_string()])
@@ -386,10 +390,19 @@ impl Commit<'_> {
                         }
                     }
                     None => {
-                        return Err(AppError::FieldError(format!(
-                            "field '{field_name}' is missing or has unsupported type (expected a \
-                             String, Number, Bool, or Null — or an Array of these scalar values)",
-                        )));
+                        if field_present {
+                            return Err(AppError::FieldError(format!(
+                                "field '{field_name}' is missing or has unsupported type \
+                                 (expected a String, Number, Bool, or Null — or an Array of these \
+                                 scalar values)",
+                            )));
+                        }
+                        // The field is genuinely absent on this commit (e.g.
+                        // `remote.pr_labels` when `remote` is `None`), so this parser
+                        // cannot decide it: skip only this field criterion and let the
+                        // rest of the parser (and the remaining parsers) decide. A
+                        // present-but-unsupported `Value::Object` field still errors
+                        // above. See orhun/git-cliff#1598.
                     }
                 }
             }
@@ -975,6 +988,51 @@ Refs: #123
             "Expected error when using unsupported field `remote`, but got Ok"
         );
 
+        Ok(())
+    }
+
+    #[test]
+    fn parse_commit_missing_field_falls_through_to_next_parser() -> Result<()> {
+        let commit = Commit::new(
+            String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
+            String::from("feat: first feature"),
+        );
+        // `commit.remote` is `None` by default (this is a LOCAL / non-PR commit),
+        // so `remote.pr_labels` cannot be resolved — exactly the orhun/git-cliff#1598
+        // scenario. The first parser must be skipped (not abort the chain) so the
+        // catch-all parser below can still match and group the commit.
+        let parsers = [
+            CommitParser {
+                sha: None,
+                message: None,
+                body: None,
+                footer: None,
+                group: Some(String::from("Bug fixes")),
+                default_scope: None,
+                scope: None,
+                skip: None,
+                field: Some(String::from("remote.pr_labels")),
+                pattern: Regex::new("bug").ok(),
+            },
+            CommitParser {
+                sha: None,
+                message: Some(Regex::new(".*")?),
+                body: None,
+                footer: None,
+                group: Some(String::from("Miscellaneous")),
+                default_scope: None,
+                scope: None,
+                skip: None,
+                field: None,
+                pattern: None,
+            },
+        ];
+        let parsed = commit.parse(&parsers, false, false)?;
+        assert_eq!(
+            Some(String::from("Miscellaneous")),
+            parsed.group,
+            "a missing field on parser #1 must fall through to the catch-all parser #2"
+        );
         Ok(())
     }
 
