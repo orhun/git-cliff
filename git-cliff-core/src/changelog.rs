@@ -196,10 +196,18 @@ impl<'a> Changelog<'a> {
                     .and_then(|release| release.version.as_ref()) ==
                     Some(skipped_tag)
             }) {
-                if let Some(previous_release) = self.releases.get_mut(release_index + 1) {
+                if let Some(mut previous_release) = self.releases.get(release_index + 1).cloned() {
+                    // Repoint this release at the next-older kept release.
+                    //
+                    // The clone is detached (`previous = None`) so the snapshot
+                    // stored on this release does not carry a stale chain, but
+                    // the shared older release is left untouched. Mutating the
+                    // shared release here used to null its own `previous`, which
+                    // broke the chain of a release sandwiched between two
+                    // non-consecutive skip matches (and, more generally, dropped
+                    // the chain of any release used as a repoint target).
                     previous_release.previous = None;
-                    self.releases[release_index].previous =
-                        Some(Box::new(previous_release.clone()));
+                    self.releases[release_index].previous = Some(Box::new(previous_release));
                 } else if release_index == self.releases.len() - 1 {
                     self.releases[release_index].previous = None;
                 }
@@ -1473,6 +1481,150 @@ mod test {
             .replace("			", ""),
             str::from_utf8(&out).unwrap_or_default()
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn changelog_generator_skip_tags_keeps_sandwiched_release() -> Result<()> {
+        // When `skip_tags` matches two NON-CONSECUTIVE releases, the release
+        // sandwiched between the two matched ones must still be emitted AND keep
+        // a correct `previous` link to the next-older kept release.
+        //
+        // Each row lists releases oldest-first, plus the expected
+        // `(version, previous.version)` pairs of the kept releases.
+        struct Case {
+            name: &'static str,
+            skip_tags: &'static str,
+            versions: Vec<Option<&'static str>>,
+            expect_previous: Vec<(Option<&'static str>, Option<&'static str>)>,
+        }
+        let cases = [
+            Case {
+                name: "non-consecutive matches keep the sandwiched release",
+                skip_tags: r".*-rc",
+                versions: vec![Some("v1.0.0-rc"), Some("v1.5.0"), Some("v2.0.0-rc")],
+                expect_previous: vec![(Some("v1.5.0"), None)],
+            },
+            Case {
+                name: "sandwich links to the older kept release across two skips",
+                skip_tags: r".*-rc",
+                versions: vec![
+                    Some("v1.0.0"),
+                    Some("v1.5.0-rc"),
+                    Some("v2.0.0"),
+                    Some("v2.5.0-rc"),
+                    Some("v3.0.0"),
+                ],
+                expect_previous: vec![
+                    (Some("v3.0.0"), Some("v2.0.0")),
+                    (Some("v2.0.0"), Some("v1.0.0")),
+                    (Some("v1.0.0"), None),
+                ],
+            },
+            Case {
+                name: "single skip preserves the older kept release's chain",
+                skip_tags: r".*-rc",
+                versions: vec![
+                    Some("v0.5.0"),
+                    Some("v1.0.0"),
+                    Some("v2.0.0-rc"),
+                    Some("v3.0.0"),
+                ],
+                expect_previous: vec![
+                    (Some("v3.0.0"), Some("v1.0.0")),
+                    (Some("v1.0.0"), Some("v0.5.0")),
+                    (Some("v0.5.0"), None),
+                ],
+            },
+            Case {
+                name: "consecutive matches drop only the matches",
+                skip_tags: r".*-rc",
+                versions: vec![Some("v1.0.0-rc"), Some("v2.0.0-rc"), Some("v3.0.0")],
+                expect_previous: vec![(Some("v3.0.0"), None)],
+            },
+            Case {
+                name: "no matches keeps every release and chain",
+                skip_tags: r"never-matches",
+                versions: vec![Some("v1.0.0"), Some("v2.0.0"), Some("v3.0.0")],
+                expect_previous: vec![
+                    (Some("v3.0.0"), Some("v2.0.0")),
+                    (Some("v2.0.0"), Some("v1.0.0")),
+                    (Some("v1.0.0"), None),
+                ],
+            },
+        ];
+
+        for case in cases {
+            let (mut config, _) = get_test_data();
+            config.git.skip_tags = Regex::new(case.skip_tags).ok();
+            config.remote.offline = true;
+
+            // Build releases oldest-first with a proper `previous` chain, each
+            // carrying a single commit so the empty-commits filter never drops
+            // them (isolating the skip-tag behavior under test).
+            let mut previous: Option<Release> = None;
+            let mut releases = Vec::new();
+            for (index, version) in case.versions.iter().enumerate() {
+                let commit_id = format!("c{index}");
+                let release = Release {
+                    version: version.map(String::from),
+                    commits: vec![Commit {
+                        id: commit_id.clone(),
+                        message: String::from("feat: test commit"),
+                        committer: Signature {
+                            timestamp: index as i64,
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    }],
+                    commit_id: Some(commit_id),
+                    timestamp: Some(index as i64),
+                    previous: previous.clone().map(Box::new),
+                    repository: Some(String::from("/root/repo")),
+                    ..Default::default()
+                };
+                previous = Some(release.clone());
+                releases.push(release);
+            }
+
+            let changelog = Changelog::new(releases, config, None)?;
+
+            // Every expected release is still emitted...
+            let kept: Vec<Option<String>> = changelog
+                .releases
+                .iter()
+                .map(|release| release.version.clone())
+                .collect();
+            for (version, _) in &case.expect_previous {
+                let version = version.map(String::from);
+                assert!(
+                    kept.contains(&version),
+                    "case `{}`: expected release {:?} to be emitted, kept {:?}",
+                    case.name,
+                    version,
+                    kept,
+                );
+            }
+
+            // ...and its `previous` pointer survived the skip-tag fixup.
+            for (version, expected_previous) in &case.expect_previous {
+                let version = version.map(String::from);
+                let actual_previous = changelog
+                    .releases
+                    .iter()
+                    .find(|release| release.version == version)
+                    .and_then(|release| release.previous.as_ref())
+                    .and_then(|release| release.version.clone());
+                assert_eq!(
+                    actual_previous.as_deref(),
+                    *expected_previous,
+                    "case `{}`: `previous` of release {:?}",
+                    case.name,
+                    version,
+                );
+            }
+        }
 
         Ok(())
     }
