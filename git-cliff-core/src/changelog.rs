@@ -19,6 +19,8 @@ use crate::remote::gitlab::GitLabClient;
 use crate::summary::Summary;
 use crate::template::Template;
 
+const END_OF_HEADER_MARKER: &str = "<!-- END OF HEADER -->";
+
 /// Changelog generator.
 #[derive(Debug)]
 pub struct Changelog<'a> {
@@ -590,17 +592,20 @@ impl<'a> Changelog<'a> {
         let postprocessors = self.config.changelog.postprocessors.clone();
 
         if let Some(header_template) = &self.header_template {
-            let write_result = writeln!(
-                out,
-                "{}",
-                header_template.render(
-                    &Releases {
-                        releases: &self.releases,
-                    },
-                    Some(&self.additional_context),
-                    &postprocessors,
-                )?
-            );
+            let header = header_template.render(
+                &Releases {
+                    releases: &self.releases,
+                },
+                Some(&self.additional_context),
+                &postprocessors,
+            )?;
+            // Static headers can still be removed by their configured text. Dynamic
+            // headers need a stable boundary because their previous rendering may differ.
+            let write_result = if header_template.variables.is_empty() {
+                writeln!(out, "{header}")
+            } else {
+                writeln!(out, "{header}\n{END_OF_HEADER_MARKER}")
+            };
             if let Err(e) = write_result {
                 if e.kind() != std::io::ErrorKind::BrokenPipe {
                     return Err(e.into());
@@ -652,7 +657,9 @@ impl<'a> Changelog<'a> {
     pub fn prepend<W: Write + ?Sized>(&self, mut changelog: String, out: &mut W) -> Result<()> {
         crate::set_progress_message!("Generating and prepending the changelog");
         tracing::debug!("Generating changelog and prepending");
-        if let Some(header) = &self.config.changelog.header {
+        if let Some(marker_index) = changelog.find(END_OF_HEADER_MARKER) {
+            changelog.replace_range(..marker_index + END_OF_HEADER_MARKER.len(), "");
+        } else if let Some(header) = &self.config.changelog.header {
             changelog = changelog.replacen(header, "", 1);
         }
         let mut generated = Vec::new();
@@ -1858,6 +1865,34 @@ chore(deps): fix broken deps
 
         assert_eq!(
             "## New Release\n## Old Release",
+            str::from_utf8(&out).unwrap_or_default()
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn changelog_prepend_replaces_a_changed_header_template() -> Result<()> {
+        let (mut config, releases) = get_test_data();
+        config.changelog.header = Some(String::from("# Changelog for {{ project }}"));
+        config.changelog.body = String::from("## Old Release");
+        config.changelog.footer = None;
+        config.changelog.postprocessors = Vec::new();
+
+        let mut old_changelog = Changelog::build(vec![releases[0].clone()], config.clone())?;
+        old_changelog.add_context("project", "old")?;
+        let mut existing = Vec::new();
+        old_changelog.generate(&mut existing)?;
+        assert!(str::from_utf8(&existing)?.contains(END_OF_HEADER_MARKER));
+
+        config.changelog.body = String::from("## New Release");
+        let mut new_changelog = Changelog::build(vec![releases[0].clone()], config)?;
+        new_changelog.add_context("project", "new")?;
+        let mut out = Vec::new();
+        new_changelog.prepend(str::from_utf8(&existing)?.to_owned(), &mut out)?;
+
+        assert_eq!(
+            "# Changelog for new\n<!-- END OF HEADER -->\n## New Release\n## Old Release",
             str::from_utf8(&out).unwrap_or_default()
         );
 
