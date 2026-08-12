@@ -599,6 +599,55 @@ mod test {
     }
 
     #[test]
+    fn no_increment_regex_uses_subject_only_when_non_conventional() -> Result<()> {
+        fn build_release<'a>(version: &str, commits: &'a [&str]) -> Release<'a> {
+            Release {
+                version: None,
+                commits: commits
+                    .iter()
+                    .map(|v| Commit::from((*v).to_string()))
+                    .collect(),
+                previous: Some(Box::new(Release {
+                    version: Some(String::from(version)),
+                    ..Default::default()
+                })),
+                ..Default::default()
+            }
+        }
+
+        // The subject does not match `no_increment_regex`, but the body does.
+        // With conventional commits disabled, the body must be ignored so the
+        // commit is not suppressed and still produces a patch bump.
+        // (https://github.com/orhun/git-cliff/issues/1476)
+        let release = build_release("1.0.0", &[
+            "fix a bug\n\nThis is a chore cleanup and must not skip the bump."
+        ]);
+        let result = release.calculate_next_version_from_commits(
+            &Bump {
+                no_increment_regex: Some(String::from("chore")),
+                ..Default::default()
+            },
+            false,
+        )?;
+        assert_eq!("1.0.1", result.version);
+        assert_eq!(Some(BumpType::Patch), result.bump_type);
+
+        // Sanity: a matching subject still suppresses the bump.
+        let release = build_release("1.0.0", &["chore cleanup\n\nBody text."]);
+        let result = release.calculate_next_version_from_commits(
+            &Bump {
+                no_increment_regex: Some(String::from("chore")),
+                ..Default::default()
+            },
+            false,
+        )?;
+        assert_eq!("1.0.0", result.version);
+        assert_eq!(None, result.bump_type);
+
+        Ok(())
+    }
+
+    #[test]
     fn bump_version_type() -> Result<()> {
         fn build_release<'a>(version: &str, commits: &'a [&str]) -> Release<'a> {
             Release {
