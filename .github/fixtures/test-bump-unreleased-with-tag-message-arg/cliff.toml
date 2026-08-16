@@ -1,6 +1,6 @@
 [changelog]
 # template for the changelog body
-# https://keats.github.io/tera/docs/#introduction
+# https://keats.github.io/tera/#getting-started
 body = """
 {% if version %}\
     ## [{{ version | trim_start_matches(pat="v") }}]
