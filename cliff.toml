@@ -70,6 +70,8 @@ footer = """
 """
 # Remove leading and trailing whitespaces from the changelog's body.
 trim = true
+# Format the rendered changelog as Markdown (only applies to Markdown output).
+# format = true
 # An array of regex based postprocessors to modify the changelog.
 postprocessors = [
   # Replace the placeholder `<REPO>` with a URL.

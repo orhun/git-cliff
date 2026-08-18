@@ -842,6 +842,21 @@ pub fn write_changelog<W: io::Write>(
         .output
         .clone()
         .or(changelog.config.changelog.output.clone());
+    // Markdown formatting only makes sense for Markdown output. Detect it from
+    // the file extension (stdout and extension-less paths are treated as
+    // Markdown, matching git-cliff's default output).
+    if changelog.config.changelog.format {
+        let is_markdown = output.as_ref().is_none_or(|path| {
+            path.extension()
+                .is_none_or(|ext| ext.eq_ignore_ascii_case("md"))
+        });
+        if !is_markdown {
+            tracing::warn!(
+                "`changelog.format` is enabled but the output is not Markdown; skipping formatting"
+            );
+            changelog.config.changelog.format = false;
+        }
+    }
     if args.bump.is_some() || args.bumped_version {
         let current_version = changelog.releases.first().and_then(|release| {
             release.version.clone().or_else(|| {

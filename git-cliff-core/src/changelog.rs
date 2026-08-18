@@ -587,64 +587,61 @@ impl<'a> Changelog<'a> {
     pub fn generate<W: Write + ?Sized>(&self, out: &mut W) -> Result<()> {
         crate::set_progress_message!("Generating and writing the changelog");
         tracing::debug!("Generating changelog");
-        let postprocessors = self.config.changelog.postprocessors.clone();
 
-        if let Some(header_template) = &self.header_template {
-            let write_result = writeln!(
-                out,
-                "{}",
-                header_template.render(
-                    &Releases {
-                        releases: &self.releases,
-                    },
-                    Some(&self.additional_context),
-                    &postprocessors,
-                )?
-            );
-            if let Err(e) = write_result {
-                if e.kind() != std::io::ErrorKind::BrokenPipe {
-                    return Err(e.into());
-                }
-            }
+        let mut output = self.render()?;
+        if self.config.changelog.format {
+            output = crate::markdown::format_markdown(&output)?;
         }
 
-        for release in &self.releases {
-            let write_result = write!(
-                out,
-                "{}",
-                self.body_template.render(
-                    &release,
-                    Some(&self.additional_context),
-                    &postprocessors
-                )?
-            );
-            if let Err(e) = write_result {
-                if e.kind() != std::io::ErrorKind::BrokenPipe {
-                    return Err(e.into());
-                }
-            }
-        }
-
-        if let Some(footer_template) = &self.footer_template {
-            let write_result = writeln!(
-                out,
-                "{}",
-                footer_template.render(
-                    &Releases {
-                        releases: &self.releases,
-                    },
-                    Some(&self.additional_context),
-                    &postprocessors,
-                )?
-            );
-            if let Err(e) = write_result {
-                if e.kind() != std::io::ErrorKind::BrokenPipe {
-                    return Err(e.into());
-                }
+        let write_result = write!(out, "{output}");
+        if let Err(e) = write_result {
+            if e.kind() != std::io::ErrorKind::BrokenPipe {
+                return Err(e.into());
             }
         }
 
         Ok(())
+    }
+
+    /// Renders the changelog (header + releases + footer) into a string.
+    ///
+    /// With `format` disabled this produces byte-for-byte the same output that
+    /// used to be written directly to the writer.
+    fn render(&self) -> Result<String> {
+        let postprocessors = self.config.changelog.postprocessors.clone();
+        let mut output = String::new();
+
+        if let Some(header_template) = &self.header_template {
+            output.push_str(&header_template.render(
+                &Releases {
+                    releases: &self.releases,
+                },
+                Some(&self.additional_context),
+                &postprocessors,
+            )?);
+            output.push('\n');
+        }
+
+        for release in &self.releases {
+            output.push_str(&self.body_template.render(
+                &release,
+                Some(&self.additional_context),
+                &postprocessors,
+            )?);
+        }
+
+        if let Some(footer_template) = &self.footer_template {
+            output.push_str(&footer_template.render(
+                &Releases {
+                    releases: &self.releases,
+                },
+                Some(&self.additional_context),
+                &postprocessors,
+            )?);
+            output.push('\n');
+        }
+
+        Ok(output)
     }
 
     /// Generates a changelog and prepends it to the given changelog.
@@ -814,6 +811,7 @@ mod test {
                     replace_command: None,
                 }],
                 render_always: false,
+                format: false,
                 output: None,
             },
             git: GitConfig {
@@ -1478,6 +1476,36 @@ mod test {
     }
 
     #[test]
+    fn changelog_generator_format() -> Result<()> {
+        let (config, releases) = get_test_data();
+
+        // Formatting disabled: the output is exactly what the templates render.
+        let plain = {
+            let changelog = Changelog::new(releases.clone(), config.clone(), None)?;
+            let mut out = Vec::new();
+            changelog.generate(&mut out)?;
+            String::from_utf8(out).expect("output should be valid utf-8")
+        };
+
+        // Formatting enabled: the output is the rendered changelog run through
+        // the Markdown formatter.
+        let mut formatted_config = config;
+        formatted_config.changelog.format = true;
+        let formatted = {
+            let changelog = Changelog::new(releases, formatted_config, None)?;
+            let mut out = Vec::new();
+            changelog.generate(&mut out)?;
+            String::from_utf8(out).expect("output should be valid utf-8")
+        };
+
+        assert_eq!(formatted, crate::markdown::format_markdown(&plain)?);
+        // The fixture output isn't already normalized, so formatting changes it.
+        assert_ne!(plain, formatted);
+
+        Ok(())
+    }
+
+    #[test]
     fn changelog_generator_split_commits() -> Result<()> {
         let (mut config, mut releases) = get_test_data();
         config.git.split_commits = true;
@@ -1661,6 +1689,7 @@ chore(deps): fix broken deps
                 trim: true,
                 postprocessors: Vec::new(),
                 render_always: false,
+                format: false,
                 output: None,
             },
             git: GitConfig {

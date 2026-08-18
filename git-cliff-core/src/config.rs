@@ -76,6 +76,13 @@ pub struct ChangelogConfig {
     pub trim: bool,
     /// Always render the body template.
     pub render_always: bool,
+    /// Format the rendered changelog as Markdown.
+    ///
+    /// Only takes effect when the output is Markdown (stdout or a `.md`
+    /// file). Defaults to `false`, in which case the output is left exactly
+    /// as the templates rendered it.
+    #[serde(default)]
+    pub format: bool,
     /// Changelog postprocessors.
     pub postprocessors: Vec<TextProcessor>,
     /// Output file path.
