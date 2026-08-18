@@ -245,6 +245,11 @@ Examples:
   - `body` is a special field which contains the body of a conventional commit, if applicable.
   - Be aware that all fields are converted to JSON strings before they are parsed by the given regex, especially when dealing with arrays.
 
+By default a commit is handled by the first parser that matches it and the rest are skipped. Set `continue = true` on a parser to keep going after it matches, so the commit can be processed by more than one parser in order. A parser with `continue = true` only overrides the fields it sets (e.g. just `scope`), leaving the others for later parsers to fill in.
+
+- `{ message = '\(www\)', scope = "Application", continue = true }`, `{ message = "^feat", group = "Features" }`
+  - Set the scope to "Application" from the first parser, then let the second parser set the group to "Features". Without `continue = true` on the first parser, only the scope would be applied and no group would be set.
+
 ### protect_breaking_commits
 
 If set to `true`, any breaking changes will be protected against being skipped
