@@ -503,6 +503,40 @@ fn process_repository<'a>(
 ///     Ok(())
 /// }
 /// ```
+/// Determines which configuration file to use.
+///
+/// An explicit path is used when it exists. When the given path does not
+/// exist, the user configuration is used instead and a warning is logged, so
+/// that a mistyped path is visible rather than silently ignored.
+///
+/// When `--config` is omitted, a project configuration is discovered by
+/// searching a starting directory and its ancestors, then the user
+/// configuration directory. Discovery starts from `--workdir` when it is
+/// given, so that it follows the directory git-cliff was asked to operate on
+/// rather than the directory it was invoked from.
+fn resolve_config_path(
+    config: Option<&Path>,
+    workdir: Option<&Path>,
+    current_dir: &Path,
+    user_config: impl FnOnce() -> Option<PathBuf>,
+) -> Option<PathBuf> {
+    match config {
+        Some(path) if path.exists() => Some(path.to_path_buf()),
+        Some(path) => {
+            tracing::warn!(
+                "Configuration file not found: {:?}, falling back to the user configuration",
+                path
+            );
+            user_config()
+        }
+        None => workdir
+            .unwrap_or(current_dir)
+            .ancestors()
+            .find_map(Config::retrieve_project_config_path)
+            .or_else(user_config),
+    }
+}
+
 pub fn run<'a>(args: Opt) -> Result<Changelog<'a>> {
     run_with_changelog_modifier(args, |_| Ok(()))
 }
@@ -566,20 +600,12 @@ pub fn run_with_changelog_modifier<'a>(
         )?]);
     }
 
-    // Determine the configuration file path. An explicit `--config` is used
-    // as given (falling back to the user configuration directory when the path
-    // does not exist); when `--config` is omitted, the configuration file is
-    // discovered automatically — a project `cliff.toml` / `.cliff.toml` /
-    // `.config/cliff.toml` (searched up the directory tree), then the user
-    // configuration directory.
-    let config_path = match &args.config {
-        Some(config_path) if config_path.exists() => Some(config_path.clone()),
-        Some(_) => Config::retrieve_user_config_path(),
-        None => env::current_dir()?
-            .ancestors()
-            .find_map(Config::retrieve_project_config_path)
-            .or_else(Config::retrieve_user_config_path),
-    };
+    let config_path = resolve_config_path(
+        args.config.as_deref(),
+        args.workdir.as_deref(),
+        &env::current_dir()?,
+        Config::retrieve_user_config_path,
+    );
 
     // Parse the configuration file, loading the default configuration if none
     // is found.
@@ -903,4 +929,85 @@ pub fn write_changelog<W: io::Write>(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use temp_dir::TempDir;
+
+    use super::*;
+
+    /// Creates a `cliff.toml` in the given directory.
+    fn write_config(dir: &Path) -> Result<PathBuf> {
+        let path = dir.join(DEFAULT_CONFIG);
+        fs::write(&path, "[changelog]\n")?;
+        Ok(path)
+    }
+
+    #[test]
+    fn explicit_config_is_used_when_it_exists() -> Result<()> {
+        let dir = TempDir::new()?;
+        let config = write_config(dir.path())?;
+        assert_eq!(
+            Some(config.clone()),
+            resolve_config_path(Some(&config), None, dir.path(), || None)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn missing_explicit_config_falls_back_to_the_user_config() -> Result<()> {
+        let dir = TempDir::new()?;
+        let user_config = dir.path().join("user-cliff.toml");
+        assert_eq!(
+            Some(user_config.clone()),
+            resolve_config_path(
+                Some(&dir.path().join("does-not-exist.toml")),
+                None,
+                dir.path(),
+                || Some(user_config.clone())
+            )
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn config_is_discovered_from_the_working_directory() -> Result<()> {
+        let workdir = TempDir::new()?;
+        let current_dir = TempDir::new()?;
+        let config = write_config(workdir.path())?;
+        // Discovery must follow `--workdir`, not the shell's directory.
+        assert_eq!(
+            Some(config),
+            resolve_config_path(None, Some(workdir.path()), current_dir.path(), || None)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn config_is_discovered_from_the_current_directory_without_workdir() -> Result<()> {
+        let dir = TempDir::new()?;
+        let config = write_config(dir.path())?;
+        assert_eq!(
+            Some(config),
+            resolve_config_path(None, None, dir.path(), || None)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn user_config_is_used_when_no_project_config_is_discovered() -> Result<()> {
+        let dir = TempDir::new()?;
+        let sub = dir.path().join("nested");
+        fs::create_dir(&sub)?;
+        let user_config = dir.path().join("user-cliff.toml");
+        // No project config anywhere, so the user configuration is used.
+        assert_eq!(
+            Some(user_config.clone()),
+            resolve_config_path(None, Some(&sub), dir.path(), || Some(user_config.clone()))
+        );
+        Ok(())
+    }
 }
