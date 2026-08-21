@@ -998,8 +998,8 @@ Refs: #123
             String::from("feat: first feature"),
         );
         // `commit.remote` is `None` by default (this is a LOCAL / non-PR commit),
-        // so `remote.pr_labels` cannot be resolved — exactly the orhun/git-cliff#1598
-        // scenario. The first parser must be skipped (not abort the chain) so the
+        // so `remote.pr_labels` cannot be resolved.
+        // The first parser must be skipped (not abort the chain) so the
         // catch-all parser below can still match and group the commit.
         let parsers = [
             CommitParser {
