@@ -583,9 +583,19 @@ impl Config {
         })
     }
 
-    /// Returns whether any configured changelog template references per-commit
-    /// diff statistics.
+    /// Returns whether per-commit diff statistics are used by a changelog
+    /// template or commit parser.
     pub fn uses_commit_statistics(&self) -> Result<bool> {
+        if self
+            .git
+            .commit_parsers
+            .iter()
+            .filter_map(|parser| parser.field.as_deref())
+            .any(|field| field.starts_with("statistics."))
+        {
+            return Ok(true);
+        }
+
         let trim = self.changelog.trim;
         let body_template = Template::new("body", self.changelog.body.clone(), trim)?;
         if body_template.contains_variable(statistics::TEMPLATE_VARIABLES) {
