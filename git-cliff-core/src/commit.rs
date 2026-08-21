@@ -329,7 +329,7 @@ impl Commit<'_> {
         let lookup_context = serde_json::to_value(&self).map_err(|e| {
             AppError::FieldError(format!("failed to convert context into value: {e}",))
         })?;
-        for parser in parsers {
+        'parsers: for parser in parsers {
             let mut regex_checks = Vec::new();
             if let Some(message_regex) = parser.message.as_ref() {
                 regex_checks.push((message_regex, self.message.clone()));
@@ -351,17 +351,18 @@ impl Commit<'_> {
             if let (Some(field_name), Some(pattern_regex)) =
                 (parser.field.as_ref(), parser.pattern.as_ref())
             {
-                let field_present;
                 let values = if field_name == "body" {
-                    field_present = true;
                     vec![body.clone()].into_iter().collect()
                 } else {
-                    let field_value = tera::dotted_pointer(&lookup_context, field_name);
-                    field_present = field_value.is_some();
-                    field_value.and_then(|v| match v {
+                    let Some(field_value) = tera::dotted_pointer(&lookup_context, field_name)
+                    else {
+                        tracing::trace!("Field '{field_name}' is absent; trying the next parser");
+                        continue 'parsers;
+                    };
+                    match field_value {
                         Value::String(s) => Some(vec![s.clone()]),
                         Value::Number(_) | Value::Bool(_) | Value::Null => {
-                            Some(vec![v.to_string()])
+                            Some(vec![field_value.to_string()])
                         }
                         Value::Array(arr) => {
                             let mut values = Vec::new();
@@ -377,7 +378,7 @@ impl Commit<'_> {
                             Some(values)
                         }
                         Value::Object(_) => None,
-                    })
+                    }
                 };
                 match values {
                     Some(values) => {
@@ -390,19 +391,10 @@ impl Commit<'_> {
                         }
                     }
                     None => {
-                        if field_present {
-                            return Err(AppError::FieldError(format!(
-                                "field '{field_name}' is missing or has unsupported type \
-                                 (expected a String, Number, Bool, or Null — or an Array of these \
-                                 scalar values)",
-                            )));
-                        }
-                        // The field is genuinely absent on this commit (e.g.
-                        // `remote.pr_labels` when `remote` is `None`), so this parser
-                        // cannot decide it: skip only this field criterion and let the
-                        // rest of the parser (and the remaining parsers) decide. A
-                        // present-but-unsupported `Value::Object` field still errors
-                        // above. See orhun/git-cliff#1598.
+                        return Err(AppError::FieldError(format!(
+                            "field '{field_name}' is missing or has unsupported type (expected a \
+                             String, Number, Bool, or Null — or an Array of these scalar values)",
+                        )));
                     }
                 }
             }
@@ -1004,7 +996,7 @@ Refs: #123
         let parsers = [
             CommitParser {
                 sha: None,
-                message: None,
+                message: Some(Regex::new("^feat")?),
                 body: None,
                 footer: None,
                 group: Some(String::from("Bug fixes")),
