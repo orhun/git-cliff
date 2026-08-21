@@ -202,7 +202,7 @@ fn process_repository<'a>(
     let ignore_regex = config.git.ignore_tags.as_ref();
     let count_tags = config.git.count_tags.as_ref();
     let recurse_submodules = config.git.recurse_submodules.unwrap_or(false);
-    let compute_commit_statistics = config.uses_commit_statistics()?;
+    let compute_commit_statistics = args.context || config.uses_commit_statistics()?;
     tags.retain(|_, tag| {
         let name = &tag.name;
 
