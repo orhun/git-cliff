@@ -10,7 +10,7 @@ pub mod args;
 /// Custom logger implementation.
 pub mod logger;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fs::{self, File};
 use std::io::{self, Write};
@@ -351,21 +351,27 @@ fn process_repository<'a>(
     // Assign commits to releases by graph reachability instead of their
     // position in the linearized log.
     // Only tags present in the walk can be release boundaries.
-    let commit_ids: HashSet<String> = commits
-        .iter()
-        .map(|commit| commit.id().to_string())
-        .collect();
+    let commit_ids: HashSet<_> = commits.iter().map(|commit| commit.id()).collect();
     let ownership = repository.commit_tag_ownership(&tags, &commit_ids)?;
 
-    // Group commits by owning tag (oldest to newest), then unreleased, keeping
-    // each group oldest-first so the loop below closes releases in order.
+    // Group commits by owning tag in a single pass, keeping each group
+    // oldest-first. Unowned commits remain unreleased.
+    let mut groups: HashMap<&str, Vec<_>> = HashMap::new();
+    let mut unreleased = Vec::new();
+    for commit in commits.iter().rev() {
+        match ownership.get(&commit.id()) {
+            Some(tag_id) => groups.entry(tag_id).or_default().push(commit),
+            None => unreleased.push(commit),
+        }
+    }
+
+    // Emit tagged groups oldest to newest so the loop below closes releases in
+    // order, followed by the unreleased commits.
     let mut ordered_commits = Vec::with_capacity(commits.len());
     for tag_id in tags.keys() {
-        let mut group: Vec<_> = commits
-            .iter()
-            .rev()
-            .filter(|commit| ownership.get(&commit.id().to_string()) == Some(tag_id))
-            .collect();
+        let Some(mut group) = groups.remove(tag_id.as_str()) else {
+            continue;
+        };
         // The tagged commit is the release tip, so close the group with it.
         if let Some(pos) = group
             .iter()
@@ -376,12 +382,7 @@ fn process_repository<'a>(
         }
         ordered_commits.extend(group);
     }
-    ordered_commits.extend(
-        commits
-            .iter()
-            .rev()
-            .filter(|commit| !ownership.contains_key(&commit.id().to_string())),
-    );
+    ordered_commits.extend(unreleased);
 
     // Process releases.
     let mut previous_release = Release::default();

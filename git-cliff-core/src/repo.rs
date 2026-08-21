@@ -626,32 +626,31 @@ impl Repository {
     pub fn commit_tag_ownership(
         &self,
         tags: &IndexMap<String, Tag>,
-        boundary_ids: &HashSet<String>,
-    ) -> Result<HashMap<String, String>> {
+        boundary_ids: &HashSet<Oid>,
+    ) -> Result<HashMap<Oid, String>> {
         let mut ownership = HashMap::new();
         // Only tags that are part of the walked history can act as boundaries.
-        let tag_ids: Vec<&String> = tags
+        let tag_ids: Vec<(Oid, &String)> = tags
             .keys()
-            .filter(|id| boundary_ids.contains(*id))
+            .filter_map(|id| Oid::from_str(id).ok().map(|oid| (oid, id)))
+            .filter(|(oid, _)| boundary_ids.contains(oid))
             .collect();
-        for (index, tag_id) in tag_ids.iter().enumerate() {
-            let Ok(tag_oid) = Oid::from_str(tag_id) else {
-                continue;
-            };
+        for (index, (tag_oid, tag_id)) in tag_ids.iter().enumerate() {
             let mut revwalk = self.inner.revwalk()?;
-            revwalk.push(tag_oid)?;
+            revwalk.push(*tag_oid)?;
             // Hide all previous (older) tags so that this walk only yields the
             // commits belonging to this tag's release range.
-            for prev in &tag_ids[..index] {
-                if let Ok(prev_oid) = Oid::from_str(prev) {
-                    // Ignore errors from hiding unrelated histories.
-                    let _ = revwalk.hide(prev_oid);
-                }
+            for (prev_oid, _) in &tag_ids[..index] {
+                // Ignore errors from hiding unrelated histories.
+                let _ = revwalk.hide(*prev_oid);
             }
             for oid in revwalk.filter_map(StdResult::ok) {
-                ownership
-                    .entry(oid.to_string())
-                    .or_insert_with(|| (*tag_id).clone());
+                if boundary_ids.contains(&oid) {
+                    ownership.entry(oid).or_insert_with(|| (*tag_id).clone());
+                    if ownership.len() == boundary_ids.len() {
+                        return Ok(ownership);
+                    }
+                }
             }
         }
         Ok(ownership)
