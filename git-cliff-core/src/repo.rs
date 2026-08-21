@@ -1,3 +1,4 @@
+use std::collections::{HashMap, HashSet};
 use std::io;
 use std::path::{Path, PathBuf};
 use std::result::Result as StdResult;
@@ -604,6 +605,55 @@ impl Repository {
             .into_iter()
             .map(|(a, b)| (a.id().to_string(), b))
             .collect())
+    }
+
+    /// Maps each commit id to the id of the tag that "owns" it.
+    ///
+    /// A commit is owned by the earliest tag (in `tags` order, which must be
+    /// oldest to newest) whose commit can reach it, i.e. the tag whose
+    /// `previous_tag..tag` range contains it. This assigns commits to releases
+    /// by graph reachability rather than by their position in the linearized
+    /// log, which can interleave diverged-then-merged branches
+    ///
+    /// Only tags whose commit id is in `boundary_ids` (the commits actually in
+    /// the walk) are considered. Commits not reachable from any such tag are
+    /// absent from the map and should be treated as unreleased.
+    ///
+    /// # Returns
+    ///
+    /// A map from each owned commit id to the commit id of its owning tag.
+    /// Commits that are not reachable from a considered tag are omitted.
+    pub fn commit_tag_ownership(
+        &self,
+        tags: &IndexMap<String, Tag>,
+        boundary_ids: &HashSet<Oid>,
+    ) -> Result<HashMap<Oid, String>> {
+        let mut ownership = HashMap::new();
+        // Only tags that are part of the walked history can act as boundaries.
+        let tag_ids: Vec<(Oid, &String)> = tags
+            .keys()
+            .filter_map(|id| Oid::from_str(id).ok().map(|oid| (oid, id)))
+            .filter(|(oid, _)| boundary_ids.contains(oid))
+            .collect();
+        for (index, (tag_oid, tag_id)) in tag_ids.iter().enumerate() {
+            let mut revwalk = self.inner.revwalk()?;
+            revwalk.push(*tag_oid)?;
+            // Hide all previous (older) tags so that this walk only yields the
+            // commits belonging to this tag's release range.
+            for (prev_oid, _) in &tag_ids[..index] {
+                // Ignore errors from hiding unrelated histories.
+                let _ = revwalk.hide(*prev_oid);
+            }
+            for oid in revwalk.filter_map(StdResult::ok) {
+                if boundary_ids.contains(&oid) {
+                    ownership.entry(oid).or_insert_with(|| (*tag_id).clone());
+                    if ownership.len() == boundary_ids.len() {
+                        return Ok(ownership);
+                    }
+                }
+            }
+        }
+        Ok(ownership)
     }
 
     /// Returns the remote of the upstream repository.

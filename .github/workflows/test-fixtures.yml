@@ -139,6 +139,7 @@ jobs:
           - fixtures-name: test-remote-config
             command: --config-url "https://github.com/orhun/git-cliff/blob/main/.github/fixtures/new-fixture-template/cliff.toml?raw=true"
           - fixtures-name: test-topo-order-commits
+          - fixtures-name: test-tag-assignment-merged-branch
           - fixtures-name: test-commit-range
           - fixtures-name: test-commit-statistics
           - fixtures-name: test-commit-range-with-sort-commits

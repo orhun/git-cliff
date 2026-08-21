@@ -10,6 +10,7 @@ pub mod args;
 /// Custom logger implementation.
 pub mod logger;
 
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fs::{self, File};
 use std::io::{self, Write};
@@ -359,11 +360,47 @@ fn process_repository<'a>(
         }
     }
 
+    // Assign commits to releases by graph reachability instead of their
+    // position in the linearized log.
+    // Only tags present in the walk can be release boundaries.
+    let commit_ids: HashSet<_> = commits.iter().map(|commit| commit.id()).collect();
+    let ownership = repository.commit_tag_ownership(&tags, &commit_ids)?;
+
+    // Group commits by owning tag in a single pass, keeping each group
+    // oldest-first. Unowned commits remain unreleased.
+    let mut groups: HashMap<&str, Vec<_>> = HashMap::new();
+    let mut unreleased = Vec::new();
+    for commit in commits.iter().rev() {
+        match ownership.get(&commit.id()) {
+            Some(tag_id) => groups.entry(tag_id).or_default().push(commit),
+            None => unreleased.push(commit),
+        }
+    }
+
+    // Emit tagged groups oldest to newest so the loop below closes releases in
+    // order, followed by the unreleased commits.
+    let mut ordered_commits = Vec::with_capacity(commits.len());
+    for tag_id in tags.keys() {
+        let Some(mut group) = groups.remove(tag_id.as_str()) else {
+            continue;
+        };
+        // The tagged commit is the release tip, so close the group with it.
+        if let Some(pos) = group
+            .iter()
+            .position(|commit| commit.id().to_string() == *tag_id)
+        {
+            let tag_commit = group.remove(pos);
+            group.push(tag_commit);
+        }
+        ordered_commits.extend(group);
+    }
+    ordered_commits.extend(unreleased);
+
     // Process releases.
     let mut previous_release = Release::default();
     let mut first_processed_tag = None;
     let repository_path = repository.root_path()?.to_string_lossy().into_owned();
-    for git_commit in commits.iter().rev() {
+    for git_commit in ordered_commits {
         let release = releases.last_mut().unwrap();
         let mut commit = Commit::from(git_commit);
         if compute_commit_statistics {
