@@ -349,7 +349,7 @@ fn process_repository<'a>(
     }
 
     // Assign commits to releases by graph reachability instead of their
-    // position in the linearized log (https://github.com/orhun/git-cliff/issues/498).
+    // position in the linearized log.
     // Only tags present in the walk can be release boundaries.
     let commit_ids: HashSet<String> = commits
         .iter()

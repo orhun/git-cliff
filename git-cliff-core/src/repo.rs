@@ -614,11 +614,15 @@ impl Repository {
     /// `previous_tag..tag` range contains it. This assigns commits to releases
     /// by graph reachability rather than by their position in the linearized
     /// log, which can interleave diverged-then-merged branches
-    /// (<https://github.com/orhun/git-cliff/issues/498>).
     ///
     /// Only tags whose commit id is in `boundary_ids` (the commits actually in
     /// the walk) are considered. Commits not reachable from any such tag are
     /// absent from the map and should be treated as unreleased.
+    ///
+    /// # Returns
+    ///
+    /// A map from each owned commit id to the commit id of its owning tag.
+    /// Commits that are not reachable from a considered tag are omitted.
     pub fn commit_tag_ownership(
         &self,
         tags: &IndexMap<String, Tag>,
