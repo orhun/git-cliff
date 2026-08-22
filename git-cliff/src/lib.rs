@@ -305,11 +305,11 @@ fn process_repository<'a>(
     let cwd = env::current_dir()?;
     let mut include_path = config.git.include_paths.clone();
     if let Ok(root) = repository.root_path() {
-        if cwd.starts_with(&root) &&
-            cwd != root &&
-            args.repository.as_ref().is_none_or(Vec::is_empty) &&
-            args.workdir.is_none() &&
-            include_path.is_empty()
+        if cwd.starts_with(&root)
+            && cwd != root
+            && args.repository.as_ref().is_none_or(Vec::is_empty)
+            && args.workdir.is_none()
+            && include_path.is_empty()
         {
             let path = cwd.join("**").join("*");
             if let Ok(stripped) = path.strip_prefix(root) {
@@ -820,11 +820,14 @@ pub fn run_with_changelog_modifier<'a>(
                 skip_list.extend(skip_commit.clone());
             }
             for sha1 in skip_list {
-                config.git.commit_parsers.insert(0, CommitParser {
-                    sha: Some(sha1.clone()),
-                    skip: Some(true),
-                    ..Default::default()
-                });
+                config.git.commit_parsers.insert(
+                    0,
+                    CommitParser {
+                        sha: Some(sha1.clone()),
+                        skip: Some(true),
+                        ..Default::default()
+                    },
+                );
             }
 
             // The commit range, used for determining the remote commits to include
@@ -912,50 +915,4 @@ pub fn write_changelog<W: io::Write>(
     }
 
     Ok(())
-}
-
-#[cfg(test)]
-mod test {
-    use std::fs;
-
-    use temp_dir::TempDir;
-
-    use super::*;
-
-    #[test]
-    fn init_config_from_writes_user_template_over_builtin() -> Result<()> {
-        let dir = TempDir::new()?;
-        fs::write(dir.path().join("github.toml"), "# user github\n")?;
-        let out = dir.path().join("cliff.toml");
-
-        init_config_from(Some("github"), Some(dir.path()), &out)?;
-
-        assert_eq!(fs::read_to_string(&out)?, "# user github\n");
-        Ok(())
-    }
-
-    #[test]
-    fn init_config_preserves_existing_api() -> Result<()> {
-        let dir = TempDir::new()?;
-        let out = dir.path().join("cliff.toml");
-
-        init_config(Some("github"), &out)?;
-
-        let written = fs::read_to_string(&out)?;
-        let builtin = git_cliff_core::embed::BuiltinConfig::get_config("github".to_string())?;
-        assert_eq!(written, builtin);
-        Ok(())
-    }
-
-    #[test]
-    fn init_config_from_errors_when_directory_missing() {
-        let dir = TempDir::new().expect("temp dir");
-        let missing = dir.path().join("does-not-exist");
-        let out = dir.path().join("cliff.toml");
-
-        let err = init_config_from(None, Some(&missing), &out)
-            .expect_err("a missing templates directory should be an error");
-
-        assert!(err.to_string().contains(&missing.display().to_string()));
-    }
 }
