@@ -100,6 +100,10 @@ impl RemotePullRequest for AzureDevOpsPullRequest {
         self.title.clone()
     }
 
+    fn author(&self) -> Option<String> {
+        self.created_by.clone().and_then(|v| v.display_name)
+    }
+
     fn labels(&self) -> Vec<String> {
         self.labels.iter().map(|v| v.name.clone()).collect()
     }
@@ -426,5 +430,40 @@ mod test {
         };
 
         assert_eq!(None, pr.merge_commit());
+    }
+
+    #[test]
+    fn pull_request_author() {
+        let pull_request: AzureDevOpsPullRequest = serde_json::from_str(
+            r#"{
+                "pullRequestId": 42,
+                "title": "feat: add pr_author",
+                "status": "completed",
+                "createdBy": { "displayName": "contributor" },
+                "lastMergeCommit": {
+                    "commitId": "1d244937ee6ceb8e0314a4a201ba93a7a61f2071"
+                }
+            }"#,
+        )
+        .expect("failed to deserialize pull request");
+
+        assert_eq!(Some(String::from("contributor")), pull_request.author());
+    }
+
+    #[test]
+    fn pull_request_author_missing() {
+        let pull_request: AzureDevOpsPullRequest = serde_json::from_str(
+            r#"{
+                "pullRequestId": 42,
+                "title": "feat: add pr_author",
+                "status": "completed",
+                "lastMergeCommit": {
+                    "commitId": "1d244937ee6ceb8e0314a4a201ba93a7a61f2071"
+                }
+            }"#,
+        )
+        .expect("failed to deserialize pull request");
+
+        assert_eq!(None, pull_request.author());
     }
 }

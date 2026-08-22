@@ -172,15 +172,25 @@ fn process_submodules(
 }
 
 /// Initializes the configuration file.
-pub fn init_config(name: Option<&str>, config_path: Option<&Path>) -> Result<()> {
-    let contents = match name {
-        Some(name) => BuiltinConfig::get_config(name.to_string())?,
-        None => EmbeddedConfig::get_config()?,
-    };
+pub fn init_config(name: Option<&str>, config_path: &Path) -> Result<()> {
+    init_config_from(name, None, config_path)
+}
 
-    let config_path = config_path
-        .map(Path::to_path_buf)
-        .unwrap_or_else(|| PathBuf::from(DEFAULT_CONFIG));
+/// Initializes the configuration file using templates from the given directory.
+pub fn init_config_from(
+    name: Option<&str>,
+    templates_dir: Option<&Path>,
+    config_path: &Path,
+) -> Result<()> {
+    let contents = match name {
+        Some(name) => BuiltinConfig::get_config_from(name.to_string(), templates_dir)?,
+        None => {
+            if let Some(dir) = templates_dir {
+                BuiltinConfig::validate_templates_dir(dir)?;
+            }
+            EmbeddedConfig::get_config()?
+        }
+    };
 
     tracing::info!(
         "Saving the configuration file{} to {}",

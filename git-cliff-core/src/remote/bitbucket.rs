@@ -58,12 +58,17 @@ pub struct BitbucketPagination<T> {
     pub values: Vec<T>,
 }
 
-/// Author of the commit.
+/// Author of a commit or a pull request.
+///
+/// A commit carries the raw `Name <email>` string; a pull request carries an
+/// account object, whose handle is `nickname`.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BitbucketCommitAuthor {
-    /// Username.
+    /// Raw `Name <email>` string, set on commit authors.
     #[serde(rename = "raw")]
     pub login: Option<String>,
+    /// Account handle, set on pull request authors.
+    pub nickname: Option<String>,
 }
 
 /// Label of the pull request.
@@ -101,6 +106,10 @@ impl RemotePullRequest for BitbucketPullRequest {
 
     fn title(&self) -> Option<String> {
         self.title.clone()
+    }
+
+    fn author(&self) -> Option<String> {
+        self.author.nickname.clone()
     }
 
     fn labels(&self) -> Vec<String> {
@@ -267,7 +276,7 @@ mod test {
     use pretty_assertions::assert_eq;
 
     use super::*;
-    use crate::remote::RemoteCommit;
+    use crate::remote::{RemoteCommit, RemotePullRequest};
 
     #[test]
     fn timestamp() {
@@ -275,10 +284,41 @@ mod test {
             hash: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
             author: Some(BitbucketCommitAuthor {
                 login: Some(String::from("orhun")),
+                nickname: None,
             }),
             date: String::from("2021-07-18T15:14:39+03:00"),
         };
 
         assert_eq!(Some(1_626_610_479), remote_commit.timestamp());
+    }
+
+    #[test]
+    fn pull_request_author() {
+        let pull_request: BitbucketPullRequest = serde_json::from_str(
+            r#"{
+                "id": 42,
+                "title": "feat: add pr_author",
+                "merge_commit": { "hash": "1d244937ee6c" },
+                "author": { "nickname": "contributor" }
+            }"#,
+        )
+        .expect("failed to deserialize pull request");
+
+        assert_eq!(Some(String::from("contributor")), pull_request.author());
+    }
+
+    #[test]
+    fn pull_request_author_missing() {
+        let pull_request: BitbucketPullRequest = serde_json::from_str(
+            r#"{
+                "id": 42,
+                "title": "feat: add pr_author",
+                "merge_commit": { "hash": "1d244937ee6c" },
+                "author": {}
+            }"#,
+        )
+        .expect("failed to deserialize pull request");
+
+        assert_eq!(None, pull_request.author());
     }
 }

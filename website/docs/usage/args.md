@@ -14,6 +14,7 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
 -h, --help             Prints help information
 -V, --version          Prints version information
 -v, --verbose...       Increases the logging verbosity
+    --list-templates   Prints the names of the available templates (built-in and user-defined)
     --bumped-version   Prints bumped version for unreleased changes
 -l, --latest           Processes the commits starting from the latest tag
     --current          Processes the commits that belong to the current tag
@@ -29,21 +30,22 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
 
 ```
 -i, --init [<CONFIG>]              Writes the default configuration file to cliff.toml
+    --templates-dir <PATH>         Sets the directory to look up user-defined templates for --init [env: GIT_CLIFF_TEMPLATES_DIR=]
     --bump                         Bumps the version for unreleased changes [default: auto] [possible values: auto, major, minor, patch]
 -c, --config <PATH>                Sets the configuration file [env: GIT_CLIFF_CONFIG=]
     --config-url <URL>             Sets the URL for the configuration file [env: GIT_CLIFF_CONFIG_URL=]
 -w, --workdir <PATH>               Sets the working directory [env: GIT_CLIFF_WORKDIR=]
 -r, --repository <PATH>...         Sets the git repository [env: GIT_CLIFF_REPOSITORY=]
-    --include-path <PATTERN>...    Sets the path to include related commits [env: GIT_CLIFF_INCLUDE_PATH=]
-    --exclude-path <PATTERN>...    Sets the path to exclude related commits [env: GIT_CLIFF_EXCLUDE_PATH=]
+    --include-path <PATTERN>       Sets the path to include related commits [env: GIT_CLIFF_INCLUDE_PATH=]
+    --exclude-path <PATTERN>       Sets the path to exclude related commits [env: GIT_CLIFF_EXCLUDE_PATH=]
     --tag-pattern <PATTERN>        Sets the regex for matching git tags [env: GIT_CLIFF_TAG_PATTERN=]
-    --with-commit <MSG>...         Sets custom commit messages to include in the changelog [env: GIT_CLIFF_WITH_COMMIT=]
+    --with-commit <MSG>            Sets custom commit messages to include in the changelog [env: GIT_CLIFF_WITH_COMMIT=]
     --with-tag-message [<MSG>]     Sets custom message for the latest release [env: GIT_CLIFF_WITH_TAG_MESSAGE=]
     --skip-tags <PATTERN>          Sets the tags to skip in the changelog [env: GIT_CLIFF_SKIP_TAGS=]
     --ignore-tags <PATTERN>        Sets the tags to ignore in the changelog [env: GIT_CLIFF_IGNORE_TAGS=]
     --count-tags <PATTERN>         Sets the tags to count in the changelog [env: GIT_CLIFF_COUNT_TAGS=]
     --limit-tags <N>               Limits the number of tags to process [env: GIT_CLIFF_LIMIT_TAGS=]
-    --skip-commit <SHA1>...        Sets commits that will be skipped in the changelog [env: GIT_CLIFF_SKIP_COMMIT=]
+    --skip-commit <SHA1>           Sets commits that will be skipped in the changelog [env: GIT_CLIFF_SKIP_COMMIT=]
 -p, --prepend [<PATH>]             Prepends entries to the given changelog file [env: GIT_CLIFF_PREPEND=]
 -o, --output [<PATH>]              Writes output to the given file [env: GIT_CLIFF_OUTPUT=]
 -t, --tag <TAG>                    Sets the tag for the latest version [env: GIT_CLIFF_TAG=]

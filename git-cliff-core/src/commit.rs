@@ -787,6 +787,7 @@ Refs: #123
         };
         commit.remote = Some(crate::contributor::RemoteContributor {
             username: None,
+            pr_author: None,
             pr_title: Some("feat: do something".to_string()),
             pr_number: None,
             pr_numbers: vec![],
@@ -849,6 +850,7 @@ Refs: #123
         };
         commit.remote = Some(crate::contributor::RemoteContributor {
             username: None,
+            pr_author: None,
             pr_title: Some("feat: do something".to_string()),
             pr_number: None,
             pr_numbers: vec![],
@@ -1070,6 +1072,7 @@ Refs: #123
         };
         commit.remote = Some(crate::contributor::RemoteContributor {
             username: None,
+            pr_author: None,
             pr_title: Some("feat: do something".to_string()),
             pr_number: None,
             pr_numbers: vec![],
