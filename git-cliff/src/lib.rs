@@ -550,6 +550,33 @@ fn process_repository<'a>(
     Ok(releases)
 }
 
+/// Determines which configuration file to use.
+///
+/// An explicit path is used when it exists. When the given path does not
+/// exist, another configuration source is used instead.
+///
+/// When `--config` is omitted, a project configuration is discovered by
+/// searching a starting directory and its ancestors, then the user
+/// configuration directory. Discovery starts from `--workdir` when it is
+/// given, so that it follows the directory git-cliff was asked to operate on
+/// rather than the directory it was invoked from.
+fn resolve_config_path(
+    config: Option<&Path>,
+    workdir: Option<&Path>,
+    current_dir: &Path,
+    user_config: impl FnOnce() -> Option<PathBuf>,
+) -> Option<PathBuf> {
+    match config {
+        Some(path) if path.exists() => Some(path.to_path_buf()),
+        Some(_) => user_config(),
+        None => workdir
+            .unwrap_or(current_dir)
+            .ancestors()
+            .find_map(Config::retrieve_project_config_path)
+            .or_else(user_config),
+    }
+}
+
 /// Runs `git-cliff`.
 ///
 /// # Example
@@ -565,40 +592,6 @@ fn process_repository<'a>(
 ///     Ok(())
 /// }
 /// ```
-/// Determines which configuration file to use.
-///
-/// An explicit path is used when it exists. When the given path does not
-/// exist, the user configuration is used instead and a warning is logged, so
-/// that a mistyped path is visible rather than silently ignored.
-///
-/// When `--config` is omitted, a project configuration is discovered by
-/// searching a starting directory and its ancestors, then the user
-/// configuration directory. Discovery starts from `--workdir` when it is
-/// given, so that it follows the directory git-cliff was asked to operate on
-/// rather than the directory it was invoked from.
-fn resolve_config_path(
-    config: Option<&Path>,
-    workdir: Option<&Path>,
-    current_dir: &Path,
-    user_config: impl FnOnce() -> Option<PathBuf>,
-) -> Option<PathBuf> {
-    match config {
-        Some(path) if path.exists() => Some(path.to_path_buf()),
-        Some(path) => {
-            tracing::warn!(
-                "Configuration file not found: {:?}, falling back to the user configuration",
-                path
-            );
-            user_config()
-        }
-        None => workdir
-            .unwrap_or(current_dir)
-            .ancestors()
-            .find_map(Config::retrieve_project_config_path)
-            .or_else(user_config),
-    }
-}
-
 pub fn run<'a>(args: Opt) -> Result<Changelog<'a>> {
     run_with_changelog_modifier(args, |_| Ok(()))
 }

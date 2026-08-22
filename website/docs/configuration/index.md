@@ -12,7 +12,7 @@ When the `--config` option is **not** given, **git-cliff** automatically discove
 
 Discovery starts from the directory given by `--workdir` when that option is used, and from the current directory otherwise.
 
-Passing `--config <path>` (or `--config <built-in template name>`) overrides this discovery. If the given path does not exist, **git-cliff** logs a warning and falls back to the global user configuration.
+Passing `--config <path>` (or `--config <built-in template name>`) overrides this discovery. If the given path does not exist, **git-cliff** falls back to another available configuration source.
 
 :::tip
 
