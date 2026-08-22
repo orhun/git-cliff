@@ -28,6 +28,12 @@ git commit -m "$commit_msg"
 
 The commit SHA will be empty as default when `--with-commit` is used. Specify the hash with a message separated by single whitespace for setting the commit SHA. e.g. `--with-commit "8f55e69eba6e6ce811ace32bd84cc82215673cb6 feat: add X"`
 
+Repeat `--with-commit` to add multiple commits:
+
+```bash
+git cliff --with-commit "feat: add X" --with-commit "fix: fix Y"
+```
+
 :::info
 
 Adding custom commits without a SHA will affect the [`commit_range`](/docs/templating/context) template variable.
