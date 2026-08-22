@@ -192,12 +192,6 @@ pub fn init_config_from(
         }
     };
 
-    let config_path = if config_path == Path::new(DEFAULT_CONFIG) {
-        PathBuf::from(DEFAULT_CONFIG)
-    } else {
-        config_path.to_path_buf()
-    };
-
     tracing::info!(
         "Saving the configuration file{} to {}",
         name.map(|v| format!(" ({v})")).unwrap_or_default(),
@@ -556,6 +550,33 @@ fn process_repository<'a>(
     Ok(releases)
 }
 
+/// Determines which configuration file to use.
+///
+/// An explicit path is used when it exists. When the given path does not
+/// exist, another configuration source is used instead.
+///
+/// When `--config` is omitted, a project configuration is discovered by
+/// searching a starting directory and its ancestors, then the user
+/// configuration directory. Discovery starts from `--workdir` when it is
+/// given, so that it follows the directory git-cliff was asked to operate on
+/// rather than the directory it was invoked from.
+fn resolve_config_path(
+    config: Option<&Path>,
+    workdir: Option<&Path>,
+    current_dir: &Path,
+    user_config: impl FnOnce() -> Option<PathBuf>,
+) -> Option<PathBuf> {
+    match config {
+        Some(path) if path.exists() => Some(path.to_path_buf()),
+        Some(_) => user_config(),
+        None => workdir
+            .unwrap_or(current_dir)
+            .ancestors()
+            .find_map(Config::retrieve_project_config_path)
+            .or_else(user_config),
+    }
+}
+
 /// Runs `git-cliff`.
 ///
 /// # Example
@@ -603,11 +624,16 @@ pub fn run_with_changelog_modifier<'a>(
     changelog_modifier: impl FnOnce(&mut Changelog) -> Result<()>,
 ) -> Result<Changelog<'a>> {
     // Retrieve the built-in configuration.
-    let builtin_config = BuiltinConfig::parse(args.config.to_string_lossy().to_string());
+    let builtin_config = args
+        .config
+        .as_ref()
+        .map(|config| BuiltinConfig::parse(config.to_string_lossy().to_string()));
 
     // Set the working directory.
     if let Some(ref workdir) = args.workdir {
-        args.config = workdir.join(args.config);
+        if let Some(config) = &args.config {
+            args.config = Some(workdir.join(config));
+        }
         match args.repository.as_mut() {
             Some(repository) => {
                 repository
@@ -629,16 +655,10 @@ pub fn run_with_changelog_modifier<'a>(
         )?]);
     }
 
-    // Set path for the configuration file.
-    let mut path = args.config.clone();
-    if !path.exists() {
-        if let Some(config_path) = Config::retrieve_user_config_path() {
-            path = config_path;
-        }
-    }
-
-    // Parse the configuration file.
-    // Load the default configuration if necessary.
+    // Parse the configuration file, loading the default configuration if none
+    // is found. The filesystem is only consulted once `--config-url` and the
+    // built-in configurations have been ruled out, so that naming a built-in
+    // configuration does not report a missing file.
     let mut config = if let Some(url) = &args.config_url {
         tracing::debug!("Using configuration file from: {url}");
         #[cfg(feature = "remote")]
@@ -650,28 +670,28 @@ pub fn run_with_changelog_modifier<'a>(
         }
         #[cfg(not(feature = "remote"))]
         unreachable!("This option is not available without the 'remote' build-time feature");
-    } else if let Ok((config, name)) = builtin_config {
+    } else if let Some(Ok((config, name))) = builtin_config {
         tracing::info!("Using built-in configuration file: {name}");
         config
-    } else if path.exists() {
-        Config::load(&path)?
+    } else if let Some(config_path) = resolve_config_path(
+        args.config.as_deref(),
+        args.workdir.as_deref(),
+        &env::current_dir()?,
+        Config::retrieve_user_config_path,
+    ) {
+        #[allow(clippy::unnecessary_debug_formatting)]
+        {
+            tracing::info!("Using configuration from: {}", config_path.display());
+        }
+        Config::load(&config_path)?
     } else if let Some(contents) = Config::read_from_manifest()? {
         contents.parse()?
-    } else if let Some(discovered_path) = env::current_dir()?
-        .ancestors()
-        .find_map(Config::retrieve_project_config_path)
-    {
-        tracing::info!(
-            "Using configuration from parent directory: {}",
-            discovered_path.display()
-        );
-        Config::load(&discovered_path)?
     } else {
         #[allow(clippy::unnecessary_debug_formatting)]
         if !args.context {
             tracing::warn!(
                 "{:?} is not found, using the default configuration",
-                args.config
+                args.config.as_deref().unwrap_or(Path::new(DEFAULT_CONFIG))
             );
         }
         EmbeddedConfig::parse()?

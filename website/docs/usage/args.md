@@ -32,7 +32,7 @@ git-cliff [FLAGS] [OPTIONS] [--] [RANGE]
 -i, --init [<CONFIG>]              Writes the default configuration file to cliff.toml
     --templates-dir <PATH>         Sets the directory to look up user-defined templates for --init [env: GIT_CLIFF_TEMPLATES_DIR=]
     --bump                         Bumps the version for unreleased changes [default: auto] [possible values: auto, major, minor, patch]
--c, --config <PATH>                Sets the configuration file [env: GIT_CLIFF_CONFIG=] [default: cliff.toml]
+-c, --config <PATH>                Sets the configuration file [env: GIT_CLIFF_CONFIG=]
     --config-url <URL>             Sets the URL for the configuration file [env: GIT_CLIFF_CONFIG_URL=]
 -w, --workdir <PATH>               Sets the working directory [env: GIT_CLIFF_WORKDIR=]
 -r, --repository <PATH>...         Sets the git repository [env: GIT_CLIFF_REPOSITORY=]
