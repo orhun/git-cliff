@@ -128,6 +128,10 @@ impl RemotePullRequest for GitLabMergeRequest {
         self.title.clone()
     }
 
+    fn author(&self) -> Option<String> {
+        self.author.clone().and_then(|v| v.username)
+    }
+
     fn labels(&self) -> Vec<String> {
         self.labels.clone()
     }
@@ -341,6 +345,7 @@ mod test {
     use pretty_assertions::assert_eq;
 
     use super::*;
+    use crate::remote::RemotePullRequest;
 
     #[test]
     fn gitlab_project_url_encodes_owner() {
@@ -384,5 +389,36 @@ mod test {
             ..Default::default()
         };
         assert!(mr.merge_commit().is_some());
+    }
+
+    #[test]
+    fn pull_request_author() {
+        let merge_request: GitLabMergeRequest = serde_json::from_str(
+            r#"{
+                "iid": 42,
+                "title": "feat: add pr_author",
+                "merge_commit_sha": "1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
+                "labels": [],
+                "author": { "username": "contributor" }
+            }"#,
+        )
+        .expect("failed to deserialize merge request");
+
+        assert_eq!(Some(String::from("contributor")), merge_request.author());
+    }
+
+    #[test]
+    fn merge_request_author_missing() {
+        let merge_request: GitLabMergeRequest = serde_json::from_str(
+            r#"{
+                "iid": 42,
+                "title": "feat: add pr_author",
+                "merge_commit_sha": "1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
+                "labels": []
+            }"#,
+        )
+        .expect("failed to deserialize merge request");
+
+        assert_eq!(None, merge_request.author());
     }
 }

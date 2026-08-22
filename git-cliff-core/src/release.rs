@@ -873,6 +873,9 @@ mod test {
             .collect(),
             vec![
                 GitHubPullRequest {
+                    user: Some(GitHubCommitAuthor {
+                        login: Some(String::from("author-1")),
+                    }),
                     title: Some(String::from("1")),
                     number: 42,
                     merge_commit_sha: Some(String::from(
@@ -883,6 +886,9 @@ mod test {
                     }],
                 },
                 GitHubPullRequest {
+                    user: Some(GitHubCommitAuthor {
+                        login: Some(String::from("author-2")),
+                    }),
                     title: Some(String::from("2")),
                     number: 66,
                     merge_commit_sha: Some(String::from(
@@ -893,6 +899,9 @@ mod test {
                     }],
                 },
                 GitHubPullRequest {
+                    user: Some(GitHubCommitAuthor {
+                        login: Some(String::from("author-3")),
+                    }),
                     title: Some(String::from("3")),
                     number: 53,
                     merge_commit_sha: Some(String::from(
@@ -903,6 +912,9 @@ mod test {
                     }],
                 },
                 GitHubPullRequest {
+                    user: Some(GitHubCommitAuthor {
+                        login: Some(String::from("author-4")),
+                    }),
                     title: Some(String::from("4")),
                     number: 1_000,
                     merge_commit_sha: Some(String::from(
@@ -913,6 +925,9 @@ mod test {
                     }],
                 },
                 GitHubPullRequest {
+                    user: Some(GitHubCommitAuthor {
+                        login: Some(String::from("author-5")),
+                    }),
                     title: Some(String::from("5")),
                     number: 999_999,
                     merge_commit_sha: Some(String::from(
@@ -934,6 +949,7 @@ mod test {
                 message: String::from("add github integration"),
                 github: RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: Some(String::from("author-1")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(42),
                     pr_numbers: vec![],
@@ -942,6 +958,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: Some(String::from("author-1")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(42),
                     pr_numbers: vec![],
@@ -955,6 +972,7 @@ mod test {
                 message: String::from("fix github integration"),
                 github: RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: Some(String::from("author-2")),
                     pr_title: Some(String::from("2")),
                     pr_number: Some(66),
                     pr_numbers: vec![],
@@ -963,6 +981,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: Some(String::from("author-2")),
                     pr_title: Some(String::from("2")),
                     pr_number: Some(66),
                     pr_numbers: vec![],
@@ -976,6 +995,7 @@ mod test {
                 message: String::from("update metadata"),
                 github: RemoteContributor {
                     username: Some(String::from("nuhro")),
+                    pr_author: Some(String::from("author-3")),
                     pr_title: Some(String::from("3")),
                     pr_number: Some(53),
                     pr_numbers: vec![],
@@ -984,6 +1004,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("nuhro")),
+                    pr_author: Some(String::from("author-3")),
                     pr_title: Some(String::from("3")),
                     pr_number: Some(53),
                     pr_numbers: vec![],
@@ -997,6 +1018,7 @@ mod test {
                 message: String::from("do some stuff"),
                 github: RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
+                    pr_author: Some(String::from("author-4")),
                     pr_title: Some(String::from("4")),
                     pr_number: Some(1_000),
                     pr_numbers: vec![],
@@ -1005,6 +1027,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
+                    pr_author: Some(String::from("author-4")),
                     pr_title: Some(String::from("4")),
                     pr_number: Some(1_000),
                     pr_numbers: vec![],
@@ -1018,6 +1041,7 @@ mod test {
                 message: String::from("alright"),
                 github: RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: Some(String::from("author-5")),
                     pr_title: Some(String::from("5")),
                     pr_number: Some(999_999),
                     pr_numbers: vec![],
@@ -1026,6 +1050,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: Some(String::from("author-5")),
                     pr_title: Some(String::from("5")),
                     pr_number: Some(999_999),
                     pr_numbers: vec![],
@@ -1039,6 +1064,7 @@ mod test {
                 message: String::from("should be fine"),
                 github: RemoteContributor {
                     username: Some(String::from("someone")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -1047,6 +1073,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("someone")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -1064,6 +1091,7 @@ mod test {
             contributors: vec![
                 RemoteContributor {
                     username: Some(String::from("someone")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -1072,6 +1100,7 @@ mod test {
                 },
                 RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: None,
                     pr_title: Some(String::from("1")),
                     pr_number: Some(42),
                     pr_numbers: vec![42, 66, 999_999],
@@ -1080,6 +1109,7 @@ mod test {
                 },
                 RemoteContributor {
                     username: Some(String::from("nuhro")),
+                    pr_author: None,
                     pr_title: Some(String::from("3")),
                     pr_number: Some(53),
                     pr_numbers: vec![53],
@@ -1088,6 +1118,7 @@ mod test {
                 },
                 RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
+                    pr_author: None,
                     pr_title: Some(String::from("4")),
                     pr_number: Some(1_000),
                     pr_numbers: vec![1_000],
@@ -1300,7 +1331,7 @@ mod test {
                 author: Some(GitLabUser {
                     id: Some(1),
                     name: Some(String::from("42")),
-                    username: Some(String::from("42")),
+                    username: Some(String::from("author-1")),
                     state: Some(String::from("42")),
                     avatar_url: None,
                     web_url: Some(String::from("42")),
@@ -1318,6 +1349,7 @@ mod test {
                 message: String::from("add github integration"),
                 gitlab: RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: Some(String::from("author-1")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(1),
                     pr_numbers: vec![],
@@ -1326,6 +1358,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: Some(String::from("author-1")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(1),
                     pr_numbers: vec![],
@@ -1339,6 +1372,7 @@ mod test {
                 message: String::from("fix github integration"),
                 gitlab: RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -1347,6 +1381,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -1360,6 +1395,7 @@ mod test {
                 message: String::from("update metadata"),
                 gitlab: RemoteContributor {
                     username: Some(String::from("nuhro")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -1368,6 +1404,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("nuhro")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -1381,6 +1418,7 @@ mod test {
                 message: String::from("do some stuff"),
                 gitlab: RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -1389,6 +1427,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -1402,6 +1441,7 @@ mod test {
                 message: String::from("alright"),
                 gitlab: RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -1410,6 +1450,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -1423,6 +1464,7 @@ mod test {
                 message: String::from("should be fine"),
                 gitlab: RemoteContributor {
                     username: Some(String::from("someone")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -1431,6 +1473,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("someone")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -1448,6 +1491,7 @@ mod test {
             contributors: vec![
                 RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: None,
                     pr_title: Some(String::from("1")),
                     pr_number: Some(1),
                     pr_numbers: vec![1],
@@ -1456,6 +1500,7 @@ mod test {
                 },
                 RemoteContributor {
                     username: Some(String::from("nuhro")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -1464,6 +1509,7 @@ mod test {
                 },
                 RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -1472,6 +1518,7 @@ mod test {
                 },
                 RemoteContributor {
                     username: Some(String::from("someone")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -1615,6 +1662,9 @@ mod test {
             .collect(),
             vec![
                 GiteaPullRequest {
+                    user: Some(GiteaCommitAuthor {
+                        login: Some(String::from("author-1")),
+                    }),
                     title: Some(String::from("1")),
                     number: 42,
                     merge_commit_sha: Some(String::from(
@@ -1625,6 +1675,9 @@ mod test {
                     }],
                 },
                 GiteaPullRequest {
+                    user: Some(GiteaCommitAuthor {
+                        login: Some(String::from("author-2")),
+                    }),
                     title: Some(String::from("2")),
                     number: 66,
                     merge_commit_sha: Some(String::from(
@@ -1635,6 +1688,9 @@ mod test {
                     }],
                 },
                 GiteaPullRequest {
+                    user: Some(GiteaCommitAuthor {
+                        login: Some(String::from("author-3")),
+                    }),
                     title: Some(String::from("3")),
                     number: 53,
                     merge_commit_sha: Some(String::from(
@@ -1645,6 +1701,9 @@ mod test {
                     }],
                 },
                 GiteaPullRequest {
+                    user: Some(GiteaCommitAuthor {
+                        login: Some(String::from("author-4")),
+                    }),
                     title: Some(String::from("4")),
                     number: 1_000,
                     merge_commit_sha: Some(String::from(
@@ -1655,6 +1714,9 @@ mod test {
                     }],
                 },
                 GiteaPullRequest {
+                    user: Some(GiteaCommitAuthor {
+                        login: Some(String::from("author-5")),
+                    }),
                     title: Some(String::from("5")),
                     number: 999_999,
                     merge_commit_sha: Some(String::from(
@@ -1676,6 +1738,7 @@ mod test {
                 message: String::from("add github integration"),
                 gitea: RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: Some(String::from("author-1")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(42),
                     pr_numbers: vec![],
@@ -1684,6 +1747,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: Some(String::from("author-1")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(42),
                     pr_numbers: vec![],
@@ -1697,6 +1761,7 @@ mod test {
                 message: String::from("fix github integration"),
                 gitea: RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: Some(String::from("author-2")),
                     pr_title: Some(String::from("2")),
                     pr_number: Some(66),
                     pr_numbers: vec![],
@@ -1705,6 +1770,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: Some(String::from("author-2")),
                     pr_title: Some(String::from("2")),
                     pr_number: Some(66),
                     pr_numbers: vec![],
@@ -1718,6 +1784,7 @@ mod test {
                 message: String::from("update metadata"),
                 gitea: RemoteContributor {
                     username: Some(String::from("nuhro")),
+                    pr_author: Some(String::from("author-3")),
                     pr_title: Some(String::from("3")),
                     pr_number: Some(53),
                     pr_numbers: vec![],
@@ -1726,6 +1793,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("nuhro")),
+                    pr_author: Some(String::from("author-3")),
                     pr_title: Some(String::from("3")),
                     pr_number: Some(53),
                     pr_numbers: vec![],
@@ -1739,6 +1807,7 @@ mod test {
                 message: String::from("do some stuff"),
                 gitea: RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
+                    pr_author: Some(String::from("author-4")),
                     pr_title: Some(String::from("4")),
                     pr_number: Some(1_000),
                     pr_numbers: vec![],
@@ -1747,6 +1816,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
+                    pr_author: Some(String::from("author-4")),
                     pr_title: Some(String::from("4")),
                     pr_number: Some(1_000),
                     pr_numbers: vec![],
@@ -1760,6 +1830,7 @@ mod test {
                 message: String::from("alright"),
                 gitea: RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: Some(String::from("author-5")),
                     pr_title: Some(String::from("5")),
                     pr_number: Some(999_999),
                     pr_numbers: vec![],
@@ -1768,6 +1839,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: Some(String::from("author-5")),
                     pr_title: Some(String::from("5")),
                     pr_number: Some(999_999),
                     pr_numbers: vec![],
@@ -1781,6 +1853,7 @@ mod test {
                 message: String::from("should be fine"),
                 gitea: RemoteContributor {
                     username: Some(String::from("someone")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -1789,6 +1862,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("someone")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -1806,6 +1880,7 @@ mod test {
             contributors: vec![
                 RemoteContributor {
                     username: Some(String::from("someone")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -1814,6 +1889,7 @@ mod test {
                 },
                 RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: None,
                     pr_title: Some(String::from("1")),
                     pr_number: Some(42),
                     pr_numbers: vec![42, 66, 999_999],
@@ -1822,6 +1898,7 @@ mod test {
                 },
                 RemoteContributor {
                     username: Some(String::from("nuhro")),
+                    pr_author: None,
                     pr_title: Some(String::from("3")),
                     pr_number: Some(53),
                     pr_numbers: vec![53],
@@ -1830,6 +1907,7 @@ mod test {
                 },
                 RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
+                    pr_author: None,
                     pr_title: Some(String::from("4")),
                     pr_number: Some(1_000),
                     pr_numbers: vec![1_000],
@@ -1913,6 +1991,7 @@ mod test {
                     hash: String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071"),
                     author: Some(BitbucketCommitAuthor {
                         login: Some(String::from("orhun")),
+                        nickname: None,
                     }),
                     date: String::from("2021-07-18T15:14:39+03:00"),
                 },
@@ -1920,6 +1999,7 @@ mod test {
                     hash: String::from("21f6aa587fcb772de13f2fde0e92697c51f84162"),
                     author: Some(BitbucketCommitAuthor {
                         login: Some(String::from("orhun")),
+                        nickname: None,
                     }),
                     date: String::from("2021-07-18T15:12:19+03:00"),
                 },
@@ -1927,6 +2007,7 @@ mod test {
                     hash: String::from("35d8c6b6329ecbcf131d7df02f93c3bbc5ba5973"),
                     author: Some(BitbucketCommitAuthor {
                         login: Some(String::from("nuhro")),
+                        nickname: None,
                     }),
                     date: String::from("2021-07-18T15:07:23+03:00"),
                 },
@@ -1934,6 +2015,7 @@ mod test {
                     hash: String::from("4d3ffe4753b923f4d7807c490e650e6624a12074"),
                     author: Some(BitbucketCommitAuthor {
                         login: Some(String::from("awesome_contributor")),
+                        nickname: None,
                     }),
                     date: String::from("2021-07-18T15:05:10+03:00"),
                 },
@@ -1941,6 +2023,7 @@ mod test {
                     hash: String::from("5a55e92e5a62dc5bf9872ffb2566959fad98bd05"),
                     author: Some(BitbucketCommitAuthor {
                         login: Some(String::from("orhun")),
+                        nickname: None,
                     }),
                     date: String::from("2021-07-18T15:03:30+03:00"),
                 },
@@ -1948,6 +2031,7 @@ mod test {
                     hash: String::from("6c34967147560ea09658776d4901709139b4ad66"),
                     author: Some(BitbucketCommitAuthor {
                         login: Some(String::from("someone")),
+                        nickname: None,
                     }),
                     date: String::from("2021-07-18T15:00:38+03:00"),
                 },
@@ -1955,6 +2039,7 @@ mod test {
                     hash: String::from("0c34967147560e809658776d4901709139b4ad68"),
                     author: Some(BitbucketCommitAuthor {
                         login: Some(String::from("idk")),
+                        nickname: None,
                     }),
                     date: String::from("2021-07-18T15:00:01+03:00"),
                 },
@@ -1962,6 +2047,7 @@ mod test {
                     hash: String::from("kk34967147560e809658776d4901709139b4ad68"),
                     author: Some(BitbucketCommitAuthor {
                         login: Some(String::from("orhun")),
+                        nickname: None,
                     }),
                     date: String::from("2021-07-14T21:25:24+03:00"),
                 },
@@ -1974,6 +2060,7 @@ mod test {
                 title: Some(String::from("1")),
                 author: BitbucketCommitAuthor {
                     login: Some(String::from("42")),
+                    nickname: Some(String::from("author-1")),
                 },
                 merge_commit: BitbucketPullRequestMergeCommit {
                     // Bitbucket merge commits returned in short format
@@ -1988,6 +2075,7 @@ mod test {
                 message: String::from("add bitbucket integration"),
                 bitbucket: RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: Some(String::from("author-1")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(1),
                     pr_numbers: vec![],
@@ -1996,6 +2084,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: Some(String::from("author-1")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(1),
                     pr_numbers: vec![],
@@ -2009,6 +2098,7 @@ mod test {
                 message: String::from("fix bitbucket integration"),
                 bitbucket: RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2017,6 +2107,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2030,6 +2121,7 @@ mod test {
                 message: String::from("update metadata"),
                 bitbucket: RemoteContributor {
                     username: Some(String::from("nuhro")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2038,6 +2130,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("nuhro")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2051,6 +2144,7 @@ mod test {
                 message: String::from("do some stuff"),
                 bitbucket: RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2059,6 +2153,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2072,6 +2167,7 @@ mod test {
                 message: String::from("alright"),
                 bitbucket: RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2080,6 +2176,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2093,6 +2190,7 @@ mod test {
                 message: String::from("should be fine"),
                 bitbucket: RemoteContributor {
                     username: Some(String::from("someone")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2101,6 +2199,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("someone")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2118,6 +2217,7 @@ mod test {
             contributors: vec![
                 RemoteContributor {
                     username: Some(String::from("nuhro")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2126,6 +2226,7 @@ mod test {
                 },
                 RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2134,6 +2235,7 @@ mod test {
                 },
                 RemoteContributor {
                     username: Some(String::from("someone")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2142,6 +2244,7 @@ mod test {
                 },
                 RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: None,
                     pr_title: Some(String::from("1")),
                     pr_number: Some(1),
                     pr_numbers: vec![1],
@@ -2160,7 +2263,7 @@ mod test {
     fn update_azure_devops_metadata() -> Result<()> {
         use crate::remote::azure_devops::{
             AzureDevOpsCommit, AzureDevOpsCommitAuthor, AzureDevOpsCommitRef,
-            AzureDevOpsPullRequest,
+            AzureDevOpsPullRequest, AzureDevOpsUser,
         };
 
         let mut release = Release {
@@ -2301,7 +2404,10 @@ mod test {
                 pull_request_id: 42,
                 title: Some(String::from("1")),
                 status: String::from("completed"),
-                created_by: None,
+                created_by: Some(AzureDevOpsUser {
+                    display_name: Some(String::from("author-1")),
+                    unique_name: None,
+                }),
                 last_merge_commit: Some(AzureDevOpsCommitRef {
                     commit_id: Some(String::from("1d244937ee6ceb8e0314a4a201ba93a7a61f2071")),
                 }),
@@ -2315,6 +2421,7 @@ mod test {
                 message: String::from("add azure devops integration"),
                 azure_devops: RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: Some(String::from("author-1")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(42),
                     pr_numbers: vec![],
@@ -2323,6 +2430,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: Some(String::from("author-1")),
                     pr_title: Some(String::from("1")),
                     pr_number: Some(42),
                     pr_numbers: vec![],
@@ -2336,6 +2444,7 @@ mod test {
                 message: String::from("fix azure devops integration"),
                 azure_devops: RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2344,6 +2453,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2357,6 +2467,7 @@ mod test {
                 message: String::from("update metadata"),
                 azure_devops: RemoteContributor {
                     username: Some(String::from("nuhro")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2365,6 +2476,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("nuhro")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2378,6 +2490,7 @@ mod test {
                 message: String::from("do some stuff"),
                 azure_devops: RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2386,6 +2499,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2399,6 +2513,7 @@ mod test {
                 message: String::from("alright"),
                 azure_devops: RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2407,6 +2522,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2420,6 +2536,7 @@ mod test {
                 message: String::from("should be fine"),
                 azure_devops: RemoteContributor {
                     username: Some(String::from("someone")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2428,6 +2545,7 @@ mod test {
                 },
                 remote: Some(RemoteContributor {
                     username: Some(String::from("someone")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2448,6 +2566,7 @@ mod test {
             contributors: vec![
                 RemoteContributor {
                     username: Some(String::from("nuhro")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2456,6 +2575,7 @@ mod test {
                 },
                 RemoteContributor {
                     username: Some(String::from("awesome_contributor")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2464,6 +2584,7 @@ mod test {
                 },
                 RemoteContributor {
                     username: Some(String::from("someone")),
+                    pr_author: None,
                     pr_title: None,
                     pr_number: None,
                     pr_numbers: vec![],
@@ -2472,6 +2593,7 @@ mod test {
                 },
                 RemoteContributor {
                     username: Some(String::from("orhun")),
+                    pr_author: None,
                     pr_title: Some(String::from("1")),
                     pr_number: Some(42),
                     pr_numbers: vec![42],

@@ -7,6 +7,12 @@ use serde::{Deserialize, Serialize};
 pub struct RemoteContributor {
     /// Username.
     pub username: Option<String>,
+    /// Account that opened the pull request.
+    ///
+    /// Unlike `username`, this is not resolved from the commit author. Only set
+    /// per commit; contributor entries leave it empty because they are
+    /// deduplicated by `username`.
+    pub pr_author: Option<String>,
     /// Title of the pull request.
     pub pr_title: Option<String>,
     /// The pull request that the user created.

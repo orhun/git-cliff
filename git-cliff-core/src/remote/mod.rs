@@ -73,6 +73,12 @@ pub trait RemotePullRequest: DynClone {
     fn number(&self) -> i64;
     /// Title.
     fn title(&self) -> Option<String>;
+    /// Account that opened the pull request.
+    ///
+    /// Defaults to `None` for backends that cannot provide it.
+    fn author(&self) -> Option<String> {
+        None
+    }
     /// Labels of the pull request.
     fn labels(&self) -> Vec<String>;
     /// Merge commit SHA.
@@ -209,6 +215,7 @@ macro_rules! update_release_metadata {
                                 pr.merge_commit() == sha_short
                         });
                         commit.$remote.username = v.username();
+                        commit.$remote.pr_author = pull_request.and_then(|v| v.author());
                         commit.$remote.pr_number = pull_request.map(|v| v.number());
                         commit.$remote.pr_title = pull_request.and_then(|v| v.title().clone());
                         commit.$remote.pr_labels =
@@ -225,6 +232,11 @@ macro_rules! update_release_metadata {
                         } else {
                             contributors.push(RemoteContributor {
                                 username: commit.$remote.username.clone(),
+                                // Left empty: contributors are deduplicated by
+                                // username, so one entry can cover pull requests
+                                // opened by different people. `pr_author` is only
+                                // unambiguous per commit.
+                                pr_author: None,
                                 pr_title: commit.$remote.pr_title.clone(),
                                 pr_number: commit.$remote.pr_number,
                                 pr_numbers: commit.$remote.pr_number.into_iter().collect(),
