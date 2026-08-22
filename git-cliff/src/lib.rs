@@ -600,15 +600,10 @@ pub fn run_with_changelog_modifier<'a>(
         )?]);
     }
 
-    let config_path = resolve_config_path(
-        args.config.as_deref(),
-        args.workdir.as_deref(),
-        &env::current_dir()?,
-        Config::retrieve_user_config_path,
-    );
-
     // Parse the configuration file, loading the default configuration if none
-    // is found.
+    // is found. The filesystem is only consulted once `--config-url` and the
+    // built-in configurations have been ruled out, so that naming a built-in
+    // configuration does not report a missing file.
     let mut config = if let Some(url) = &args.config_url {
         tracing::debug!("Using configuration file from: {url}");
         #[cfg(feature = "remote")]
@@ -623,7 +618,12 @@ pub fn run_with_changelog_modifier<'a>(
     } else if let Some(Ok((config, name))) = builtin_config {
         tracing::info!("Using built-in configuration file: {name}");
         config
-    } else if let Some(config_path) = config_path {
+    } else if let Some(config_path) = resolve_config_path(
+        args.config.as_deref(),
+        args.workdir.as_deref(),
+        &env::current_dir()?,
+        Config::retrieve_user_config_path,
+    ) {
         #[allow(clippy::unnecessary_debug_formatting)]
         {
             tracing::info!("Using configuration from: {}", config_path.display());
