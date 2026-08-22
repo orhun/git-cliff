@@ -164,6 +164,9 @@ pub struct Opt {
     /// Sets the tags to count in the changelog.
     #[arg(long, env = "GIT_CLIFF_COUNT_TAGS", value_name = "PATTERN")]
     pub count_tags: Option<Regex>,
+    /// Limits the number of tags to process.
+    #[arg(long, env = "GIT_CLIFF_LIMIT_TAGS", value_name = "N")]
+    pub limit_tags: Option<usize>,
     /// Sets commits that will be skipped in the changelog.
     // Same one-value-per-occurrence constraint. A `value_delimiter` would be
     // safe here (SHA1s contain no spaces) but that is new behavior, not a fix,

@@ -1,5 +1,6 @@
+use std::collections::{HashMap, HashSet};
 use std::io;
-use std::path::{self, Path, PathBuf};
+use std::path::{Path, PathBuf};
 use std::result::Result as StdResult;
 use std::sync::LazyLock;
 
@@ -330,7 +331,9 @@ impl Repository {
     /// It removes the leading `./` and adds `**` to the end if the pattern is a
     /// directory.
     fn normalize_pattern(pattern: Pattern) -> Pattern {
-        let star_added = if pattern.as_str().ends_with(path::MAIN_SEPARATOR) {
+        // glob patterns and git's diff paths always use '/', whatever the host
+        // OS, so this must not be `path::MAIN_SEPARATOR`
+        let star_added = if pattern.as_str().ends_with('/') {
             Pattern::new(&format!("{pattern}**")).expect("failed to add '**' to the end of glob")
         } else {
             pattern
@@ -604,6 +607,55 @@ impl Repository {
             .collect())
     }
 
+    /// Maps each commit id to the id of the tag that "owns" it.
+    ///
+    /// A commit is owned by the earliest tag (in `tags` order, which must be
+    /// oldest to newest) whose commit can reach it, i.e. the tag whose
+    /// `previous_tag..tag` range contains it. This assigns commits to releases
+    /// by graph reachability rather than by their position in the linearized
+    /// log, which can interleave diverged-then-merged branches
+    ///
+    /// Only tags whose commit id is in `boundary_ids` (the commits actually in
+    /// the walk) are considered. Commits not reachable from any such tag are
+    /// absent from the map and should be treated as unreleased.
+    ///
+    /// # Returns
+    ///
+    /// A map from each owned commit id to the commit id of its owning tag.
+    /// Commits that are not reachable from a considered tag are omitted.
+    pub fn commit_tag_ownership(
+        &self,
+        tags: &IndexMap<String, Tag>,
+        boundary_ids: &HashSet<Oid>,
+    ) -> Result<HashMap<Oid, String>> {
+        let mut ownership = HashMap::new();
+        // Only tags that are part of the walked history can act as boundaries.
+        let tag_ids: Vec<(Oid, &String)> = tags
+            .keys()
+            .filter_map(|id| Oid::from_str(id).ok().map(|oid| (oid, id)))
+            .filter(|(oid, _)| boundary_ids.contains(oid))
+            .collect();
+        for (index, (tag_oid, tag_id)) in tag_ids.iter().enumerate() {
+            let mut revwalk = self.inner.revwalk()?;
+            revwalk.push(*tag_oid)?;
+            // Hide all previous (older) tags so that this walk only yields the
+            // commits belonging to this tag's release range.
+            for (prev_oid, _) in &tag_ids[..index] {
+                // Ignore errors from hiding unrelated histories.
+                let _ = revwalk.hide(*prev_oid);
+            }
+            for oid in revwalk.filter_map(StdResult::ok) {
+                if boundary_ids.contains(&oid) {
+                    ownership.entry(oid).or_insert_with(|| (*tag_id).clone());
+                    if ownership.len() == boundary_ids.len() {
+                        return Ok(ownership);
+                    }
+                }
+            }
+        }
+        Ok(ownership)
+    }
+
     /// Returns the remote of the upstream repository.
     ///
     /// The strategy used here is the following:
@@ -618,7 +670,7 @@ impl Repository {
             if branch.is_head() {
                 let upstream = &self.inner.branch_upstream_remote(&format!(
                     "refs/heads/{}",
-                    &branch.name()?.ok_or_else(|| Error::RepoError(String::from(
+                    branch.name()?.ok_or_else(|| Error::RepoError(String::from(
                         "branch name is not valid"
                     )))?
                 ))?;
@@ -1029,7 +1081,7 @@ mod test {
         assert!(result.is_err());
         if let Err(error) = result {
             assert!(
-                format!("{error:?}").contains(
+                error.to_string().contains(
                     format!("could not find repository at '{}'", path.display()).as_str()
                 )
             );
@@ -1099,7 +1151,7 @@ mod test {
         assert!(result.is_err());
         if let Err(error) = result {
             assert!(
-                format!("{error:?}").contains(
+                error.to_string().contains(
                     format!("could not find repository at '{}'", path.display()).as_str()
                 )
             );
@@ -1191,6 +1243,20 @@ mod test {
             before,
             "no .git-blame-ignore-revs file present"
         );
+    }
+
+    #[test]
+    fn test_normalize_pattern() {
+        let normalize = |input: &str| {
+            Repository::normalize_pattern(Pattern::new(input).expect("valid pattern"))
+                .as_str()
+                .to_string()
+        };
+
+        assert_eq!(normalize("dir/"), "dir/**");
+        assert_eq!(normalize("./dir/"), "dir/**");
+        assert_eq!(normalize("./file.txt"), "file.txt");
+        assert_eq!(normalize("dir/file.txt"), "dir/file.txt");
     }
 
     #[test]
