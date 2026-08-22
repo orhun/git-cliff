@@ -10,6 +10,7 @@ pub mod args;
 /// Custom logger implementation.
 pub mod logger;
 
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fs::{self, File};
 use std::io::{self, Write};
@@ -107,6 +108,17 @@ fn determine_commit_range(
                 commit_range = Some(format!("{tag1}..{tag2}"));
             }
         }
+    } else if commit_range.is_none() {
+        if let Some(tag_limit) = config.git.limit_tags.filter(|limit| *limit > 0) {
+            let tag_index = tags.len().saturating_sub(tag_limit);
+            if let (Some((tag1, _)), Some((tag2, _))) = (tags.get_index(tag_index), tags.last()) {
+                if tag1 == tag2 {
+                    commit_range = Some(tag2.to_owned());
+                } else {
+                    commit_range = Some(format!("{tag1}..{tag2}"));
+                }
+            }
+        }
     }
 
     Ok(commit_range)
@@ -200,6 +212,7 @@ fn process_repository<'a>(
     let ignore_regex = config.git.ignore_tags.as_ref();
     let count_tags = config.git.count_tags.as_ref();
     let recurse_submodules = config.git.recurse_submodules.unwrap_or(false);
+    let compute_commit_statistics = args.context || config.uses_commit_statistics()?;
     tags.retain(|_, tag| {
         let name = &tag.name;
 
@@ -345,29 +358,68 @@ fn process_repository<'a>(
         }
     }
 
+    // Assign commits to releases by graph reachability instead of their
+    // position in the linearized log.
+    // Only tags present in the walk can be release boundaries.
+    let commit_ids: HashSet<_> = commits.iter().map(|commit| commit.id()).collect();
+    let ownership = repository.commit_tag_ownership(&tags, &commit_ids)?;
+
+    // Group commits by owning tag in a single pass, keeping each group
+    // oldest-first. Unowned commits remain unreleased.
+    let mut groups: HashMap<&str, Vec<_>> = HashMap::new();
+    let mut unreleased = Vec::new();
+    for commit in commits.iter().rev() {
+        match ownership.get(&commit.id()) {
+            Some(tag_id) => groups.entry(tag_id).or_default().push(commit),
+            None => unreleased.push(commit),
+        }
+    }
+
+    // Emit tagged groups oldest to newest so the loop below closes releases in
+    // order, followed by the unreleased commits.
+    let mut ordered_commits = Vec::with_capacity(commits.len());
+    for tag_id in tags.keys() {
+        let Some(mut group) = groups.remove(tag_id.as_str()) else {
+            continue;
+        };
+        // The tagged commit is the release tip, so close the group with it.
+        if let Some(pos) = group
+            .iter()
+            .position(|commit| commit.id().to_string() == *tag_id)
+        {
+            let tag_commit = group.remove(pos);
+            group.push(tag_commit);
+        }
+        ordered_commits.extend(group);
+    }
+    ordered_commits.extend(unreleased);
+
     // Process releases.
     let mut previous_release = Release::default();
     let mut first_processed_tag = None;
     let repository_path = repository.root_path()?.to_string_lossy().into_owned();
-    for git_commit in commits.iter().rev() {
+    for git_commit in ordered_commits {
         let release = releases.last_mut().unwrap();
         let mut commit = Commit::from(git_commit);
-        commit.statistics = match repository.commit_statistics(git_commit) {
-            Ok(statistics) => statistics,
-            Err(err)
-                if matches!(
-                    &err,
-                    Error::GitError(git_err) if git_err.message().contains("object not found")
-                ) =>
-            {
-                tracing::warn!(
-                    "Skipping diff statistics for commit {} because a Git object is missing: {err}",
-                    commit.id,
-                );
-                CommitStatistics::default()
+        if compute_commit_statistics {
+            commit.statistics = match repository.commit_statistics(git_commit) {
+                Ok(statistics) => statistics,
+                Err(err)
+                    if matches!(
+                        &err,
+                        Error::GitError(git_err) if git_err.message().contains("object not found")
+                    ) =>
+                {
+                    tracing::warn!(
+                        "Skipping diff statistics for commit {} because a Git object is missing: \
+                         {err}",
+                        commit.id,
+                    );
+                    CommitStatistics::default()
+                }
+                Err(err) => return Err(err),
             }
-            Err(err) => return Err(err),
-        };
+        }
         let commit_id = commit.id.clone();
         release.commits.push(commit);
         release.repository = Some(repository_path.clone());
@@ -775,6 +827,9 @@ pub fn run_with_changelog_modifier<'a>(
     }
     if args.count_tags.is_some() {
         config.git.count_tags.clone_from(&args.count_tags);
+    }
+    if args.limit_tags.is_some() {
+        config.git.limit_tags = args.limit_tags;
     }
     if let Some(include_path) = &args.include_path {
         config

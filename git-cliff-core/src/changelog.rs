@@ -566,7 +566,10 @@ impl<'a> Changelog<'a> {
         crate::set_progress_message!("Bumping the version for unreleased changes");
         if let Some(ref mut last_release) = self.releases.iter_mut().next() {
             if last_release.version.is_none() {
-                let next = last_release.calculate_next_version_with_config(&self.config.bump)?;
+                let next = last_release.calculate_next_version_from_commits(
+                    &self.config.bump,
+                    self.config.git.conventional_commits,
+                )?;
                 tracing::debug!("Bumping the version to {}", next.version);
                 last_release.bump_type = next.bump_type;
                 last_release.version = Some(next.version.clone());
@@ -968,6 +971,7 @@ mod test {
                 skip_tags: Regex::new("v3.*").ok(),
                 ignore_tags: None,
                 count_tags: None,
+                limit_tags: None,
                 use_branch_tags: false,
                 topo_order: false,
                 topo_order_commits: true,

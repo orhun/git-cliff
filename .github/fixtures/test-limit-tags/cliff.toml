@@ -3,21 +3,23 @@
 
 [changelog]
 # A Tera template to be rendered for each release in the changelog.
-# See https://keats.github.io/tera/#getting-started
+# See https://keats.github.io/tera/docs/#introduction
 body = """
 {% if version %}\
-    ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+    ## [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
 {% else %}\
     ## [unreleased]
 {% endif %}\
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | upper_first }}
     {% for commit in commits %}
-        - {% if commit.breaking %}[**breaking**] {% endif %}{{ commit.message | upper_first }}\
+        - {{ commit.message | upper_first }}\
     {% endfor %}
 {% endfor %}\n
 """
 
 [git]
-# Order releases topologically instead of chronologically.
-topo_order = true
+# Regex to select git tags that represent releases.
+tag_pattern = "prod-.*"
+# Limit the number of tags contained in the changelog.
+limit_tags = 3

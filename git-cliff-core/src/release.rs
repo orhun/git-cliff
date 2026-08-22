@@ -118,6 +118,17 @@ impl Release<'_> {
     ///
     /// It uses the given bump version configuration to calculate the next
     /// version.
+    pub(super) fn calculate_next_version_with_config(&self, config: &Bump) -> Result<NextVersion> {
+        self.calculate_next_version_from_commits(config, true)
+    }
+
+    /// Calculates the next version based on the commits.
+    ///
+    /// When `conventional_commits` is disabled, bump evaluation uses only the
+    /// commit subject (the first line), so commit body text cannot trigger an
+    /// unintended version bump through the custom increment regular
+    /// expressions (`custom_major_increment_regex`,
+    /// `custom_minor_increment_regex` and `no_increment_regex`).
     #[cfg_attr(
         feature = "tracing",
         tracing::instrument(
@@ -128,7 +139,11 @@ impl Release<'_> {
             )
         )
     )]
-    pub(super) fn calculate_next_version_with_config(&self, config: &Bump) -> Result<NextVersion> {
+    pub(super) fn calculate_next_version_from_commits(
+        &self,
+        config: &Bump,
+        conventional_commits: bool,
+    ) -> Result<NextVersion> {
         crate::set_progress_message!(
             "Calculating the next version from commits with custom bump rules"
         );
@@ -190,7 +205,19 @@ impl Release<'_> {
                             &old_semver,
                             self.commits
                                 .iter()
-                                .map(|commit| commit.raw_message().trim_end().to_string())
+                                .map(|commit| {
+                                    let message = commit.raw_message().trim_end();
+                                    // When conventional commits are disabled,
+                                    // evaluate the bump regular expressions
+                                    // against the commit subject only, so body
+                                    // text cannot trigger an unintended version
+                                    // bump.
+                                    if conventional_commits {
+                                        message.to_string()
+                                    } else {
+                                        message.lines().next().unwrap_or_default().to_string()
+                                    }
+                                })
                                 .collect::<Vec<String>>(),
                         );
                         let bump_type = determine_bump_type(&old_semver, &new_semver);
@@ -517,6 +544,103 @@ mod test {
             no_increment_regex: Some(String::from("^ci$")),
             ..Default::default()
         })?;
+        assert_eq!("1.0.0", result.version);
+        assert_eq!(None, result.bump_type);
+
+        Ok(())
+    }
+
+    #[test]
+    fn custom_increment_regex_matches_subject_only_when_non_conventional() -> Result<()> {
+        fn build_release<'a>(version: &str, commits: &'a [&str]) -> Release<'a> {
+            Release {
+                version: None,
+                commits: commits
+                    .iter()
+                    .map(|v| Commit::from((*v).to_string()))
+                    .collect(),
+                previous: Some(Box::new(Release {
+                    version: Some(String::from(version)),
+                    ..Default::default()
+                })),
+                ..Default::default()
+            }
+        }
+
+        let bump = Bump {
+            custom_major_increment_regex: Some(String::from("breaking")),
+            custom_minor_increment_regex: Some(String::from("feat")),
+            ..Default::default()
+        };
+
+        // The subject does not match any increment regex, but the body mentions
+        // both "breaking" and "feat". With conventional commits disabled, the
+        // body must be ignored so only a patch bump is produced.
+        // (https://github.com/orhun/git-cliff/issues/1476)
+        let release = build_release("1.0.0", &[
+            "fix a bug\n\nThe body mentions breaking and feat as plain words."
+        ]);
+        let result = release.calculate_next_version_from_commits(&bump, false)?;
+        assert_eq!("1.0.1", result.version);
+        assert_eq!(Some(BumpType::Patch), result.bump_type);
+
+        // Sanity: a matching subject still drives the expected bump.
+        let release = build_release("1.0.0", &["breaking: remove v1 endpoints\n\nBody text."]);
+        let result = release.calculate_next_version_from_commits(&bump, false)?;
+        assert_eq!("2.0.0", result.version);
+        assert_eq!(Some(BumpType::Major), result.bump_type);
+
+        let release = build_release("1.0.0", &["feat: add a thing\n\nBody text."]);
+        let result = release.calculate_next_version_from_commits(&bump, false)?;
+        assert_eq!("1.1.0", result.version);
+        assert_eq!(Some(BumpType::Minor), result.bump_type);
+
+        Ok(())
+    }
+
+    #[test]
+    fn no_increment_regex_uses_subject_only_when_non_conventional() -> Result<()> {
+        fn build_release<'a>(version: &str, commits: &'a [&str]) -> Release<'a> {
+            Release {
+                version: None,
+                commits: commits
+                    .iter()
+                    .map(|v| Commit::from((*v).to_string()))
+                    .collect(),
+                previous: Some(Box::new(Release {
+                    version: Some(String::from(version)),
+                    ..Default::default()
+                })),
+                ..Default::default()
+            }
+        }
+
+        // The subject does not match `no_increment_regex`, but the body does.
+        // With conventional commits disabled, the body must be ignored so the
+        // commit is not suppressed and still produces a patch bump.
+        // (https://github.com/orhun/git-cliff/issues/1476)
+        let release = build_release("1.0.0", &[
+            "fix a bug\n\nThis is a chore cleanup and must not skip the bump."
+        ]);
+        let result = release.calculate_next_version_from_commits(
+            &Bump {
+                no_increment_regex: Some(String::from("chore")),
+                ..Default::default()
+            },
+            false,
+        )?;
+        assert_eq!("1.0.1", result.version);
+        assert_eq!(Some(BumpType::Patch), result.bump_type);
+
+        // Sanity: a matching subject still suppresses the bump.
+        let release = build_release("1.0.0", &["chore cleanup\n\nBody text."]);
+        let result = release.calculate_next_version_from_commits(
+            &Bump {
+                no_increment_regex: Some(String::from("chore")),
+                ..Default::default()
+            },
+            false,
+        )?;
         assert_eq!("1.0.0", result.version);
         assert_eq!(None, result.bump_type);
 
