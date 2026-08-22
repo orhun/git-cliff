@@ -160,14 +160,24 @@ fn process_submodules(
 }
 
 /// Initializes the configuration file.
-pub fn init_config(
+pub fn init_config(name: Option<&str>, config_path: &Path) -> Result<()> {
+    init_config_from(name, None, config_path)
+}
+
+/// Initializes the configuration file using templates from the given directory.
+pub fn init_config_from(
     name: Option<&str>,
     templates_dir: Option<&Path>,
     config_path: &Path,
 ) -> Result<()> {
     let contents = match name {
         Some(name) => BuiltinConfig::get_config_from(name.to_string(), templates_dir)?,
-        None => EmbeddedConfig::get_config()?,
+        None => {
+            if let Some(dir) = templates_dir {
+                BuiltinConfig::validate_templates_dir(dir)?;
+            }
+            EmbeddedConfig::get_config()?
+        }
     };
 
     let config_path = if config_path == Path::new(DEFAULT_CONFIG) {
@@ -913,28 +923,39 @@ mod test {
     use super::*;
 
     #[test]
-    fn init_config_writes_user_template_over_builtin() -> Result<()> {
+    fn init_config_from_writes_user_template_over_builtin() -> Result<()> {
         let dir = TempDir::new()?;
-        // a user template shadowing the built-in "github" template
         fs::write(dir.path().join("github.toml"), "# user github\n")?;
         let out = dir.path().join("cliff.toml");
 
-        init_config(Some("github"), Some(dir.path()), &out)?;
+        init_config_from(Some("github"), Some(dir.path()), &out)?;
 
         assert_eq!(fs::read_to_string(&out)?, "# user github\n");
         Ok(())
     }
 
     #[test]
-    fn init_config_falls_back_to_builtin_without_templates_dir() -> Result<()> {
+    fn init_config_preserves_existing_api() -> Result<()> {
         let dir = TempDir::new()?;
         let out = dir.path().join("cliff.toml");
 
-        init_config(Some("github"), None, &out)?;
+        init_config(Some("github"), &out)?;
 
         let written = fs::read_to_string(&out)?;
         let builtin = git_cliff_core::embed::BuiltinConfig::get_config("github".to_string())?;
         assert_eq!(written, builtin);
         Ok(())
+    }
+
+    #[test]
+    fn init_config_from_errors_when_directory_missing() {
+        let dir = TempDir::new().expect("temp dir");
+        let missing = dir.path().join("does-not-exist");
+        let out = dir.path().join("cliff.toml");
+
+        let err = init_config_from(None, Some(&missing), &out)
+            .expect_err("a missing templates directory should be an error");
+
+        assert!(err.to_string().contains(&missing.display().to_string()));
     }
 }

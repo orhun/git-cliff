@@ -4,7 +4,7 @@ use std::{env, io, process};
 
 use clap::Parser;
 use git_cliff::args::Opt;
-use git_cliff::{init_config, logger};
+use git_cliff::{init_config_from, logger};
 use git_cliff_core::embed::BuiltinConfig;
 use git_cliff_core::error::Result;
 
@@ -51,7 +51,7 @@ fn main() -> Result<()> {
 
     // Create the configuration file if init flag is given.
     if let Some(path) = &args.init {
-        init_config(path.as_deref(), args.templates_dir.as_deref(), &args.config)?;
+        init_config_from(path.as_deref(), args.templates_dir.as_deref(), &args.config)?;
         return Ok(());
     }
 

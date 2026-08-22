@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Component, Path};
 use std::{fs, str};
 
 use rust_embed::RustEmbed;
@@ -73,12 +73,33 @@ impl BuiltinConfig {
         Ok((parsed, name))
     }
 
+    /// Validates a user-defined templates directory.
+    pub fn validate_templates_dir(dir: &Path) -> Result<()> {
+        if !dir.is_dir() {
+            return Err(Error::ArgumentError(format!(
+                "templates directory does not exist or is not a directory: {}",
+                dir.display()
+            )));
+        }
+        Ok(())
+    }
+
     /// Extracts the template content for `name`, preferring a user-provided
     /// template found in `templates_dir` (if given) over the built-in template
     /// of the same name. The `.toml` extension is optional in `name`.
     pub fn get_config_from(name: String, templates_dir: Option<&Path>) -> Result<String> {
         if let Some(dir) = templates_dir {
-            let path = dir.join(Self::with_toml_extension(&name));
+            Self::validate_templates_dir(dir)?;
+            let file_name = Self::with_toml_extension(&name);
+            let mut components = Path::new(&file_name).components();
+            if !matches!(components.next(), Some(Component::Normal(_))) ||
+                components.next().is_some()
+            {
+                return Err(Error::ArgumentError(format!(
+                    "template name must not contain path components: {name}"
+                )));
+            }
+            let path = dir.join(file_name);
             if path.is_file() {
                 return Ok(fs::read_to_string(path)?);
             }
@@ -116,12 +137,7 @@ impl BuiltinConfig {
     pub fn list_templates(templates_dir: Option<&Path>) -> Result<Vec<String>> {
         let mut names = Self::list();
         if let Some(dir) = templates_dir {
-            if !dir.is_dir() {
-                return Err(Error::ArgumentError(format!(
-                    "templates directory does not exist or is not a directory: {}",
-                    dir.display()
-                )));
-            }
+            Self::validate_templates_dir(dir)?;
             for entry in fs::read_dir(dir)? {
                 let path = entry?.path();
                 if path
@@ -253,5 +269,22 @@ mod test {
             BuiltinConfig::get_config("github".to_string())?
         );
         Ok(())
+    }
+
+    #[test]
+    fn get_config_from_errors_when_directory_missing() {
+        let dir = TempDir::new().expect("temp dir");
+        let missing = dir.path().join("does-not-exist");
+        let err = BuiltinConfig::get_config_from("github".to_string(), Some(&missing))
+            .expect_err("a missing templates directory should be an error");
+        assert!(err.to_string().contains(&missing.display().to_string()));
+    }
+
+    #[test]
+    fn get_config_from_rejects_paths_outside_directory() {
+        let dir = TempDir::new().expect("temp dir");
+        let err = BuiltinConfig::get_config_from("../github".to_string(), Some(dir.path()))
+            .expect_err("a template name with path components should be an error");
+        assert!(err.to_string().contains("must not contain path components"));
     }
 }
