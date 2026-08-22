@@ -173,9 +173,23 @@ fn process_submodules(
 
 /// Initializes the configuration file.
 pub fn init_config(name: Option<&str>, config_path: &Path) -> Result<()> {
+    init_config_from(name, None, config_path)
+}
+
+/// Initializes the configuration file using templates from the given directory.
+pub fn init_config_from(
+    name: Option<&str>,
+    templates_dir: Option<&Path>,
+    config_path: &Path,
+) -> Result<()> {
     let contents = match name {
-        Some(name) => BuiltinConfig::get_config(name.to_string())?,
-        None => EmbeddedConfig::get_config()?,
+        Some(name) => BuiltinConfig::get_config_from(name.to_string(), templates_dir)?,
+        None => {
+            if let Some(dir) = templates_dir {
+                BuiltinConfig::validate_templates_dir(dir)?;
+            }
+            EmbeddedConfig::get_config()?
+        }
     };
 
     let config_path = if config_path == Path::new(DEFAULT_CONFIG) {

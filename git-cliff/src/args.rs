@@ -82,6 +82,19 @@ pub struct Opt {
 	    required = false
 	)]
     pub init: Option<Option<String>>,
+    /// Sets the directory to look up user-defined templates for `--init`.
+    ///
+    /// A user-defined template overrides a built-in template of the same name.
+    #[arg(
+	    long,
+	    env = "GIT_CLIFF_TEMPLATES_DIR",
+	    value_name = "PATH",
+	    value_parser = Opt::parse_dir
+	)]
+    pub templates_dir: Option<PathBuf>,
+    /// Prints the names of the available templates (built-in and user-defined).
+    #[arg(long, help_heading = Some("FLAGS"))]
+    pub list_templates: bool,
     /// Sets the configuration file.
     #[arg(
 	    short,
@@ -525,6 +538,19 @@ mod tests {
     #[test]
     fn verify_cli() {
         Opt::command().debug_assert();
+    }
+
+    #[test]
+    fn parses_template_flags() {
+        let opt = Opt::try_parse_from([
+            "git-cliff",
+            "--list-templates",
+            "--templates-dir",
+            "/tmp/my-templates",
+        ])
+        .expect("template flags should parse");
+        assert!(opt.list_templates);
+        assert_eq!(opt.templates_dir, Some(PathBuf::from("/tmp/my-templates")));
     }
 
     #[test]

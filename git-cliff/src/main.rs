@@ -4,7 +4,8 @@ use std::{env, io, process};
 
 use clap::Parser;
 use git_cliff::args::Opt;
-use git_cliff::{init_config, logger};
+use git_cliff::{init_config_from, logger};
+use git_cliff_core::embed::BuiltinConfig;
 use git_cliff_core::error::Result;
 
 /// Profiler.
@@ -40,9 +41,17 @@ fn main() -> Result<()> {
         git_cliff::check_new_version();
     }
 
+    // Print the available templates if requested.
+    if args.list_templates {
+        for name in BuiltinConfig::list_templates(args.templates_dir.as_deref())? {
+            println!("{name}");
+        }
+        return Ok(());
+    }
+
     // Create the configuration file if init flag is given.
     if let Some(path) = &args.init {
-        init_config(path.as_deref(), &args.config)?;
+        init_config_from(path.as_deref(), args.templates_dir.as_deref(), &args.config)?;
         return Ok(());
     }
 
