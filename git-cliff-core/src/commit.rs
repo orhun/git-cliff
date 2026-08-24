@@ -436,9 +436,17 @@ impl Commit<'_> {
                             matched = true;
                             break;
                         }
-                        self.group = parser.group.clone().map(regex_replace);
-                        self.scope = parser.scope.clone().map(regex_replace);
-                        self.default_scope.clone_from(&parser.default_scope);
+                        // A terminal parser stops the loop, but it should only
+                        // overwrite the fields it actually sets. Otherwise a
+                        // preceding `continue` parser that set, say, the scope
+                        // would get blanked out just because this parser only
+                        // sets the group. This mirrors the sha-based match
+                        // above, which already preserves previously-set fields.
+                        self.group = parser.group.clone().map(regex_replace).or(self.group);
+                        self.scope = parser.scope.clone().map(regex_replace).or(self.scope);
+                        if parser.default_scope.is_some() {
+                            self.default_scope.clone_from(&parser.default_scope);
+                        }
                         return Ok(self);
                     }
                 }
@@ -1103,6 +1111,42 @@ Refs: #123
         let parsed = commit.clone().parse(&scope_only, false, true)?;
         assert_eq!(Some(String::from("Deep Scope")), parsed.scope);
         assert_eq!(None, parsed.group);
+
+        // A `continue` parser can set the scope and a following terminal parser
+        // (no `continue`) can set the group without wiping the scope. The
+        // terminal parser only overwrites the fields it actually sets, so the
+        // scope from the first parser is kept instead of being reset to None.
+        let parsers = vec![
+            CommitParser {
+                sha: None,
+                message: Regex::new("\\(deep\\)").ok(),
+                body: None,
+                footer: None,
+                group: None,
+                default_scope: None,
+                scope: Some(String::from("Deep Scope")),
+                skip: None,
+                r#continue: Some(true),
+                field: None,
+                pattern: None,
+            },
+            CommitParser {
+                sha: None,
+                message: Regex::new("^feat").ok(),
+                body: None,
+                footer: None,
+                group: Some(String::from("Features")),
+                default_scope: None,
+                scope: None,
+                skip: None,
+                r#continue: None,
+                field: None,
+                pattern: None,
+            },
+        ];
+        let parsed = commit.clone().parse(&parsers, false, false)?;
+        assert_eq!(Some(String::from("Deep Scope")), parsed.scope);
+        assert_eq!(Some(String::from("Features")), parsed.group);
 
         Ok(())
     }
