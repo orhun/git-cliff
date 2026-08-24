@@ -12,7 +12,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::embed::EmbeddedConfig;
 use crate::error::Result;
-use crate::{CONFIG_FILES, DEFAULT_CONFIG, command, error};
+use crate::template::Template;
+use crate::{CONFIG_FILES, DEFAULT_CONFIG, command, error, statistics};
 
 /// Default initial tag.
 const DEFAULT_INITIAL_TAG: &str = "0.1.0";
@@ -130,6 +131,8 @@ pub struct GitConfig {
     /// Regex to count matched tags.
     #[serde(with = "serde_regex", default)]
     pub count_tags: Option<Regex>,
+    /// Limit the number of tags to process.
+    pub limit_tags: Option<usize>,
     /// Include only the tags that belong to the current branch.
     pub use_branch_tags: bool,
     /// Order releases topologically instead of chronologically.
@@ -584,6 +587,39 @@ impl Config {
             if path.is_file() { Some(path) } else { None }
         })
     }
+
+    /// Returns whether per-commit diff statistics are used by a changelog
+    /// template or commit parser.
+    pub fn uses_commit_statistics(&self) -> Result<bool> {
+        if self
+            .git
+            .commit_parsers
+            .iter()
+            .filter_map(|parser| parser.field.as_deref())
+            .any(|field| field.starts_with("statistics."))
+        {
+            return Ok(true);
+        }
+
+        let trim = self.changelog.trim;
+        let body_template = Template::new("body", self.changelog.body.clone(), trim)?;
+        if body_template.contains_variable(statistics::TEMPLATE_VARIABLES) {
+            return Ok(true);
+        }
+        if let Some(header) = &self.changelog.header {
+            let header_template = Template::new("header", header.clone(), trim)?;
+            if header_template.contains_variable(statistics::TEMPLATE_VARIABLES) {
+                return Ok(true);
+            }
+        }
+        if let Some(footer) = &self.changelog.footer {
+            let footer_template = Template::new("footer", footer.clone(), trim)?;
+            if footer_template.contains_variable(statistics::TEMPLATE_VARIABLES) {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
 }
 
 impl FromStr for Config {
@@ -722,6 +758,23 @@ mod test {
             Config::retrieve_project_config_path(dir.path()),
             Some(dir.path().join("cliff.toml")),
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn detects_commit_statistics_usage_in_templates() -> Result<()> {
+        let mut config = EmbeddedConfig::parse()?;
+        assert!(!config.uses_commit_statistics()?);
+
+        config.changelog.body = String::from(
+            "{% for commit in commits %}{{ commit.statistics.files_changed }}{% endfor %}",
+        );
+        assert!(config.uses_commit_statistics()?);
+
+        config.changelog.body = String::from("{{ version }}");
+        config.changelog.footer = Some(String::from("{{ commit.statistics.additions }}"));
+        assert!(config.uses_commit_statistics()?);
 
         Ok(())
     }

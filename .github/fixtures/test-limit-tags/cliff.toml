@@ -1,0 +1,25 @@
+# git-cliff ~ configuration file
+# https://git-cliff.org/docs/configuration
+
+[changelog]
+# A Tera template to be rendered for each release in the changelog.
+# See https://keats.github.io/tera/docs/#introduction
+body = """
+{% if version %}\
+    ## [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+    ## [unreleased]
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | upper_first }}
+    {% for commit in commits %}
+        - {{ commit.message | upper_first }}\
+    {% endfor %}
+{% endfor %}\n
+"""
+
+[git]
+# Regex to select git tags that represent releases.
+tag_pattern = "prod-.*"
+# Limit the number of tags contained in the changelog.
+limit_tags = 3

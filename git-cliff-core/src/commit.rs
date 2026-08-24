@@ -332,7 +332,7 @@ impl Commit<'_> {
         // Set when a `continue` parser matches, so the commit isn't filtered out
         // at the end even though no parser returned early.
         let mut matched = false;
-        for parser in parsers {
+        'parsers: for parser in parsers {
             let mut regex_checks = Vec::new();
             if let Some(message_regex) = parser.message.as_ref() {
                 regex_checks.push((message_regex, self.message.clone()));
@@ -357,10 +357,15 @@ impl Commit<'_> {
                 let values = if field_name == "body" {
                     vec![body.clone()].into_iter().collect()
                 } else {
-                    tera::dotted_pointer(&lookup_context, field_name).and_then(|v| match v {
+                    let Some(field_value) = tera::dotted_pointer(&lookup_context, field_name)
+                    else {
+                        tracing::trace!("Field '{field_name}' is absent; trying the next parser");
+                        continue 'parsers;
+                    };
+                    match field_value {
                         Value::String(s) => Some(vec![s.clone()]),
                         Value::Number(_) | Value::Bool(_) | Value::Null => {
-                            Some(vec![v.to_string()])
+                            Some(vec![field_value.to_string()])
                         }
                         Value::Array(arr) => {
                             let mut values = Vec::new();
@@ -376,7 +381,7 @@ impl Commit<'_> {
                             Some(values)
                         }
                         Value::Object(_) => None,
-                    })
+                    }
                 };
                 match values {
                     Some(values) => {
@@ -813,6 +818,7 @@ Refs: #123
         };
         commit.remote = Some(crate::contributor::RemoteContributor {
             username: None,
+            pr_author: None,
             pr_title: Some("feat: do something".to_string()),
             pr_number: None,
             pr_numbers: vec![],
@@ -876,6 +882,7 @@ Refs: #123
         };
         commit.remote = Some(crate::contributor::RemoteContributor {
             username: None,
+            pr_author: None,
             pr_title: Some("feat: do something".to_string()),
             pr_number: None,
             pr_numbers: vec![],
@@ -1152,6 +1159,53 @@ Refs: #123
     }
 
     #[test]
+    fn parse_commit_missing_field_falls_through_to_next_parser() -> Result<()> {
+        let commit = Commit::new(
+            String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
+            String::from("feat: first feature"),
+        );
+        // `commit.remote` is `None` by default (this is a LOCAL / non-PR commit),
+        // so `remote.pr_labels` cannot be resolved.
+        // The first parser must be skipped (not abort the chain) so the
+        // catch-all parser below can still match and group the commit.
+        let parsers = [
+            CommitParser {
+                sha: None,
+                message: Some(Regex::new("^feat")?),
+                body: None,
+                footer: None,
+                group: Some(String::from("Bug fixes")),
+                default_scope: None,
+                scope: None,
+                skip: None,
+                r#continue: None,
+                field: Some(String::from("remote.pr_labels")),
+                pattern: Regex::new("bug").ok(),
+            },
+            CommitParser {
+                sha: None,
+                message: Some(Regex::new(".*")?),
+                body: None,
+                footer: None,
+                group: Some(String::from("Miscellaneous")),
+                default_scope: None,
+                scope: None,
+                skip: None,
+                r#continue: None,
+                field: None,
+                pattern: None,
+            },
+        ];
+        let parsed = commit.parse(&parsers, false, false)?;
+        assert_eq!(
+            Some(String::from("Miscellaneous")),
+            parsed.group,
+            "a missing field on parser #1 must fall through to the catch-all parser #2"
+        );
+        Ok(())
+    }
+
+    #[test]
     fn commit_sha() {
         let commit = Commit::new(
             String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
@@ -1194,6 +1248,7 @@ Refs: #123
         };
         commit.remote = Some(crate::contributor::RemoteContributor {
             username: None,
+            pr_author: None,
             pr_title: Some("feat: do something".to_string()),
             pr_number: None,
             pr_numbers: vec![],

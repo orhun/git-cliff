@@ -8,7 +8,9 @@ sidebar_position: 4
 
 ## File Path
 
-**git-cliff** will look for a configuration file first in the project directory, then in the global user directory. If no configuration file is found, **git-cliff** will use the default configuration values. See [cliff.toml](https://github.com/orhun/git-cliff/blob/main/config/cliff.toml) for the default configuration values.
+When the `--config` option is **not** given, **git-cliff** automatically discovers the configuration file, first in the project directory and then in the global user directory. If no configuration file is found, **git-cliff** will use the default configuration values. See [cliff.toml](https://github.com/orhun/git-cliff/blob/main/config/cliff.toml) for the default configuration values.
+
+Discovery starts from the directory given by `--workdir` when that option is used, and from the current directory otherwise.
 
 :::tip
 

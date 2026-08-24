@@ -103,7 +103,7 @@ following context is generated to use for templating:
 
 :::info
 
-See the [GitHub integration](/docs/integration/github) for the additional values you can use in the template.
+See [Remote metadata](#remote-metadata) for additional commit values provided by remote integrations.
 
 :::
 
@@ -153,6 +153,27 @@ Breaking changes will not be skipped if [`protect_breaking_commits`](/docs/confi
 From [Git docs](https://git-scm.com/book/en/v2/Git-Basics-Viewing-the-Commit-History):
 
 > You may be wondering what the difference is between author and committer. The author is the person who originally wrote the work, whereas the committer is the person who last applied the work. So, if you send in a patch to a project and one of the core members applies the patch, both of you get credit — you as the author, and the core member as the committer.
+
+### Remote metadata
+
+When a remote integration returns a commit, it adds the following `remote`
+object to the commit context. Pull request fields are populated when that commit
+is matched with a pull request:
+
+```json
+{
+  "username": "commit-author",
+  "pr_author": "pull-request-author",
+  "pr_title": "feat: add a feature",
+  "pr_number": 42,
+  "pr_labels": ["enhancement"]
+}
+```
+
+`username` is resolved from the commit author, while `pr_author` is the account
+that opened the pull request. These values can differ, particularly for squash
+merges. See the [integration documentation](/docs/category/integration) for
+provider-specific behavior.
 
 ## Non-Conventional Commits
 
@@ -222,7 +243,7 @@ If [`conventional_commits`](/docs/configuration/git#conventional_commits) is set
 
 :::info
 
-See the [GitHub integration](/docs/integration/github) for the additional values you can use in the template.
+See [Remote metadata](#remote-metadata) for additional commit values provided by remote integrations.
 
 :::
 

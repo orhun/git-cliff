@@ -10,6 +10,7 @@ pub mod args;
 /// Custom logger implementation.
 pub mod logger;
 
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fs::{self, File};
 use std::io::{self, Write};
@@ -107,6 +108,17 @@ fn determine_commit_range(
                 commit_range = Some(format!("{tag1}..{tag2}"));
             }
         }
+    } else if commit_range.is_none() {
+        if let Some(tag_limit) = config.git.limit_tags.filter(|limit| *limit > 0) {
+            let tag_index = tags.len().saturating_sub(tag_limit);
+            if let (Some((tag1, _)), Some((tag2, _))) = (tags.get_index(tag_index), tags.last()) {
+                if tag1 == tag2 {
+                    commit_range = Some(tag2.to_owned());
+                } else {
+                    commit_range = Some(format!("{tag1}..{tag2}"));
+                }
+            }
+        }
     }
 
     Ok(commit_range)
@@ -161,15 +173,23 @@ fn process_submodules(
 
 /// Initializes the configuration file.
 pub fn init_config(name: Option<&str>, config_path: &Path) -> Result<()> {
-    let contents = match name {
-        Some(name) => BuiltinConfig::get_config(name.to_string())?,
-        None => EmbeddedConfig::get_config()?,
-    };
+    init_config_from(name, None, config_path)
+}
 
-    let config_path = if config_path == Path::new(DEFAULT_CONFIG) {
-        PathBuf::from(DEFAULT_CONFIG)
-    } else {
-        config_path.to_path_buf()
+/// Initializes the configuration file using templates from the given directory.
+pub fn init_config_from(
+    name: Option<&str>,
+    templates_dir: Option<&Path>,
+    config_path: &Path,
+) -> Result<()> {
+    let contents = match name {
+        Some(name) => BuiltinConfig::get_config_from(name.to_string(), templates_dir)?,
+        None => {
+            if let Some(dir) = templates_dir {
+                BuiltinConfig::validate_templates_dir(dir)?;
+            }
+            EmbeddedConfig::get_config()?
+        }
     };
 
     tracing::info!(
@@ -202,6 +222,7 @@ fn process_repository<'a>(
     let ignore_regex = config.git.ignore_tags.as_ref();
     let count_tags = config.git.count_tags.as_ref();
     let recurse_submodules = config.git.recurse_submodules.unwrap_or(false);
+    let compute_commit_statistics = args.context || config.uses_commit_statistics()?;
     tags.retain(|_, tag| {
         let name = &tag.name;
 
@@ -347,29 +368,68 @@ fn process_repository<'a>(
         }
     }
 
+    // Assign commits to releases by graph reachability instead of their
+    // position in the linearized log.
+    // Only tags present in the walk can be release boundaries.
+    let commit_ids: HashSet<_> = commits.iter().map(|commit| commit.id()).collect();
+    let ownership = repository.commit_tag_ownership(&tags, &commit_ids)?;
+
+    // Group commits by owning tag in a single pass, keeping each group
+    // oldest-first. Unowned commits remain unreleased.
+    let mut groups: HashMap<&str, Vec<_>> = HashMap::new();
+    let mut unreleased = Vec::new();
+    for commit in commits.iter().rev() {
+        match ownership.get(&commit.id()) {
+            Some(tag_id) => groups.entry(tag_id).or_default().push(commit),
+            None => unreleased.push(commit),
+        }
+    }
+
+    // Emit tagged groups oldest to newest so the loop below closes releases in
+    // order, followed by the unreleased commits.
+    let mut ordered_commits = Vec::with_capacity(commits.len());
+    for tag_id in tags.keys() {
+        let Some(mut group) = groups.remove(tag_id.as_str()) else {
+            continue;
+        };
+        // The tagged commit is the release tip, so close the group with it.
+        if let Some(pos) = group
+            .iter()
+            .position(|commit| commit.id().to_string() == *tag_id)
+        {
+            let tag_commit = group.remove(pos);
+            group.push(tag_commit);
+        }
+        ordered_commits.extend(group);
+    }
+    ordered_commits.extend(unreleased);
+
     // Process releases.
     let mut previous_release = Release::default();
     let mut first_processed_tag = None;
     let repository_path = repository.root_path()?.to_string_lossy().into_owned();
-    for git_commit in commits.iter().rev() {
+    for git_commit in ordered_commits {
         let release = releases.last_mut().unwrap();
         let mut commit = Commit::from(git_commit);
-        commit.statistics = match repository.commit_statistics(git_commit) {
-            Ok(statistics) => statistics,
-            Err(err)
-                if matches!(
-                    &err,
-                    Error::GitError(git_err) if git_err.message().contains("object not found")
-                ) =>
-            {
-                tracing::warn!(
-                    "Skipping diff statistics for commit {} because a Git object is missing: {err}",
-                    commit.id,
-                );
-                CommitStatistics::default()
+        if compute_commit_statistics {
+            commit.statistics = match repository.commit_statistics(git_commit) {
+                Ok(statistics) => statistics,
+                Err(err)
+                    if matches!(
+                        &err,
+                        Error::GitError(git_err) if git_err.message().contains("object not found")
+                    ) =>
+                {
+                    tracing::warn!(
+                        "Skipping diff statistics for commit {} because a Git object is missing: \
+                         {err}",
+                        commit.id,
+                    );
+                    CommitStatistics::default()
+                }
+                Err(err) => return Err(err),
             }
-            Err(err) => return Err(err),
-        };
+        }
         let commit_id = commit.id.clone();
         release.commits.push(commit);
         release.repository = Some(repository_path.clone());
@@ -490,6 +550,33 @@ fn process_repository<'a>(
     Ok(releases)
 }
 
+/// Determines which configuration file to use.
+///
+/// An explicit path is used when it exists. When the given path does not
+/// exist, another configuration source is used instead.
+///
+/// When `--config` is omitted, a project configuration is discovered by
+/// searching a starting directory and its ancestors, then the user
+/// configuration directory. Discovery starts from `--workdir` when it is
+/// given, so that it follows the directory git-cliff was asked to operate on
+/// rather than the directory it was invoked from.
+fn resolve_config_path(
+    config: Option<&Path>,
+    workdir: Option<&Path>,
+    current_dir: &Path,
+    user_config: impl FnOnce() -> Option<PathBuf>,
+) -> Option<PathBuf> {
+    match config {
+        Some(path) if path.exists() => Some(path.to_path_buf()),
+        Some(_) => user_config(),
+        None => workdir
+            .unwrap_or(current_dir)
+            .ancestors()
+            .find_map(Config::retrieve_project_config_path)
+            .or_else(user_config),
+    }
+}
+
 /// Runs `git-cliff`.
 ///
 /// # Example
@@ -537,11 +624,16 @@ pub fn run_with_changelog_modifier<'a>(
     changelog_modifier: impl FnOnce(&mut Changelog) -> Result<()>,
 ) -> Result<Changelog<'a>> {
     // Retrieve the built-in configuration.
-    let builtin_config = BuiltinConfig::parse(args.config.to_string_lossy().to_string());
+    let builtin_config = args
+        .config
+        .as_ref()
+        .map(|config| BuiltinConfig::parse(config.to_string_lossy().to_string()));
 
     // Set the working directory.
     if let Some(ref workdir) = args.workdir {
-        args.config = workdir.join(args.config);
+        if let Some(config) = &args.config {
+            args.config = Some(workdir.join(config));
+        }
         match args.repository.as_mut() {
             Some(repository) => {
                 repository
@@ -563,16 +655,10 @@ pub fn run_with_changelog_modifier<'a>(
         )?]);
     }
 
-    // Set path for the configuration file.
-    let mut path = args.config.clone();
-    if !path.exists() {
-        if let Some(config_path) = Config::retrieve_user_config_path() {
-            path = config_path;
-        }
-    }
-
-    // Parse the configuration file.
-    // Load the default configuration if necessary.
+    // Parse the configuration file, loading the default configuration if none
+    // is found. The filesystem is only consulted once `--config-url` and the
+    // built-in configurations have been ruled out, so that naming a built-in
+    // configuration does not report a missing file.
     let mut config = if let Some(url) = &args.config_url {
         tracing::debug!("Using configuration file from: {url}");
         #[cfg(feature = "remote")]
@@ -584,28 +670,28 @@ pub fn run_with_changelog_modifier<'a>(
         }
         #[cfg(not(feature = "remote"))]
         unreachable!("This option is not available without the 'remote' build-time feature");
-    } else if let Ok((config, name)) = builtin_config {
+    } else if let Some(Ok((config, name))) = builtin_config {
         tracing::info!("Using built-in configuration file: {name}");
         config
-    } else if path.exists() {
-        Config::load(&path)?
+    } else if let Some(config_path) = resolve_config_path(
+        args.config.as_deref(),
+        args.workdir.as_deref(),
+        &env::current_dir()?,
+        Config::retrieve_user_config_path,
+    ) {
+        #[allow(clippy::unnecessary_debug_formatting)]
+        {
+            tracing::info!("Using configuration from: {}", config_path.display());
+        }
+        Config::load(&config_path)?
     } else if let Some(contents) = Config::read_from_manifest()? {
         contents.parse()?
-    } else if let Some(discovered_path) = env::current_dir()?
-        .ancestors()
-        .find_map(Config::retrieve_project_config_path)
-    {
-        tracing::info!(
-            "Using configuration from parent directory: {}",
-            discovered_path.display()
-        );
-        Config::load(&discovered_path)?
     } else {
         #[allow(clippy::unnecessary_debug_formatting)]
         if !args.context {
             tracing::warn!(
                 "{:?} is not found, using the default configuration",
-                args.config
+                args.config.as_deref().unwrap_or(Path::new(DEFAULT_CONFIG))
             );
         }
         EmbeddedConfig::parse()?
@@ -744,6 +830,9 @@ pub fn run_with_changelog_modifier<'a>(
     }
     if args.count_tags.is_some() {
         config.git.count_tags.clone_from(&args.count_tags);
+    }
+    if args.limit_tags.is_some() {
+        config.git.limit_tags = args.limit_tags;
     }
     if let Some(include_path) = &args.include_path {
         config
