@@ -1011,9 +1011,15 @@ pub fn write_changelog<W: io::Write>(
 mod tests {
     use std::fs;
 
+    use pretty_assertions::assert_eq;
     use temp_dir::TempDir;
 
     use super::*;
+
+    /// Creates a temporary directory.
+    fn temp_dir() -> Result<TempDir> {
+        Ok(TempDir::with_prefix("git-cliff-")?)
+    }
 
     /// Creates a project configuration file in the given directory.
     fn write_config(dir: &Path) -> Result<PathBuf> {
@@ -1024,18 +1030,30 @@ mod tests {
 
     #[test]
     fn explicit_config_is_used_when_it_exists() -> Result<()> {
-        let dir = TempDir::new()?;
-        let config = write_config(dir.path())?;
+        let config_dir = temp_dir()?;
+        let current_dir = temp_dir()?;
+        // The configuration lives outside the directory discovery would
+        // search, so only the explicit branch can return this path.
+        let config = write_config(config_dir.path())?;
         assert_eq!(
-            Some(config.clone()),
-            resolve_config_path(Some(&config), None, dir.path(), || None)
+            Some(config),
+            resolve_config_path(
+                Some(&config_dir.path().join(DEFAULT_CONFIG)),
+                None,
+                current_dir.path(),
+                || None
+            )
         );
         Ok(())
     }
 
     #[test]
-    fn missing_explicit_config_falls_back_to_the_user_config() -> Result<()> {
-        let dir = TempDir::new()?;
+    fn missing_explicit_config_skips_discovery_and_uses_the_user_config() -> Result<()> {
+        let dir = temp_dir()?;
+        // A discoverable project configuration is present, so this also
+        // proves that giving `--config` skips discovery entirely rather
+        // than falling through to it.
+        write_config(dir.path())?;
         let user_config = dir.path().join("user-cliff.toml");
         assert_eq!(
             Some(user_config.clone()),
@@ -1051,11 +1069,12 @@ mod tests {
 
     #[test]
     fn config_is_discovered_from_the_working_directory() -> Result<()> {
-        let workdir = TempDir::new()?;
-        let current_dir = TempDir::new()?;
+        let workdir = temp_dir()?;
+        let current_dir = temp_dir()?;
         let config = write_config(workdir.path())?;
-        // Discovery follows `--workdir` rather than the directory git-cliff
-        // was invoked from.
+        // Both directories hold a configuration, so this asserts which one
+        // wins rather than merely that something was found.
+        write_config(current_dir.path())?;
         assert_eq!(
             Some(config),
             resolve_config_path(None, Some(workdir.path()), current_dir.path(), || None)
@@ -1065,7 +1084,7 @@ mod tests {
 
     #[test]
     fn config_is_discovered_from_the_current_directory_without_workdir() -> Result<()> {
-        let dir = TempDir::new()?;
+        let dir = temp_dir()?;
         let config = write_config(dir.path())?;
         assert_eq!(
             Some(config),
@@ -1076,7 +1095,7 @@ mod tests {
 
     #[test]
     fn config_is_discovered_from_a_parent_directory() -> Result<()> {
-        let dir = TempDir::new()?;
+        let dir = temp_dir()?;
         let nested = dir.path().join("nested");
         fs::create_dir(&nested)?;
         let config = write_config(dir.path())?;
@@ -1091,9 +1110,18 @@ mod tests {
 
     #[test]
     fn user_config_is_used_when_no_project_config_is_discovered() -> Result<()> {
-        let dir = TempDir::new()?;
+        let dir = temp_dir()?;
         let nested = dir.path().join("nested");
         fs::create_dir(&nested)?;
+        // Discovery walks to the filesystem root here, so this assumes no
+        // configuration file exists above the temporary directory.
+        assert_eq!(
+            None,
+            dir.path()
+                .ancestors()
+                .find_map(Config::retrieve_project_config_path),
+            "a configuration file above the temporary directory defeats this test"
+        );
         let user_config = dir.path().join("user-cliff.toml");
         assert_eq!(
             Some(user_config.clone()),
