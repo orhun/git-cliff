@@ -591,6 +591,8 @@ impl<'a> Changelog<'a> {
         crate::set_progress_message!("Generating and writing the changelog");
         tracing::debug!("Generating changelog");
         let postprocessors = self.config.changelog.postprocessors.clone();
+        let releases_for_changelog: Vec<_> =
+            self.releases.iter().map(Release::for_changelog).collect();
 
         if let Some(header_template) = &self.header_template {
             let write_result = writeln!(
@@ -598,7 +600,7 @@ impl<'a> Changelog<'a> {
                 "{}",
                 header_template.render(
                     &Releases {
-                        releases: &self.releases,
+                        releases: &releases_for_changelog,
                     },
                     Some(&self.additional_context),
                     &postprocessors,
@@ -611,16 +613,12 @@ impl<'a> Changelog<'a> {
             }
         }
 
-        for release in &self.releases {
-            let mut release_for_changelog = release.clone();
-            release_for_changelog
-                .commits
-                .retain(|commit| commit.should_include_in_changelog());
+        for release in &releases_for_changelog {
             let write_result = write!(
                 out,
                 "{}",
                 self.body_template.render(
-                    &release_for_changelog,
+                    release,
                     Some(&self.additional_context),
                     &postprocessors
                 )?
@@ -638,7 +636,7 @@ impl<'a> Changelog<'a> {
                 "{}",
                 footer_template.render(
                     &Releases {
-                        releases: &self.releases,
+                        releases: &releases_for_changelog,
                     },
                     Some(&self.additional_context),
                     &postprocessors,
@@ -777,8 +775,8 @@ mod test {
     use super::*;
     use crate::commit::{Commit, Signature};
     use crate::config::{
-        Bump, ChangelogConfig, CommitParser, CommitSkip, GitConfig, LinkParser, Remote,
-        RemoteConfig, TextProcessor,
+        Bump, ChangelogConfig, CommitParser, CommitSkip, CommitSkipTarget, GitConfig, LinkParser,
+        Remote, RemoteConfig, TextProcessor,
     };
 
     fn get_test_data() -> (Config, Vec<Release<'static>>) {
@@ -1446,6 +1444,126 @@ mod test {
             )
             .replace("			", ""),
             str::from_utf8(&out).unwrap_or_default()
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn changelog_generator_skip_changelog_omits_docs_but_bumps() -> Result<()> {
+        let (mut config, _) = get_test_data();
+        config.git.filter_commits = true;
+        config.git.filter_unconventional = true;
+        config.git.commit_parsers = vec![
+            CommitParser {
+                message: Regex::new("^feat").ok(),
+                group: Some(String::from("Features")),
+                ..Default::default()
+            },
+            CommitParser {
+                message: Regex::new("^docs").ok(),
+                skip: Some(CommitSkip::Target(CommitSkipTarget::Changelog)),
+                ..Default::default()
+            },
+        ];
+        config.changelog.header = Some(String::from(
+            "{% for release in releases %}{% for commit in release.commits %}H-{{ commit.message \
+             }}\n{% endfor %}{% for submodule_path, commits in release.submodule_commits %}{% for \
+             commit in commits %}HS-{{ commit.message }}\n{% endfor %}{% endfor %}{% endfor %}",
+        ));
+        config.changelog.body = String::from(
+            "{% if version %}## {{ version }}\n{% endif %}{% for commit in commits %}- {{ \
+             commit.message }}\n{% endfor %}{% for submodule_path, commits in submodule_commits \
+             %}{% for commit in commits %}S-{{ commit.message }}\n{% endfor %}{% endfor %}",
+        );
+        config.changelog.footer = Some(String::from(
+            "{% for release in releases %}{% for commit in release.commits %}F-{{ commit.message \
+             }}\n{% endfor %}{% for submodule_path, commits in release.submodule_commits %}{% for \
+             commit in commits %}FS-{{ commit.message }}\n{% endfor %}{% endfor %}{% endfor %}",
+        ));
+
+        let releases = vec![Release {
+            version: None,
+            commits: vec![
+                Commit::new(String::from("aaa111"), String::from("feat: shiny widget")),
+                Commit::new(String::from("bbb222"), String::from("docs: readme only")),
+            ],
+            submodule_commits: HashMap::from([(String::from("sub"), vec![
+                Commit::new(
+                    String::from("ccc333"),
+                    String::from("docs: submodule notes"),
+                ),
+                Commit::new(
+                    String::from("ddd444"),
+                    String::from("feat: submodule widget"),
+                ),
+            ])]),
+            previous: Some(Box::new(Release {
+                version: Some(String::from("1.0.0")),
+                ..Default::default()
+            })),
+            repository: Some(String::from("/root/repo")),
+            ..Default::default()
+        }];
+
+        let mut changelog = Changelog::new(releases, config, None)?;
+        changelog.bump_version()?;
+        assert_eq!(changelog.releases[0].version.as_deref(), Some("1.1.0"));
+        assert!(
+            changelog.releases[0]
+                .commits
+                .iter()
+                .any(|commit| commit.raw_message().contains("docs: readme only")),
+            "skip = \"changelog\" must keep the docs commit on the live release for bump"
+        );
+        assert_eq!(changelog.releases[0].commits.len(), 2);
+        assert_eq!(
+            changelog.releases[0]
+                .submodule_commits
+                .get("sub")
+                .map(Vec::len),
+            Some(2)
+        );
+
+        let mut out = Vec::new();
+        changelog.generate(&mut out)?;
+        let rendered = str::from_utf8(&out).unwrap_or_default();
+        assert!(rendered.contains("## 1.1.0"), "{rendered}");
+        assert!(rendered.contains("- shiny widget"), "{rendered}");
+        assert!(rendered.contains("H-shiny widget"), "{rendered}");
+        assert!(rendered.contains("F-shiny widget"), "{rendered}");
+        assert!(rendered.contains("S-submodule widget"), "{rendered}");
+        assert!(rendered.contains("HS-submodule widget"), "{rendered}");
+        assert!(rendered.contains("FS-submodule widget"), "{rendered}");
+        assert!(
+            !rendered.contains("readme only"),
+            "docs commit leaked into changelog output:\n{rendered}"
+        );
+        assert!(
+            !rendered.contains("submodule notes"),
+            "docs submodule commit leaked into changelog output:\n{rendered}"
+        );
+
+        let mut context = Vec::new();
+        changelog.write_context(&mut context)?;
+        let context_json = str::from_utf8(&context).unwrap_or_default();
+        assert!(
+            context_json.contains("readme only"),
+            "docs commit must remain in --context so bump can still see it:\n{context_json}"
+        );
+        assert!(
+            context_json.contains("\"include_in_changelog\":false"),
+            "context must serialize skip = \"changelog\":\n{context_json}"
+        );
+
+        let changelog_from_context =
+            Changelog::from_context(&mut context.as_slice(), changelog.config.clone())?;
+        let mut out_from_context = Vec::new();
+        changelog_from_context.generate(&mut out_from_context)?;
+        let rendered_from_context = str::from_utf8(&out_from_context).unwrap_or_default();
+        assert!(
+            !rendered_from_context.contains("readme only"),
+            "--from-context dropped the skip = \"changelog\" split:\n{rendered_from_context}"
         );
 
         Ok(())

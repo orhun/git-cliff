@@ -176,15 +176,17 @@ pub struct Commit<'a> {
     /// Whether this commit should contribute to version bumping.
     ///
     /// `None` means include (default). Set when a matching parser uses
-    /// `skip = "bump"`.
-    #[serde(skip)]
+    /// `skip = "bump"`. Serialized so `--context` / `--from-context` keep
+    /// the split.
+    #[serde(default)]
     pub(crate) include_in_bump: Option<bool>,
 
     /// Whether this commit should appear in the changelog.
     ///
     /// `None` means include (default). Set when a matching parser uses
-    /// `skip = "changelog"`.
-    #[serde(skip)]
+    /// `skip = "changelog"`. Serialized so `--context` / `--from-context` keep
+    /// the split.
+    #[serde(default)]
     pub(crate) include_in_changelog: Option<bool>,
 }
 
@@ -549,7 +551,7 @@ impl Serialize for Commit<'_> {
             }
         }
 
-        let mut commit = serializer.serialize_struct("Commit", 21)?;
+        let mut commit = serializer.serialize_struct("Commit", 23)?;
         commit.serialize_field("id", &self.id)?;
         if let Some(conv) = &self.conv {
             commit.serialize_field("message", conv.description())?;
@@ -597,6 +599,12 @@ impl Serialize for Commit<'_> {
         commit.serialize_field("azure_devops", &self.azure_devops)?;
         if let Some(remote) = &self.remote {
             commit.serialize_field("remote", remote)?;
+        }
+        if self.include_in_bump.is_some() {
+            commit.serialize_field("include_in_bump", &self.include_in_bump)?;
+        }
+        if self.include_in_changelog.is_some() {
+            commit.serialize_field("include_in_changelog", &self.include_in_changelog)?;
         }
         commit.serialize_field("raw_message", &self.raw_message())?;
         commit.end()
@@ -1134,6 +1142,15 @@ Refs: #123
         assert!(!chore.should_include_in_bump());
         assert!(chore.should_include_in_changelog());
         assert_eq!(chore.group.as_deref(), Some("Other"));
+
+        let json = serde_json::to_string(&docs).expect("commit should serialize");
+        assert!(
+            json.contains("\"include_in_changelog\":false"),
+            "skip = \"changelog\" must round-trip through --context: {json}"
+        );
+        let restored: Commit<'_> = serde_json::from_str(&json).expect("commit should deserialize");
+        assert!(!restored.should_include_in_changelog());
+        assert!(restored.should_include_in_bump());
 
         Ok(())
     }

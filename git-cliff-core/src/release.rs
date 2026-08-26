@@ -114,6 +114,23 @@ impl Release<'_> {
         self
     }
 
+    /// Clone this release for changelog rendering, omitting commits marked
+    /// with `skip = "changelog"`.
+    ///
+    /// The original release is left unchanged so version bumping can still
+    /// see those commits. Submodule commit lists are filtered the same way.
+    #[must_use]
+    pub(crate) fn for_changelog(&self) -> Self {
+        let mut release = self.clone();
+        release
+            .commits
+            .retain(|commit| commit.should_include_in_changelog());
+        for commits in release.submodule_commits.values_mut() {
+            commits.retain(|commit| commit.should_include_in_changelog());
+        }
+        release
+    }
+
     /// Calculates the next version based on the commits.
     ///
     /// It uses the given bump version configuration to calculate the next
