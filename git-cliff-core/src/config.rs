@@ -439,6 +439,37 @@ impl Bump {
     }
 }
 
+/// Skip behaviour for a matched [`CommitParser`].
+///
+/// `skip = true` drops the commit from processing entirely. Set `skip` to
+/// `"changelog"` or `"bump"` to omit the commit from one output while keeping
+/// it in the other. `skip = false` is a no-op (same as omitting `skip`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum CommitSkip {
+    /// `skip = true` drops the commit; `skip = false` keeps it.
+    Flag(bool),
+    /// Skip only one output (`"changelog"` or `"bump"`).
+    Target(CommitSkipTarget),
+}
+
+impl CommitSkip {
+    /// Whether this parser drops the commit from processing entirely.
+    pub fn is_all(&self) -> bool {
+        matches!(self, Self::Flag(true))
+    }
+}
+
+/// Output to skip without dropping the commit from processing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum CommitSkipTarget {
+    /// Omit from changelog output; keep for version bump and `filter_commits`.
+    Changelog,
+    /// Omit from version bump; keep in the changelog.
+    Bump,
+}
+
 /// Parser for grouping commits.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct CommitParser {
@@ -459,8 +490,12 @@ pub struct CommitParser {
     pub default_scope: Option<String>,
     /// Commit scope for overriding the default scope.
     pub scope: Option<String>,
-    /// Whether to skip this commit group.
-    pub skip: Option<bool>,
+    /// Skip behaviour for a matched commit.
+    ///
+    /// - `true`: drop the commit from processing (changelog, bump, statistics).
+    /// - `"changelog"`: omit from changelog output; keep for version bump.
+    /// - `"bump"`: omit from version bump; keep in the changelog.
+    pub skip: Option<CommitSkip>,
     /// Field name of the commit to match the regex against.
     pub field: Option<String>,
     /// Regex for matching the field value.
@@ -773,6 +808,38 @@ mod test {
         config.changelog.footer = Some(String::from("{{ commit.statistics.additions }}"));
         assert!(config.uses_commit_statistics()?);
 
+        Ok(())
+    }
+
+    #[test]
+    fn parse_commit_parser_skip_targets() -> Result<()> {
+        let config = Config::from_str(
+            r#"
+                [changelog]
+                body = "test"
+                [[git.commit_parsers]]
+                message = "^docs"
+                skip = "changelog"
+                [[git.commit_parsers]]
+                message = "^chore"
+                skip = "bump"
+                [[git.commit_parsers]]
+                message = "^revert"
+                skip = true
+            "#,
+        )?;
+        assert_eq!(
+            config.git.commit_parsers[0].skip,
+            Some(CommitSkip::Target(CommitSkipTarget::Changelog))
+        );
+        assert_eq!(
+            config.git.commit_parsers[1].skip,
+            Some(CommitSkip::Target(CommitSkipTarget::Bump))
+        );
+        assert_eq!(
+            config.git.commit_parsers[2].skip,
+            Some(CommitSkip::Flag(true))
+        );
         Ok(())
     }
 }

@@ -612,11 +612,15 @@ impl<'a> Changelog<'a> {
         }
 
         for release in &self.releases {
+            let mut release_for_changelog = release.clone();
+            release_for_changelog
+                .commits
+                .retain(|commit| commit.should_include_in_changelog());
             let write_result = write!(
                 out,
                 "{}",
                 self.body_template.render(
-                    &release,
+                    &release_for_changelog,
                     Some(&self.additional_context),
                     &postprocessors
                 )?
@@ -773,8 +777,8 @@ mod test {
     use super::*;
     use crate::commit::{Commit, Signature};
     use crate::config::{
-        Bump, ChangelogConfig, CommitParser, GitConfig, LinkParser, Remote, RemoteConfig,
-        TextProcessor,
+        Bump, ChangelogConfig, CommitParser, CommitSkip, GitConfig, LinkParser, Remote,
+        RemoteConfig, TextProcessor,
     };
 
     fn get_test_data() -> (Config, Vec<Release<'static>>) {
@@ -851,7 +855,7 @@ mod test {
                         group: None,
                         default_scope: None,
                         scope: None,
-                        skip: Some(true),
+                        skip: Some(CommitSkip::Flag(true)),
                         field: None,
                         pattern: None,
                     },
@@ -863,7 +867,7 @@ mod test {
                         group: None,
                         default_scope: None,
                         scope: None,
-                        skip: Some(true),
+                        skip: Some(CommitSkip::Flag(true)),
                         field: None,
                         pattern: None,
                     },
@@ -875,7 +879,7 @@ mod test {
                         group: None,
                         default_scope: None,
                         scope: None,
-                        skip: Some(true),
+                        skip: Some(CommitSkip::Flag(true)),
                         field: None,
                         pattern: None,
                     },
@@ -1493,7 +1497,7 @@ mod test {
             .iter_mut()
             .filter(|p| p.footer.is_some())
         {
-            parser.skip = Some(true);
+            parser.skip = Some(CommitSkip::Flag(true));
         }
 
         releases[0].commits.push(Commit {

@@ -21,7 +21,7 @@ use args::{BumpOption, Opt, Sort, Strip};
 use clap::ValueEnum;
 use git_cliff_core::changelog::Changelog;
 use git_cliff_core::commit::{Commit, CommitStatistics, Range};
-use git_cliff_core::config::{CommitParser, Config};
+use git_cliff_core::config::{CommitParser, CommitSkip, Config};
 use git_cliff_core::embed::{BuiltinConfig, EmbeddedConfig};
 use git_cliff_core::error::{Error, Result};
 use git_cliff_core::release::Release;
@@ -897,7 +897,7 @@ pub fn run_with_changelog_modifier<'a>(
             for sha1 in skip_list {
                 config.git.commit_parsers.insert(0, CommitParser {
                     sha: Some(sha1.clone()),
-                    skip: Some(true),
+                    skip: Some(CommitSkip::Flag(true)),
                     ..Default::default()
                 });
             }
