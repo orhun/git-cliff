@@ -776,6 +776,57 @@ mod test {
         Bump, ChangelogConfig, CommitParser, GitConfig, LinkParser, Remote, RemoteConfig,
         TextProcessor,
     };
+    use crate::embed::BuiltinConfig;
+
+    #[test]
+    fn keepachangelog_footers_handle_missing_previous_release() -> Result<()> {
+        for name in [
+            "keepachangelog",
+            "github-keepachangelog",
+            "gitlab-keepachangelog",
+            "azure-devops-keepachangelog",
+        ] {
+            let config: toml::Value =
+                toml::from_str(&BuiltinConfig::get_config(name.to_string())?)?;
+            let footer = config
+                .get("changelog")
+                .and_then(|changelog| changelog.get("footer"))
+                .and_then(toml::Value::as_str)
+                .expect("built-in Keep a Changelog template must have a footer");
+            let footer_template = Template::new("footer", footer.to_string(), true)?;
+            let releases = vec![
+                Release {
+                    version: None,
+                    previous: None,
+                    ..Default::default()
+                },
+                Release {
+                    version: Some(String::from("v2.0.0")),
+                    previous: Some(Box::new(Release {
+                        version: Some(String::from("v1.0.0")),
+                        ..Default::default()
+                    })),
+                    ..Default::default()
+                },
+            ];
+            let additional_context = HashMap::from([(
+                String::from("remote"),
+                serde_json::to_value(RemoteConfig::default())?,
+            )]);
+            let rendered = footer_template.render(
+                &Releases {
+                    releases: &releases,
+                },
+                Some(&additional_context),
+                &[],
+            )?;
+            assert!(
+                rendered.contains("v1.0.0") && rendered.contains("v2.0.0"),
+                "{name} did not render the valid comparison link:\n{rendered}"
+            );
+        }
+        Ok(())
+    }
 
     fn get_test_data() -> (Config, Vec<Release<'static>>) {
         let config = Config {
