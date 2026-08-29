@@ -564,7 +564,7 @@ impl<'a> Changelog<'a> {
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn bump_version(&mut self) -> Result<Option<String>> {
         crate::set_progress_message!("Bumping the version for unreleased changes");
-        if let Some(ref mut last_release) = self.releases.iter_mut().next() {
+        if let Some(last_release) = self.releases.first_mut() {
             if last_release.version.is_none() {
                 let next = last_release.calculate_next_version_from_commits(
                     &self.config.bump,
