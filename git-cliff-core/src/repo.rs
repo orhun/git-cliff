@@ -518,6 +518,7 @@ impl Repository {
                 name: tag.name().unwrap_or_default().to_owned(),
                 message: tag
                     .message()
+                    .unwrap_or_default()
                     .map(|msg| TAG_SIGNATURE_REGEX.replace(msg, "").trim().to_owned()),
             },
             _ => Tag {
@@ -566,6 +567,7 @@ impl Repository {
         for name in tag_names
             .iter()
             .flatten()
+            .flatten()
             .filter(|tag_name| pattern.as_ref().is_none_or(|pat| pat.is_match(tag_name)))
             .map(String::from)
         {
@@ -593,6 +595,8 @@ impl Repository {
                         name: tag.name().map(String::from).unwrap_or(name),
                         message: tag
                             .message()
+                            .ok()
+                            .flatten()
                             .map(|msg| TAG_SIGNATURE_REGEX.replace(msg, "").trim().to_owned()),
                     }));
                 }
@@ -674,13 +678,15 @@ impl Repository {
                         "branch name is not valid"
                     )))?
                 ))?;
-                let upstream_name = upstream.as_str().ok_or_else(|| {
-                    Error::RepoError(String::from("name of the upstream remote is not valid"))
+                let upstream_name = upstream.as_str().map_err(|err| {
+                    Error::RepoError(format!("name of the upstream remote is not valid: {err}"))
                 })?;
                 let origin = &self.inner.find_remote(upstream_name)?;
                 let url = origin
                     .url()
-                    .ok_or_else(|| Error::RepoError(String::from("failed to get the remote URL")))?
+                    .map_err(|err| {
+                        Error::RepoError(format!("failed to get the remote URL: {err}"))
+                    })?
                     .to_string();
                 tracing::trace!("Upstream URL: {url}");
                 return find_remote(&url);

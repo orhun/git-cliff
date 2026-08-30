@@ -93,7 +93,7 @@ tracing.workspace = true
 tracing-indicatif = { workspace = true, optional = true }
 
 [dependencies.git2]
-version = "0.20.4"
+version = "0.21"
 default-features = false
 optional = true
 
