@@ -8,7 +8,9 @@ use serde::ser::{SerializeStruct, Serializer};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::value::Value;
 
-use crate::config::{CommitParser, GitConfig, LinkParser, TextProcessor};
+use crate::config::{
+    CommitParser, CommitSkip, CommitSkipTarget, GitConfig, LinkParser, TextProcessor,
+};
 use crate::error::{Error as AppError, Result};
 
 /// Regular expression for matching SHA1 and a following commit message
@@ -170,6 +172,22 @@ pub struct Commit<'a> {
     /// In fact, it is pre-processed by [`Commit::preprocess`], and only be
     /// generated when serializing into `context` the first time.
     pub raw_message: Option<String>,
+
+    /// Whether this commit should contribute to version bumping.
+    ///
+    /// `None` means include (default). Set when a matching parser uses
+    /// `skip = "bump"`. Serialized so `--context` / `--from-context` keep
+    /// the split.
+    #[serde(default)]
+    pub(crate) include_in_bump: Option<bool>,
+
+    /// Whether this commit should appear in the changelog.
+    ///
+    /// `None` means include (default). Set when a matching parser uses
+    /// `skip = "changelog"`. Serialized so `--context` / `--from-context` keep
+    /// the split.
+    #[serde(default)]
+    pub(crate) include_in_changelog: Option<bool>,
 }
 
 impl From<String> for Commit<'_> {
@@ -296,14 +314,44 @@ impl Commit<'_> {
         Ok(self)
     }
 
-    /// States if the commit is skipped in the provided `CommitParser`.
+    /// States if the commit is dropped from processing by the provided
+    /// [`CommitParser`].
+    ///
+    /// Returns `true` only for `skip = true`. `skip = "changelog"` and
+    /// `skip = "bump"` keep the commit in the pipeline.
     ///
     /// Returns `false` if `protect_breaking_commits` is enabled in the config
     /// and the commit is breaking, or the parser's `skip` field is None or
-    /// `false`. Returns `true` otherwise.
+    /// `false`.
     fn skip_commit(&self, parser: &CommitParser, protect_breaking: bool) -> bool {
-        parser.skip.unwrap_or(false) &&
+        parser.skip.as_ref().is_some_and(CommitSkip::is_all) &&
             !(self.conv.as_ref().is_some_and(ConventionalCommit::breaking) && protect_breaking)
+    }
+
+    /// Apply `skip = "changelog"` / `skip = "bump"` from a matching parser.
+    fn apply_parser_skip(&mut self, parser: &CommitParser, protect_breaking: bool) {
+        if protect_breaking && self.conv.as_ref().is_some_and(ConventionalCommit::breaking) {
+            return;
+        }
+        match parser.skip {
+            Some(CommitSkip::Target(CommitSkipTarget::Changelog)) => {
+                self.include_in_changelog = Some(false);
+            }
+            Some(CommitSkip::Target(CommitSkipTarget::Bump)) => {
+                self.include_in_bump = Some(false);
+            }
+            Some(CommitSkip::Flag(_)) | None => {}
+        }
+    }
+
+    /// Whether this commit should contribute to version bumping.
+    pub(crate) fn should_include_in_bump(&self) -> bool {
+        self.include_in_bump.unwrap_or(true)
+    }
+
+    /// Whether this commit should appear in the changelog.
+    pub(crate) fn should_include_in_changelog(&self) -> bool {
+        self.include_in_changelog.unwrap_or(true)
     }
 
     /// Parses the commit using [`CommitParser`]s.
@@ -405,6 +453,7 @@ impl Commit<'_> {
                     self.group = parser.group.clone().or(self.group);
                     self.scope = parser.scope.clone().or(self.scope);
                     self.default_scope = parser.default_scope.clone().or(self.default_scope);
+                    self.apply_parser_skip(parser, protect_breaking);
                     return Ok(self);
                 }
             }
@@ -422,6 +471,7 @@ impl Commit<'_> {
                         self.group = parser.group.clone().map(regex_replace);
                         self.scope = parser.scope.clone().map(regex_replace);
                         self.default_scope.clone_from(&parser.default_scope);
+                        self.apply_parser_skip(parser, protect_breaking);
                         return Ok(self);
                     }
                 }
@@ -501,7 +551,7 @@ impl Serialize for Commit<'_> {
             }
         }
 
-        let mut commit = serializer.serialize_struct("Commit", 21)?;
+        let mut commit = serializer.serialize_struct("Commit", 23)?;
         commit.serialize_field("id", &self.id)?;
         if let Some(conv) = &self.conv {
             commit.serialize_field("message", conv.description())?;
@@ -549,6 +599,12 @@ impl Serialize for Commit<'_> {
         commit.serialize_field("azure_devops", &self.azure_devops)?;
         if let Some(remote) = &self.remote {
             commit.serialize_field("remote", remote)?;
+        }
+        if self.include_in_bump.is_some() {
+            commit.serialize_field("include_in_bump", &self.include_in_bump)?;
+        }
+        if self.include_in_changelog.is_some() {
+            commit.serialize_field("include_in_changelog", &self.include_in_changelog)?;
         }
         commit.serialize_field("raw_message", &self.raw_message())?;
         commit.end()
@@ -1046,7 +1102,7 @@ Refs: #123
                 group: None,
                 default_scope: None,
                 scope: None,
-                skip: Some(true),
+                skip: Some(CommitSkip::Flag(true)),
                 field: None,
                 pattern: None,
             }],
@@ -1055,8 +1111,48 @@ Refs: #123
         );
         assert!(
             parsed_commit.is_err(),
-            "Expected error when parsing with `skip: Some(true)`, but got Ok"
+            "Expected error when parsing with `skip = true`, but got Ok"
         );
+    }
+
+    #[test]
+    fn parse_commit_skip_targets() -> Result<()> {
+        let docs = Commit::new(String::from("abc"), String::from("docs: update readme")).parse(
+            &[CommitParser {
+                message: Regex::new("^docs").ok(),
+                skip: Some(CommitSkip::Target(CommitSkipTarget::Changelog)),
+                ..Default::default()
+            }],
+            false,
+            true,
+        )?;
+        assert!(docs.should_include_in_bump());
+        assert!(!docs.should_include_in_changelog());
+
+        let chore = Commit::new(String::from("def"), String::from("chore: tidy")).parse(
+            &[CommitParser {
+                message: Regex::new("^chore").ok(),
+                skip: Some(CommitSkip::Target(CommitSkipTarget::Bump)),
+                group: Some(String::from("Other")),
+                ..Default::default()
+            }],
+            false,
+            true,
+        )?;
+        assert!(!chore.should_include_in_bump());
+        assert!(chore.should_include_in_changelog());
+        assert_eq!(chore.group.as_deref(), Some("Other"));
+
+        let json = serde_json::to_string(&docs).expect("commit should serialize");
+        assert!(
+            json.contains("\"include_in_changelog\":false"),
+            "skip = \"changelog\" must round-trip through --context: {json}"
+        );
+        let restored: Commit<'_> = serde_json::from_str(&json).expect("commit should deserialize");
+        assert!(!restored.should_include_in_changelog());
+        assert!(restored.should_include_in_bump());
+
+        Ok(())
     }
 
     #[test]

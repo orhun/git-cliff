@@ -262,7 +262,7 @@ mod test {
     use regex::Regex;
 
     use super::*;
-    use crate::config::{CommitParser, ProcessingStep};
+    use crate::config::{CommitParser, CommitSkip, ProcessingStep};
 
     #[test]
     fn list_keeps_legacy_behavior_when_order_is_unset() -> Result<()> {
@@ -284,7 +284,7 @@ mod test {
                     group: None,
                     default_scope: None,
                     scope: None,
-                    skip: Some(true),
+                    skip: Some(CommitSkip::Flag(true)),
                     field: None,
                     pattern: None,
                 },
@@ -336,7 +336,7 @@ mod test {
                     group: None,
                     default_scope: None,
                     scope: None,
-                    skip: Some(true),
+                    skip: Some(CommitSkip::Flag(true)),
                     field: None,
                     pattern: None,
                 },

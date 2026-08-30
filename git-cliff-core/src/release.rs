@@ -114,6 +114,23 @@ impl Release<'_> {
         self
     }
 
+    /// Clone this release for changelog rendering, omitting commits marked
+    /// with `skip = "changelog"`.
+    ///
+    /// The original release is left unchanged so version bumping can still
+    /// see those commits. Submodule commit lists are filtered the same way.
+    #[must_use]
+    pub(crate) fn for_changelog(&self) -> Self {
+        let mut release = self.clone();
+        release
+            .commits
+            .retain(|commit| commit.should_include_in_changelog());
+        for commits in release.submodule_commits.values_mut() {
+            commits.retain(|commit| commit.should_include_in_changelog());
+        }
+        release
+    }
+
     /// Calculates the next version based on the commits.
     ///
     /// It uses the given bump version configuration to calculate the next
@@ -205,6 +222,7 @@ impl Release<'_> {
                             &old_semver,
                             self.commits
                                 .iter()
+                                .filter(|commit| commit.should_include_in_bump())
                                 .map(|commit| {
                                     let message = commit.raw_message().trim_end();
                                     // When conventional commits are disabled,
@@ -485,6 +503,25 @@ mod test {
             assert_eq!("0.1.0", result.version);
             assert_eq!(None, result.bump_type);
         }
+        Ok(())
+    }
+
+    #[test]
+    fn skip_bump_excludes_commit_from_version_increment() -> Result<()> {
+        let mut skipped_feat = Commit::from(String::from("feat: should not bump"));
+        skipped_feat.include_in_bump = Some(false);
+        let release = Release {
+            version: None,
+            commits: vec![skipped_feat],
+            previous: Some(Box::new(Release {
+                version: Some(String::from("1.0.0")),
+                ..Default::default()
+            })),
+            ..Default::default()
+        };
+        let result = release.calculate_next_version()?;
+        assert_eq!("1.0.0", result.version);
+        assert_eq!(None, result.bump_type);
         Ok(())
     }
 

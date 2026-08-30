@@ -225,7 +225,11 @@ Examples:
 - `{ message = ".*deprecated", body = ".*deprecated", group = "Deprecation" }`
   - Group the commit as "Deprecation" if the commit body and message contains "deprecated".
 - `{ message = "^revert", skip = true }`
-  - Skip processing the commit if the commit message (description) starts with "revert".
+  - Skip processing the commit if the commit message (description) starts with "revert". This drops the commit from the changelog, version bump, and statistics.
+- `{ message = "^docs", skip = "changelog" }`
+  - Match `docs` commits so they still satisfy `filter_commits` and contribute to version bumping, but omit them from the changelog.
+- `{ message = "^chore", group = "Miscellaneous", skip = "bump" }`
+  - Keep `chore` commits in the changelog, but exclude them from `--bump` / `--bumped-version`.
 - `{ message = "^doc", group = "Documentation", default_scope = "other" },`
   - If the commit starts with "doc", group the commit as "Documentation" and set the default scope to "other". (e.g. `docs: xyz` will be processed as `docs(other): xyz`)
 - `{ message = "(www)", scope = "Application" }`
