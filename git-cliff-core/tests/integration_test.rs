@@ -36,6 +36,7 @@ fn generate_changelog() -> Result<()> {
         footer: Some(String::from("eoc - end of changelog")),
         trim: true,
         render_always: false,
+        format: false,
         postprocessors: [].to_vec(),
         output: None,
     };

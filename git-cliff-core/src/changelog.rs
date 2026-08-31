@@ -590,68 +590,66 @@ impl<'a> Changelog<'a> {
     pub fn generate<W: Write + ?Sized>(&self, out: &mut W) -> Result<()> {
         crate::set_progress_message!("Generating and writing the changelog");
         tracing::debug!("Generating changelog");
+
+        let mut output = self.render()?;
+        if self.config.changelog.format {
+            output = crate::markdown::format_markdown(&output)?;
+        }
+
+        let write_result = write!(out, "{output}");
+        if let Err(e) = write_result {
+            if e.kind() != std::io::ErrorKind::BrokenPipe {
+                return Err(e.into());
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Renders the changelog (header + releases + footer) into a string.
+    ///
+    /// With `format` disabled this produces byte-for-byte the same output that
+    /// used to be written directly to the writer.
+    fn render(&self) -> Result<String> {
         let postprocessors = self.config.changelog.postprocessors.clone();
+        let mut output = String::new();
 
         if let Some(header_template) = &self.header_template {
-            let header = header_template.render(
+            output.push_str(&header_template.render(
                 &Releases {
                     releases: &self.releases,
                 },
                 Some(&self.additional_context),
                 &postprocessors,
-            )?;
-            // Static headers can still be removed by their configured text. Dynamic
-            // headers need a stable boundary because their previous rendering may differ.
+            )?);
+            output.push('\n');
             let header_marker = &self.config.changelog.header_marker;
-            let write_result = if header_template.variables.is_empty() || header_marker.is_empty() {
-                writeln!(out, "{header}")
-            } else {
-                writeln!(out, "{header}\n{header_marker}")
-            };
-            if let Err(e) = write_result {
-                if e.kind() != std::io::ErrorKind::BrokenPipe {
-                    return Err(e.into());
-                }
+            if !header_template.variables.is_empty() && !header_marker.is_empty() {
+                output.push_str(header_marker);
+                output.push('\n');
             }
         }
 
         for release in &self.releases {
-            let write_result = write!(
-                out,
-                "{}",
-                self.body_template.render(
-                    &release,
-                    Some(&self.additional_context),
-                    &postprocessors
-                )?
-            );
-            if let Err(e) = write_result {
-                if e.kind() != std::io::ErrorKind::BrokenPipe {
-                    return Err(e.into());
-                }
-            }
+            output.push_str(&self.body_template.render(
+                &release,
+                Some(&self.additional_context),
+                &postprocessors,
+            )?);
         }
 
         if let Some(footer_template) = &self.footer_template {
-            let write_result = writeln!(
-                out,
-                "{}",
-                footer_template.render(
-                    &Releases {
-                        releases: &self.releases,
-                    },
-                    Some(&self.additional_context),
-                    &postprocessors,
-                )?
-            );
-            if let Err(e) = write_result {
-                if e.kind() != std::io::ErrorKind::BrokenPipe {
-                    return Err(e.into());
-                }
-            }
+            output.push_str(&footer_template.render(
+                &Releases {
+                    releases: &self.releases,
+                },
+                Some(&self.additional_context),
+                &postprocessors,
+            )?);
+            output.push('\n');
         }
 
-        Ok(())
+        Ok(output)
     }
 
     /// Generates a changelog and prepends it to the given changelog.
@@ -668,7 +666,17 @@ impl<'a> Changelog<'a> {
         if let Some(marker_index) = marker_index {
             changelog.replace_range(..marker_index + header_marker.len(), "");
         } else if let Some(header) = &self.config.changelog.header {
-            changelog = changelog.replacen(header, "", 1);
+            let stripped = changelog.replacen(header, "", 1);
+            if stripped.len() != changelog.len() {
+                changelog = stripped;
+            } else if self.config.changelog.format {
+                // When formatting is enabled the existing changelog was written
+                // with a formatted header, so the raw configured header no
+                // longer matches. Strip the formatted version instead to avoid
+                // duplicating the header on prepend.
+                let formatted_header = crate::markdown::format_markdown(header)?;
+                changelog = changelog.replacen(&formatted_header, "", 1);
+            }
         }
         let mut generated = Vec::new();
         self.generate(&mut generated)?;
@@ -881,6 +889,7 @@ mod test {
                     replace_command: None,
                 }],
                 render_always: false,
+                format: false,
                 output: None,
             },
             git: GitConfig {
@@ -1546,6 +1555,36 @@ mod test {
     }
 
     #[test]
+    fn changelog_generator_format() -> Result<()> {
+        let (config, releases) = get_test_data();
+
+        // Formatting disabled: the output is exactly what the templates render.
+        let plain = {
+            let changelog = Changelog::new(releases.clone(), config.clone(), None)?;
+            let mut out = Vec::new();
+            changelog.generate(&mut out)?;
+            String::from_utf8(out).expect("output should be valid utf-8")
+        };
+
+        // Formatting enabled: the output is the rendered changelog run through
+        // the Markdown formatter.
+        let mut formatted_config = config;
+        formatted_config.changelog.format = true;
+        let formatted = {
+            let changelog = Changelog::new(releases, formatted_config, None)?;
+            let mut out = Vec::new();
+            changelog.generate(&mut out)?;
+            String::from_utf8(out).expect("output should be valid utf-8")
+        };
+
+        assert_eq!(formatted, crate::markdown::format_markdown(&plain)?);
+        // The fixture output isn't already normalized, so formatting changes it.
+        assert_ne!(plain, formatted);
+
+        Ok(())
+    }
+
+    #[test]
     fn changelog_generator_split_commits() -> Result<()> {
         let (mut config, mut releases) = get_test_data();
         config.git.split_commits = true;
@@ -1730,6 +1769,7 @@ chore(deps): fix broken deps
                 trim: true,
                 postprocessors: Vec::new(),
                 render_always: false,
+                format: false,
                 output: None,
             },
             git: GitConfig {
@@ -1928,6 +1968,35 @@ chore(deps): fix broken deps
         assert_eq!(
             "## New Release\n## Old Release",
             str::from_utf8(&out).unwrap_or_default()
+        );
+
+        Ok(())
+    }
+    #[test]
+    fn changelog_prepend_strips_formatted_header() -> Result<()> {
+        let (mut config, releases) = get_test_data();
+        config.changelog.header = Some(String::from("Changelog\n=========\n"));
+        config.changelog.body = String::from("## New Release\n");
+        config.changelog.footer = None;
+        config.changelog.postprocessors = Vec::new();
+        config.changelog.format = true;
+
+        // Simulate a changelog that was previously written with formatting on:
+        // its stored header is the formatted version of the configured header,
+        // which no longer matches the raw configured text.
+        let changelog = Changelog::build(vec![releases[0].clone()], config)?;
+        let mut existing = Vec::new();
+        changelog.generate(&mut existing)?;
+        let existing = String::from_utf8(existing).unwrap_or_default();
+
+        let mut out = Vec::new();
+        changelog.prepend(existing, &mut out)?;
+        let out = String::from_utf8(out).unwrap_or_default();
+
+        assert_eq!(
+            1,
+            out.matches("Changelog").count(),
+            "header should not be duplicated on prepend:\n{out}"
         );
 
         Ok(())

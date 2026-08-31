@@ -71,6 +71,30 @@ It is useful for adding indentation to the template for readability, as shown [i
 
 If set to `true`, the changelog [body](#body) will be rendered even if there are no releases to process.
 
+### format
+
+If set to `true`, the rendered changelog is passed through a Markdown formatter before it is written. This normalizes heading styles, list markers, and blank lines so you don't have to fight the template with `{%-` and `trim` to get tidy output.
+
+Formatting only runs when the output is Markdown, i.e. writing to stdout or to a file with a `.md` extension. It is off by default, and with it off the output is exactly what the templates render.
+
+```toml
+[changelog]
+format = true
+```
+
+:::note
+
+This is an out-of-the-box alternative to configuring [`postprocessors`](#postprocessors) with an external tool like [`mdformat`](https://github.com/hukkin/mdformat), e.g.:
+
+```toml
+[changelog]
+postprocessors = [
+  { pattern = '.*', replace_command = 'mdformat -' },
+]
+```
+
+:::
+
 ### postprocessors
 
 An array of commit postprocessors for manipulating the changelog before outputting.

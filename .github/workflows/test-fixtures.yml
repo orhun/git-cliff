@@ -47,6 +47,7 @@ jobs:
           - fixtures-name: test-commit-footers
           - fixtures-name: test-commit-preprocessors
           - fixtures-name: test-conventional-commit
+          - fixtures-name: test-changelog-format-markdown
           - fixtures-name: test-custom-scope
           - fixtures-name: test-limit-commits
           - fixtures-name: test-limit-tags

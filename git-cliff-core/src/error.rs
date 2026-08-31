@@ -10,6 +10,9 @@ pub enum Error {
     /// string.
     #[error("UTF-8 error: `{0}`")]
     Utf8Error(#[from] std::str::Utf8Error),
+    /// Error that may occur while formatting the changelog as Markdown.
+    #[error("Markdown format error: `{0}`")]
+    MarkdownFormatError(#[from] pulldown_cmark_to_cmark::Error),
     /// Error variant that represents errors coming out of libgit2.
     #[cfg(feature = "repo")]
     #[error("Git error: `{0}`")]
