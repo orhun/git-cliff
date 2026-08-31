@@ -246,29 +246,17 @@ Examples:
   - `body` is a special field which contains the body of a conventional commit, if applicable.
   - Be aware that all fields are converted to JSON strings before they are parsed by the given regex, especially when dealing with arrays.
 
-By default a commit is handled by the first parser that matches it and the rest are skipped. Set `continue = true` on a parser to keep going after it matches, so the commit can be processed by more than one parser in order. Every parser only writes the fields it actually sets (for example just `scope`), so a value set by an earlier parser is kept unless a later parser sets that same field again. This is true whether the later parser has `continue = true` or is a regular terminal parser.
-
-A real-world use case is deriving the scope from information that lives outside the conventional-commit type. Say your team records which component a change touches in a `Component:` git trailer (footer) and keeps the type in the subject:
-
-```
-feat: add invoices
-
-Component: Billing
-```
-
-You can read the component into the scope with `continue = true`, then group the commit by its conventional type in a separate parser:
+By default a commit is handled by the first parser that matches it. Set `continue = true` to keep applying the following parsers to the same commit, each one only overwriting the fields it sets. This lets you derive a value such as the scope in one parser and group by type in another:
 
 ```toml
 [git]
 commit_parsers = [
   { footer = "^Component:Billing$", scope = "billing", continue = true },
-  { footer = "^Component:Auth$", scope = "auth", continue = true },
   { message = "^feat", group = "Features" },
-  { message = "^fix", group = "Bug Fixes" },
 ]
 ```
 
-The first matching footer parser sets the scope and parsing continues, then the `^feat` parser sets the group. Because the grouping parser only sets `group`, the scope picked up from the footer is preserved. This keeps the component list in one place instead of writing out every component-and-type combination as its own parser.
+The footer parser sets the scope and parsing continues, then the `^feat` parser sets the group without clearing the scope. Note that `field`/`pattern` matching always evaluates against the original commit, so a later parser cannot match on a `scope` (or other field) set by an earlier one. See [tips and tricks](/docs/tips-and-tricks#parsing-commits-with-multiple-parsers) for a fuller example.
 
 ### protect_breaking_commits
 
