@@ -53,3 +53,29 @@ git cliff --config-url https://github.com/orhun/git-cliff/blob/main/examples/git
 ```
 
 :::
+
+## User-defined templates
+
+In addition to the built-in templates, you can keep your own templates in a
+directory and use them with `--init` by pointing `git-cliff` at that directory
+with `--templates-dir` (or the `GIT_CLIFF_TEMPLATES_DIR` environment variable):
+
+```bash
+# initialize using ~/my-templates/company.toml
+git cliff --templates-dir ~/my-templates --init company
+```
+
+A user-defined template takes precedence over a built-in template of the same
+name, so you can override the shipped templates by placing a `.toml` file with
+the same name in your templates directory.
+
+To list every available template — built-in and user-defined — use
+`--list-templates` (useful for shell/editor completion):
+
+```bash
+# print built-in template names
+git cliff --list-templates
+
+# also include user-defined templates from a directory
+git cliff --list-templates --templates-dir ~/my-templates
+```

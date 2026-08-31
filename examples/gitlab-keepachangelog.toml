@@ -75,12 +75,10 @@ footer = """
 {%- endmacro -%}
 
 {% for release in releases -%}
-    {% if release.version -%}
-        {% if release.previous.version -%}
-            [{{ release.version | trim_start_matches(pat="v") }}]: \
-                {{ self::project_url() }}/-/compare/{{ release.previous.version }}...{{ release.version }}
-        {% endif -%}
-    {% else -%}
+    {% if release.version and release.previous and release.previous.version -%}
+        [{{ release.version | trim_start_matches(pat="v") }}]: \
+            {{ self::project_url() }}/-/compare/{{ release.previous.version }}...{{ release.version }}
+    {% elif not release.version and release.previous and release.previous.version -%}
         [unreleased]: {{ self::project_url() }}/-/compare/{{ release.previous.version }}...HEAD
     {% endif -%}
 {% endfor %}

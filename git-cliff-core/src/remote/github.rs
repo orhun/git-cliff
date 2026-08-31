@@ -73,6 +73,8 @@ pub struct GitHubPullRequest {
     pub number: i64,
     /// Pull request title.
     pub title: Option<String>,
+    /// Account that opened the pull request.
+    pub user: Option<GitHubCommitAuthor>,
     /// SHA of the merge commit.
     pub merge_commit_sha: Option<String>,
     /// Labels of the pull request.
@@ -86,6 +88,10 @@ impl RemotePullRequest for GitHubPullRequest {
 
     fn title(&self) -> Option<String> {
         self.title.clone()
+    }
+
+    fn author(&self) -> Option<String> {
+        self.user.clone().and_then(|v| v.login)
     }
 
     fn labels(&self) -> Vec<String> {
@@ -250,7 +256,7 @@ mod test {
     use pretty_assertions::assert_eq;
 
     use super::*;
-    use crate::remote::RemoteCommit;
+    use crate::remote::{RemoteCommit, RemotePullRequest};
 
     #[test]
     fn timestamp() {
@@ -267,5 +273,37 @@ mod test {
         };
 
         assert_eq!(Some(1_626_610_479), remote_commit.timestamp());
+    }
+
+    #[test]
+    fn pull_request_author() {
+        let pull_request: GitHubPullRequest = serde_json::from_str(
+            r#"{
+                "number": 42,
+                "title": "feat: add pr_author",
+                "merge_commit_sha": "1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
+                "labels": [],
+                "user": { "login": "contributor" }
+            }"#,
+        )
+        .expect("failed to deserialize pull request");
+
+        assert_eq!(Some(String::from("contributor")), pull_request.author());
+    }
+
+    #[test]
+    fn pull_request_author_missing() {
+        let pull_request: GitHubPullRequest = serde_json::from_str(
+            r#"{
+                "number": 42,
+                "title": "feat: add pr_author",
+                "merge_commit_sha": "1d244937ee6ceb8e0314a4a201ba93a7a61f2071",
+                "labels": [],
+                "user": null
+            }"#,
+        )
+        .expect("failed to deserialize pull request");
+
+        assert_eq!(None, pull_request.author());
     }
 }

@@ -50,6 +50,7 @@ jobs:
           - fixtures-name: test-changelog-format-markdown
           - fixtures-name: test-custom-scope
           - fixtures-name: test-limit-commits
+          - fixtures-name: test-limit-tags
           - fixtures-name: test-skip-breaking-changes
           - fixtures-name: test-split-commits
           - fixtures-name: test-bump-version
@@ -126,8 +127,15 @@ jobs:
             command: --tag v0.2.0
           - fixtures-name: test-custom-remote-api-url
             command: v1.4.0..v1.4.1
+          # NOTE: These two entries share one fixture (and one expected.md).
+          # The second puts the positional range AFTER --include-path: since
+          # include-path takes exactly one value per occurrence, the trailing
+          # range lands in the RANGE slot. (Under the old greedy num_args(1..)
+          # it was absorbed as one more glob and silently dropped.)
           - fixtures-name: test-monorepo-include-path
             command: v2.6.1..v2.7.0 --include-path .github/fixtures/
+          - fixtures-name: test-monorepo-include-path
+            command: --include-path .github/fixtures/ v2.6.1..v2.7.0
           - fixtures-name: test-require-conventional-negative
           - fixtures-name: test-require-conventional-skipped
           - fixtures-name: test-submodules
@@ -139,6 +147,7 @@ jobs:
           - fixtures-name: test-remote-config
             command: --config-url "https://github.com/orhun/git-cliff/blob/main/.github/fixtures/new-fixture-template/cliff.toml?raw=true"
           - fixtures-name: test-topo-order-commits
+          - fixtures-name: test-tag-assignment-merged-branch
           - fixtures-name: test-commit-range
           - fixtures-name: test-commit-statistics
           - fixtures-name: test-commit-range-with-sort-commits
