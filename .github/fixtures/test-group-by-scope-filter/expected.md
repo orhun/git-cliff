@@ -17,4 +17,4 @@
 
 - add feature 2
 
-<!-- END OF HEADER -->
+<!-- git-cliff: end of header -->

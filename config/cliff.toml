@@ -3,6 +3,9 @@
 
 
 [changelog]
+# A stable marker placed after context-dependent headers. Required for reliably
+# replacing the previous header when using `--prepend`.
+header_marker = "<!-- git-cliff: end of header -->"
 # A Tera template to be rendered for each release in the changelog.
 # See https://keats.github.io/tera/docs/#introduction
 body = """
