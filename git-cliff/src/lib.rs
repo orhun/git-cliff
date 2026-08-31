@@ -844,12 +844,15 @@ pub fn write_changelog<W: io::Write>(
         .or(changelog.config.changelog.output.clone());
     // Markdown formatting only makes sense for Markdown output. Detect it from
     // the file extension (stdout and extension-less paths are treated as
-    // Markdown, matching git-cliff's default output).
+    // Markdown, matching git-cliff's default output). The prepend target is a
+    // destination too, so its extension is checked as well.
     if changelog.config.changelog.format {
-        let is_markdown = output.as_ref().is_none_or(|path| {
+        let is_markdown_path = |path: &PathBuf| {
             path.extension()
                 .is_none_or(|ext| ext.eq_ignore_ascii_case("md"))
-        });
+        };
+        let is_markdown = output.as_ref().is_none_or(&is_markdown_path) &&
+            args.prepend.as_ref().is_none_or(&is_markdown_path);
         if !is_markdown {
             tracing::warn!(
                 "`changelog.format` is enabled but the output is not Markdown; skipping formatting"

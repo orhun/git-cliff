@@ -12,7 +12,8 @@ use crate::error::Result;
 /// (heading styles, list markers, blank lines between blocks) without the user
 /// having to fiddle with `{%-` / `trim` everywhere. The GitHub-flavored
 /// extensions git-cliff templates commonly use (tables, strikethrough, task
-/// lists, footnotes) are enabled so they survive the round-trip.
+/// lists, footnotes, and the rest of GFM) are enabled so they survive the
+/// round-trip.
 ///
 /// The formatter options are intentionally conservative: it doesn't reflow
 /// text or rewrite links, so template output that is already valid Markdown
@@ -23,6 +24,7 @@ pub fn format_markdown(input: &str) -> Result<String> {
     options.insert(Options::ENABLE_STRIKETHROUGH);
     options.insert(Options::ENABLE_TASKLISTS);
     options.insert(Options::ENABLE_FOOTNOTES);
+    options.insert(Options::ENABLE_GFM);
 
     let parser = Parser::new_ext(input, options);
     let mut formatted = String::with_capacity(input.len());

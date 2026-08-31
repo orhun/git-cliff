@@ -650,7 +650,17 @@ impl<'a> Changelog<'a> {
         crate::set_progress_message!("Generating and prepending the changelog");
         tracing::debug!("Generating changelog and prepending");
         if let Some(header) = &self.config.changelog.header {
-            changelog = changelog.replacen(header, "", 1);
+            let stripped = changelog.replacen(header, "", 1);
+            if stripped.len() != changelog.len() {
+                changelog = stripped;
+            } else if self.config.changelog.format {
+                // When formatting is enabled the existing changelog was written
+                // with a formatted header, so the raw configured header no
+                // longer matches. Strip the formatted version instead to avoid
+                // duplicating the header on prepend.
+                let formatted_header = crate::markdown::format_markdown(header)?;
+                changelog = changelog.replacen(&formatted_header, "", 1);
+            }
         }
         let mut generated = Vec::new();
         self.generate(&mut generated)?;
@@ -1888,6 +1898,36 @@ chore(deps): fix broken deps
         assert_eq!(
             "## New Release\n## Old Release",
             str::from_utf8(&out).unwrap_or_default()
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn changelog_prepend_strips_formatted_header() -> Result<()> {
+        let (mut config, releases) = get_test_data();
+        config.changelog.header = Some(String::from("Changelog\n=========\n"));
+        config.changelog.body = String::from("## New Release\n");
+        config.changelog.footer = None;
+        config.changelog.postprocessors = Vec::new();
+        config.changelog.format = true;
+
+        // Simulate a changelog that was previously written with formatting on:
+        // its stored header is the formatted version of the configured header,
+        // which no longer matches the raw configured text.
+        let changelog = Changelog::build(vec![releases[0].clone()], config)?;
+        let mut existing = Vec::new();
+        changelog.generate(&mut existing)?;
+        let existing = String::from_utf8(existing).unwrap_or_default();
+
+        let mut out = Vec::new();
+        changelog.prepend(existing, &mut out)?;
+        let out = String::from_utf8(out).unwrap_or_default();
+
+        assert_eq!(
+            1,
+            out.matches("Changelog").count(),
+            "header should not be duplicated on prepend:\n{out}"
         );
 
         Ok(())

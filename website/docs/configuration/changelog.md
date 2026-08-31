@@ -67,7 +67,18 @@ Formatting only runs when the output is Markdown, i.e. writing to stdout or to a
 format = true
 ```
 
-This is an out-of-the-box alternative to configuring [`postprocessors`](#postprocessors) with an external tool like `mdformat`.
+:::note
+
+This is an out-of-the-box alternative to configuring [`postprocessors`](#postprocessors) with an external tool like [`mdformat`](https://github.com/hukkin/mdformat), e.g.:
+
+```toml
+[changelog]
+postprocessors = [
+  { pattern = '.*', replace_command = 'mdformat -' },
+]
+```
+
+:::
 
 ### postprocessors
 
