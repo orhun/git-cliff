@@ -12,6 +12,7 @@ use regex::Regex;
 #[test]
 fn generate_changelog() -> Result<()> {
     let changelog_config = ChangelogConfig {
+        header_marker: String::from("<!-- git-cliff: end of header -->"),
         header: Some(String::from("this is a changelog")),
         body: String::from(
             r#"

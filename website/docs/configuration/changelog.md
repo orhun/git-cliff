@@ -9,6 +9,7 @@ This section contains the configuration options for changelog generation.
 ```toml
 [changelog]
 header = "Changelog"
+header_marker = "<!-- git-cliff: end of header -->"
 body = """
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | upper_first }}
@@ -31,6 +32,20 @@ See [templating](/docs/category/templating) for more detail.
 Header template that will be rendered and added to the beginning of the changelog.
 
 The template context contains the full list of releases in the variable `releases`. See [templating](/docs/category/templating) for more details.
+
+### header_marker
+
+A stable marker written after a header that uses template variables. When
+prepending releases with `--prepend`, **git-cliff** uses this marker to remove
+the previously rendered header even if its content has changed.
+
+```toml
+[changelog]
+header_marker = "<!-- git-cliff: end of header -->"
+```
+
+Static headers continue to be matched by their configured text and do not emit
+the marker. Set it to an empty string to disable the marker.
 
 ### body
 
