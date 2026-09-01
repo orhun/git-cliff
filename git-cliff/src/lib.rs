@@ -311,6 +311,26 @@ fn process_repository<'a>(
     // Additionally, if `include_path` is already explicitly set, it might be preferable to append.
     let cwd = env::current_dir()?;
     let mut include_path = config.git.include_paths.clone();
+    // When `--workdir` is set, scope the changelog to that directory by turning it
+    // into a repo-relative include pattern. Diff paths are relative to the repo
+    // root, so the pattern must be too; an absolute or cwd-relative pattern would
+    // match nothing and produce an empty changelog (see #1369). If `workdir`
+    // resolves to the repo root itself, no filter is added so everything is kept.
+    if let Some(workdir) = &args.workdir {
+        if let Ok(root) = repository.root_path() {
+            let workdir_abs =
+                fs::canonicalize(cwd.join(workdir)).unwrap_or_else(|_| cwd.join(workdir));
+            if let Ok(rel) = workdir_abs.strip_prefix(&root) {
+                if !rel.as_os_str().is_empty() {
+                    // Trailing separator makes the directory expand to a `**` glob.
+                    let pattern = Pattern::new(rel.join("").to_string_lossy().as_ref())?;
+                    if !include_path.iter().any(|p| p.as_str() == pattern.as_str()) {
+                        include_path.push(pattern);
+                    }
+                }
+            }
+        }
+    }
     if let Ok(root) = repository.root_path() {
         if cwd.starts_with(&root) &&
             cwd != root &&
@@ -648,11 +668,6 @@ pub fn run_with_changelog_modifier<'a>(
         if let Some(body_file) = args.body_file {
             args.body_file = Some(workdir.join(body_file));
         }
-        // pushing an empty component force-adds a trailing path separator
-        // which is needed for correct glob expansion
-        args.include_path = Some(vec![Pattern::new(
-            workdir.join("").to_string_lossy().as_ref(),
-        )?]);
     }
 
     // Parse the configuration file, loading the default configuration if none

@@ -159,6 +159,12 @@ jobs:
             previous-release-timestamp: "2022-04-06 01:25:12"
           - fixtures-name: test-workdir-include-path
             command: v2.6.1..v2.7.0 --workdir .github/fixtures/
+          # Regression test for #1369: `--workdir` at the repository root must
+          # include every commit instead of producing empty output. Using an
+          # absolute path ($PWD) exercises the path that previously built an
+          # absolute include pattern that matched no repo-relative diff paths.
+          - fixtures-name: test-workdir-repo-root
+            command: --workdir "$PWD"
           - fixtures-name: test-fail-on-unmatched-commit
           # NOTE: The following four include-path tests all use identical
           # expected.md content. They verify that the same result is produced
