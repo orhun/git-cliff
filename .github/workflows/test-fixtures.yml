@@ -153,6 +153,22 @@ jobs:
           - fixtures-name: test-commit-range-with-sort-commits
           - fixtures-name: test-commit-range-with-given-range
             command: a140cef^..a9d4050 --ignore-tags "."
+          - fixtures-name: test-range-start-at-inclusive
+            command: --start-at v0.1.0 --end-at v0.2.0
+          - fixtures-name: test-range-end-before-exclusive
+            command: --start-after v0.1.0 --end-before v0.2.0
+          - fixtures-name: test-range-end-before-only
+            command: --end-before v0.2.0
+          # NOTE: These two entries share one fixture (and one expected.md).
+          # They lock the range/path composition: the endpoint flags combined
+          # with --include-path resolve the SAME interval regardless of flag
+          # order. --dry-run prints the resolved interval and count, which are
+          # path-unaware, so a regression that drops the range would flip the
+          # output to `[<first-commit>, HEAD]` and a much larger count.
+          - fixtures-name: test-range-include-path-dry-run
+            command: --start-after v2.6.1 --end-at v2.7.0 --include-path .github/fixtures/ --dry-run
+          - fixtures-name: test-range-include-path-dry-run
+            command: --include-path .github/fixtures/ --start-after v2.6.1 --end-at v2.7.0 --dry-run
           - fixtures-name: test-override-scope
           - fixtures-name: test-regex-json-array
           - fixtures-name: test-release-statistics
