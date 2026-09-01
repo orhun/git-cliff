@@ -36,14 +36,14 @@ body = """
     ## [unreleased]
 {% endif %}\
 
-{% for entry in commits | commit_groups(groups=commit_parsers_groups) %}
-    ### {{ entry.group | trim | upper_first }}
-    {% for commit in entry.commits
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | striptags | trim | upper_first }}
+    {% for commit in commits
     | filter(attribute="scope")
     | sort(attribute="scope") %}
         {{ self::print_commit(commit=commit) }}
     {%- endfor %}
-    {% for commit in entry.commits %}
+    {% for commit in commits %}
         {%- if not commit.scope -%}
             {{ self::print_commit(commit=commit) }}
         {% endif -%}
@@ -100,22 +100,22 @@ commit_preprocessors = [
 commit_parsers = [
   # Skip commits without a scope, except breaking changes (e.g., "feat!: xxx")
   { message = "^[a-z]+\\s*:", skip = true },
-  { message = "^feat", group = "⛰️  Features" },
-  { message = "^fix", group = "🐛 Bug Fixes" },
-  { message = "^doc", group = "📚 Documentation" },
-  { message = "^perf", group = "⚡ Performance" },
+  { message = "^feat", group = "<!-- 0 -->⛰️  Features" },
+  { message = "^fix", group = "<!-- 1 -->🐛 Bug Fixes" },
+  { message = "^doc", group = "<!-- 3 -->📚 Documentation" },
+  { message = "^perf", group = "<!-- 4 -->⚡ Performance" },
   { message = "^refactor\\(clippy\\)", skip = true },
-  { message = "^refactor", group = "🚜 Refactor" },
-  { message = "^style", group = "🎨 Styling" },
-  { message = "^test", group = "🧪 Testing" },
+  { message = "^refactor", group = "<!-- 2 -->🚜 Refactor" },
+  { message = "^style", group = "<!-- 5 -->🎨 Styling" },
+  { message = "^test", group = "<!-- 6 -->🧪 Testing" },
   { message = "^chore\\(release\\): prepare for", skip = true },
   { message = "^chore\\(deps.*\\)", skip = true },
   { message = "^chore\\(pr\\)", skip = true },
   { message = "^chore\\(pull\\)", skip = true },
   { message = "^chore\\(npm\\).*yarn\\.lock", skip = true },
-  { message = "^chore|^ci", group = "⚙️ Miscellaneous Tasks" },
-  { body = ".*security", group = "🛡️ Security" },
-  { message = "^revert", group = "◀️ Revert" },
+  { message = "^chore|^ci", group = "<!-- 7 -->⚙️ Miscellaneous Tasks" },
+  { body = ".*security", group = "<!-- 8 -->🛡️ Security" },
+  { message = "^revert", group = "<!-- 9 -->◀️ Revert" },
 ]
 # Prevent commits that are breaking from being excluded by commit parsers.
 protect_breaking_commits = false
@@ -128,7 +128,7 @@ tag_pattern = "v[0-9].*"
 # Changes belonging to these releases will be included in the next release.
 skip_tags = "beta|alpha"
 # Regex to exclude git tags after applying the tag_pattern.
-ignore_tags = "rc|v2.1.0|v2.1.1"
+ignore_tags = "rc|v2.1.0|v2.1.1|v2.14.0"
 # Order releases topologically instead of chronologically.
 topo_order = false
 # Order of commits in each group/release within the changelog.
