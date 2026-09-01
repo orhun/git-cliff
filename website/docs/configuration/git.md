@@ -246,6 +246,18 @@ Examples:
   - `body` is a special field which contains the body of a conventional commit, if applicable.
   - Be aware that all fields are converted to JSON strings before they are parsed by the given regex, especially when dealing with arrays.
 
+By default a commit is handled by the first parser that matches it. Set `continue = true` to keep applying the following parsers to the same commit, each one only overwriting the fields it sets. This lets you derive a value such as the scope in one parser and group by type in another:
+
+```toml
+[git]
+commit_parsers = [
+  { footer = "^Component:Billing$", scope = "billing", continue = true },
+  { message = "^feat", group = "Features" },
+]
+```
+
+The footer parser sets the scope and parsing continues, then the `^feat` parser sets the group without clearing the scope. Note that `field`/`pattern` matching always evaluates against the original commit, so a later parser cannot match on a `scope` (or other field) set by an earlier one. See [tips and tricks](/docs/tips-and-tricks#parsing-commits-with-multiple-parsers) for a fuller example.
+
 ### protect_breaking_commits
 
 If set to `true`, any breaking changes will be protected against being skipped

@@ -154,6 +154,7 @@ jobs:
           - fixtures-name: test-commit-range-with-given-range
             command: a140cef^..a9d4050 --ignore-tags "."
           - fixtures-name: test-override-scope
+          - fixtures-name: test-multiple-commit-parsers
           - fixtures-name: test-regex-json-array
           - fixtures-name: test-release-statistics
             previous-release-timestamp: "2022-04-06 01:25:12"

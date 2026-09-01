@@ -491,6 +491,9 @@ pub struct CommitParser {
     pub scope: Option<String>,
     /// Whether to skip this commit group.
     pub skip: Option<bool>,
+    /// Whether to keep parsing with the following parsers after this one
+    /// matches, letting a commit be processed by multiple parsers in order.
+    pub r#continue: Option<bool>,
     /// Field name of the commit to match the regex against.
     pub field: Option<String>,
     /// Regex for matching the field value.

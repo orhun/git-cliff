@@ -160,3 +160,33 @@ This will generate the changelog using only local Git commit information.
 Note that PR titles, labels, and other remote metadata will not be included in offline mode.
 
 :::
+
+## Parsing commits with multiple parsers
+
+By default the first matching [`commit_parser`](/docs/configuration/git#commit_parsers) wins and the rest are skipped. With `continue = true` a commit keeps flowing through the parsers, each one overwriting only the fields it sets. This is handy when the scope lives outside the conventional-commit type, for example in a `Component:` git trailer:
+
+```
+feat: add invoices
+
+Component: Billing
+```
+
+You can read the component into the scope, then group by type in a separate parser:
+
+```toml
+[git]
+commit_parsers = [
+  { footer = "^Component:Billing$", scope = "billing", continue = true },
+  { footer = "^Component:Auth$", scope = "auth", continue = true },
+  { message = "^feat", group = "Features" },
+  { message = "^fix", group = "Bug Fixes" },
+]
+```
+
+The footer parser sets the scope and parsing continues; the `^feat` parser then sets the group, and because it only sets `group` the scope is preserved. This keeps the component list in one place instead of writing out every component-and-type combination.
+
+:::note
+
+Parser matching (`field`/`pattern`) always runs against the original commit, not against fields set by earlier parsers in the same run. So a later parser cannot match on a `scope` that an earlier parser just assigned; match on the underlying commit data (such as the footer) instead.
+
+:::
