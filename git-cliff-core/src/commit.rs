@@ -174,17 +174,17 @@ pub struct Commit<'a> {
 
 impl From<String> for Commit<'_> {
     fn from(message: String) -> Self {
-        if let Some(captures) = SHA1_REGEX.captures(&message) {
-            if let (Some(id), Some(message)) = (
+        if let Some(captures) = SHA1_REGEX.captures(&message) &&
+            let (Some(id), Some(message)) = (
                 captures.get(1).map(|v| v.as_str()),
                 captures.get(2).map(|v| v.as_str()),
-            ) {
-                return Commit {
-                    id: id.to_string(),
-                    message: message.to_string(),
-                    ..Default::default()
-                };
-            }
+            )
+        {
+            return Commit {
+                id: id.to_string(),
+                message: message.to_string(),
+                ..Default::default()
+            };
         }
         Commit {
             id: String::new(),

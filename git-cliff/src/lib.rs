@@ -36,12 +36,10 @@ pub fn check_new_version() {
     let pkg_name = env!("CARGO_PKG_NAME");
     let pkg_version = env!("CARGO_PKG_VERSION");
     let informer = update_informer::new(update_informer::registry::Crates, pkg_name, pkg_version);
-    if let Some(new_version) = informer.check_version().ok().flatten() {
-        if new_version.semver().pre.is_empty() {
-            tracing::info!(
-                "A new version of {pkg_name} is available: v{pkg_version} -> {new_version}",
-            );
-        }
+    if let Some(new_version) = informer.check_version().ok().flatten() &&
+        new_version.semver().pre.is_empty()
+    {
+        tracing::info!("A new version of {pkg_name} is available: v{pkg_version} -> {new_version}",);
     }
 }
 
@@ -108,15 +106,15 @@ fn determine_commit_range(
                 commit_range = Some(format!("{tag1}..{tag2}"));
             }
         }
-    } else if commit_range.is_none() {
-        if let Some(tag_limit) = config.git.limit_tags.filter(|limit| *limit > 0) {
-            let tag_index = tags.len().saturating_sub(tag_limit);
-            if let (Some((tag1, _)), Some((tag2, _))) = (tags.get_index(tag_index), tags.last()) {
-                if tag1 == tag2 {
-                    commit_range = Some(tag2.to_owned());
-                } else {
-                    commit_range = Some(format!("{tag1}..{tag2}"));
-                }
+    } else if commit_range.is_none() &&
+        let Some(tag_limit) = config.git.limit_tags.filter(|limit| *limit > 0)
+    {
+        let tag_index = tags.len().saturating_sub(tag_limit);
+        if let (Some((tag1, _)), Some((tag2, _))) = (tags.get_index(tag_index), tags.last()) {
+            if tag1 == tag2 {
+                commit_range = Some(tag2.to_owned());
+            } else {
+                commit_range = Some(format!("{tag1}..{tag2}"));
             }
         }
     }
@@ -311,21 +309,39 @@ fn process_repository<'a>(
     // Additionally, if `include_path` is already explicitly set, it might be preferable to append.
     let cwd = env::current_dir()?;
     let mut include_path = config.git.include_paths.clone();
-    if let Ok(root) = repository.root_path() {
-        if cwd.starts_with(&root) &&
-            cwd != root &&
-            args.repository.as_ref().is_none_or(Vec::is_empty) &&
-            args.workdir.is_none() &&
-            include_path.is_empty()
+    // When `--workdir` is set, scope the changelog to that directory by turning it
+    // into a repo-relative include pattern. Diff paths are relative to the repo
+    // root, so the pattern must be too; an absolute or cwd-relative pattern would
+    // match nothing and produce an empty changelog (see #1369). If `workdir`
+    // resolves to the repo root itself, no filter is added so everything is kept.
+    if let Some(workdir) = &args.workdir &&
+        let Ok(root) = repository.root_path()
+    {
+        let workdir_abs = fs::canonicalize(cwd.join(workdir)).unwrap_or_else(|_| cwd.join(workdir));
+        if let Ok(rel) = workdir_abs.strip_prefix(&root) &&
+            !rel.as_os_str().is_empty()
         {
-            let path = cwd.join("**").join("*");
-            if let Ok(stripped) = path.strip_prefix(root) {
-                tracing::info!(
-                    "Including changes from the current directory: {}",
-                    cwd.display()
-                );
-                include_path = vec![Pattern::new(stripped.to_string_lossy().as_ref())?];
+            // Trailing separator makes the directory expand to a `**` glob.
+            let pattern = Pattern::new(rel.join("").to_string_lossy().as_ref())?;
+            if !include_path.iter().any(|p| p.as_str() == pattern.as_str()) {
+                include_path.push(pattern);
             }
+        }
+    }
+    if let Ok(root) = repository.root_path() &&
+        cwd.starts_with(&root) &&
+        cwd != root &&
+        args.repository.as_ref().is_none_or(Vec::is_empty) &&
+        args.workdir.is_none() &&
+        include_path.is_empty()
+    {
+        let path = cwd.join("**").join("*");
+        if let Ok(stripped) = path.strip_prefix(root) {
+            tracing::info!(
+                "Including changes from the current directory: {}",
+                cwd.display()
+            );
+            include_path = vec![Pattern::new(stripped.to_string_lossy().as_ref())?];
         }
     }
 
@@ -538,13 +554,12 @@ fn process_repository<'a>(
     }
 
     // Set custom message for the latest release.
-    if let Some(message) = &args.with_tag_message {
-        if let Some(latest_release) = releases
+    if let Some(message) = &args.with_tag_message &&
+        let Some(latest_release) = releases
             .iter_mut()
             .rfind(|release| !release.commits.is_empty())
-        {
-            latest_release.message = Some(message.to_owned());
-        }
+    {
+        latest_release.message = Some(message.to_owned());
     }
 
     Ok(releases)
@@ -648,11 +663,6 @@ pub fn run_with_changelog_modifier<'a>(
         if let Some(body_file) = args.body_file {
             args.body_file = Some(workdir.join(body_file));
         }
-        // pushing an empty component force-adds a trailing path separator
-        // which is needed for correct glob expansion
-        args.include_path = Some(vec![Pattern::new(
-            workdir.join("").to_string_lossy().as_ref(),
-        )?]);
     }
 
     // Parse the configuration file, loading the default configuration if none
@@ -975,12 +985,12 @@ pub fn write_changelog<W: io::Write>(
         } else {
             return Ok(());
         };
-        if let Some(tag_pattern) = &changelog.config.git.tag_pattern {
-            if !tag_pattern.is_match(&next_version) {
-                return Err(Error::ChangelogError(format!(
-                    "Next version ({next_version}) does not match the tag pattern: {tag_pattern}",
-                )));
-            }
+        if let Some(tag_pattern) = &changelog.config.git.tag_pattern &&
+            !tag_pattern.is_match(&next_version)
+        {
+            return Err(Error::ChangelogError(format!(
+                "Next version ({next_version}) does not match the tag pattern: {tag_pattern}",
+            )));
         }
         if args.bumped_version {
             if changelog.config.changelog.output.is_none() {
