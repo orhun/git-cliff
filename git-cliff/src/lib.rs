@@ -39,9 +39,7 @@ pub fn check_new_version() {
     if let Some(new_version) = informer.check_version().ok().flatten() &&
         new_version.semver().pre.is_empty()
     {
-        tracing::info!(
-            "A new version of {pkg_name} is available: v{pkg_version} -> {new_version}",
-        );
+        tracing::info!("A new version of {pkg_name} is available: v{pkg_version} -> {new_version}",);
     }
 }
 
