@@ -22,6 +22,7 @@ use std::env;
 use std::fmt::Debug;
 use std::time::Duration;
 
+use cacache::RemoveOpts;
 use dyn_clone::DynClone;
 use etcetera::{BaseStrategy, choose_base_strategy};
 use http_cache_reqwest::{CACacheManager, Cache, CacheMode, HttpCache, HttpCacheOptions};
@@ -134,6 +135,7 @@ impl Remote {
                 mode: CacheMode::Default,
                 manager: CACacheManager {
                     path: strategy.cache_dir().join(env!("CARGO_PKG_NAME")),
+                    remove_opts: RemoveOpts::default(),
                 },
                 options: HttpCacheOptions::default(),
             }))

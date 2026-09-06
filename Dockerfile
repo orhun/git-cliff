@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4.3-labs
-FROM lukemathwalker/cargo-chef:0.1.77-rust-1.94.1-slim-bookworm@sha256:4787c365155bfff657a58c89e6ce05b99e60d343ee57fd4a0fdcbb2547a8e017 AS chef
+FROM lukemathwalker/cargo-chef:0.1.78-rust-1.98.0-slim-bookworm@sha256:114101b5c218940bc2381db703dd3529473db554992bf10fc94a7ba2ac35baf8 AS chef
 WORKDIR app
 
 FROM chef AS planner
@@ -14,7 +14,7 @@ COPY . .
 RUN cargo build --release --locked --no-default-features --features github --features gitlab --features bitbucket
 RUN rm -f target/release/deps/git_cliff*
 
-FROM debian:bookworm-slim@sha256:f06537653ac770703bc45b4b113475bd402f451e85223f0f2837acbf89ab020a as runner
+FROM debian:bookworm-slim@sha256:abd67ffcfa541b485a3dff59865ab629aa048a6c613e639d36e7456b0b229241 as runner
 
 # Install ca-certificates (required for `--use-native-tls` argument)
 RUN apt-get update \

@@ -65,10 +65,13 @@ pub struct Config {
 }
 
 /// Changelog configuration.
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChangelogConfig {
     /// Changelog header.
     pub header: Option<String>,
+    /// Marker written after a dynamic changelog header.
+    #[serde(default = "default_header_marker")]
+    pub header_marker: String,
     /// Changelog body, template.
     pub body: String,
     /// Changelog footer.
@@ -77,10 +80,37 @@ pub struct ChangelogConfig {
     pub trim: bool,
     /// Always render the body template.
     pub render_always: bool,
+    /// Format the rendered changelog as Markdown.
+    ///
+    /// Only takes effect when the output is Markdown (stdout or a `.md`
+    /// file). Defaults to `false`, in which case the output is left exactly
+    /// as the templates rendered it.
+    #[serde(default)]
+    pub format: bool,
     /// Changelog postprocessors.
     pub postprocessors: Vec<TextProcessor>,
     /// Output file path.
     pub output: Option<PathBuf>,
+}
+
+fn default_header_marker() -> String {
+    String::from("<!-- git-cliff: end of header -->")
+}
+
+impl Default for ChangelogConfig {
+    fn default() -> Self {
+        Self {
+            header: None,
+            header_marker: default_header_marker(),
+            body: String::new(),
+            footer: None,
+            trim: false,
+            render_always: false,
+            format: false,
+            postprocessors: Vec::new(),
+            output: None,
+        }
+    }
 }
 
 /// Git configuration
@@ -703,6 +733,21 @@ mod test {
         assert!(!Remote::new("test", "").is_set());
         assert!(!Remote::new("", "").is_set());
         assert_eq!(Duration::from_secs(30), remote1.http_timeout);
+    }
+
+    #[test]
+    fn parse_changelog_header_marker() -> Result<()> {
+        let config: Config = r#"
+            [changelog]
+            header_marker = "<!-- custom header boundary -->"
+        "#
+        .parse()?;
+
+        assert_eq!(
+            "<!-- custom header boundary -->",
+            config.changelog.header_marker
+        );
+        Ok(())
     }
 
     #[test]
