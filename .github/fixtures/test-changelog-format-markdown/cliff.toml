@@ -1,0 +1,33 @@
+# git-cliff ~ configuration file
+# https://git-cliff.org/docs/configuration
+
+[changelog]
+# The template below deliberately renders sloppy (but valid) Markdown:
+# `*` bullet markers and runs of blank lines between blocks. With
+# `format = true` the rendered output is round-tripped through the Markdown
+# formatter, which normalizes the bullets to `-` and collapses the extra
+# blank lines. The expected.md is the tidied result.
+format = true
+body = """
+{% if version %}\
+    ## {{ version | trim_start_matches(pat="v") }} - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+    ## Unreleased
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+
+
+### {{ group | upper_first }}
+
+
+{% for commit in commits %}
+* {{ commit.message | upper_first }}
+{% endfor %}
+{% endfor %}
+"""
+
+[git]
+commit_parsers = [
+    { message = "^feat", group = "Features" },
+    { message = "^fix", group = "Bug Fixes" },
+]

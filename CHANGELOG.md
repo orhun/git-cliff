@@ -1,5 +1,78 @@
 [![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)
 
+## [2.14.1](https://github.com/orhun/git-cliff/compare/v2.13.1..v2.14.1) - 2026-09-01
+
+### ⛰️  Features
+
+- *(args)* [**breaking**] Discover config when --config is omitted ([#1584](https://github.com/orhun/git-cliff/issues/1584)) - ([b367384](https://github.com/orhun/git-cliff/commit/b367384ac90d434ef2cac401f1704ce07b702d28))
+- *(args)* Add default value for --prepend option ([#1549](https://github.com/orhun/git-cliff/issues/1549)) - ([03a9c80](https://github.com/orhun/git-cliff/commit/03a9c8026a25a3cca10441c910197eee20eef7a8))
+- *(bump)* Add no_increment_regex config ([#1522](https://github.com/orhun/git-cliff/issues/1522)) - ([61c5e4c](https://github.com/orhun/git-cliff/commit/61c5e4c1b202d59ab8c52e525381caccc0c326d8))
+- *(changelog)* Support opt-in Markdown formatting ([#1610](https://github.com/orhun/git-cliff/issues/1610)) - ([286ea93](https://github.com/orhun/git-cliff/commit/286ea934735b0fd9cc08b91c31851f973d1de2b7))
+- *(cli)* Support user-defined templates for --init ([#1583](https://github.com/orhun/git-cliff/issues/1583)) - ([b7c25f8](https://github.com/orhun/git-cliff/commit/b7c25f8fb92ff94c7e5bd5320914a7050f7d1507))
+- *(cli)* Add --body-file for changelog templates ([#1574](https://github.com/orhun/git-cliff/issues/1574)) - ([7437023](https://github.com/orhun/git-cliff/commit/7437023eae45c6243871194e7a965f2eea7e54f3))
+- *(context)* Add pr_numbers field to RemoteContributor ([#1546](https://github.com/orhun/git-cliff/issues/1546)) - ([48fd98f](https://github.com/orhun/git-cliff/commit/48fd98fe86e47dee628b15bc28f90c8748ca0f4b))
+- *(examples)* Add GitLab built-in changelog templates ([#1561](https://github.com/orhun/git-cliff/issues/1561)) - ([c92bd16](https://github.com/orhun/git-cliff/commit/c92bd1617f7106f5bd964892a96c67892d0cbb35))
+- *(git)* Support limiting processed tags ([#1493](https://github.com/orhun/git-cliff/issues/1493)) - ([d13a61c](https://github.com/orhun/git-cliff/commit/d13a61c8832c8a7f8824630ab36973534153edbb))
+- *(git)* Ignore commits listed in .git-blame-ignore-revs ([#1585](https://github.com/orhun/git-cliff/issues/1585)) - ([89247f4](https://github.com/orhun/git-cliff/commit/89247f4f956b0877be5d96f2bd1857d08c79abf7))
+- *(remote)* [**breaking**] Expose the pull request author as `commit.remote.pr_author` ([#1613](https://github.com/orhun/git-cliff/issues/1613)) - ([017e10b](https://github.com/orhun/git-cliff/commit/017e10b785d1972242899419b6f3ece8e60e5128))
+- *(remote)* Add configurable HTTP timeout for metadata requests ([#1580](https://github.com/orhun/git-cliff/issues/1580)) - ([c559920](https://github.com/orhun/git-cliff/commit/c559920da45464ec0bb880245dbefe7ce2858ecb))
+- *(template)* Add group_by_scope filter ([#1547](https://github.com/orhun/git-cliff/issues/1547)) - ([dd5f305](https://github.com/orhun/git-cliff/commit/dd5f305ce0085e7090193c66b8eb2fedf1ee37f0))
+- *(template)* Add commit_groups filter for ordered group rendering ([#1518](https://github.com/orhun/git-cliff/issues/1518)) - ([8a2a331](https://github.com/orhun/git-cliff/commit/8a2a3311c9d5af208b2db5dd41f3171655327770))
+
+### 🐛 Bug Fixes
+
+- *(args)* [**breaking**] Stop greedy multi-value options from swallowing the positional range ([#1614](https://github.com/orhun/git-cliff/issues/1614)) - ([7123bd3](https://github.com/orhun/git-cliff/commit/7123bd362b38b03d4c911f9dab68bddf26f4a541))
+- *(args)* Use default help literal color ([#1578](https://github.com/orhun/git-cliff/issues/1578)) - ([717e711](https://github.com/orhun/git-cliff/commit/717e711e915a71b4b170f7507b7d9d44773bab5d))
+- *(bump)* Evaluate increment regexes against the commit subject only ([#1605](https://github.com/orhun/git-cliff/issues/1605)) - ([fa8000b](https://github.com/orhun/git-cliff/commit/fa8000ba379e6836eb7d2ce2b18027fbbde41958))
+- *(bump)* Honor no_increment_regex for raw messages ([#1576](https://github.com/orhun/git-cliff/issues/1576)) - ([79fce6e](https://github.com/orhun/git-cliff/commit/79fce6eb714962158c7d1f31827f400cabb48d4e))
+- *(cd)* Restore v2.12 compatibility and roll changes into v2.14.1 - ([b799bb3](https://github.com/orhun/git-cliff/commit/b799bb3c369a938e01069a79033cdc6325fc956c))
+- *(changelog)* Replace dynamic headers when prepending ([#1603](https://github.com/orhun/git-cliff/issues/1603)) - ([680b6a9](https://github.com/orhun/git-cliff/commit/680b6a9905e80d7911a47ee7af489321876cf6b8))
+- *(changelog)* Assign commits to releases by graph reachability ([#1601](https://github.com/orhun/git-cliff/issues/1601)) - ([e86c95e](https://github.com/orhun/git-cliff/commit/e86c95e29b21fd962d0b31cf381943781ff5d222))
+- *(changelog)* Keep prepended section separated from existing content ([#1528](https://github.com/orhun/git-cliff/issues/1528)) - ([ce24883](https://github.com/orhun/git-cliff/commit/ce2488311671e4d8dbcde6f9d4f247a7397b8a3b))
+- *(ci)* Disable docker push for builds on forks ([#1622](https://github.com/orhun/git-cliff/issues/1622)) - ([73c994a](https://github.com/orhun/git-cliff/commit/73c994ab8328c18bafde5daa3ea7912672756ad5))
+- *(config)* Move heart emoji before "New Contributors" heading ([#1527](https://github.com/orhun/git-cliff/issues/1527)) - ([7e35ff5](https://github.com/orhun/git-cliff/commit/7e35ff50d455cd6d648dbbfffb59ec4d317e39a2))
+- *(git)* Fall through to the next parser when a commit field is missing ([#1600](https://github.com/orhun/git-cliff/issues/1600)) - ([8bcca0a](https://github.com/orhun/git-cliff/commit/8bcca0a9c45bc1162b8a8bebbf48aa3433c2d4e2))
+- *(git)* Match directory include/exclude patterns on Windows ([#1593](https://github.com/orhun/git-cliff/issues/1593)) - ([d962b5c](https://github.com/orhun/git-cliff/commit/d962b5c6111f66afa2af88e2fc51a615b8e2e7b6))
+- *(git)* Handle nested annotated tags ([#1360](https://github.com/orhun/git-cliff/issues/1360)) - ([772e01d](https://github.com/orhun/git-cliff/commit/772e01d92f62ebf5bc01e57d06957d61ef88d43c))
+- *(remote)* Use the default HTTP timeout for unconfigured remotes ([#1597](https://github.com/orhun/git-cliff/issues/1597)) - ([5963160](https://github.com/orhun/git-cliff/commit/5963160d7303111a217ee8453189d23a1c87925a))
+- *(statistics)* Don't compute statistics when templates do not use them ([#1543](https://github.com/orhun/git-cliff/issues/1543)) - ([4526e13](https://github.com/orhun/git-cliff/commit/4526e13f5d77f269dda226c23aaa54c23042342e))
+- *(statistics)* Ignore missing git objects ([#1523](https://github.com/orhun/git-cliff/issues/1523)) - ([4377363](https://github.com/orhun/git-cliff/commit/437736385b66057cdb138f08a4bbb7a4f0424adf))
+- *(templates)* Handle missing previous release ([#1621](https://github.com/orhun/git-cliff/issues/1621)) - ([afe3a5b](https://github.com/orhun/git-cliff/commit/afe3a5b2aae82efd30dc86f874ee1363106daba2))
+- *(website)* Link to correct release notes ([#1526](https://github.com/orhun/git-cliff/issues/1526)) - ([39d51b9](https://github.com/orhun/git-cliff/commit/39d51b9b50037123c49d24a13f8ce8240816549d))
+
+### 📚 Documentation
+
+- *(website)* Add highlights for 2.14.0 ([#1626](https://github.com/orhun/git-cliff/issues/1626)) - ([36aa120](https://github.com/orhun/git-cliff/commit/36aa12076fb5e64d8791c79174650afd14c780e9))
+- *(website)* Correct global configuration paths ([#1587](https://github.com/orhun/git-cliff/issues/1587)) - ([d838e9f](https://github.com/orhun/git-cliff/commit/d838e9fe1e6110cf1a434a7e9f618e2bffd08a3b))
+- *(website)* Mention the config schema link ([#1577](https://github.com/orhun/git-cliff/issues/1577)) - ([3fc238a](https://github.com/orhun/git-cliff/commit/3fc238ac8d81d5e258e25f321a07543adc4a69f8))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(ci)* Update codecov-action ([#1625](https://github.com/orhun/git-cliff/issues/1625)) - ([8a08dda](https://github.com/orhun/git-cliff/commit/8a08dda4c565d9e8f2269f2a5c9ee44a759aa37a))
+- *(clippy)* Remove redundant reference in format! argument ([#1594](https://github.com/orhun/git-cliff/issues/1594)) - ([122642a](https://github.com/orhun/git-cliff/commit/122642a0e25c72562bba9b5d59c443c8a5547d46))
+
+## ❤️ New Contributors
+
+* @ChrisJr404 made their first contribution in [#1610](https://github.com/orhun/git-cliff/pull/1610)
+* @tianrking made their first contribution in [#1603](https://github.com/orhun/git-cliff/pull/1603)
+* @lazizbekravshanov made their first contribution in [#1584](https://github.com/orhun/git-cliff/pull/1584)
+* @jimisola made their first contribution in [#1613](https://github.com/orhun/git-cliff/pull/1613)
+* @Jonnobrow made their first contribution in [#1601](https://github.com/orhun/git-cliff/pull/1601)
+* @YuriNachos made their first contribution in [#1605](https://github.com/orhun/git-cliff/pull/1605)
+* @hasezoey made their first contribution in [#1609](https://github.com/orhun/git-cliff/pull/1609)
+* @artshmelev made their first contribution in [#1597](https://github.com/orhun/git-cliff/pull/1597)
+* @Cyrus580529 made their first contribution in [#1594](https://github.com/orhun/git-cliff/pull/1594)
+* @Noai-oss made their first contribution in [#1587](https://github.com/orhun/git-cliff/pull/1587)
+* @nabsei made their first contribution in [#1585](https://github.com/orhun/git-cliff/pull/1585)
+* @JDanRibeiro made their first contribution in [#1561](https://github.com/orhun/git-cliff/pull/1561)
+* @arieleli01212 made their first contribution in [#1546](https://github.com/orhun/git-cliff/pull/1546)
+* @ychampion made their first contribution in [#1574](https://github.com/orhun/git-cliff/pull/1574)
+* @CatBraaain made their first contribution in [#1549](https://github.com/orhun/git-cliff/pull/1549)
+* @SAY-5 made their first contribution
+* @GChernikov made their first contribution in [#1360](https://github.com/orhun/git-cliff/pull/1360)
+* @signekb made their first contribution in [#1527](https://github.com/orhun/git-cliff/pull/1527)
+* @guerda made their first contribution in [#1526](https://github.com/orhun/git-cliff/pull/1526)
+
 ## [2.13.1](https://github.com/orhun/git-cliff/compare/v2.13.0..v2.13.1) - 2026-04-26
 
 ### 🐛 Bug Fixes
@@ -67,7 +140,7 @@
 - *(npm)* Optimize tsup and tsconfig for node 18+ cli ([#1382](https://github.com/orhun/git-cliff/issues/1382)) - ([e7e89c4](https://github.com/orhun/git-cliff/commit/e7e89c41e50cd56d032bb0885f9fa959bbd3743f))
 - *(website)* Standardize on yarn and fix invalid changelog anchor link ([#1383](https://github.com/orhun/git-cliff/issues/1383)) - ([97b39d9](https://github.com/orhun/git-cliff/commit/97b39d94f687a51fc5534933f8e74a44d0c7faec))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @truffle-dev made their first contribution in [#1490](https://github.com/orhun/git-cliff/pull/1490)
 * @WaterWhisperer made their first contribution in [#1487](https://github.com/orhun/git-cliff/pull/1487)
@@ -76,7 +149,7 @@
 * @danielpza made their first contribution in [#1448](https://github.com/orhun/git-cliff/pull/1448)
 * @niklasmarderx made their first contribution in [#1456](https://github.com/orhun/git-cliff/pull/1456)
 * @lawrence3699 made their first contribution in [#1484](https://github.com/orhun/git-cliff/pull/1484)
-* @mixator made their first contribution in [#1392](https://github.com/orhun/git-cliff/pull/1392)
+* @mskrypskyi92 made their first contribution in [#1392](https://github.com/orhun/git-cliff/pull/1392)
 * @saudademjj made their first contribution in [#1450](https://github.com/orhun/git-cliff/pull/1450)
 * @nbelsterling made their first contribution in [#1425](https://github.com/orhun/git-cliff/pull/1425)
 * @y5 made their first contribution in [#1427](https://github.com/orhun/git-cliff/pull/1427)
@@ -109,7 +182,7 @@
 - *(ci)* Fix codecov action inputs and skip upload for dependabot PRs ([#1343](https://github.com/orhun/git-cliff/issues/1343)) - ([d7a47bb](https://github.com/orhun/git-cliff/commit/d7a47bb03ed794a9f8701f801600e06d8dbde834))
 - *(clippy)* Fix pedantic lints ([#1346](https://github.com/orhun/git-cliff/issues/1346)) - ([0260b0a](https://github.com/orhun/git-cliff/commit/0260b0a7ca4ea9281f5b9ca48709d46891376852))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @taladar made their first contribution in [#1319](https://github.com/orhun/git-cliff/pull/1319)
 * @barskern made their first contribution in [#1321](https://github.com/orhun/git-cliff/pull/1321)
@@ -156,7 +229,7 @@
 - *(logging)* Increase log verbosity ([#1244](https://github.com/orhun/git-cliff/issues/1244)) - ([ee9f742](https://github.com/orhun/git-cliff/commit/ee9f7428958d2b602f0c82749f8ed8da7214fac8))
 - *(npm)* Update git-cliff to v2.10.1 ([#1265](https://github.com/orhun/git-cliff/issues/1265)) - ([3da8f26](https://github.com/orhun/git-cliff/commit/3da8f2678b872569a2875e1ca05707bc26124c78))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @Lewiscowles1986 made their first contribution in [#1226](https://github.com/orhun/git-cliff/pull/1226)
 * @OpenSauce made their first contribution in [#1314](https://github.com/orhun/git-cliff/pull/1314)
@@ -196,7 +269,7 @@
 
 - *(repo)* Use the correct order while diffing paths ([#1188](https://github.com/orhun/git-cliff/issues/1188)) ([#1257](https://github.com/orhun/git-cliff/issues/1257)) - ([fb61cb5](https://github.com/orhun/git-cliff/commit/fb61cb51aa3223eca231f172f655c75ea03255b0))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @tessus made their first contribution in [#1263](https://github.com/orhun/git-cliff/pull/1263)
 * @mrdomino made their first contribution in [#1250](https://github.com/orhun/git-cliff/pull/1250)
@@ -235,10 +308,6 @@
 - *(website)* Add highlights for 2.10.0 ([#1225](https://github.com/orhun/git-cliff/issues/1225)) - ([a3fe8c9](https://github.com/orhun/git-cliff/commit/a3fe8c95fec8dad9f048626f4b2b1aec9b895cf4))
 - *(website)* Add installation instructions for gentoo-linux ([#1203](https://github.com/orhun/git-cliff/issues/1203)) - ([07fe6bf](https://github.com/orhun/git-cliff/commit/07fe6bfb7624688c99879e761e124ae092afb737))
 
-### 🎨 Styling
-
-- *(formatting)* Use spaces instead of tabs ([#1184](https://github.com/orhun/git-cliff/issues/1184)) - ([0027300](https://github.com/orhun/git-cliff/commit/00273009e7553229bccc02e9f4a00d6f8acb9cd5))
-
 ### 🧪 Testing
 
 - *(fixture)* Add test fixture for overriding the conventional scope ([#1166](https://github.com/orhun/git-cliff/issues/1166)) - ([cb84a08](https://github.com/orhun/git-cliff/commit/cb84a08e60ca4c0f6108c95b4f2a62d47069014b))
@@ -251,11 +320,10 @@
 - *(crate)* Remove Rust nightly requirement - ([4f3e5af](https://github.com/orhun/git-cliff/commit/4f3e5af46bb51e412dff88001b3d135d8575bbe8))
 - *(fixture)* Update test-regex-json-array fixture ([#1178](https://github.com/orhun/git-cliff/issues/1178)) - ([95f4056](https://github.com/orhun/git-cliff/commit/95f40563a3a9607143e0acc03e81bdeef479bf09))
 - *(format)* Format module imports for readability ([#1183](https://github.com/orhun/git-cliff/issues/1183)) - ([6db7d49](https://github.com/orhun/git-cliff/commit/6db7d49488a248a2fab010480cb955621d4bcf5a))
-- *(git)* Add .git-blame-ignore-revs - ([5b64131](https://github.com/orhun/git-cliff/commit/5b641319336485bbf1294c5da2e9f95378799864))
 - *(npm)* Bump git-cliff to 2.9.1 ([#1156](https://github.com/orhun/git-cliff/issues/1156)) - ([e13b158](https://github.com/orhun/git-cliff/commit/e13b158744bddb17154963f777cb58b4ba424205))
 - *(website)* Update the node version - ([566c2a1](https://github.com/orhun/git-cliff/commit/566c2a11ebda002eae566b06d19263bdfa03af30))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @Nick2bad4u made their first contribution in [#1180](https://github.com/orhun/git-cliff/pull/1180)
 * @aspann made their first contribution in [#1203](https://github.com/orhun/git-cliff/pull/1203)
@@ -321,7 +389,7 @@
 - *(docs)* Fix some typos ([#1149](https://github.com/orhun/git-cliff/issues/1149)) - ([7148b2d](https://github.com/orhun/git-cliff/commit/7148b2dbff518eb71c276f3c256db49970730863))
 - *(project)* Migrate to Rust 2024 edition ([#1128](https://github.com/orhun/git-cliff/issues/1128)) - ([4445f06](https://github.com/orhun/git-cliff/commit/4445f063518bd8514ac19381e3ee6c61828c72a9))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @vardbabayan made their first contribution in [#1149](https://github.com/orhun/git-cliff/pull/1149)
 * @ognis1205 made their first contribution in [#1145](https://github.com/orhun/git-cliff/pull/1145)
@@ -329,7 +397,7 @@
 * @jdrst made their first contribution in [#1138](https://github.com/orhun/git-cliff/pull/1138)
 * @lehmanju made their first contribution in [#1136](https://github.com/orhun/git-cliff/pull/1136)
 * @Jean-Beru made their first contribution in [#1132](https://github.com/orhun/git-cliff/pull/1132)
-* @william-stacken made their first contribution in [#1086](https://github.com/orhun/git-cliff/pull/1086)
+* @ made their first contribution in [#1086](https://github.com/orhun/git-cliff/pull/1086)
 * @SebClapie made their first contribution in [#1121](https://github.com/orhun/git-cliff/pull/1121)
 * @okydk made their first contribution in [#1051](https://github.com/orhun/git-cliff/pull/1051)
 
@@ -380,7 +448,7 @@
 - *(lint)* Allow false positive lint - ([1b779a6](https://github.com/orhun/git-cliff/commit/1b779a698f845cb449da0640aeac45d53c6c43b9))
 - *(nix)* Update flakes - ([22fbe9d](https://github.com/orhun/git-cliff/commit/22fbe9dafbbeaa4bd68082787ea8231dbe12c9ae))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @xsadia made their first contribution in [#992](https://github.com/orhun/git-cliff/pull/992)
 * @chenrui333 made their first contribution in [#1002](https://github.com/orhun/git-cliff/pull/1002)
@@ -438,7 +506,7 @@
 
 - *(docker)* Bump the Rust version in Docker image - ([fc142e4](https://github.com/orhun/git-cliff/commit/fc142e4b9d4b5b54bc8a0fca6e336345951c9c7b))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @pauliyobo made their first contribution in [#896](https://github.com/orhun/git-cliff/pull/896)
 * @blackheaven made their first contribution in [#939](https://github.com/orhun/git-cliff/pull/939)
@@ -469,7 +537,7 @@
 - *(docker)* Disable building arm64 docker images temporarily ([#879](https://github.com/orhun/git-cliff/issues/879)) - ([cde2a8e](https://github.com/orhun/git-cliff/commit/cde2a8e3222f5e8f8bdd9ae841fd0e5c42f68846))
 - *(fixtures)* Build binaries using dev profile ([#886](https://github.com/orhun/git-cliff/issues/886)) - ([a394f88](https://github.com/orhun/git-cliff/commit/a394f88f1d1742dfa3d30887bcb387361de306bc))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @ckrenslehner made their first contribution in [#889](https://github.com/orhun/git-cliff/pull/889)
 
@@ -513,7 +581,7 @@
 - *(lib)* Fix typos in code comments - ([81854d2](https://github.com/orhun/git-cliff/commit/81854d2166fc265168effde50fa892265b83efdf))
 - *(npm)* Bump dev dependencies - ([61b86f1](https://github.com/orhun/git-cliff/commit/61b86f162bee28fffb3b3b06f19261d568fbf60b))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @nejcgalof made their first contribution in [#853](https://github.com/orhun/git-cliff/pull/853)
 * @pplmx made their first contribution in [#824](https://github.com/orhun/git-cliff/pull/824)
@@ -570,7 +638,7 @@
 - *(website)* Remove v2 announcement - ([a71649b](https://github.com/orhun/git-cliff/commit/a71649b6cd5a72c2a6b20c08dc1b8dfa37c19a6b))
 - *(website)* Add discord button to navbar - ([565b9c8](https://github.com/orhun/git-cliff/commit/565b9c8df0e1a3eb3b5a4415cadfcae065743a40))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @weichweich made their first contribution in [#807](https://github.com/orhun/git-cliff/pull/807)
 * @janbuchar made their first contribution in [#784](https://github.com/orhun/git-cliff/pull/784)
@@ -624,7 +692,7 @@
 
 - *(template)* Add tests ([#674](https://github.com/orhun/git-cliff/issues/674)) - ([a51422d](https://github.com/orhun/git-cliff/commit/a51422dda9431a3f24b4b061ab055ac97fa018de))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @bukowa made their first contribution in [#710](https://github.com/orhun/git-cliff/pull/710)
 * @MeitarR made their first contribution in [#713](https://github.com/orhun/git-cliff/pull/713)
@@ -658,7 +726,7 @@
 - *(example)* Allow using github template without github variables ([#672](https://github.com/orhun/git-cliff/issues/672)) - ([6a9feba](https://github.com/orhun/git-cliff/commit/6a9feba98f36de1980bab313f6b0a861f5009d71))
 - *(links)* Ignore patreon links - ([bfe2774](https://github.com/orhun/git-cliff/commit/bfe27744701296185d2f1d37dba7cfb48bd70519))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @R11baka made their first contribution in [#672](https://github.com/orhun/git-cliff/pull/672)
 * @0x61nas made their first contribution in [#669](https://github.com/orhun/git-cliff/pull/669)
@@ -688,7 +756,7 @@
 - *(pypi)* Disable PyPi builds for x86_64-pc-windows-gnu - ([f675b0b](https://github.com/orhun/git-cliff/commit/f675b0b5bdbe57437e39dbe4c0b78e7c4f373936))
 - *(tests)* Don't check last commit ([#619](https://github.com/orhun/git-cliff/issues/619)) - ([68b9839](https://github.com/orhun/git-cliff/commit/68b98393e72d4a38a2e9166477784a9e1a55c9cf))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @lanesawyer made their first contribution in [#621](https://github.com/orhun/git-cliff/pull/621)
 * @timharek made their first contribution in [#617](https://github.com/orhun/git-cliff/pull/617)
@@ -710,7 +778,7 @@
 
 - *(ci)* Remove audit check - ([6ba6809](https://github.com/orhun/git-cliff/commit/6ba6809ea1ff9b34f192b387e77da06cf0570606))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @clementnuss made their first contribution in [#597](https://github.com/orhun/git-cliff/pull/597)
 * @tomasbjerre made their first contribution in [#589](https://github.com/orhun/git-cliff/pull/589)
@@ -753,7 +821,7 @@
 - *(website)* Allow deploying website manually - ([0b64bc0](https://github.com/orhun/git-cliff/commit/0b64bc032523f6565e47352cccd0d92f8bf9eae9))
 - *(website)* Only deploy website when there is a new release - ([8651832](https://github.com/orhun/git-cliff/commit/8651832926afa83dac4b9cbb5d298bbea5e7af6d))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @aminya made their first contribution in [#567](https://github.com/orhun/git-cliff/pull/567)
 * @jsurkont made their first contribution in [#530](https://github.com/orhun/git-cliff/pull/530)
@@ -798,7 +866,7 @@
 - *(ci)* Check semver violations via CI - ([a25a114](https://github.com/orhun/git-cliff/commit/a25a1148d92ee07402c9069eaad74574e392339c))
 - *(fixtures)* Enable verbose logging for output - ([2927231](https://github.com/orhun/git-cliff/commit/292723109f328f96b84a629d61fd38b02ceef4e8))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @lloydjatkinson made their first contribution in [#520](https://github.com/orhun/git-cliff/pull/520)
 
@@ -939,7 +1007,7 @@
 
 - *(config)* Use postprocessors for checking the typos - ([5212cc9](https://github.com/orhun/git-cliff/commit/5212cc9446bc1389274516ed3d7eb7b334b1b606))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @welpo made their first contribution in [#486](https://github.com/orhun/git-cliff/pull/486)
 * @bobrik made their first contribution in [#415](https://github.com/orhun/git-cliff/pull/415)
@@ -980,7 +1048,7 @@
 - *(release)* Update cargo-deb usage - ([213f383](https://github.com/orhun/git-cliff/commit/213f383b54c9a40a351f341c28bbdf03b73f701d))
 - *(website)* Update the tracking link - ([eb9f8e9](https://github.com/orhun/git-cliff/commit/eb9f8e970d2adcb6c6f512b20ca8a9f77d09ff54))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @woshilapin made their first contribution in [#318](https://github.com/orhun/git-cliff/pull/318)
 * @debghs made their first contribution in [#329](https://github.com/orhun/git-cliff/pull/329)
@@ -1012,7 +1080,7 @@
 
 - *(args)* Update clap and clap extras to v4 ([#137](https://github.com/orhun/git-cliff/issues/137)) ([#292](https://github.com/orhun/git-cliff/issues/292)) - ([fb4c733](https://github.com/orhun/git-cliff/commit/fb4c733a70a4dbc25060481ee5f3c644bb0bb83b))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @joshka made their first contribution in [#293](https://github.com/orhun/git-cliff/pull/293)
 * @dnaka91 made their first contribution in [#272](https://github.com/orhun/git-cliff/pull/272)
@@ -1069,7 +1137,7 @@
 - *(mergify)* Add configuration file for automatic merge ([#245](https://github.com/orhun/git-cliff/issues/245)) - ([0a79aae](https://github.com/orhun/git-cliff/commit/0a79aae3576aaa17385d17d114ef6d3f3aa1fb48))
 - *(pypi)* Publish `git-cliff` on PyPI ([#158](https://github.com/orhun/git-cliff/issues/158)) - ([2b7a1ef](https://github.com/orhun/git-cliff/commit/2b7a1efaafca017c4a21f1af25c6047347119e8d))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @alexfertel made their first contribution in [#253](https://github.com/orhun/git-cliff/pull/253)
 * @tvcsantos made their first contribution
@@ -1162,7 +1230,7 @@
 - *(website)* Move website to website folder - ([5644d10](https://github.com/orhun/git-cliff/commit/5644d1036508ffb420e12503adb671708e087cd9))
 - *(website)* Move website to docs for GitHub pages deployment - ([b6e52e1](https://github.com/orhun/git-cliff/commit/b6e52e128e7a105682adf885850d14deefdff3ec))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @bors[bot] made their first contribution in [#161](https://github.com/orhun/git-cliff/pull/161)
 * @dependabot[bot] made their first contribution
@@ -1298,7 +1366,7 @@
 
 - *(docker)* Update versions in Dockerfile - ([02e2b8e](https://github.com/orhun/git-cliff/commit/02e2b8e58e0e4a518fe5318be2bec6d1360ad34e))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @FlrnFrmm made their first contribution in [#116](https://github.com/orhun/git-cliff/pull/116)
 * @sbmueller made their first contribution in [#114](https://github.com/orhun/git-cliff/pull/114)
@@ -1354,7 +1422,7 @@
 - *(funding)* Add GitHub Sponsors option for funding - ([f3fada7](https://github.com/orhun/git-cliff/commit/f3fada723d680dab4f0cd435dc0430425a7fe995))
 - *(project)* Update MSRV to 1.60.0 - ([b55e678](https://github.com/orhun/git-cliff/commit/b55e678a4ea669e195d0adae0694a340ab724c31))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @AaronFriel made their first contribution in [#101](https://github.com/orhun/git-cliff/pull/101)
 
@@ -1391,7 +1459,7 @@
 - *(docker)* Disable building arm64 docker images temporarily - ([175f7d7](https://github.com/orhun/git-cliff/commit/175f7d70559c642721c0c82215224cfba2cb0221))
 - *(project)* Set MSRV to 1.58.1 ([#87](https://github.com/orhun/git-cliff/issues/87)) - ([bfcd0d9](https://github.com/orhun/git-cliff/commit/bfcd0d97ba2fc2271e754f6c9ecb834edf7f1190))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @hawkw made their first contribution in [#97](https://github.com/orhun/git-cliff/pull/97)
 * @7596ff made their first contribution in [#99](https://github.com/orhun/git-cliff/pull/99)
@@ -1442,7 +1510,7 @@
 - *(docker)* Build Docker images for arm64 - ([8475e1f](https://github.com/orhun/git-cliff/commit/8475e1fd63b89bb56c2cf68de62dbb4d9e66b4bb))
 - *(docker)* Upgrade versions in Dockerfile - ([3aa9a1a](https://github.com/orhun/git-cliff/commit/3aa9a1a059f876b66ce03bc1a4a7735a2c27e146))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @favna made their first contribution in [#83](https://github.com/orhun/git-cliff/pull/83)
 * @kaushalmodi made their first contribution in [#80](https://github.com/orhun/git-cliff/pull/80)
@@ -1463,7 +1531,7 @@
 - *(core)* Document timestamp format of `Release` struct ([#67](https://github.com/orhun/git-cliff/issues/67)) - ([d68eb12](https://github.com/orhun/git-cliff/commit/d68eb120c0a0a98bc1e7264a3aede17b5f5c54be))
 - *(readme)* Add another option of GitHub Actions ([#64](https://github.com/orhun/git-cliff/issues/64)) - ([db7edf5](https://github.com/orhun/git-cliff/commit/db7edf5707f2bfdf49c749026969fd1833530ed7))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @marcoieni made their first contribution in [#67](https://github.com/orhun/git-cliff/pull/67)
 
@@ -1512,7 +1580,7 @@
 - *(ci)* Run cargo-audit for checking vulnerabilities - ([cfe41fe](https://github.com/orhun/git-cliff/commit/cfe41fe56eddb38c109e178e02d3567d10ad78ff))
 - *(docker)* Bump the Rust version in Dockerfile - ([d4cbb85](https://github.com/orhun/git-cliff/commit/d4cbb857388f8d5686715fcba62f8adaeb92230a))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @tranzystorekk made their first contribution in [#57](https://github.com/orhun/git-cliff/pull/57)
 * @bachp made their first contribution in [#42](https://github.com/orhun/git-cliff/pull/42)
@@ -1560,7 +1628,7 @@
 - *(fixtures)* Run test fixtures on ubuntu-latest - ([dea65f2](https://github.com/orhun/git-cliff/commit/dea65f235e2091001d8de41794bf3c98a7223917))
 - *(fixtures)* Improve the workflow for test fixtures - ([92a54d6](https://github.com/orhun/git-cliff/commit/92a54d67b825b53b6993a769ea9d5cf37ea2e43e))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @kenji-miyake made their first contribution in [#40](https://github.com/orhun/git-cliff/pull/40)
 
@@ -1593,7 +1661,7 @@
 - *(project)* Migrate to Rust 2021 edition - ([0000000](https://github.com/orhun/git-cliff/commit/0000000ef0e2d0710f4c1294408da2639f6f3217))
 - *(project)* Remove unnecessary Cargo.lock entry from .gitignore - ([481713c](https://github.com/orhun/git-cliff/commit/481713cbb74fc2bce4a46ab6f8d4649b03d96fc2))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @pataar made their first contribution in [#26](https://github.com/orhun/git-cliff/pull/26)
 * @alteregoart made their first contribution in [#24](https://github.com/orhun/git-cliff/pull/24)
@@ -1634,7 +1702,7 @@
 - *(workflow)* Update the runner to ubuntu-20.04 - ([5069594](https://github.com/orhun/git-cliff/commit/5069594f1800e409665609224995b25dcb9df438))
 - *(workflow)* Set a version for the checkout action - ([b323e60](https://github.com/orhun/git-cliff/commit/b323e60996595976fbe8261b5f8c4a9f67d2a8f8))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @FoxxMD made their first contribution in [#16](https://github.com/orhun/git-cliff/pull/16)
 
@@ -1656,7 +1724,7 @@
 - *(readme)* Add badge for joining the Matrix chat - ([b5edfc2](https://github.com/orhun/git-cliff/commit/b5edfc279d0290fecaacab469ecccdadf63eb3ab))
 - *(readme)* Update installation instructions for Arch Linux - ([8fb18b7](https://github.com/orhun/git-cliff/commit/8fb18b784808222fdf3c4328ac9c871b93524fee))
 
-## New Contributors ❤️
+## ❤️ New Contributors
 
 * @Groxx made their first contribution in [#7](https://github.com/orhun/git-cliff/pull/7)
 

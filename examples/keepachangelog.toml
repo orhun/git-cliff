@@ -30,17 +30,15 @@ body = """
 # See https://keats.github.io/tera/#getting-started
 footer = """
 {% for release in releases -%}
-    {% if release.version -%}
-        {% if release.previous.version -%}
-            [{{ release.version | trim_start_matches(pat="v") }}]: \
-                https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}\
-                    /compare/{{ release.previous.version }}..{{ release.version }}
-        {% else -%}
-            [{{ release.version | trim_start_matches(pat="v") }}]: \
-                https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}\
-                    /tree/{{ release.version }}
-        {% endif -%}
-    {% else -%}
+    {% if release.version and release.previous and release.previous.version -%}
+        [{{ release.version | trim_start_matches(pat="v") }}]: \
+            https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}\
+                /compare/{{ release.previous.version }}..{{ release.version }}
+    {% elif release.version -%}
+        [{{ release.version | trim_start_matches(pat="v") }}]: \
+            https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}\
+                /tree/{{ release.version }}
+    {% elif release.previous and release.previous.version -%}
         [unreleased]: https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}\
             /compare/{{ release.previous.version }}..HEAD
     {% endif -%}

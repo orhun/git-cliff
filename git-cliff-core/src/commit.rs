@@ -71,8 +71,8 @@ pub struct Signature {
 impl<'a> From<CommitSignature<'a>> for Signature {
     fn from(signature: CommitSignature<'a>) -> Self {
         Self {
-            name: signature.name().map(String::from),
-            email: signature.email().map(String::from),
+            name: signature.name().ok().map(String::from),
+            email: signature.email().ok().map(String::from),
             timestamp: signature.when().seconds(),
         }
     }
@@ -329,6 +329,9 @@ impl Commit<'_> {
         let lookup_context = serde_json::to_value(&self).map_err(|e| {
             AppError::FieldError(format!("failed to convert context into value: {e}",))
         })?;
+        // Set when a `continue` parser matches, so the commit isn't filtered out
+        // at the end even though no parser returned early.
+        let mut matched = false;
         'parsers: for parser in parsers {
             if let Some(sha) = parser.sha.as_ref() {
                 if sha.to_lowercase() != self.id {
@@ -430,6 +433,10 @@ impl Commit<'_> {
                     self.group = parser.group.clone().or(self.group);
                     self.scope = parser.scope.clone().or(self.scope);
                     self.default_scope = parser.default_scope.clone().or(self.default_scope);
+                    if parser.r#continue.unwrap_or(false) {
+                        matched = true;
+                        continue;
+                    }
                     return Ok(self);
                 }
             } else {
@@ -444,14 +451,40 @@ impl Commit<'_> {
                         }
                         value
                     };
-                    self.group = parser.group.clone().map(regex_replace);
-                    self.scope = parser.scope.clone().map(regex_replace);
-                    self.default_scope.clone_from(&parser.default_scope);
+                    if parser.r#continue.unwrap_or(false) {
+                        // Only override the fields this parser sets, so later
+                        // parsers can fill in the rest.
+                        if let Some(group) = parser.group.clone() {
+                            self.group = Some(regex_replace(group));
+                        }
+                        if let Some(scope) = parser.scope.clone() {
+                            self.scope = Some(regex_replace(scope));
+                        }
+                        if parser.default_scope.is_some() {
+                            self.default_scope.clone_from(&parser.default_scope);
+                        }
+                        matched = true;
+                        continue 'parsers;
+                    }
+                    if matched {
+                        // Preserve fields contributed by preceding parsers.
+                        self.group = parser.group.clone().map(regex_replace).or(self.group);
+                        self.scope = parser.scope.clone().map(regex_replace).or(self.scope);
+                        if parser.default_scope.is_some() {
+                            self.default_scope.clone_from(&parser.default_scope);
+                        }
+                    } else {
+                        // Keep the original first-match-wins behavior when
+                        // no preceding parser continued.
+                        self.group = parser.group.clone().map(regex_replace);
+                        self.scope = parser.scope.clone().map(regex_replace);
+                        self.default_scope.clone_from(&parser.default_scope);
+                    }
                     return Ok(self);
                 }
             }
         }
-        if filter {
+        if filter && !matched {
             Err(AppError::GroupError(String::from(
                 "Commit does not belong to any group",
             )))
@@ -633,6 +666,7 @@ mod test {
                 default_scope: Some(String::from("test_scope")),
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: None,
                 pattern: None,
             }],
@@ -842,6 +876,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: None,
                 pattern: None,
             }],
@@ -905,6 +940,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: Some(String::from("author.name")),
                 pattern: Regex::new("John Doe").ok(),
             }],
@@ -923,6 +959,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: Some(String::from("remote.pr_title")),
                 pattern: Regex::new("feat: do something").ok(),
             }],
@@ -941,6 +978,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: Some(String::from("body")),
                 pattern: Regex::new("something great").ok(),
             }],
@@ -959,6 +997,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: Some(String::from("remote.pr_labels")),
                 pattern: Regex::new("feature|deprecation").ok(),
             }],
@@ -977,6 +1016,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: Some(String::from("links")),
                 pattern: Regex::new(".*").ok(),
             }],
@@ -995,6 +1035,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: Some(String::from("remote")),
                 pattern: Regex::new(".*").ok(),
             }],
@@ -1005,6 +1046,157 @@ Refs: #123
             parse_result.is_err(),
             "Expected error when using unsupported field `remote`, but got Ok"
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn parse_commit_multiple_parsers() -> Result<()> {
+        let commit = Commit::new(
+            String::from("8f55e69eba6e6ce811ace32bd84cc82215673cb6"),
+            String::from("feat(deep): support multiple parsers"),
+        );
+        let commit = commit.into_conventional()?;
+
+        // Without `continue`, the first matching parser wins and short-circuits:
+        // the scope-only parser matches, so the group from the later parser is
+        // never applied.
+        let parsers = vec![
+            CommitParser {
+                sha: None,
+                message: Regex::new("\\(deep\\)").ok(),
+                body: None,
+                footer: None,
+                group: None,
+                default_scope: None,
+                scope: Some(String::from("Deep Scope")),
+                skip: None,
+                r#continue: None,
+                field: None,
+                pattern: None,
+            },
+            CommitParser {
+                sha: None,
+                message: Regex::new("^feat").ok(),
+                body: None,
+                footer: None,
+                group: Some(String::from("Features")),
+                default_scope: None,
+                scope: None,
+                skip: None,
+                r#continue: None,
+                field: None,
+                pattern: None,
+            },
+        ];
+        let parsed = commit.clone().parse(&parsers, false, false)?;
+        assert_eq!(Some(String::from("Deep Scope")), parsed.scope);
+        assert_eq!(None, parsed.group);
+
+        // With `continue = true` on the composing parsers, the commit picks up
+        // the scope from the first and the group from the second.
+        let parsers = vec![
+            CommitParser {
+                sha: None,
+                message: Regex::new("\\(deep\\)").ok(),
+                body: None,
+                footer: None,
+                group: None,
+                default_scope: None,
+                scope: Some(String::from("Deep Scope")),
+                skip: None,
+                r#continue: Some(true),
+                field: None,
+                pattern: None,
+            },
+            CommitParser {
+                sha: None,
+                message: Regex::new("^feat").ok(),
+                body: None,
+                footer: None,
+                group: Some(String::from("Features")),
+                default_scope: None,
+                scope: None,
+                skip: None,
+                r#continue: Some(true),
+                field: None,
+                pattern: None,
+            },
+        ];
+        let parsed = commit.clone().parse(&parsers, false, true)?;
+        assert_eq!(Some(String::from("Deep Scope")), parsed.scope);
+        assert_eq!(Some(String::from("Features")), parsed.group);
+
+        // A `continue` parser that matches keeps the commit even when filtering
+        // is on and it only set a scope (no group).
+        let scope_only = vec![CommitParser {
+            sha: None,
+            message: Regex::new("^feat").ok(),
+            body: None,
+            footer: None,
+            group: None,
+            default_scope: None,
+            scope: Some(String::from("Deep Scope")),
+            skip: None,
+            r#continue: Some(true),
+            field: None,
+            pattern: None,
+        }];
+        let parsed = commit.clone().parse(&scope_only, false, true)?;
+        assert_eq!(Some(String::from("Deep Scope")), parsed.scope);
+        assert_eq!(None, parsed.group);
+
+        // A `continue` parser can set the scope and a following terminal parser
+        // (no `continue`) can set the group without wiping the scope. The
+        // terminal parser only overwrites the fields it actually sets, so the
+        // scope from the first parser is kept instead of being reset to None.
+        let parsers = vec![
+            CommitParser {
+                sha: None,
+                message: Regex::new("\\(deep\\)").ok(),
+                body: None,
+                footer: None,
+                group: None,
+                default_scope: None,
+                scope: Some(String::from("Deep Scope")),
+                skip: None,
+                r#continue: Some(true),
+                field: None,
+                pattern: None,
+            },
+            CommitParser {
+                sha: None,
+                message: Regex::new("^feat").ok(),
+                body: None,
+                footer: None,
+                group: Some(String::from("Features")),
+                default_scope: None,
+                scope: None,
+                skip: None,
+                r#continue: None,
+                field: None,
+                pattern: None,
+            },
+        ];
+        let parsed = commit.clone().parse(&parsers, false, false)?;
+        assert_eq!(Some(String::from("Deep Scope")), parsed.scope);
+        assert_eq!(Some(String::from("Features")), parsed.group);
+
+        // Without a preceding `continue` match, terminal parsers retain the
+        // original behavior of clearing fields they do not set.
+        let mut populated_commit = commit;
+        populated_commit.group = Some(String::from("Old Group"));
+        populated_commit.scope = Some(String::from("Old Scope"));
+        populated_commit.default_scope = Some(String::from("Old Default Scope"));
+        let terminal = vec![CommitParser {
+            message: Regex::new("^feat").ok(),
+            group: Some(String::from("Features")),
+            ..Default::default()
+        }];
+        let parsed = populated_commit.parse(&terminal, false, false)?;
+        assert_eq!(Some(String::from("Features")), parsed.group);
+        assert_eq!(None, parsed.scope);
+        assert_eq!(None, parsed.default_scope);
 
         Ok(())
     }
@@ -1029,6 +1221,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: Some(String::from("remote.pr_labels")),
                 pattern: Regex::new("bug").ok(),
             },
@@ -1041,6 +1234,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: None,
                 pattern: None,
             },
@@ -1066,6 +1260,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: None,
                 pattern: None,
             },
@@ -1078,6 +1273,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: None,
                 pattern: None,
             },
@@ -1109,6 +1305,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: None,
                 pattern: None,
             },
@@ -1121,6 +1318,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: None,
                 pattern: None,
             },
@@ -1158,6 +1356,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: None,
                 pattern: None,
             },
@@ -1170,6 +1369,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: None,
                 pattern: None,
             },
@@ -1210,6 +1410,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: Some(String::from("message")),
                 pattern: Regex::new("remove").ok(),
             },
@@ -1222,6 +1423,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: None,
                 pattern: None,
             },
@@ -1260,6 +1462,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: None,
                 pattern: None,
             },
@@ -1272,6 +1475,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: None,
                 pattern: None,
             },
@@ -1320,6 +1524,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: Some(true),
+                r#continue: None,
                 field: None,
                 pattern: None,
             }],
@@ -1363,6 +1568,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: Some(String::from("author.name")),
                 pattern: Regex::new("^John Doe$").ok(),
             }],
@@ -1381,6 +1587,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: Some(String::from("remote.pr_title")),
                 pattern: Regex::new("^feat(\\([^)]+\\))?").ok(),
             }],
@@ -1399,6 +1606,7 @@ Refs: #123
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: Some(String::from("author.name")),
                 pattern: Regex::new("Something else").ok(),
             }],

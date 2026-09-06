@@ -38,13 +38,11 @@ body = """
 # See https://keats.github.io/tera/#getting-started
 footer = """
 {% for release in releases -%}
-    {% if release.version -%}
-        {% if release.previous.version -%}
-            [{{ release.version | trim_start_matches(pat="v") }}]: \
-                https://dev.azure.com/{{ remote.azure_devops.owner }}\
-                    /_git/{{ remote.azure_devops.repo }}/branchCompare?baseVersion=GT{{ release.previous.version }}&targetVersion=GT{{ release.version }}
-        {% endif -%}
-    {% else -%}
+    {% if release.version and release.previous and release.previous.version -%}
+        [{{ release.version | trim_start_matches(pat="v") }}]: \
+            https://dev.azure.com/{{ remote.azure_devops.owner }}\
+                /_git/{{ remote.azure_devops.repo }}/branchCompare?baseVersion=GT{{ release.previous.version }}&targetVersion=GT{{ release.version }}
+    {% elif not release.version and release.previous and release.previous.version -%}
         [unreleased]: https://dev.azure.com/{{ remote.azure_devops.owner }}\
                     /_git/{{ remote.azure_devops.repo }}/branchCompare?baseVersion=GT{{ release.previous.version }}&targetVersion=GBmaster&_a=commits
     {% endif -%}

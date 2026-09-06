@@ -246,6 +246,16 @@ Examples:
   - `body` is a special field which contains the body of a conventional commit, if applicable.
   - Be aware that all fields are converted to JSON strings before they are parsed by the given regex, especially when dealing with arrays.
 
+Set `continue = true` to apply following parsers to the same commit:
+
+```toml
+[git]
+commit_parsers = [
+  { footer = "^Component:Billing$", scope = "billing", continue = true },
+  { message = "^feat", group = "Features" },
+]
+```
+
 ### protect_breaking_commits
 
 If set to `true`, any breaking changes will be protected against being skipped

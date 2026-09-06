@@ -12,6 +12,7 @@ use regex::Regex;
 #[test]
 fn generate_changelog() -> Result<()> {
     let changelog_config = ChangelogConfig {
+        header_marker: String::from("<!-- git-cliff: end of header -->"),
         header: Some(String::from("this is a changelog")),
         body: String::from(
             r#"
@@ -35,6 +36,7 @@ fn generate_changelog() -> Result<()> {
         footer: Some(String::from("eoc - end of changelog")),
         trim: true,
         render_always: false,
+        format: false,
         postprocessors: [].to_vec(),
         output: None,
     };
@@ -59,6 +61,7 @@ fn generate_changelog() -> Result<()> {
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: None,
                 pattern: None,
             },
@@ -71,6 +74,7 @@ fn generate_changelog() -> Result<()> {
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: None,
                 pattern: None,
             },
@@ -83,6 +87,7 @@ fn generate_changelog() -> Result<()> {
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: None,
                 pattern: None,
             },
@@ -95,6 +100,7 @@ fn generate_changelog() -> Result<()> {
                 default_scope: None,
                 scope: Some(String::from("tests")),
                 skip: None,
+                r#continue: None,
                 field: None,
                 pattern: None,
             },
@@ -107,6 +113,7 @@ fn generate_changelog() -> Result<()> {
                 default_scope: None,
                 scope: None,
                 skip: None,
+                r#continue: None,
                 field: Some(String::from("author.name")),
                 pattern: Regex::new("John Doe").ok(),
             },

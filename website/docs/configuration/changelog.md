@@ -9,6 +9,7 @@ This section contains the configuration options for changelog generation.
 ```toml
 [changelog]
 header = "Changelog"
+header_marker = "<!-- git-cliff: end of header -->"
 body = """
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | upper_first }}
@@ -31,6 +32,20 @@ See [templating](/docs/category/templating) for more detail.
 Header template that will be rendered and added to the beginning of the changelog.
 
 The template context contains the full list of releases in the variable `releases`. See [templating](/docs/category/templating) for more details.
+
+### header_marker
+
+A stable marker written after a header that uses template variables. When
+prepending releases with `--prepend`, **git-cliff** uses this marker to remove
+the previously rendered header even if its content has changed.
+
+```toml
+[changelog]
+header_marker = "<!-- git-cliff: end of header -->"
+```
+
+Static headers continue to be matched by their configured text and do not emit
+the marker. Set it to an empty string to disable the marker.
 
 ### body
 
@@ -55,6 +70,30 @@ It is useful for adding indentation to the template for readability, as shown [i
 ### render_always
 
 If set to `true`, the changelog [body](#body) will be rendered even if there are no releases to process.
+
+### format
+
+If set to `true`, the rendered changelog is passed through a Markdown formatter before it is written. This normalizes heading styles, list markers, and blank lines so you don't have to fight the template with `{%-` and `trim` to get tidy output.
+
+Formatting only runs when the output is Markdown, i.e. writing to stdout or to a file with a `.md` extension. It is off by default, and with it off the output is exactly what the templates render.
+
+```toml
+[changelog]
+format = true
+```
+
+:::note
+
+This is an out-of-the-box alternative to configuring [`postprocessors`](#postprocessors) with an external tool like [`mdformat`](https://github.com/hukkin/mdformat), e.g.:
+
+```toml
+[changelog]
+postprocessors = [
+  { pattern = '.*', replace_command = 'mdformat -' },
+]
+```
+
+:::
 
 ### postprocessors
 
