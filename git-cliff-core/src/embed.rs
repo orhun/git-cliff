@@ -1,19 +1,36 @@
 use std::path::{Component, Path};
 use std::{fs, str};
 
-use rust_embed::RustEmbed;
-
 use crate::config::Config;
 use crate::error::{Error, Result};
 
-/// Default configuration file embedder/extractor.
-///
-/// Embeds `config/`[`DEFAULT_CONFIG`] into the binary.
-///
-/// [`DEFAULT_CONFIG`]: crate::DEFAULT_CONFIG
-#[derive(Debug, RustEmbed)]
-#[folder = "../config/"]
-pub struct EmbeddedConfig;
+// Workaround: derive macros may generate structs without docs, triggering　`missing_docs` lint
+// errors that can't be suppressed on the item itself.　Wrap the type in a module with
+// `#[allow(missing_docs)]` and re-export it.
+//
+// See: https://users.rust-lang.org/t/suppress-missing-doc-error-resulting-from-a-derive-macro/97301
+#[allow(missing_docs)]
+mod assets {
+    use rust_embed::RustEmbed;
+
+    /// Default configuration file embedder/extractor.
+    ///
+    /// Embeds `config/`[`DEFAULT_CONFIG`] into the binary.
+    ///
+    /// [`DEFAULT_CONFIG`]: crate::DEFAULT_CONFIG
+    #[derive(Debug, RustEmbed)]
+    #[folder = "../config/"]
+    pub struct EmbeddedConfig;
+
+    /// Built-in configuration file embedder/extractor.
+    ///
+    /// Embeds the files under `/examples/` into the binary.
+    #[derive(RustEmbed)]
+    #[folder = "../examples/"]
+    pub struct BuiltinConfig;
+}
+
+pub use assets::{BuiltinConfig, EmbeddedConfig};
 
 impl EmbeddedConfig {
     /// Extracts the embedded content.
@@ -33,13 +50,6 @@ impl EmbeddedConfig {
         Self::get_config()?.parse()
     }
 }
-
-/// Built-in configuration file embedder/extractor.
-///
-/// Embeds the files under `/examples/` into the binary.
-#[derive(RustEmbed)]
-#[folder = "../examples/"]
-pub struct BuiltinConfig;
 
 impl BuiltinConfig {
     /// Normalizes a template name to a file name carrying the `.toml`
