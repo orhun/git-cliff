@@ -515,10 +515,10 @@ impl TextProcessor {
     pub fn replace(&self, rendered: &mut String, command_envs: Vec<(&str, &str)>) -> Result<()> {
         if let Some(text) = &self.replace {
             *rendered = self.pattern.replace_all(rendered, text).to_string();
-        } else if let Some(command) = &self.replace_command {
-            if self.pattern.is_match(rendered) {
-                *rendered = command::run(command, Some(rendered.clone()), command_envs)?;
-            }
+        } else if let Some(command) = &self.replace_command &&
+            self.pattern.is_match(rendered)
+        {
+            *rendered = command::run(command, Some(rendered.clone()), command_envs)?;
         }
         Ok(())
     }
@@ -555,11 +555,10 @@ impl Config {
     pub fn load(path: &Path) -> Result<Config> {
         if MANIFEST_INFO
             .iter()
-            .any(|v| path.file_name() == v.path.file_name())
+            .any(|v| path.file_name() == v.path.file_name()) &&
+            let Some(contents) = Self::read_from_manifest()?
         {
-            if let Some(contents) = Self::read_from_manifest()? {
-                return contents.parse();
-            }
+            return contents.parse();
         }
 
         // Adding sources one after another overwrites the previous values.

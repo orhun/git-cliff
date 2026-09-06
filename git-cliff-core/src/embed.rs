@@ -142,11 +142,10 @@ impl BuiltinConfig {
                 let path = entry?.path();
                 if path
                     .extension()
-                    .is_some_and(|ext| ext.eq_ignore_ascii_case("toml"))
+                    .is_some_and(|ext| ext.eq_ignore_ascii_case("toml")) &&
+                    let Some(stem) = path.file_stem()
                 {
-                    if let Some(stem) = path.file_stem() {
-                        names.push(stem.to_string_lossy().to_string());
-                    }
+                    names.push(stem.to_string_lossy().to_string());
                 }
             }
         }

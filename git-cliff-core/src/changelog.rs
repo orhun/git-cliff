@@ -166,12 +166,12 @@ impl<'a> Changelog<'a> {
             .into_iter()
             .rev()
             .filter(|release| {
-                if let Some(version) = &release.version {
-                    if skip_regex.is_some_and(|r| r.is_match(version)) {
-                        skipped_tags.push(version.clone());
-                        tracing::debug!("Skipping release: {version}");
-                        return false;
-                    }
+                if let Some(version) = &release.version &&
+                    skip_regex.is_some_and(|r| r.is_match(version))
+                {
+                    skipped_tags.push(version.clone());
+                    tracing::debug!("Skipping release: {version}");
+                    return false;
                 }
                 if release.commits.is_empty() {
                     if let Some(version) = release.version.clone() {
@@ -564,23 +564,23 @@ impl<'a> Changelog<'a> {
     #[cfg_attr(feature = "tracing", tracing::instrument(skip_all))]
     pub fn bump_version(&mut self) -> Result<Option<String>> {
         crate::set_progress_message!("Bumping the version for unreleased changes");
-        if let Some(last_release) = self.releases.first_mut() {
-            if last_release.version.is_none() {
-                let next = last_release.calculate_next_version_from_commits(
-                    &self.config.bump,
-                    self.config.git.conventional_commits,
-                )?;
-                tracing::debug!("Bumping the version to {}", next.version);
-                last_release.bump_type = next.bump_type;
-                last_release.version = Some(next.version.clone());
-                last_release.timestamp = Some(
-                    SystemTime::now()
-                        .duration_since(UNIX_EPOCH)?
-                        .as_secs()
-                        .try_into()?,
-                );
-                return Ok(Some(next.version));
-            }
+        if let Some(last_release) = self.releases.first_mut() &&
+            last_release.version.is_none()
+        {
+            let next = last_release.calculate_next_version_from_commits(
+                &self.config.bump,
+                self.config.git.conventional_commits,
+            )?;
+            tracing::debug!("Bumping the version to {}", next.version);
+            last_release.bump_type = next.bump_type;
+            last_release.version = Some(next.version.clone());
+            last_release.timestamp = Some(
+                SystemTime::now()
+                    .duration_since(UNIX_EPOCH)?
+                    .as_secs()
+                    .try_into()?,
+            );
+            return Ok(Some(next.version));
         }
         Ok(None)
     }
@@ -597,10 +597,10 @@ impl<'a> Changelog<'a> {
         }
 
         let write_result = write!(out, "{output}");
-        if let Err(e) = write_result {
-            if e.kind() != std::io::ErrorKind::BrokenPipe {
-                return Err(e.into());
-            }
+        if let Err(e) = write_result &&
+            e.kind() != std::io::ErrorKind::BrokenPipe
+        {
+            return Err(e.into());
         }
 
         Ok(())
