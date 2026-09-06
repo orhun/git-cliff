@@ -10,7 +10,7 @@ use crate::error::{Error, Result};
 //
 // See: https://users.rust-lang.org/t/suppress-missing-doc-error-resulting-from-a-derive-macro/97301
 #[allow(missing_docs)]
-mod assets {
+mod inner {
     use rust_embed::RustEmbed;
 
     /// Default configuration file embedder/extractor.
@@ -30,7 +30,7 @@ mod assets {
     pub struct BuiltinConfig;
 }
 
-pub use assets::{BuiltinConfig, EmbeddedConfig};
+pub use inner::{BuiltinConfig, EmbeddedConfig};
 
 impl EmbeddedConfig {
     /// Extracts the embedded content.
