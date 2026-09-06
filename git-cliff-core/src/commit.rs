@@ -333,10 +333,10 @@ impl Commit<'_> {
         // at the end even though no parser returned early.
         let mut matched = false;
         'parsers: for parser in parsers {
-            if let Some(sha) = parser.sha.as_ref() {
-                if sha.to_lowercase() != self.id {
-                    continue 'parsers;
-                }
+            if let Some(sha) = parser.sha.as_ref() &&
+                sha.to_lowercase() != self.id
+            {
+                continue 'parsers;
             }
             let mut regex_checks = Vec::new();
             if let Some(message_regex) = parser.message.as_ref() {
@@ -439,49 +439,47 @@ impl Commit<'_> {
                     }
                     return Ok(self);
                 }
+            } else if self.skip_commit(parser, protect_breaking) {
+                return Err(AppError::GroupError(String::from("Skipping commit")));
             } else {
-                if self.skip_commit(parser, protect_breaking) {
-                    return Err(AppError::GroupError(String::from("Skipping commit")));
-                } else {
-                    let regex_replace = |mut value: String| {
-                        for (regex, text) in &regex_checks {
-                            for mat in regex.find_iter(text) {
-                                value = regex.replace(mat.as_str(), value).to_string();
-                            }
+                let regex_replace = |mut value: String| {
+                    for (regex, text) in &regex_checks {
+                        for mat in regex.find_iter(text) {
+                            value = regex.replace(mat.as_str(), value).to_string();
                         }
-                        value
-                    };
-                    if parser.r#continue.unwrap_or(false) {
-                        // Only override the fields this parser sets, so later
-                        // parsers can fill in the rest.
-                        if let Some(group) = parser.group.clone() {
-                            self.group = Some(regex_replace(group));
-                        }
-                        if let Some(scope) = parser.scope.clone() {
-                            self.scope = Some(regex_replace(scope));
-                        }
-                        if parser.default_scope.is_some() {
-                            self.default_scope.clone_from(&parser.default_scope);
-                        }
-                        matched = true;
-                        continue 'parsers;
                     }
-                    if matched {
-                        // Preserve fields contributed by preceding parsers.
-                        self.group = parser.group.clone().map(regex_replace).or(self.group);
-                        self.scope = parser.scope.clone().map(regex_replace).or(self.scope);
-                        if parser.default_scope.is_some() {
-                            self.default_scope.clone_from(&parser.default_scope);
-                        }
-                    } else {
-                        // Keep the original first-match-wins behavior when
-                        // no preceding parser continued.
-                        self.group = parser.group.clone().map(regex_replace);
-                        self.scope = parser.scope.clone().map(regex_replace);
+                    value
+                };
+                if parser.r#continue.unwrap_or(false) {
+                    // Only override the fields this parser sets, so later
+                    // parsers can fill in the rest.
+                    if let Some(group) = parser.group.clone() {
+                        self.group = Some(regex_replace(group));
+                    }
+                    if let Some(scope) = parser.scope.clone() {
+                        self.scope = Some(regex_replace(scope));
+                    }
+                    if parser.default_scope.is_some() {
                         self.default_scope.clone_from(&parser.default_scope);
                     }
-                    return Ok(self);
+                    matched = true;
+                    continue 'parsers;
                 }
+                if matched {
+                    // Preserve fields contributed by preceding parsers.
+                    self.group = parser.group.clone().map(regex_replace).or(self.group);
+                    self.scope = parser.scope.clone().map(regex_replace).or(self.scope);
+                    if parser.default_scope.is_some() {
+                        self.default_scope.clone_from(&parser.default_scope);
+                    }
+                } else {
+                    // Keep the original first-match-wins behavior when
+                    // no preceding parser continued.
+                    self.group = parser.group.clone().map(regex_replace);
+                    self.scope = parser.scope.clone().map(regex_replace);
+                    self.default_scope.clone_from(&parser.default_scope);
+                }
+                return Ok(self);
             }
         }
         if filter && !matched {
