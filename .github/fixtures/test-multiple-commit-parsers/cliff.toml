@@ -13,7 +13,7 @@ body = """
     {% for commit in commits %}
         - {% if commit.scope %}({{ commit.scope }}) {% endif %}{{ commit.message }}\
     {% endfor %}
-{% endfor %}\n
+{% endfor %}
 """
 
 [git]

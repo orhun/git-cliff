@@ -441,15 +441,18 @@ impl Commit<'_> {
                             matched = true;
                             break;
                         }
-                        // A terminal parser stops the loop, but it should only
-                        // overwrite the fields it actually sets. Otherwise a
-                        // preceding `continue` parser that set, say, the scope
-                        // would get blanked out just because this parser only
-                        // sets the group. This mirrors the sha-based match
-                        // above, which already preserves previously-set fields.
-                        self.group = parser.group.clone().map(regex_replace).or(self.group);
-                        self.scope = parser.scope.clone().map(regex_replace).or(self.scope);
-                        if parser.default_scope.is_some() {
+                        if matched {
+                            // Preserve fields contributed by preceding parsers.
+                            self.group = parser.group.clone().map(regex_replace).or(self.group);
+                            self.scope = parser.scope.clone().map(regex_replace).or(self.scope);
+                            if parser.default_scope.is_some() {
+                                self.default_scope.clone_from(&parser.default_scope);
+                            }
+                        } else {
+                            // Keep the original first-match-wins behavior when
+                            // no preceding parser continued.
+                            self.group = parser.group.clone().map(regex_replace);
+                            self.scope = parser.scope.clone().map(regex_replace);
                             self.default_scope.clone_from(&parser.default_scope);
                         }
                         return Ok(self);
@@ -1154,6 +1157,22 @@ Refs: #123
         let parsed = commit.clone().parse(&parsers, false, false)?;
         assert_eq!(Some(String::from("Deep Scope")), parsed.scope);
         assert_eq!(Some(String::from("Features")), parsed.group);
+
+        // Without a preceding `continue` match, terminal parsers retain the
+        // original behavior of clearing fields they do not set.
+        let mut populated_commit = commit;
+        populated_commit.group = Some(String::from("Old Group"));
+        populated_commit.scope = Some(String::from("Old Scope"));
+        populated_commit.default_scope = Some(String::from("Old Default Scope"));
+        let terminal = vec![CommitParser {
+            message: Regex::new("^feat").ok(),
+            group: Some(String::from("Features")),
+            ..Default::default()
+        }];
+        let parsed = populated_commit.parse(&terminal, false, false)?;
+        assert_eq!(Some(String::from("Features")), parsed.group);
+        assert_eq!(None, parsed.scope);
+        assert_eq!(None, parsed.default_scope);
 
         Ok(())
     }

@@ -256,7 +256,7 @@ commit_parsers = [
 ]
 ```
 
-The footer parser sets the scope and parsing continues, then the `^feat` parser sets the group without clearing the scope. Note that `field`/`pattern` matching always evaluates against the original commit, so a later parser cannot match on a `scope` (or other field) set by an earlier one. See [tips and tricks](/docs/tips-and-tricks#parsing-commits-with-multiple-parsers) for a fuller example.
+The footer parser sets the scope before the `^feat` parser sets the group. `field`/`pattern` always matches the original commit, not values set by earlier parsers.
 
 ### protect_breaking_commits
 
