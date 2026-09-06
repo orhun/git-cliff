@@ -4,8 +4,8 @@ use std::{fs, str};
 use crate::config::Config;
 use crate::error::{Error, Result};
 
-// Workaround: derive macros may generate structs without docs, triggering　`missing_docs` lint
-// errors that can't be suppressed on the item itself.　Wrap the type in a module with
+// Workaround: derive macros may generate structs without docs, triggering `missing_docs` lint
+// errors that can't be suppressed on the item itself. Wrap the type in a module with
 // `#[allow(missing_docs)]` and re-export it.
 //
 // See: https://users.rust-lang.org/t/suppress-missing-doc-error-resulting-from-a-derive-macro/97301
