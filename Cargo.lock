@@ -1037,6 +1037,7 @@ dependencies = [
  "secrecy",
  "serial_test",
  "shellexpand",
+ "temp-dir",
  "tracing",
  "tracing-indicatif",
  "tracing-subscriber",
