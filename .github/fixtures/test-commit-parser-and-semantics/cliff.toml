@@ -1,0 +1,28 @@
+# git-cliff ~ configuration file
+# https://git-cliff.org/docs/configuration
+
+[changelog]
+body = """
+{% if version %}\
+    ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+    ## [unreleased]
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group }}
+    {% for commit in commits %}
+        - {{ commit.message | upper_first }}\
+    {% endfor %}
+{% endfor %}
+"""
+
+[git]
+# Every matcher in a single parser must match. In particular, neither a
+# matching removal subject without a breaking footer nor an unrelated subject
+# with a breaking footer belongs to the Removed group.
+commit_parsers = [
+    { message = "^feat:.*?(remove|delete|drop)", footer = "^BREAKING CHANGE:", group = "Removed" },
+    { message = "^feat", group = "Added" },
+    { message = "^fix", group = "Fixed" },
+    { message = ".*", group = "Changed" },
+]
