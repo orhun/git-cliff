@@ -81,6 +81,9 @@ git cliff -o
 
 Prepend new changes to an existing changelog file:
 
+See [Migrating an existing changelog](/docs/usage/migrating-existing-changelog)
+if the file was created before you started using **git-cliff**.
+
 ```bash
 # 1- changelog header is removed from CHANGELOG.md
 # 2- new entries are prepended to CHANGELOG.md without footer part
