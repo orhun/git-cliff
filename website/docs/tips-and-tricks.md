@@ -160,3 +160,15 @@ This will generate the changelog using only local Git commit information.
 Note that PR titles, labels, and other remote metadata will not be included in offline mode.
 
 :::
+
+## Parsing commits with multiple parsers
+
+Use `continue = true` to apply more than one [`commit_parser`](/docs/configuration/git#commit_parsers) to a commit:
+
+```toml
+[git]
+commit_parsers = [
+  { footer = "^Component:Billing$", scope = "billing", continue = true },
+  { message = "^feat", group = "Features" },
+]
+```
