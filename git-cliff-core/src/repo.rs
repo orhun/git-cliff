@@ -406,12 +406,11 @@ impl Repository {
 
         // Check the cache first.
         {
-            if let Ok(result) = cacache::read_sync(&self.changed_files_cache_path, &cache_key) {
-                if let Ok((files, _)) =
+            if let Ok(result) = cacache::read_sync(&self.changed_files_cache_path, &cache_key) &&
+                let Ok((files, _)) =
                     bincode::decode_from_slice(&result, bincode::config::standard())
-                {
-                    return files;
-                }
+            {
+                return files;
             }
         }
 
@@ -531,10 +530,10 @@ impl Repository {
     /// Returns the commit object of the given ID.
     #[must_use]
     pub fn find_commit(&self, id: &str) -> Option<Commit<'_>> {
-        if let Ok(oid) = Oid::from_str(id) {
-            if let Ok(commit) = self.inner.find_commit(oid) {
-                return Some(commit);
-            }
+        if let Ok(oid) = Oid::from_str(id) &&
+            let Ok(commit) = self.inner.find_commit(oid)
+        {
+            return Some(commit);
         }
         None
     }

@@ -1,19 +1,36 @@
 use std::path::{Component, Path};
 use std::{fs, str};
 
-use rust_embed::RustEmbed;
-
 use crate::config::Config;
 use crate::error::{Error, Result};
 
-/// Default configuration file embedder/extractor.
-///
-/// Embeds `config/`[`DEFAULT_CONFIG`] into the binary.
-///
-/// [`DEFAULT_CONFIG`]: crate::DEFAULT_CONFIG
-#[derive(Debug, RustEmbed)]
-#[folder = "../config/"]
-pub struct EmbeddedConfig;
+// Workaround: derive macros may generate structs without docs, triggering `missing_docs` lint
+// errors that can't be suppressed on the item itself. Wrap the type in a module with
+// `#[allow(missing_docs)]` and re-export it.
+//
+// See: https://users.rust-lang.org/t/suppress-missing-doc-error-resulting-from-a-derive-macro/97301
+#[allow(missing_docs)]
+mod inner {
+    use rust_embed::RustEmbed;
+
+    /// Default configuration file embedder/extractor.
+    ///
+    /// Embeds `config/`[`DEFAULT_CONFIG`] into the binary.
+    ///
+    /// [`DEFAULT_CONFIG`]: crate::DEFAULT_CONFIG
+    #[derive(Debug, RustEmbed)]
+    #[folder = "../config/"]
+    pub struct EmbeddedConfig;
+
+    /// Built-in configuration file embedder/extractor.
+    ///
+    /// Embeds the files under `/examples/` into the binary.
+    #[derive(RustEmbed)]
+    #[folder = "../examples/"]
+    pub struct BuiltinConfig;
+}
+
+pub use inner::{BuiltinConfig, EmbeddedConfig};
 
 impl EmbeddedConfig {
     /// Extracts the embedded content.
@@ -33,13 +50,6 @@ impl EmbeddedConfig {
         Self::get_config()?.parse()
     }
 }
-
-/// Built-in configuration file embedder/extractor.
-///
-/// Embeds the files under `/examples/` into the binary.
-#[derive(RustEmbed)]
-#[folder = "../examples/"]
-pub struct BuiltinConfig;
 
 impl BuiltinConfig {
     /// Normalizes a template name to a file name carrying the `.toml`
@@ -142,11 +152,10 @@ impl BuiltinConfig {
                 let path = entry?.path();
                 if path
                     .extension()
-                    .is_some_and(|ext| ext.eq_ignore_ascii_case("toml"))
+                    .is_some_and(|ext| ext.eq_ignore_ascii_case("toml")) &&
+                    let Some(stem) = path.file_stem()
                 {
-                    if let Some(stem) = path.file_stem() {
-                        names.push(stem.to_string_lossy().to_string());
-                    }
+                    names.push(stem.to_string_lossy().to_string());
                 }
             }
         }
