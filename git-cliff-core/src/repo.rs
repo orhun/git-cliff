@@ -380,6 +380,10 @@ impl Repository {
                 })
             }
             (None, Some(exclude_pattern)) => {
+                // don't exclude empty commits
+                if changed_files.is_empty() {
+                    return true;
+                }
                 // check if the commit has at least one changed file that does not
                 // match all exclude patterns.
                 changed_files.iter().any(|path| {
@@ -1194,6 +1198,26 @@ mod test {
             .expect("failed to get the last commit")
     }
 
+    fn create_empty_commit(repo: &Repository) -> Commit<'_> {
+        let output = Command::new("git")
+            .args([
+                "commit",
+                "--allow-empty",
+                "--no-gpg-sign",
+                "--message",
+                "empty commit",
+            ])
+            .current_dir(&repo.path)
+            .output()
+            .expect("failed to execute git commit");
+        assert!(output.status.success(), "git commit failed {output:?}");
+
+        repo.inner
+            .head()
+            .and_then(|head| head.peel_to_commit())
+            .expect("failed to get the last commit")
+    }
+
     #[test]
     fn filter_git_blame_ignore_revs_removes_listed_and_ignore_file_only_commits() {
         let (repo, _temp_dir) = create_temp_repo();
@@ -1362,6 +1386,31 @@ mod test {
                 Some(vec![new_pattern("**/*.txt")]).as_ref(),
             );
             assert!(!retain, "exclude: **/*.txt");
+        }
+
+        let empty_commit = create_empty_commit(&repo);
+
+        {
+            let retain = repo.should_retain_commit(&empty_commit, None, None);
+            assert!(retain, "empty commit, no include/exclude patterns");
+        }
+
+        {
+            let retain = repo.should_retain_commit(
+                &empty_commit,
+                None,
+                Some(vec![new_pattern("**/*.txt")]).as_ref(),
+            );
+            assert!(retain, "empty commit, exclude: **/*.txt");
+        }
+
+        {
+            let retain = repo.should_retain_commit(
+                &empty_commit,
+                Some(vec![new_pattern("**")]).as_ref(),
+                None,
+            );
+            assert!(!retain, "empty commit, include: **");
         }
     }
 }
