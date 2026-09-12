@@ -14,3 +14,5 @@ patreon
 # These links are mostly generated in CHANGELOGs and do not need strict availability checks in CI.
 https://github.com/.*/issues/.*
 https://github.com/.*/pull/.*
+# The following GitHub user pages return 404 (account may be deleted, suspended, or renamed).
+https://github.com/SAY-5
