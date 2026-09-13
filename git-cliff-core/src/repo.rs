@@ -913,13 +913,21 @@ mod test {
         let commit = create_commit_with_files(&repo, vec![("initial.txt", "initial content")]);
 
         Command::new("git")
-            .args(["tag", "-a", "v1.0.0-staging", "-m", "s"])
+            .args(["tag", "-a", "v1.0.0-staging", "--no-sign", "-m", "s"])
             .current_dir(path)
             .output()?;
 
         // nested tag: v1.0.0-stable -> v1.0.0-staging -> commit
         Command::new("git")
-            .args(["tag", "-a", "v1.0.0-stable", "-m", "s", "v1.0.0-staging"])
+            .args([
+                "tag",
+                "-a",
+                "v1.0.0-stable",
+                "--no-sign",
+                "-m",
+                "s",
+                "v1.0.0-staging",
+            ])
             .current_dir(path)
             .output()?;
 
