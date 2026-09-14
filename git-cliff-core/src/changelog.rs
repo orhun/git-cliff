@@ -3,7 +3,7 @@ use std::io::{Read, Write};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::config::Config;
-use crate::error::Result;
+use crate::error::{Error as AppError, Result};
 use crate::process::CommitProcessor;
 use crate::release::{Release, Releases};
 #[cfg(feature = "azure_devops")]
@@ -117,6 +117,7 @@ impl<'a> Changelog<'a> {
     fn process_commits(&mut self) -> Result<()> {
         crate::set_progress_message!("Processing commits for the changelog");
         tracing::debug!("Processing the commits");
+        self.resolve_commit_parser_shas()?;
 
         let mut summary = Summary::default();
         for release in &mut self.releases {
@@ -144,6 +145,47 @@ impl<'a> Changelog<'a> {
             }
         }
 
+        Ok(())
+    }
+
+    /// Expands abbreviated SHAs (at least 4 characters) in the commit parsers
+    /// to the full SHA of the matching commit. Like git, this fails if an
+    /// abbreviated SHA matches more than one commit.
+    fn resolve_commit_parser_shas(&mut self) -> Result<()> {
+        let ids = self
+            .releases
+            .iter()
+            .flat_map(|release| {
+                release
+                    .commits
+                    .iter()
+                    .chain(release.submodule_commits.values().flatten())
+            })
+            .map(|commit| commit.id.as_str())
+            .collect::<HashSet<_>>();
+        for parser in &mut self.config.git.commit_parsers {
+            let Some(sha) = parser.sha.as_mut() else {
+                continue;
+            };
+            let prefix = sha.to_lowercase();
+            if prefix.len() < 4 || ids.contains(prefix.as_str()) {
+                continue;
+            }
+            let matches = ids
+                .iter()
+                .filter(|id| id.starts_with(&prefix))
+                .collect::<Vec<_>>();
+            match matches.as_slice() {
+                [] => {}
+                [id] => *sha = (*id).to_string(),
+                _ => {
+                    return Err(AppError::ChangelogError(format!(
+                        "commit parser SHA `{sha}` is ambiguous, it matches {} commits",
+                        matches.len()
+                    )));
+                }
+            }
+        }
         Ok(())
     }
 
@@ -1431,6 +1473,75 @@ mod test {
             },
         ];
         (config, releases)
+    }
+
+    fn sha_parser(sha: &str, group: &str) -> CommitParser {
+        CommitParser {
+            sha: Some(String::from(sha)),
+            group: Some(String::from(group)),
+            ..Default::default()
+        }
+    }
+
+    fn sha_test_release() -> Release<'static> {
+        Release {
+            version: Some(String::from("v1.0.0")),
+            commits: ["abc1234def", "abc1299", "fff0000"]
+                .into_iter()
+                .map(|id| Commit::new(String::from(id), String::from("feat: add feature")))
+                .collect(),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn changelog_resolves_abbreviated_commit_parser_shas() -> Result<()> {
+        let (mut config, _) = get_test_data();
+        config.git.commit_parsers = vec![
+            sha_parser("ABC123", "Abbreviated"),
+            sha_parser("fff0000", "Full"),
+            sha_parser("abc", "Too short"),
+            sha_parser("dead", "No match"),
+        ];
+        let changelog = Changelog::new(vec![sha_test_release()], config, None)?;
+        let shas = changelog
+            .config
+            .git
+            .commit_parsers
+            .iter()
+            .map(|parser| parser.sha.as_deref())
+            .collect::<Vec<_>>();
+        assert_eq!(shas, vec![
+            Some("abc1234def"),
+            Some("fff0000"),
+            Some("abc"),
+            Some("dead")
+        ]);
+        let group_of = |id: &str| {
+            changelog.releases[0]
+                .commits
+                .iter()
+                .find(|commit| commit.id == id)
+                .and_then(|commit| commit.group.clone())
+        };
+        assert_eq!(group_of("abc1234def").as_deref(), Some("Abbreviated"));
+        assert_eq!(group_of("fff0000").as_deref(), Some("Full"));
+        Ok(())
+    }
+
+    #[test]
+    fn changelog_rejects_ambiguous_commit_parser_sha() {
+        let (mut config, _) = get_test_data();
+        config.git.commit_parsers = vec![sha_parser("abc12", "Ambiguous")];
+        let Err(error) = Changelog::new(vec![sha_test_release()], config, None) else {
+            panic!("ambiguous SHA must be rejected");
+        };
+        assert!(
+            error
+                .to_string()
+                .contains("`abc12` is ambiguous, it matches 2 commits"),
+            "{error}"
+        );
     }
 
     #[test]
