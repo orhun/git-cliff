@@ -23,10 +23,7 @@ For example:
 
 ## Using `.git-blame-ignore-revs` file
 
-As an alternative, if the repository has a [`.git-blame-ignore-revs`](https://git-scm.com/docs/git-blame#Documentation/git-blame.txt---ignore-revs-fileltfilegt) file, **git-cliff** automatically excludes:
-
-- commits whose hash (full or abbreviated) is listed in that file, and
-- commits that **only** modify that file.
+As an alternative, if the repository has a [`.git-blame-ignore-revs`](https://git-scm.com/docs/git-blame#Documentation/git-blame.txt---ignore-revs-fileltfilegt) file, **git-cliff** automatically excludes commits whose hash (full or abbreviated) is listed in that file. Commits that only modify the file itself are not excluded unless their hash is listed.
 
 For example:
 
