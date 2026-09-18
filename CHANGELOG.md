@@ -1,5 +1,37 @@
 [![animation](https://raw.githubusercontent.com/orhun/git-cliff/main/website/static/img/git-cliff-anim.gif)](https://git-cliff.org)
 
+## [2.14.2](https://github.com/orhun/git-cliff/compare/v2.14.1..v2.14.2) - 2026-09-18
+
+### ⛰️  Features
+
+- *(parser)* Allow commits to be parsed by multiple parsers ([#1611](https://github.com/orhun/git-cliff/issues/1611)) - ([4644e5f](https://github.com/orhun/git-cliff/commit/4644e5f1dac5d37d2b54b2ab830df0fef076b279))
+
+### 🐛 Bug Fixes
+
+- *(args)* Resolve --workdir to a repo-relative include path ([#1369](https://github.com/orhun/git-cliff/issues/1369)) ([#1627](https://github.com/orhun/git-cliff/issues/1627)) - ([094593f](https://github.com/orhun/git-cliff/commit/094593fba1dfc8a1a8d938aec4cefe09032a4b64))
+- *(parser)* Require all commit parser fields to match ([#1616](https://github.com/orhun/git-cliff/issues/1616)) - ([91143b2](https://github.com/orhun/git-cliff/commit/91143b2955d1ca00395a92a1d4af5d75d8c36490))
+
+### 📚 Documentation
+
+- *(website)* Add highlights for 2.14.2 ([#1646](https://github.com/orhun/git-cliff/issues/1646)) - ([d27b67a](https://github.com/orhun/git-cliff/commit/d27b67ac395abcd3383fcac0dcf12c2726c37a3d))
+
+### 🧪 Testing
+
+- *(args)* Cover configuration file resolution ([#1617](https://github.com/orhun/git-cliff/issues/1617)) - ([8fc0aef](https://github.com/orhun/git-cliff/commit/8fc0aef60ea701f77b59a8eb19a59a69ef27b4d7))
+- *(git)* Disable tag signing when running tests ([#1641](https://github.com/orhun/git-cliff/issues/1641)) - ([28c8bab](https://github.com/orhun/git-cliff/commit/28c8babfff346efdd3d72614684a17e569a01ed5))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(lychee)* Update .lycheeignore ([#1635](https://github.com/orhun/git-cliff/issues/1635)) - ([c0eecc1](https://github.com/orhun/git-cliff/commit/c0eecc1ecb8f4ed747ddb58c91c5c74340d6dca5))
+- *(nix)* Update flake.lock ([#1630](https://github.com/orhun/git-cliff/issues/1630)) - ([f07a7c8](https://github.com/orhun/git-cliff/commit/f07a7c81120fa1267512aaf2c245048f3c0d956c))
+
+## ❤️ New Contributors
+
+* @heaths made their first contribution in [#1641](https://github.com/orhun/git-cliff/pull/1641)
+* @Jorge-Polanco-Roque made their first contribution in [#1627](https://github.com/orhun/git-cliff/pull/1627)
+* @genx7up made their first contribution in [#1632](https://github.com/orhun/git-cliff/pull/1632)
+* @sisp made their first contribution in [#1616](https://github.com/orhun/git-cliff/pull/1616)
+
 ## [2.14.1](https://github.com/orhun/git-cliff/compare/v2.13.1..v2.14.1) - 2026-09-01
 
 ### ⛰️  Features
