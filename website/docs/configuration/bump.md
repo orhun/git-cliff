@@ -115,7 +115,7 @@ git-cliff --bumped-version
 
 ### bump_type
 
-When set, it forces to always bump in major, minor or patch.
+When set, it forces to always bump in major, minor, patch, or prerelease.
 
 e.g.
 
@@ -123,3 +123,6 @@ e.g.
 [bump]
 bump_type = "minor"
 ```
+
+When `bump_type = "prerelease"`, the current prerelease suffix is incremented.
+This errors if the previous version is not already a prerelease.
