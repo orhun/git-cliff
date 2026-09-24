@@ -321,6 +321,42 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           YARN_ENABLE_IMMUTABLE_INSTALLS: false
 
+  update-yarn-lock:
+    name: Update yarn.lock after the NPM release
+    needs: publish-npm
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - name: Install node
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 18
+          registry-url: "https://registry.npmjs.org"
+      - name: Update the lockfile
+        shell: bash
+        working-directory: npm/git-cliff
+        run: yarn install --mode=update-lockfile
+        env:
+          YARN_ENABLE_IMMUTABLE_INSTALLS: false
+      - name: Create a pull request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          add-paths: npm/git-cliff/yarn.lock
+          branch: chore/update-yarn-lock
+          delete-branch: true
+          commit-message: "chore(npm): update yarn.lock for ${{ github.ref_name }}"
+          title: "chore(npm): update yarn.lock for ${{ github.ref_name }}"
+          body: |
+            Regenerates `npm/git-cliff/yarn.lock` after `${{ github.ref_name }}` was published to npm,
+            so that the `optionalDependencies` bumped by `release.sh` resolve again under the
+            immutable `yarn install` used in CI. See #1266.
+
   publish-pypi:
     name: Publish PyPI package
     runs-on: ubuntu-22.04
