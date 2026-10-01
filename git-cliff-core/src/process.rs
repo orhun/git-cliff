@@ -259,6 +259,8 @@ impl<'cfg, 'sum> CommitProcessor<'cfg, 'sum> {
 
 #[cfg(test)]
 mod test {
+    use std::str::FromStr;
+
     use regex::Regex;
 
     use super::*;
@@ -364,6 +366,60 @@ mod test {
         assert_eq!(commits.len(), 1);
         assert_eq!(commits[0].group.as_deref(), Some("fix"));
         assert_eq!(commits[0].message, "fix(ci): restore build");
+
+        Ok(())
+    }
+
+    #[test]
+    fn list_matches_anchored_parsers_on_unconventional_body_lines() -> Result<()> {
+        let config = crate::config::Config::from_str(
+            r#"
+            [git]
+            conventional_commits = false
+            filter_unconventional = false
+            split_commits = true
+            filter_commits = true
+            commit_parsers = [{ message = "^fix:", group = "Fixed" }]
+            processing_order = [
+                "commit_preprocessors",
+                "split_commits",
+                "conventional_commits",
+                "commit_parsers",
+                "link_parsers",
+            ]
+            "#,
+        )?;
+        let commit = Commit::new(
+            String::from("123123"),
+            String::from(
+                "Unconventional commit\n\nfix: first line of the commit body\nbugfix: not a \
+                 matching line\nfix: second line of the commit body",
+            ),
+        );
+
+        let mut commits = vec![commit.clone()];
+        CommitProcessor::new(&config.git, &mut Summary::default()).run(&mut commits)?;
+        assert_eq!(commits.len(), 2);
+        assert_eq!(commits[0].message, "fix: first line of the commit body");
+        assert_eq!(commits[1].message, "fix: second line of the commit body");
+        for commit in commits {
+            assert_eq!(commit.group.as_deref(), Some("Fixed"));
+            assert_eq!(commit.id, "123123");
+        }
+
+        for order in [
+            None,
+            Some(vec![
+                ProcessingStep::CommitParsers,
+                ProcessingStep::SplitCommits,
+            ]),
+        ] {
+            let mut cfg = config.git.clone();
+            cfg.processing_order = order;
+            let mut commits = vec![commit.clone()];
+            CommitProcessor::new(&cfg, &mut Summary::default()).run(&mut commits)?;
+            assert!(commits.is_empty());
+        }
 
         Ok(())
     }
