@@ -1062,8 +1062,10 @@ impl TempFile {
     /// permissions are kept, and the rename is only attempted after the
     /// content has been flushed to disk.
     fn persist(mut self, target: &Path) -> Result<()> {
-        let path =
-            self.path.as_ref().expect("temporary file already persisted");
+        let path = self
+            .path
+            .as_ref()
+            .expect("temporary file already persisted");
         // Keep the target's permissions instead of inheriting the umask
         // defaults of the freshly created temporary file.
         if let Ok(metadata) = fs::metadata(target) {
