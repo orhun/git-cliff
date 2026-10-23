@@ -202,6 +202,30 @@ pub fn init_config_from(
     Ok(())
 }
 
+/// Returns the include pattern that scopes the changelog to `workdir`.
+///
+/// Diff paths are relative to the repository root and always use `/`, so the
+/// pattern is built the same way, with a trailing `/` so that it expands to a
+/// `**` glob. Returns `None` if `workdir` is the repository root itself or is
+/// outside of it.
+fn workdir_include_pattern(root: &Path, workdir: &Path) -> Result<Option<Pattern>> {
+    // Both sides are canonicalized: on Windows, `fs::canonicalize` returns a
+    // `\\?\` verbatim path, which never starts with the root reported by git.
+    let root = fs::canonicalize(root).unwrap_or_else(|_| root.to_path_buf());
+    let workdir = fs::canonicalize(workdir).unwrap_or_else(|_| workdir.to_path_buf());
+    let Ok(rel) = workdir.strip_prefix(&root) else {
+        return Ok(None);
+    };
+    if rel.as_os_str().is_empty() {
+        return Ok(None);
+    }
+    let pattern = rel
+        .components()
+        .map(|c| format!("{}/", c.as_os_str().to_string_lossy()))
+        .collect::<String>();
+    Ok(Some(Pattern::new(&pattern)?))
+}
+
 /// Processes the tags and commits for creating release entries for the
 /// changelog.
 ///
@@ -316,18 +340,11 @@ fn process_repository<'a>(
     // match nothing and produce an empty changelog (see #1369). If `workdir`
     // resolves to the repo root itself, no filter is added so everything is kept.
     if let Some(workdir) = &args.workdir &&
-        let Ok(root) = repository.root_path()
+        let Ok(root) = repository.root_path() &&
+        let Some(pattern) = workdir_include_pattern(&root, &cwd.join(workdir))? &&
+        !include_path.iter().any(|p| p.as_str() == pattern.as_str())
     {
-        let workdir_abs = fs::canonicalize(cwd.join(workdir)).unwrap_or_else(|_| cwd.join(workdir));
-        if let Ok(rel) = workdir_abs.strip_prefix(&root) &&
-            !rel.as_os_str().is_empty()
-        {
-            // Trailing separator makes the directory expand to a `**` glob.
-            let pattern = Pattern::new(rel.join("").to_string_lossy().as_ref())?;
-            if !include_path.iter().any(|p| p.as_str() == pattern.as_str()) {
-                include_path.push(pattern);
-            }
-        }
+        include_path.push(pattern);
     }
     if let Ok(root) = repository.root_path() &&
         cwd.starts_with(&root) &&
@@ -989,4 +1006,33 @@ pub fn write_changelog<W: io::Write>(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use pretty_assertions::assert_eq;
+    use temp_dir::TempDir;
+
+    use super::*;
+
+    #[test]
+    fn workdir_include_pattern_is_repo_relative_with_forward_slashes() -> Result<()> {
+        let root = TempDir::with_prefix("git-cliff-")?;
+        let workdir = root.path().join("sub").join("dir");
+        fs::create_dir_all(&workdir)?;
+        assert_eq!(
+            Some("sub/dir/"),
+            workdir_include_pattern(root.path(), &workdir)?
+                .as_ref()
+                .map(Pattern::as_str)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn workdir_include_pattern_is_none_for_repo_root() -> Result<()> {
+        let root = TempDir::with_prefix("git-cliff-")?;
+        assert_eq!(None, workdir_include_pattern(root.path(), root.path())?);
+        Ok(())
+    }
 }
