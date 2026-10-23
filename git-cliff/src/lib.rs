@@ -16,6 +16,7 @@ use std::env;
 use std::fs::{self, File};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use args::{BumpOption, Opt, Sort, Strip};
@@ -1000,14 +1001,129 @@ pub fn write_changelog<W: io::Write>(
     }
     if let Some(path) = &args.prepend {
         let changelog_before = fs::read_to_string(path)?;
-        let mut out = io::BufWriter::new(File::create(path)?);
-        changelog.prepend(changelog_before, &mut out)?;
+        write_file_atomic(path, |out| {
+            changelog.prepend(changelog_before, out)?;
+            Ok(())
+        })?;
     }
     if output.is_some() || args.prepend.is_none() {
         changelog.generate(&mut out)?;
     }
 
     Ok(())
+}
+
+/// A temporary file that deletes itself when dropped, unless it has been
+/// persisted over its target. Used for atomic file replacement: the new
+/// content is fully written to the temporary file first, so a failed write
+/// or a killed process can never leave the target truncated or half-written.
+struct TempFile {
+    path: Option<PathBuf>,
+    file: File,
+}
+
+impl TempFile {
+    /// Creates a uniquely named temporary file in `dir`.
+    fn create_in(dir: &Path, prefix: &str) -> Result<Self> {
+        // Uniqueness across processes comes from the PID plus the address of
+        // the counter (randomized by ASLR); the counter itself keeps names
+        // unique across threads and repeated calls within a process.
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
+        let unique = format!(
+            "{:x}.{:x}",
+            std::process::id(),
+            std::ptr::addr_of!(COUNTER) as usize
+        );
+        for _ in 0..100 {
+            let n = COUNTER.fetch_add(1, Ordering::Relaxed);
+            let path = dir.join(format!(".{prefix}.{unique}.{n}.tmp"));
+            match fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&path)
+            {
+                Ok(file) => {
+                    return Ok(Self {
+                        path: Some(path),
+                        file,
+                    });
+                }
+                Err(e) if e.kind() == io::ErrorKind::AlreadyExists => continue,
+                Err(e) => return Err(e.into()),
+            }
+        }
+        Err(Error::ChangelogError(format!(
+            "could not create a unique temporary file in {}",
+            dir.display()
+        )))
+    }
+
+    /// Atomically replaces `target` with the temporary file. The original
+    /// permissions are kept, and the rename is only attempted after the
+    /// content has been flushed to disk.
+    fn persist(mut self, target: &Path) -> Result<()> {
+        let path = self
+            .path
+            .as_ref()
+            .expect("temporary file already persisted");
+        // Keep the target's permissions instead of inheriting the umask
+        // defaults of the freshly created temporary file.
+        if let Ok(metadata) = fs::metadata(target) {
+            fs::set_permissions(path, metadata.permissions())?;
+        }
+        self.file.flush()?;
+        self.file.sync_all()?;
+        let path = self.path.take().expect("temporary file already persisted");
+        // `rename` over an existing file is atomic on Unix. On Windows it
+        // refuses to overwrite, so the old file is removed first.
+        #[cfg(windows)]
+        let _ = fs::remove_file(target);
+        fs::rename(&path, target)?;
+        // Best effort: make the rename itself durable against power loss.
+        if let Some(parent) = target.parent() &&
+            let Ok(dir) = File::open(parent)
+        {
+            let _ = dir.sync_all();
+        }
+        Ok(())
+    }
+}
+
+impl Drop for TempFile {
+    fn drop(&mut self) {
+        if let Some(path) = self.path.take() {
+            let _ = fs::remove_file(path);
+        }
+    }
+}
+
+/// Writes to `path` atomically: `write` produces the new content into a
+/// buffered temporary file in the same directory, which is then renamed over
+/// `path`. If the write fails or the process dies before the rename, the
+/// existing file is left untouched and no temporary file is left behind.
+fn write_file_atomic(
+    path: &Path,
+    write: impl FnOnce(&mut dyn io::Write) -> Result<()>,
+) -> Result<()> {
+    // Resolve symlinks so a symlinked changelog keeps pointing at its target
+    // (like the previous in-place rewrite did) instead of being replaced by
+    // a regular file.
+    let target = fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
+    let dir = target
+        .parent()
+        .filter(|dir| !dir.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    let prefix = target
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("tmp");
+    let mut temp = TempFile::create_in(dir, prefix)?;
+    {
+        let mut out = io::BufWriter::new(&mut temp.file);
+        write(&mut out)?;
+        out.flush()?;
+    }
+    temp.persist(&target)
 }
 
 #[cfg(test)]
@@ -1036,5 +1152,95 @@ mod tests {
         let root = TempDir::with_prefix("git-cliff-")?;
         assert_eq!(None, workdir_include_pattern(root.path(), root.path())?);
         Ok(())
+    }
+
+    /// Creates an empty scratch directory unique to this test run.
+    fn scratch_dir(name: &str) -> PathBuf {
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
+        let dir = env::temp_dir().join(format!(
+            "git-cliff-atomic-write-test-{name}-{}-{}",
+            std::process::id(),
+            COUNTER.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir_all(&dir).expect("could not create scratch dir");
+        dir
+    }
+
+    /// Asserts that no stray temporary files were left behind next to `file`.
+    fn assert_no_leftovers(dir: &Path, file: &str) {
+        let leftovers: Vec<_> = fs::read_dir(dir)
+            .expect("could not list scratch dir")
+            .filter_map(|entry| entry.ok())
+            .filter(|entry| entry.file_name() != file)
+            .collect();
+        assert!(leftovers.is_empty(), "leftover files: {leftovers:?}");
+    }
+
+    /// Fails like a full disk or `ulimit -f 0` would.
+    fn failing_write(_out: &mut dyn io::Write) -> Result<()> {
+        Err(io::Error::new(io::ErrorKind::StorageFull, "no space left on device").into())
+    }
+
+    /// Regression test for <https://github.com/orhun/git-cliff/issues/1650>:
+    /// a failed write must leave the existing file untouched instead of
+    /// truncating it to 0 bytes.
+    #[test]
+    fn atomic_write_failure_keeps_original_file() {
+        let dir = scratch_dir("failure");
+        let path = dir.join("CHANGELOG.md");
+        let original = "# Changelog\n\n## v0.1.0 - uncommitted notes\n";
+        fs::write(&path, original).unwrap();
+
+        let result = write_file_atomic(&path, |out| {
+            out.write_all(b"## v0.2.0\n")?;
+            failing_write(out)
+        });
+        assert!(result.is_err());
+
+        assert_eq!(fs::read_to_string(&path).unwrap(), original);
+        assert_no_leftovers(&dir, "CHANGELOG.md");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn atomic_write_success_replaces_file() {
+        let dir = scratch_dir("success");
+        let path = dir.join("CHANGELOG.md");
+        fs::write(&path, "old\n").unwrap();
+
+        write_file_atomic(&path, |out| {
+            out.write_all(b"new\n")?;
+            Ok(())
+        })
+        .unwrap();
+
+        assert_eq!(fs::read_to_string(&path).unwrap(), "new\n");
+        assert_no_leftovers(&dir, "CHANGELOG.md");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    /// The atomic replacement must keep the original file's permissions
+    /// (the previous in-place rewrite did).
+    #[test]
+    #[cfg(unix)]
+    fn atomic_write_keeps_permissions() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let dir = scratch_dir("perms");
+        let path = dir.join("CHANGELOG.md");
+        fs::write(&path, "old\n").unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+
+        write_file_atomic(&path, |out| {
+            out.write_all(b"new\n")?;
+            Ok(())
+        })
+        .unwrap();
+
+        assert_eq!(
+            fs::metadata(&path).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
+        let _ = fs::remove_dir_all(&dir);
     }
 }
