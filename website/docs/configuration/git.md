@@ -130,6 +130,44 @@ With the configuration above, lines are parsed as conventional commits and uncon
 If `filter_unconventional = false`, every line will be processed as an unconventional commit, resulting in each line of
 a commit being treated as a changelog entry.
 
+:::note
+
+When [`processing_order`](#processing_order) is omitted, the legacy pipeline processes the **whole commit message before splitting it**, then processes each remaining line again. A parser with `skip = true`, or `filter_commits = true` with no matching parser, can therefore discard the entire commit before its body lines are considered.
+
+To match individual lines before parser-based filtering, explicitly place `split_commits` before `commit_parsers`:
+
+```toml
+[git]
+conventional_commits = false
+filter_unconventional = false
+split_commits = true
+filter_commits = true
+commit_parsers = [
+    { message = "^fix:", group = "Fixed" },
+]
+processing_order = [
+    "commit_preprocessors",
+    "split_commits",
+    "conventional_commits",
+    "commit_parsers",
+    "link_parsers",
+]
+```
+
+For example, given this commit message:
+
+```text
+Unconventional commit
+
+fix: first line of the commit body
+bugfix: not a matching line
+fix: second line of the commit body
+```
+
+The configuration above keeps the two `fix:` lines in the `Fixed` group. The subject and `bugfix:` line are omitted. Without `processing_order`, the same configuration discards the whole commit because `^fix:` does not match the start of its message.
+
+:::
+
 ### processing_order
 
 Defines a custom commit processing pipeline.
@@ -144,7 +182,7 @@ Supported step names:
 - [`commit_parsers`](#commit_parsers)
 - [`link_parsers`](#link_parsers)
 
-The default processing order is:
+For an explicit split-before-parsing pipeline, use:
 
 ```toml
 [git]
