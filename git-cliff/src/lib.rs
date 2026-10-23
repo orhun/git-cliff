@@ -219,6 +219,8 @@ fn workdir_include_pattern(root: &Path, workdir: &Path) -> Result<Option<Pattern
     if rel.as_os_str().is_empty() {
         return Ok(None);
     }
+    // Git diff paths always use `/`, even on Windows; keep the glob separator
+    // platform-independent instead of using the native path separator.
     let pattern = rel
         .components()
         .map(|c| format!("{}/", c.as_os_str().to_string_lossy()))
