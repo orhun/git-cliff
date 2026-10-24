@@ -8,3 +8,4 @@
 4. Push the tags: `git push --tags`
 5. Wait for [Continuous Deployment](https://github.com/orhun/git-cliff/actions) workflow to finish.
    - Do not forget to set `vars.USE_TESTPYPI` variable to `false` before release.
+6. Merge the pull request that updates `npm/git-cliff/yarn.lock` (opened by the workflow after the npm release).
