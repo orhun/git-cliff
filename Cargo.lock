@@ -1038,6 +1038,7 @@ dependencies = [
  "serial_test",
  "shellexpand",
  "temp-dir",
+ "tempfile",
  "tracing",
  "tracing-indicatif",
  "tracing-subscriber",

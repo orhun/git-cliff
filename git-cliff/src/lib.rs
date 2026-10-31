@@ -7,6 +7,7 @@
 /// Command-line argument parser.
 pub mod args;
 mod config_path;
+mod file;
 
 /// Custom logger implementation.
 pub mod logger;
@@ -1000,8 +1001,10 @@ pub fn write_changelog<W: io::Write>(
     }
     if let Some(path) = &args.prepend {
         let changelog_before = fs::read_to_string(path)?;
-        let mut out = io::BufWriter::new(File::create(path)?);
-        changelog.prepend(changelog_before, &mut out)?;
+        file::write(path, |out| {
+            changelog.prepend(changelog_before, out)?;
+            Ok(())
+        })?;
     }
     if output.is_some() || args.prepend.is_none() {
         changelog.generate(&mut out)?;
