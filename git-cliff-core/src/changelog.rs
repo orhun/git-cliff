@@ -117,7 +117,7 @@ impl<'a> Changelog<'a> {
     fn process_commits(&mut self) -> Result<()> {
         crate::set_progress_message!("Processing commits for the changelog");
         tracing::debug!("Processing the commits");
-        self.resolve_commit_parser_shas()?;
+        self.expand_commit_parser_shas()?;
 
         let mut summary = Summary::default();
         for release in &mut self.releases {
@@ -151,7 +151,7 @@ impl<'a> Changelog<'a> {
     /// Expands abbreviated SHAs (at least 4 characters) in the commit parsers
     /// to the full SHA of the matching commit. Like git, this fails if an
     /// abbreviated SHA matches more than one commit.
-    fn resolve_commit_parser_shas(&mut self) -> Result<()> {
+    fn expand_commit_parser_shas(&mut self) -> Result<()> {
         let ids = self
             .releases
             .iter()
@@ -171,19 +171,15 @@ impl<'a> Changelog<'a> {
             if prefix.len() < 4 || ids.contains(prefix.as_str()) {
                 continue;
             }
-            let matches = ids
-                .iter()
-                .filter(|id| id.starts_with(&prefix))
-                .collect::<Vec<_>>();
-            match matches.as_slice() {
-                [] => {}
-                [id] => *sha = (*id).to_string(),
-                _ => {
+            let mut matches = ids.iter().filter(|id| id.starts_with(&prefix));
+            if let Some(id) = matches.next() {
+                if matches.next().is_some() {
+                    let count = 2 + matches.count();
                     return Err(AppError::ChangelogError(format!(
-                        "commit parser SHA `{sha}` is ambiguous, it matches {} commits",
-                        matches.len()
+                        "commit parser SHA `{sha}` is ambiguous, it matches {count} commits"
                     )));
                 }
+                *sha = (*id).to_string();
             }
         }
         Ok(())
