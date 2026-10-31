@@ -586,7 +586,7 @@ impl Config {
         // cannot panic - see https://github.com/lunacookies/etcetera/issues/42
         let strategy = choose_base_strategy()
             .expect("cannot determine current OS's default strategy (layout)");
-        for supported_path in [
+        let supported_path = [
             strategy.config_dir().join("git-cliff").join(DEFAULT_CONFIG),
             // paths for backwards compatibility
             #[cfg(target_os = "macos")]
@@ -596,17 +596,13 @@ impl Config {
                 .join("Library/Application Support/git-cliff")
                 .join(DEFAULT_CONFIG),
         ]
-        .iter()
+        .into_iter()
+        .find(|path| path.exists())?;
+        #[allow(clippy::unnecessary_debug_formatting)]
         {
-            if supported_path.exists() {
-                #[allow(clippy::unnecessary_debug_formatting)]
-                {
-                    tracing::debug!("Using configuration file from: {supported_path:?}");
-                }
-                return Some(supported_path.clone());
-            }
+            tracing::debug!("Using configuration file from: {supported_path:?}");
         }
-        None
+        Some(supported_path)
     }
 
     /// Returns the first valid configuration file found in `dir`.
