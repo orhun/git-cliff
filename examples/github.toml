@@ -1,9 +1,5 @@
 # git-cliff ~ configuration file
 # https://git-cliff.org/docs/configuration
-#
-# GitHub App logins end in "[bot]" (e.g. renovate[bot]). Raw "@name[bot]" breaks
-# Markdown mentions/avatars on release pages, so the template strips that suffix
-# (same as GitHub's own generated release notes).
 
 # [remote.github]
 # owner = "orhun"
@@ -24,7 +20,7 @@ body = """
     {%- set commit_message = commit.message -%}
   {%- endif -%}
   * {{ commit_message | split(pat="\n") | first | trim }}\
-    {% if commit.remote.username %} by @{{ commit.remote.username | replace(from="[bot]", to="") }}{%- endif -%}
+    {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif -%}
     {% if commit.remote.pr_number %} in \
       [#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }}) \
     {%- endif %}
@@ -36,7 +32,7 @@ body = """
   ### New Contributors
 {%- endif %}\
 {% for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
-  * @{{ contributor.username | replace(from="[bot]", to="") }} made their first contribution
+  * @{{ contributor.username }} made their first contribution
     {%- if contributor.pr_number %} in \
       [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}) \
     {%- endif %}
