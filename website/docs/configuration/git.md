@@ -130,6 +130,58 @@ With the configuration above, lines are parsed as conventional commits and uncon
 If `filter_unconventional = false`, every line will be processed as an unconventional commit, resulting in each line of
 a commit being treated as a changelog entry.
 
+:::note
+
+Without [`processing_order`](#processing_order), **git-cliff** applies parsers to the full message before splitting it. A skipped or unmatched commit is discarded before its body lines are checked.
+
+<details>
+  <summary>To filter each line separately:</summary>
+
+To filter each line separately, put `split_commits` before `commit_parsers`:
+
+```toml
+[git]
+conventional_commits = false
+filter_unconventional = false
+split_commits = true
+filter_commits = true
+commit_parsers = [
+    { message = "^fix:", group = "Fixed" },
+]
+processing_order = [
+    "commit_preprocessors",
+    "split_commits",
+    "conventional_commits",
+    "commit_parsers",
+    "link_parsers",
+]
+```
+
+Given this message, the configuration keeps only the two `fix:` lines in the `Fixed` group:
+
+```text
+Unconventional commit
+
+fix: first line of the commit body
+bugfix: not a matching line
+fix: second line of the commit body
+```
+
+The resulting changelog excerpt is:
+
+```markdown
+## [unreleased]
+
+### Fixed
+
+- Fix: first line of the commit body
+- Fix: second line of the commit body
+```
+
+</details>
+
+:::
+
 ### processing_order
 
 Defines a custom commit processing pipeline.
@@ -144,7 +196,7 @@ Supported step names:
 - [`commit_parsers`](#commit_parsers)
 - [`link_parsers`](#link_parsers)
 
-The default processing order is:
+The default processing order (split-before-parsing pipeline) is:
 
 ```toml
 [git]
