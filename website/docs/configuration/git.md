@@ -132,9 +132,12 @@ a commit being treated as a changelog entry.
 
 :::note
 
-When [`processing_order`](#processing_order) is omitted, the legacy pipeline processes the **whole commit message before splitting it**, then processes each remaining line again. A parser with `skip = true`, or `filter_commits = true` with no matching parser, can therefore discard the entire commit before its body lines are considered.
+Without [`processing_order`](#processing_order), **git-cliff** applies parsers to the full message before splitting it. A skipped or unmatched commit is discarded before its body lines are checked.
 
-To match individual lines before parser-based filtering, explicitly place `split_commits` before `commit_parsers`:
+<details>
+  <summary>To filter each line separately:</summary>
+
+To filter each line separately, put `split_commits` before `commit_parsers`:
 
 ```toml
 [git]
@@ -154,7 +157,7 @@ processing_order = [
 ]
 ```
 
-For example, given this commit message:
+Given this message, the configuration keeps only the two `fix:` lines in the `Fixed` group:
 
 ```text
 Unconventional commit
@@ -164,7 +167,18 @@ bugfix: not a matching line
 fix: second line of the commit body
 ```
 
-The configuration above keeps the two `fix:` lines in the `Fixed` group. The subject and `bugfix:` line are omitted. Without `processing_order`, the same configuration discards the whole commit because `^fix:` does not match the start of its message.
+The resulting changelog excerpt is:
+
+```markdown
+## [unreleased]
+
+### Fixed
+
+- Fix: first line of the commit body
+- Fix: second line of the commit body
+```
+
+</details>
 
 :::
 
@@ -182,7 +196,7 @@ Supported step names:
 - [`commit_parsers`](#commit_parsers)
 - [`link_parsers`](#link_parsers)
 
-For an explicit split-before-parsing pipeline, use:
+The default processing order (split-before-parsing pipeline) is:
 
 ```toml
 [git]
