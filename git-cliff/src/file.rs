@@ -1,4 +1,4 @@
-//! Atomic replacement of files.
+//! File handling utilities.
 
 use std::fs::{self, File};
 use std::io::{self, Write};
