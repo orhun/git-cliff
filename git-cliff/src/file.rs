@@ -37,8 +37,8 @@ pub(crate) fn write(
     let _ = temp.persist(&target).map_err(io::Error::from)?;
 
     // Best effort: make the rename itself durable against power loss.
-    if let Some(parent) = target.parent()
-        && let Ok(dir) = File::open(parent)
+    if let Some(parent) = target.parent() &&
+        let Ok(dir) = File::open(parent)
     {
         let _ = dir.sync_all();
     }
@@ -48,9 +48,11 @@ pub(crate) fn write(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::io;
+
     use temp_dir::TempDir;
+
+    use super::*;
 
     #[test]
     fn failed_write_keeps_original_file_and_cleans_up_temp_file() {
