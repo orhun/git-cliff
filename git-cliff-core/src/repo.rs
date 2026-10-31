@@ -217,11 +217,12 @@ impl Repository {
     }
 
     /// Filters out commits listed in the repository's `.git-blame-ignore-revs`
-    /// file, as well as commits that only modify that file.
+    /// file.
     ///
     /// Mirrors the file `git blame --ignore-revs-file` reads: one commit
     /// hash per line, blank lines and `#`-comments ignored. Hashes may be
-    /// abbreviated. Does nothing if the file does not exist.
+    /// abbreviated. Does nothing if the file does not exist. Commits that
+    /// merely modify the file are kept unless their own hash is listed.
     pub fn filter_git_blame_ignore_revs(&self, commits: &mut Vec<Commit<'_>>) {
         let Ok(root) = self.root_path() else {
             return;
@@ -239,11 +240,7 @@ impl Repository {
         }
         commits.retain(|commit| {
             let id = commit.id().to_string();
-            if ignored_ids.iter().any(|ignored| id.starts_with(ignored)) {
-                return false;
-            }
-            let changed_files = self.commit_changed_files(commit);
-            !(changed_files.len() == 1 && changed_files[0] == Path::new(GIT_BLAME_IGNORE_REVS_FILE))
+            !ignored_ids.iter().any(|ignored| id.starts_with(ignored))
         });
     }
 
@@ -1227,15 +1224,15 @@ mod test {
     }
 
     #[test]
-    fn filter_git_blame_ignore_revs_removes_listed_and_ignore_file_only_commits() {
+    fn filter_git_blame_ignore_revs_removes_only_listed_commits() {
         let (repo, _temp_dir) = create_temp_repo();
 
         let normal_commit_1 = create_commit_with_files(&repo, vec![("file1.txt", "content1")]);
         let ignored_commit = create_commit_with_files(&repo, vec![("file2.txt", "content2")]);
         let normal_commit_2 = create_commit_with_files(&repo, vec![("file3.txt", "content3")]);
 
-        // A commit that only adds/updates the ignore file itself should also
-        // be filtered out, regardless of whether it lists itself.
+        // The ignore file lists the ignored commit but not the commit that
+        // creates/updates the file itself, so the latter must be kept.
         let ignore_file_contents = format!("# comment\n{}\n", ignored_commit.id());
         let ignore_file_commit = create_commit_with_files(&repo, vec![(
             ".git-blame-ignore-revs",
@@ -1257,8 +1254,38 @@ mod test {
             "commit listed in .git-blame-ignore-revs should be filtered out"
         );
         assert!(
-            !remaining_ids.contains(&ignore_file_commit.id()),
-            "commit that only touches .git-blame-ignore-revs should be filtered out"
+            remaining_ids.contains(&ignore_file_commit.id()),
+            "unlisted commit that only touches .git-blame-ignore-revs should be kept"
+        );
+        assert_eq!(commits.len(), 3);
+    }
+
+    #[test]
+    fn filter_git_blame_ignore_revs_matches_abbreviated_hashes() {
+        let (repo, _temp_dir) = create_temp_repo();
+
+        let ignored_commit = create_commit_with_files(&repo, vec![("file1.txt", "content1")]);
+        create_commit_with_files(&repo, vec![("file2.txt", "content2")]);
+
+        let abbreviated = ignored_commit.id().to_string()[..7].to_string();
+        let ignore_file_contents = format!("# comment\n{abbreviated}\n");
+        create_commit_with_files(&repo, vec![(
+            ".git-blame-ignore-revs",
+            ignore_file_contents.as_str(),
+        )]);
+
+        let mut commits = repo
+            .commits(None, None, None, false)
+            .expect("failed to get commits");
+        assert_eq!(commits.len(), 3, "sanity check before filtering");
+
+        repo.filter_git_blame_ignore_revs(&mut commits);
+
+        let remaining_ids: Vec<_> = commits.iter().map(git2::Commit::id).collect();
+        assert!(
+            !remaining_ids.contains(&ignored_commit.id()),
+            "commit with an abbreviated hash listed in .git-blame-ignore-revs should be filtered \
+             out"
         );
         assert_eq!(commits.len(), 2);
     }
