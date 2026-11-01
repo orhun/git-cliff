@@ -469,19 +469,69 @@ impl Bump {
     }
 }
 
+/// Serde helpers for commit parser regexes that may reference environment
+/// variables as `${NAME}`.
+mod env_regex {
+    use std::env;
+    use std::sync::LazyLock;
+
+    use regex::Regex;
+    use serde::de::Error;
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    /// Matches `${NAME}` where `NAME` is a valid environment variable name.
+    static ENV_VAR: LazyLock<Regex> = LazyLock::new(|| {
+        Regex::new(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}").expect("valid env var regex")
+    });
+
+    /// Replaces each `${NAME}` in `value` with the environment variable `NAME`.
+    fn expand(value: &str) -> Result<String, String> {
+        let mut missing = None;
+        let expanded = ENV_VAR.replace_all(value, |caps: &regex::Captures| {
+            env::var(&caps[1]).unwrap_or_else(|_| {
+                missing.get_or_insert_with(|| caps[1].to_string());
+                String::new()
+            })
+        });
+        match missing {
+            Some(name) => Err(format!(
+                "environment variable `{name}` used in commit parser is not set"
+            )),
+            None => Ok(expanded.into_owned()),
+        }
+    }
+
+    pub fn serialize<S: Serializer>(
+        value: &Option<Regex>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        serde_regex::serialize(value, serializer)
+    }
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Option<Regex>, D::Error> {
+        let Some(pattern) = Option::<String>::deserialize(deserializer)? else {
+            return Ok(None);
+        };
+        let pattern = expand(&pattern).map_err(D::Error::custom)?;
+        Regex::new(&pattern).map(Some).map_err(D::Error::custom)
+    }
+}
+
 /// Parser for grouping commits.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct CommitParser {
     /// SHA1 of the commit.
     pub sha: Option<String>,
     /// Regex for matching the commit message.
-    #[serde(with = "serde_regex", default)]
+    #[serde(with = "env_regex", default)]
     pub message: Option<Regex>,
     /// Regex for matching the commit body.
-    #[serde(with = "serde_regex", default)]
+    #[serde(with = "env_regex", default)]
     pub body: Option<Regex>,
     /// Regex for matching the commit footer.
-    #[serde(with = "serde_regex", default)]
+    #[serde(with = "env_regex", default)]
     pub footer: Option<Regex>,
     /// Group of the commit.
     pub group: Option<String>,
@@ -497,7 +547,7 @@ pub struct CommitParser {
     /// Field name of the commit to match the regex against.
     pub field: Option<String>,
     /// Regex for matching the field value.
-    #[serde(with = "serde_regex", default)]
+    #[serde(with = "env_regex", default)]
     pub pattern: Option<Regex>,
 }
 
@@ -815,6 +865,38 @@ mod test {
         config.changelog.body = String::from("{{ version }}");
         config.changelog.footer = Some(String::from("{{ commit.statistics.additions }}"));
         assert!(config.uses_commit_statistics()?);
+
+        Ok(())
+    }
+
+    #[test]
+    fn expand_env_vars_in_commit_parsers() -> Result<()> {
+        unsafe {
+            env::set_var("CLIFF_TEST_PARSER_SCOPE", "app1");
+        }
+        let config: Config = r#"
+            [git]
+            commit_parsers = [
+              { message = '^feat\(${CLIFF_TEST_PARSER_SCOPE}\):', group = "Features" },
+              { message = '^fix\((.*)\)', group = 'Fix (${1})' },
+            ]
+        "#
+        .parse()?;
+
+        let parsers = &config.git.commit_parsers;
+        assert_eq!(
+            Some(r"^feat\(app1\):"),
+            parsers[0].message.as_ref().map(Regex::as_str)
+        );
+        assert_eq!(Some("Fix (${1})"), parsers[1].group.as_deref());
+
+        let error = r#"
+            [git]
+            commit_parsers = [{ message = "^${CLIFF_TEST_PARSER_UNSET}", group = "Features" }]
+        "#
+        .parse::<Config>()
+        .expect_err("unset environment variable should fail");
+        assert!(error.to_string().contains("CLIFF_TEST_PARSER_UNSET"));
 
         Ok(())
     }

@@ -300,6 +300,15 @@ Examples:
   - `body` is a special field which contains the body of a conventional commit, if applicable.
   - Be aware that all fields are converted to JSON strings before they are parsed by the given regex, especially when dealing with arrays.
 
+Environment variables can be referenced in the `message`, `body`, `footer` and `pattern` regexes as `${NAME}`. They are substituted before the regex is compiled, and an unset variable is an error. This allows sharing a single configuration, e.g. across the projects of a monorepo:
+
+```toml
+[git]
+commit_parsers = [
+  { message = '^feat\(${GIT_CLIFF_SCOPE}\):', group = "Features" },
+]
+```
+
 Set `continue = true` to apply following parsers to the same commit:
 
 ```toml
