@@ -14,5 +14,9 @@ patreon
 # These links are mostly generated in CHANGELOGs and do not need strict availability checks in CI.
 https://github.com/.*/issues/.*
 https://github.com/.*/pull/.*
+# MacPorts links frequently suffer from temporary server overloads (503).
+# To prevent flaky builds, these non-critical reference links are excluded from CI checks.
+# See: https://trac.macports.org/ticket/68563?cversion=0&cnum_hist=14
+https://www.macports.org
 # The following GitHub user pages return 404 (account may be deleted, suspended, or renamed).
 https://github.com/SAY-5
