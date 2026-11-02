@@ -57,8 +57,67 @@ git cliff --unreleased --bump --context | jq -r .[0].version
 Optionally, you can specify a bump type in `--bump`:
 
 ```bash
-git cliff --bump [major|minor|patch]
+git cliff --bump [major|minor|patch|prerelease]
 ```
+
+## Prerelease versions
+
+You can initialize a prerelease for a base version bump:
+
+```bash
+git cliff --bump --prerelease beta
+```
+
+This produces a version such as `1.3.0-beta.0`.
+
+Use `--prerelease <identifier>` with `--bump` whenever you want to create or
+continue a prerelease:
+
+```bash
+git cliff --bump --prerelease beta --bumped-version
+# 1.2.0-beta.2 -> 1.2.0-beta.3
+```
+
+To increment an existing prerelease suffix without changing the base version:
+
+```bash
+git cliff --bump prerelease
+```
+
+Examples:
+
+- `1.2.0-beta.0` -> `1.2.0-beta.1`
+- `1.2.0-beta` -> `1.2.0-beta.1`
+- `1.2.0-beta.2` -> `1.2.0-beta.3`
+
+To promote an existing prerelease to its stable version, omit `--prerelease`:
+
+```bash
+git cliff --bump
+```
+
+This removes only the suffix, preserving the base version, tag prefix, and build
+metadata. It does not recalculate from the last stable tag, create a Git tag, or
+publish a release. To print only the stable version:
+
+```bash
+git cliff --bumped-version
+```
+
+Examples:
+
+- `1.2.0-beta.2` -> `1.2.0`
+- `1.2.0-rc.1+build.45` -> `1.2.0+build.45`
+
+For an existing prerelease, promotion also takes precedence over
+`--bump major|minor|patch` when no prerelease identifier is requested. For example,
+`1.2.0-rc.1 --bump minor` produces `1.2.0`, not `1.3.0`.
+Stable versions continue to bump normally.
+
+The explicit `--bump prerelease` operation is an exception: it increments the
+existing suffix without requiring `--prerelease`. It errors for a stable version
+and cannot be combined with `--prerelease`. The configured
+`bump_type = "prerelease"` has the same behavior.
 
 ## Zero-based versioning scheme
 
