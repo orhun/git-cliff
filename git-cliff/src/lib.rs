@@ -944,8 +944,8 @@ pub fn write_changelog<W: io::Write>(
             path.extension()
                 .is_none_or(|ext| ext.eq_ignore_ascii_case("md"))
         };
-        let is_markdown = output.as_ref().is_none_or(&is_markdown_path) &&
-            args.prepend.as_ref().is_none_or(&is_markdown_path);
+        let is_markdown = output.as_ref().is_none_or(is_markdown_path) &&
+            args.prepend.as_ref().is_none_or(is_markdown_path);
         if !is_markdown {
             tracing::warn!(
                 "`changelog.format` is enabled but the output is not Markdown; skipping formatting"
