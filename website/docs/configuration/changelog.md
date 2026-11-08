@@ -51,7 +51,7 @@ the marker. Set it to an empty string to disable the marker.
 
 Body template that will be rendered for each release in the changelog. For example, if the changelog contains 3 releases, it will be rendered 3 times, once for each release.
 
-The template context contains one release in the variable `release`. See [templating](/docs/category/templating) for more detail.
+The template context is the release itself, so its fields are available at the top level, for example `version` and `commits`. See [templating](/docs/category/templating) for more detail.
 
 ### footer
 
