@@ -611,6 +611,22 @@ impl Repository {
             .collect())
     }
 
+    /// Returns the set of shallow boundary commit ids if this is a shallow
+    /// repository, so graph walks stop at grafted roots like `git2::Revwalk`.
+    fn shallow_roots(&self) -> HashSet<Oid> {
+        if !self.inner.is_shallow() {
+            return HashSet::new();
+        }
+        std::fs::read_to_string(self.inner.commondir().join("shallow"))
+            .map(|contents| {
+                contents
+                    .lines()
+                    .filter_map(|line| Oid::from_str(line.trim()).ok())
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
     /// Maps each commit id to the id of the tag that "owns" it.
     ///
     /// A commit is owned by the earliest tag (in `tags` order, which must be
@@ -632,27 +648,47 @@ impl Repository {
         tags: &IndexMap<String, Tag>,
         boundary_ids: &HashSet<Oid>,
     ) -> Result<HashMap<Oid, String>> {
-        let mut ownership = HashMap::new();
+        if boundary_ids.is_empty() {
+            return Ok(HashMap::new());
+        }
         // Only tags that are part of the walked history can act as boundaries.
         let tag_ids: Vec<(Oid, &String)> = tags
             .keys()
             .filter_map(|id| Oid::from_str(id).ok().map(|oid| (oid, id)))
             .filter(|(oid, _)| boundary_ids.contains(oid))
             .collect();
-        for (index, (tag_oid, tag_id)) in tag_ids.iter().enumerate() {
-            let mut revwalk = self.inner.revwalk()?;
-            revwalk.push(*tag_oid)?;
-            // Hide all previous (older) tags so that this walk only yields the
-            // commits belonging to this tag's release range.
-            for (prev_oid, _) in &tag_ids[..index] {
-                // Ignore errors from hiding unrelated histories.
-                let _ = revwalk.hide(*prev_oid);
+        if tag_ids.is_empty() {
+            return Ok(HashMap::new());
+        }
+
+        // Walk oldest tag first with one shared visited set: skipping commits
+        // already reached from an older tag matches hiding older tags without
+        // restarting a revwalk per tag.
+        let shallow_roots = self.shallow_roots();
+        let mut ownership = HashMap::with_capacity(boundary_ids.len());
+        let mut visited = HashSet::with_capacity(boundary_ids.len());
+        let mut stack = Vec::new();
+        for (tag_oid, tag_id) in tag_ids {
+            if !visited.insert(tag_oid) {
+                continue;
             }
-            for oid in revwalk.filter_map(StdResult::ok) {
+            stack.push(tag_oid);
+            while let Some(oid) = stack.pop() {
+                let Ok(commit) = self.inner.find_commit(oid) else {
+                    continue;
+                };
                 if boundary_ids.contains(&oid) {
-                    ownership.entry(oid).or_insert_with(|| (*tag_id).clone());
+                    ownership.insert(oid, tag_id.clone());
                     if ownership.len() == boundary_ids.len() {
                         return Ok(ownership);
+                    }
+                }
+                if shallow_roots.contains(&oid) {
+                    continue;
+                }
+                for parent_oid in commit.parent_ids() {
+                    if visited.insert(parent_oid) {
+                        stack.push(parent_oid);
                     }
                 }
             }
@@ -1447,5 +1483,245 @@ mod test {
             );
             assert!(!retain, "empty commit, include: **");
         }
+    }
+
+    fn create_commit_on_parents(
+        repo: &Repository,
+        refname: Option<&str>,
+        msg: &str,
+        timestamp: i64,
+        parent_ids: &[Oid],
+    ) -> Result<Oid> {
+        let tree_id = repo.inner.treebuilder(None)?.write()?;
+        let tree = repo.inner.find_tree(tree_id)?;
+        let sig = git2::Signature::new("test", "test@example.com", &git2::Time::new(timestamp, 0))?;
+        let parents: Vec<Commit<'_>> = parent_ids
+            .iter()
+            .map(|id| repo.inner.find_commit(*id))
+            .collect::<StdResult<Vec<_>, _>>()?;
+        let parent_refs: Vec<&Commit<'_>> = parents.iter().collect();
+        Ok(repo
+            .inner
+            .commit(refname, &sig, &sig, msg, &tree, &parent_refs)?)
+    }
+
+    fn create_lightweight_tag(repo: &Repository, name: &str, commit_id: Oid) -> Result<()> {
+        let obj = repo.inner.find_object(commit_id, None)?;
+        repo.inner.tag_lightweight(name, &obj, false)?;
+        Ok(())
+    }
+
+    #[test]
+    fn commit_tag_ownership_handles_merged_branches_and_unreleased() -> Result<()> {
+        let (repo, _temp_dir) = create_temp_repo();
+
+        // Cross-merged branch graph:
+        //   c1 (v0.1.0) <- c_main (v0.2.0) <- m_feature_to_main (HEAD)
+        //              \<- c_feat <- m_main_to_feature (merged into m_feature_to_main)
+        // `c_feat` is not an ancestor of `v0.2.0` and must stay unreleased.
+        let c1 = create_commit_on_parents(&repo, Some("HEAD"), "feat: init", 1_700_000_000, &[])?;
+        create_lightweight_tag(&repo, "v0.1.0", c1)?;
+
+        let c_feat =
+            create_commit_on_parents(&repo, None, "feat: unreleased", 1_700_000_001, &[c1])?;
+        let c_main =
+            create_commit_on_parents(&repo, Some("HEAD"), "fix: release", 1_700_000_002, &[c1])?;
+        create_lightweight_tag(&repo, "v0.2.0", c_main)?;
+
+        let m_main_to_feat =
+            create_commit_on_parents(&repo, None, "chore: merge main", 1_700_000_003, &[
+                c_feat, c_main,
+            ])?;
+        let m_feat_to_main = create_commit_on_parents(
+            &repo,
+            Some("HEAD"),
+            "chore: merge feature",
+            1_700_000_004,
+            &[c_main, m_main_to_feat],
+        )?;
+
+        // Also test a hotfix branch released after v0.2.0 timestamp-wise (v0.1.1)
+        // branched from v0.1.0 and merged back into HEAD.
+        let c_hotfix = create_commit_on_parents(&repo, None, "fix: hotfix", 1_700_000_005, &[c1])?;
+        create_lightweight_tag(&repo, "v0.1.1", c_hotfix)?;
+        let m_hotfix = create_commit_on_parents(
+            &repo,
+            Some("HEAD"),
+            "chore: merge hotfix",
+            1_700_000_006,
+            &[m_feat_to_main, c_hotfix],
+        )?;
+
+        let tags = repo.tags(&None, false, false)?;
+        let commits = repo.commits(None, None, None, false)?;
+        let boundary_ids: HashSet<Oid> = commits.iter().map(Commit::id).collect();
+        let ownership = repo.commit_tag_ownership(&tags, &boundary_ids)?;
+
+        assert_eq!(ownership.get(&c1), Some(&c1.to_string()));
+        assert_eq!(ownership.get(&c_main), Some(&c_main.to_string()));
+        assert_eq!(ownership.get(&c_hotfix), Some(&c_hotfix.to_string()));
+        assert_eq!(ownership.get(&c_feat), None);
+        assert_eq!(ownership.get(&m_main_to_feat), None);
+        assert_eq!(ownership.get(&m_feat_to_main), None);
+        assert_eq!(ownership.get(&m_hotfix), None);
+        Ok(())
+    }
+
+    #[test]
+    fn commit_tag_ownership_respects_boundaries_and_empty_inputs() -> Result<()> {
+        let (repo, _temp_dir) = create_temp_repo();
+
+        let c1 = create_commit_on_parents(&repo, Some("HEAD"), "feat: c1", 1_700_000_000, &[])?;
+        create_lightweight_tag(&repo, "v0.1.0", c1)?;
+        let c2 = create_commit_on_parents(&repo, Some("HEAD"), "feat: c2", 1_700_000_001, &[c1])?;
+        let c3 = create_commit_on_parents(&repo, Some("HEAD"), "feat: c3", 1_700_000_002, &[c2])?;
+        create_lightweight_tag(&repo, "v0.2.0", c3)?;
+        let c4 = create_commit_on_parents(&repo, Some("HEAD"), "feat: c4", 1_700_000_003, &[c3])?;
+
+        // Orphan branch tag that is outside HEAD's boundary_ids.
+        let orphan = create_commit_on_parents(&repo, None, "feat: orphan", 1_700_000_004, &[])?;
+        create_lightweight_tag(&repo, "v0.1.5-orphan", orphan)?;
+
+        let tags = repo.tags(&None, false, false)?;
+
+        // Empty boundaries -> empty map.
+        assert!(
+            repo.commit_tag_ownership(&tags, &HashSet::new())?
+                .is_empty()
+        );
+        // Empty tags -> empty map.
+        assert!(
+            repo.commit_tag_ownership(&IndexMap::new(), &HashSet::from([c1, c2, c3]))?
+                .is_empty()
+        );
+
+        // Simulate path filtering omitting `c2` from `boundary_ids`: traversal
+        // still crosses `c2` to reach `c1`, without adding `c2` to ownership.
+        let filtered_boundaries = HashSet::from([c1, c3, c4]);
+        let ownership = repo.commit_tag_ownership(&tags, &filtered_boundaries)?;
+        assert_eq!(ownership.get(&c1), Some(&c1.to_string()));
+        assert_eq!(ownership.get(&c2), None);
+        assert_eq!(ownership.get(&c3), Some(&c3.to_string()));
+        assert_eq!(ownership.get(&c4), None);
+        assert_eq!(ownership.get(&orphan), None);
+        Ok(())
+    }
+
+    #[test]
+    fn commit_tag_ownership_handles_shallow_repos_and_grafts() -> Result<()> {
+        let (origin_repo, origin_dir) = create_temp_repo();
+
+        let c1 =
+            create_commit_on_parents(&origin_repo, Some("HEAD"), "feat: 1", 1_700_000_000, &[])?;
+        create_lightweight_tag(&origin_repo, "v0.1.0", c1)?;
+        let c2 =
+            create_commit_on_parents(&origin_repo, Some("HEAD"), "feat: 2", 1_700_000_001, &[c1])?;
+        let c3 =
+            create_commit_on_parents(&origin_repo, Some("HEAD"), "feat: 3", 1_700_000_002, &[c2])?;
+        create_lightweight_tag(&origin_repo, "v0.2.0", c3)?;
+        let c4 =
+            create_commit_on_parents(&origin_repo, Some("HEAD"), "feat: 4", 1_700_000_003, &[c3])?;
+        let c5 =
+            create_commit_on_parents(&origin_repo, Some("HEAD"), "feat: 5", 1_700_000_004, &[c4])?;
+        create_lightweight_tag(&origin_repo, "v0.3.0", c5)?;
+
+        // Real shallow clone where parents before depth 2 are missing objects.
+        let shallow_dir = TempDir::with_prefix("git-cliff-shallow-")?;
+        let output = Command::new("git")
+            .args([
+                "clone",
+                "--depth",
+                "2",
+                "--no-local",
+                &origin_dir.path().to_string_lossy(),
+                &shallow_dir.path().to_string_lossy(),
+            ])
+            .output()?;
+        assert!(
+            output.status.success(),
+            "git clone --depth 2 failed: {output:?}"
+        );
+
+        let shallow_repo = Repository::discover(shallow_dir.path().to_path_buf())?;
+        assert!(shallow_repo.inner.is_shallow());
+        let shallow_tags = shallow_repo.tags(&None, false, false)?;
+        let shallow_commits = shallow_repo.commits(None, None, None, false)?;
+        let shallow_boundaries: HashSet<Oid> = shallow_commits.iter().map(Commit::id).collect();
+        assert_eq!(shallow_boundaries, HashSet::from([c4, c5]));
+        let shallow_ownership =
+            shallow_repo.commit_tag_ownership(&shallow_tags, &shallow_boundaries)?;
+        assert_eq!(shallow_ownership.get(&c4), Some(&c5.to_string()));
+        assert_eq!(shallow_ownership.get(&c5), Some(&c5.to_string()));
+
+        // Shallow graft where the parent object still exists in ODB: writing `c3`
+        // into `.git/shallow` must stop traversal at `c3` rather than claiming `c2`.
+        fs::write(
+            origin_repo.inner.commondir().join("shallow"),
+            format!("{c3}\n"),
+        )?;
+        assert!(origin_repo.inner.is_shallow());
+        let grafted_tags = origin_repo.tags(&None, false, false)?;
+        let grafted_boundaries = HashSet::from([c2, c3, c4, c5]);
+        let grafted_ownership =
+            origin_repo.commit_tag_ownership(&grafted_tags, &grafted_boundaries)?;
+        assert_eq!(grafted_ownership.get(&c2), None);
+        assert_eq!(grafted_ownership.get(&c3), Some(&c3.to_string()));
+        assert_eq!(grafted_ownership.get(&c4), Some(&c5.to_string()));
+        assert_eq!(grafted_ownership.get(&c5), Some(&c5.to_string()));
+        Ok(())
+    }
+
+    #[test]
+    fn commit_tag_ownership_maps_many_tags_and_commits() -> Result<()> {
+        let (repo, _temp_dir) = create_temp_repo();
+
+        let tag_count = 40;
+        let commits_per_tag = 3;
+        let mut expected = Vec::with_capacity(tag_count * commits_per_tag);
+        let mut parent = Vec::new();
+        let mut ts = 1_700_000_000;
+        let tree_id = repo.inner.treebuilder(None)?.write()?;
+        let tree = repo.inner.find_tree(tree_id)?;
+
+        for tag_idx in 0..tag_count {
+            let mut batch = Vec::with_capacity(commits_per_tag);
+            for offset in 0..commits_per_tag {
+                let sig =
+                    git2::Signature::new("test", "test@example.com", &git2::Time::new(ts, 0))?;
+                let parents: Vec<Commit<'_>> = parent
+                    .iter()
+                    .map(|id| repo.inner.find_commit(*id))
+                    .collect::<StdResult<Vec<_>, _>>()?;
+                let parent_refs: Vec<&Commit<'_>> = parents.iter().collect();
+                let oid = repo.inner.commit(
+                    Some("HEAD"),
+                    &sig,
+                    &sig,
+                    &format!("feat: {tag_idx}-{offset}"),
+                    &tree,
+                    &parent_refs,
+                )?;
+                ts += 1;
+                parent = vec![oid];
+                batch.push(oid);
+            }
+            let tag_oid = *batch.last().expect("non-empty batch");
+            create_lightweight_tag(&repo, &format!("v0.{tag_idx}.0"), tag_oid)?;
+            let tag_hash = tag_oid.to_string();
+            for oid in batch {
+                expected.push((oid, tag_hash.clone()));
+            }
+        }
+
+        let tags = repo.tags(&None, false, false)?;
+        let commits = repo.commits(None, None, None, false)?;
+        let boundary_ids: HashSet<Oid> = commits.iter().map(Commit::id).collect();
+        let ownership = repo.commit_tag_ownership(&tags, &boundary_ids)?;
+
+        assert_eq!(ownership.len(), expected.len());
+        for (oid, expected_tag) in expected {
+            assert_eq!(ownership.get(&oid), Some(&expected_tag));
+        }
+        Ok(())
     }
 }
