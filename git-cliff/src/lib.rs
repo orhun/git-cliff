@@ -1143,11 +1143,31 @@ mod tests {
 
         /// Processes the repository with the changelog scoped to project `a`.
         fn process(dir: &TempDir, args: &[&str]) -> Result<Vec<Release<'static>>> {
+            process_with(
+                dir,
+                "[git]\ntag_pattern = \"a-.*\"\ninclude_paths = [\"a/**\"]",
+                args,
+            )
+        }
+
+        fn process_with(
+            dir: &TempDir,
+            config: &str,
+            args: &[&str],
+        ) -> Result<Vec<Release<'static>>> {
             let repository = Box::leak(Box::new(Repository::init(dir.path().to_path_buf())?));
-            let mut config: Config =
-                "[git]\ntag_pattern = \"a-.*\"\ninclude_paths = [\"a/**\"]".parse()?;
+            let mut config: Config = config.parse()?;
             let args = Opt::parse_from(std::iter::once(&"git-cliff").chain(args).copied());
             process_repository(repository, &mut config, &args)
+        }
+
+        fn rev_parse(dir: &TempDir, rev: &str) -> Option<String> {
+            let output = std::process::Command::new("git")
+                .args(["rev-parse", rev])
+                .current_dir(dir.path())
+                .output()
+                .expect("failed to run git");
+            Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
         }
 
         fn summary(releases: &[Release<'_>]) -> Vec<(Option<String>, Vec<String>)> {
@@ -1182,15 +1202,7 @@ mod tests {
                 ],
                 summary(&releases)
             );
-            let tag_commit = std::process::Command::new("git")
-                .args(["rev-parse", "a-1.0.0"])
-                .current_dir(dir.path())
-                .output()?
-                .stdout;
-            assert_eq!(
-                Some(String::from_utf8_lossy(&tag_commit).trim().to_string()),
-                releases[0].commit_id
-            );
+            assert_eq!(rev_parse(&dir, "a-1.0.0"), releases[0].commit_id);
             assert_eq!(
                 Some(String::from("a-1.0.0")),
                 previous_version(&releases[1])
@@ -1275,6 +1287,83 @@ mod tests {
                 vec![(Some(String::from("a-2.0.0")), vec![])],
                 summary(&releases)
             );
+            Ok(())
+        }
+
+        #[test]
+        fn tags_close_releases_without_path_filters() -> Result<()> {
+            let dir = TempDir::with_prefix("git-cliff-")?;
+            git(dir.path(), &["init", "--initial-branch", "main"]);
+            commit_file(dir.path(), "one", "feat: one");
+            git(dir.path(), &["tag", "v1.0.0"]);
+            commit_file(dir.path(), "two", "fix: two");
+            commit_file(dir.path(), "three", "chore: three");
+            git(dir.path(), &["tag", "v1.1.0"]);
+            commit_file(dir.path(), "four", "fix: four");
+
+            let releases = process_with(&dir, "[git]\ntag_pattern = \"v.*\"", &[])?;
+            assert_eq!(
+                vec![
+                    (Some(String::from("v1.0.0")), vec![String::from(
+                        "feat: one"
+                    )]),
+                    (Some(String::from("v1.1.0")), vec![
+                        String::from("fix: two"),
+                        String::from("chore: three")
+                    ]),
+                    (None, vec![String::from("fix: four")]),
+                ],
+                summary(&releases)
+            );
+            assert_eq!(rev_parse(&dir, "v1.0.0"), releases[0].commit_id);
+            assert_eq!(rev_parse(&dir, "v1.1.0"), releases[1].commit_id);
+            assert_eq!(Some(String::from("v1.0.0")), previous_version(&releases[1]));
+            assert_eq!(Some(String::from("v1.1.0")), previous_version(&releases[2]));
+            Ok(())
+        }
+
+        #[test]
+        fn path_filtered_tag_on_matching_commit_is_release() -> Result<()> {
+            let dir = TempDir::with_prefix("git-cliff-")?;
+            git(dir.path(), &["init", "--initial-branch", "main"]);
+            commit_file(dir.path(), "a/file", "feat: add project a");
+            git(dir.path(), &["tag", "a-1.0.0"]);
+            commit_file(dir.path(), "b/file", "feat: add project b");
+            commit_file(dir.path(), "a/file", "fix: fix project a");
+
+            let releases = process(&dir, &[])?;
+            assert_eq!(
+                vec![
+                    (Some(String::from("a-1.0.0")), vec![String::from(
+                        "feat: add project a"
+                    )]),
+                    (None, vec![String::from("fix: fix project a")]),
+                ],
+                summary(&releases)
+            );
+            assert_eq!(rev_parse(&dir, "a-1.0.0"), releases[0].commit_id);
+            Ok(())
+        }
+
+        #[test]
+        fn path_filtered_commits_get_statistics_with_context() -> Result<()> {
+            let dir = monorepo();
+            commit_file(dir.path(), "a/file", "fix: fix project a");
+
+            let releases = process(&dir, &["--context"])?;
+            assert_eq!(
+                vec![
+                    (Some(String::from("a-1.0.0")), vec![String::from(
+                        "feat: add project a"
+                    )]),
+                    (None, vec![String::from("fix: fix project a")]),
+                ],
+                summary(&releases)
+            );
+            let statistics = &releases[1].commits[0].statistics;
+            assert_eq!(1, statistics.files_changed);
+            assert_eq!(1, statistics.additions);
+            assert_eq!(1, statistics.deletions);
             Ok(())
         }
     }
