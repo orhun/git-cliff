@@ -136,6 +136,10 @@ jobs:
             command: v2.6.1..v2.7.0 --include-path .github/fixtures/
           - fixtures-name: test-monorepo-include-path
             command: --include-path .github/fixtures/ v2.6.1..v2.7.0
+          # Regression test for #1122: release tags on a commit that touches
+          # none of the included paths must still be release boundaries.
+          - fixtures-name: test-include-path-release-tags
+            command: --include-path "a/**" --bump
           - fixtures-name: test-require-conventional-negative
           - fixtures-name: test-require-conventional-skipped
           - fixtures-name: test-submodules

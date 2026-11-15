@@ -20,6 +20,8 @@ git cliff --include-path "packages/some_library/**/*" --exclude-path ".github/*"
 
 These paths must be relative to the repository's root and should be a valid glob pattern.
 
+The path filters only decide which commits are listed. Release tags are still taken from the whole history (see [`tag_pattern`](/docs/configuration/git#tag_pattern)), so a tag on a commit that does not touch the included paths still marks a release. A release without any matching commits is not listed, but it is still used as the previous version, e.g. for `--bump`.
+
 :::info
 
 Path patterns can be passed in three ways:

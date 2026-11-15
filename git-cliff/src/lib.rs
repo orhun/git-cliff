@@ -229,6 +229,14 @@ fn workdir_include_pattern(root: &Path, workdir: &Path) -> Result<Option<Pattern
     Ok(Some(Pattern::new(&pattern)?))
 }
 
+/// An entry of the history that is turned into releases, oldest first.
+enum ReleaseEntry<'a, C> {
+    /// A commit that is part of the changelog.
+    Commit(&'a C),
+    /// A tagged commit that was filtered out but still closes a release.
+    Tag(C),
+}
+
 /// Processes the tags and commits for creating release entries for the
 /// changelog.
 ///
@@ -369,6 +377,7 @@ fn process_repository<'a>(
     let include_path = (!include_path.is_empty()).then_some(include_path);
     let exclude_path =
         (!config.git.exclude_paths.is_empty()).then_some(config.git.exclude_paths.clone());
+    let has_path_filter = include_path.is_some() || exclude_path.is_some();
     let mut commits = repository.commits(
         commit_range.as_deref(),
         include_path,
@@ -383,6 +392,7 @@ fn process_repository<'a>(
     // Update tags.
     let mut releases = vec![Release::default()];
     let mut tag_timestamp = None;
+    let mut unreleased_version = None;
     if let Some(ref tag) = args.tag {
         if let Some(commit_id) = commits.first().map(|c| c.id().to_string()) {
             match tags.get(&commit_id) {
@@ -395,21 +405,33 @@ fn process_repository<'a>(
                 }
             }
         } else {
-            releases[0].version = Some(tag.clone());
-            releases[0].timestamp = Some(
-                SystemTime::now()
-                    .duration_since(UNIX_EPOCH)?
-                    .as_secs()
-                    .try_into()?,
-            );
+            unreleased_version = Some(tag.clone());
         }
     }
 
     // Assign commits to releases by graph reachability instead of their
     // position in the linearized log.
-    // Only tags present in the walk can be release boundaries.
+    // Only tags present in the walk can be release boundaries. Path filters
+    // decide which commits are listed, not which tags are releases, so the
+    // boundaries come from the unfiltered walk when they are set.
     let commit_ids: HashSet<_> = commits.iter().map(|commit| commit.id()).collect();
-    let ownership = repository.commit_tag_ownership(&tags, &commit_ids)?;
+    let walk_ids: HashSet<_>;
+    let boundary_ids = if has_path_filter {
+        walk_ids = repository
+            .commits(
+                commit_range.as_deref(),
+                None,
+                None,
+                config.git.topo_order_commits,
+            )?
+            .iter()
+            .map(|commit| commit.id())
+            .collect();
+        &walk_ids
+    } else {
+        &commit_ids
+    };
+    let ownership = repository.commit_tag_ownership(&tags, boundary_ids)?;
 
     // Group commits by owning tag in a single pass, keeping each group
     // oldest-first. Unowned commits remain unreleased.
@@ -424,53 +446,70 @@ fn process_repository<'a>(
 
     // Emit tagged groups oldest to newest so the loop below closes releases in
     // order, followed by the unreleased commits.
-    let mut ordered_commits = Vec::with_capacity(commits.len());
+    let mut ordered_commits = Vec::with_capacity(commits.len() + tags.len());
     for tag_id in tags.keys() {
-        let Some(mut group) = groups.remove(tag_id.as_str()) else {
+        let group = groups.remove(tag_id.as_str());
+        let Some(tag_commit) = repository.find_commit(tag_id) else {
             continue;
         };
-        // The tagged commit is the release tip, so close the group with it.
-        if let Some(pos) = group
-            .iter()
-            .position(|commit| commit.id().to_string() == *tag_id)
-        {
-            let tag_commit = group.remove(pos);
-            group.push(tag_commit);
+        if commit_ids.contains(&tag_commit.id()) {
+            let Some(mut group) = group else {
+                continue;
+            };
+            // The tagged commit is the release tip, so close the group with it.
+            if let Some(pos) = group
+                .iter()
+                .position(|commit| commit.id() == tag_commit.id())
+            {
+                let tag_commit = group.remove(pos);
+                group.push(tag_commit);
+            }
+            ordered_commits.extend(group.into_iter().map(ReleaseEntry::Commit));
+        } else if boundary_ids.contains(&tag_commit.id()) {
+            // The tagged commit was filtered out by the path filters, so the
+            // tag closes the release on its own.
+            ordered_commits.extend(group.into_iter().flatten().map(ReleaseEntry::Commit));
+            ordered_commits.push(ReleaseEntry::Tag(tag_commit));
         }
-        ordered_commits.extend(group);
     }
-    ordered_commits.extend(unreleased);
+    ordered_commits.extend(unreleased.into_iter().map(ReleaseEntry::Commit));
 
     // Process releases.
     let mut previous_release = Release::default();
     let mut first_processed_tag = None;
     let repository_path = repository.root_path()?.to_string_lossy().into_owned();
-    for git_commit in ordered_commits {
+    for entry in &ordered_commits {
         let release = releases.last_mut().unwrap();
-        let mut commit = Commit::from(git_commit);
-        if compute_commit_statistics {
-            commit.statistics = match repository.commit_statistics(git_commit) {
-                Ok(statistics) => statistics,
-                Err(err)
-                    if matches!(
-                        &err,
-                        Error::GitError(git_err) if git_err.message().contains("object not found")
-                    ) =>
-                {
-                    tracing::warn!(
-                        "Skipping diff statistics for commit {} because a Git object is missing: \
-                         {err}",
-                        commit.id,
-                    );
-                    CommitStatistics::default()
+        let git_commit = match entry {
+            ReleaseEntry::Commit(git_commit) => {
+                let mut commit = Commit::from(*git_commit);
+                if compute_commit_statistics {
+                    commit.statistics = match repository.commit_statistics(git_commit) {
+                        Ok(statistics) => statistics,
+                        Err(err)
+                            if matches!(
+                                &err,
+                                Error::GitError(git_err)
+                                    if git_err.message().contains("object not found")
+                            ) =>
+                        {
+                            tracing::warn!(
+                                "Skipping diff statistics for commit {} because a Git object is \
+                                 missing: {err}",
+                                commit.id,
+                            );
+                            CommitStatistics::default()
+                        }
+                        Err(err) => return Err(err),
+                    }
                 }
-                Err(err) => return Err(err),
+                release.commits.push(commit);
+                *git_commit
             }
-        }
-        let commit_id = commit.id.clone();
-        release.commits.push(commit);
+            ReleaseEntry::Tag(tag_commit) => tag_commit,
+        };
         release.repository = Some(repository_path.clone());
-        release.commit_id = Some(commit_id);
+        release.commit_id = Some(git_commit.id().to_string());
         if let Some(tag) = tags.get(release.commit_id.as_ref().unwrap()) {
             release.version = Some(tag.name.clone());
             release.message.clone_from(&tag.message);
@@ -493,13 +532,31 @@ fn process_repository<'a>(
             previous_release.previous = None;
             release.previous = Some(Box::new(previous_release));
             previous_release = release.clone();
-            releases.push(Release::default());
+            if release.commits.is_empty() {
+                // A tag without any commits matching the path filters is not
+                // listed as a release, but it is still the previous release of
+                // the next one (e.g. for bumping).
+                *release = Release::default();
+            } else {
+                releases.push(Release::default());
+            }
         }
     }
 
     debug_assert!(!releases.is_empty());
 
-    if releases.len() > 1 {
+    if let Some(version) = unreleased_version {
+        let release = releases.last_mut().unwrap();
+        release.version = Some(version);
+        release.timestamp = Some(
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)?
+                .as_secs()
+                .try_into()?,
+        );
+    }
+
+    if first_processed_tag.is_some() {
         previous_release.previous = None;
         releases.last_mut().unwrap().previous = Some(Box::new(previous_release));
     }
@@ -1015,6 +1072,7 @@ pub fn write_changelog<W: io::Write>(
 
 #[cfg(test)]
 mod tests {
+    use clap::Parser;
     use pretty_assertions::assert_eq;
     use temp_dir::TempDir;
 
@@ -1038,6 +1096,178 @@ mod tests {
     fn workdir_include_pattern_is_none_for_repo_root() -> Result<()> {
         let root = TempDir::with_prefix("git-cliff-")?;
         assert_eq!(None, workdir_include_pattern(root.path(), root.path())?);
+        Ok(())
+    }
+
+    fn git(dir: &Path, args: &[&str]) {
+        let output = std::process::Command::new("git")
+            .args(["-c", "commit.gpgSign=false", "-c", "tag.gpgSign=false"])
+            .args(args)
+            .current_dir(dir)
+            .env("GIT_AUTHOR_NAME", "test")
+            .env("GIT_AUTHOR_EMAIL", "test@example.com")
+            .env("GIT_COMMITTER_NAME", "test")
+            .env("GIT_COMMITTER_EMAIL", "test@example.com")
+            .output()
+            .expect("failed to run git");
+        assert!(output.status.success(), "git {args:?} failed: {output:?}");
+    }
+
+    fn commit_file(dir: &Path, path: &str, message: &str) {
+        let path = dir.join(path);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(&path, message).unwrap();
+        git(dir, &["add", "."]);
+        git(dir, &["commit", "-m", message]);
+    }
+
+    /// Creates a monorepo where the `a-*` and `b-*` releases are tagged on
+    /// commits that touch neither `a/` nor `b/`.
+    fn monorepo() -> TempDir {
+        let dir = TempDir::with_prefix("git-cliff-").unwrap();
+        git(dir.path(), &["init", "--initial-branch", "main"]);
+        commit_file(dir.path(), "a/file", "feat: add project a");
+        commit_file(dir.path(), "b/file", "feat: add project b");
+        commit_file(dir.path(), "README.md", "chore: prepare release");
+        git(dir.path(), &["tag", "a-1.0.0"]);
+        git(dir.path(), &["tag", "b-1.0.0"]);
+        dir
+    }
+
+    /// Processes the repository with the changelog scoped to project `a`.
+    fn process(dir: &TempDir, args: &[&str]) -> Result<Vec<Release<'static>>> {
+        let repository = Box::leak(Box::new(Repository::init(dir.path().to_path_buf())?));
+        let mut config: Config =
+            "[git]\ntag_pattern = \"a-.*\"\ninclude_paths = [\"a/**\"]".parse()?;
+        let args = Opt::parse_from(std::iter::once(&"git-cliff").chain(args).copied());
+        process_repository(repository, &mut config, &args)
+    }
+
+    fn summary(releases: &[Release<'_>]) -> Vec<(Option<String>, Vec<String>)> {
+        releases
+            .iter()
+            .map(|release| {
+                (
+                    release.version.clone(),
+                    release.commits.iter().map(|c| c.message.clone()).collect(),
+                )
+            })
+            .collect()
+    }
+
+    fn previous_version(release: &Release<'_>) -> Option<String> {
+        release.previous.as_ref().and_then(|p| p.version.clone())
+    }
+
+    #[test]
+    fn path_filtered_tag_is_release_boundary() -> Result<()> {
+        let dir = monorepo();
+        commit_file(dir.path(), "a/file", "fix: fix project a");
+        commit_file(dir.path(), "b/file", "feat: add feature to project b");
+
+        let releases = process(&dir, &[])?;
+        assert_eq!(
+            vec![
+                (Some(String::from("a-1.0.0")), vec![String::from(
+                    "feat: add project a"
+                )]),
+                (None, vec![String::from("fix: fix project a")]),
+            ],
+            summary(&releases)
+        );
+        let tag_commit = std::process::Command::new("git")
+            .args(["rev-parse", "a-1.0.0"])
+            .current_dir(dir.path())
+            .output()?
+            .stdout;
+        assert_eq!(
+            Some(String::from_utf8_lossy(&tag_commit).trim().to_string()),
+            releases[0].commit_id
+        );
+        assert_eq!(
+            Some(String::from("a-1.0.0")),
+            previous_version(&releases[1])
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn path_filtered_tag_without_commits_is_kept_as_previous_release() -> Result<()> {
+        let dir = monorepo();
+        commit_file(dir.path(), "b/file", "fix: fix project b");
+        commit_file(dir.path(), "README.md", "chore: prepare another release");
+        git(dir.path(), &["tag", "a-1.1.0"]);
+        commit_file(dir.path(), "a/file", "fix: fix project a");
+
+        let releases = process(&dir, &[])?;
+        assert_eq!(
+            vec![
+                (Some(String::from("a-1.0.0")), vec![String::from(
+                    "feat: add project a"
+                )]),
+                (None, vec![String::from("fix: fix project a")]),
+            ],
+            summary(&releases)
+        );
+        assert_eq!(
+            Some(String::from("a-1.1.0")),
+            previous_version(&releases[1])
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn path_filtered_first_tag_without_commits_is_previous_release() -> Result<()> {
+        let dir = TempDir::with_prefix("git-cliff-")?;
+        git(dir.path(), &["init", "--initial-branch", "main"]);
+        commit_file(dir.path(), "README.md", "chore: prepare release");
+        git(dir.path(), &["tag", "a-1.0.0"]);
+        commit_file(dir.path(), "a/file", "fix: fix project a");
+
+        let releases = process(&dir, &[])?;
+        assert_eq!(
+            vec![(None, vec![String::from("fix: fix project a")])],
+            summary(&releases)
+        );
+        assert_eq!(
+            Some(String::from("a-1.0.0")),
+            previous_version(&releases[0])
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn path_filtered_tag_outside_walk_is_not_release_boundary() -> Result<()> {
+        let dir = monorepo();
+        git(dir.path(), &["switch", "--create", "side"]);
+        commit_file(dir.path(), "README.md", "chore: release from a side branch");
+        git(dir.path(), &["tag", "a-9.0.0"]);
+        git(dir.path(), &["switch", "main"]);
+        commit_file(dir.path(), "a/file", "fix: fix project a");
+
+        let releases = process(&dir, &[])?;
+        assert_eq!(
+            vec![
+                (Some(String::from("a-1.0.0")), vec![String::from(
+                    "feat: add project a"
+                )]),
+                (None, vec![String::from("fix: fix project a")]),
+            ],
+            summary(&releases)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn path_filtered_tag_arg_without_commits_is_unreleased_version() -> Result<()> {
+        let dir = monorepo();
+        commit_file(dir.path(), "b/file", "fix: fix project b");
+
+        let releases = process(&dir, &["--tag", "a-2.0.0", "a-1.0.0..HEAD"])?;
+        assert_eq!(
+            vec![(Some(String::from("a-2.0.0")), vec![])],
+            summary(&releases)
+        );
         Ok(())
     }
 }
