@@ -1099,175 +1099,183 @@ mod tests {
         Ok(())
     }
 
-    fn git(dir: &Path, args: &[&str]) {
-        let output = std::process::Command::new("git")
-            .args(["-c", "commit.gpgSign=false", "-c", "tag.gpgSign=false"])
-            .args(args)
-            .current_dir(dir)
-            .env("GIT_AUTHOR_NAME", "test")
-            .env("GIT_AUTHOR_EMAIL", "test@example.com")
-            .env("GIT_COMMITTER_NAME", "test")
-            .env("GIT_COMMITTER_EMAIL", "test@example.com")
-            .output()
-            .expect("failed to run git");
-        assert!(output.status.success(), "git {args:?} failed: {output:?}");
-    }
+    /// These tests build real repositories with the `git` command, which the
+    /// Nix build sandbox doesn't have (`flake.nix` skips tests matching `repo`).
+    mod repo {
+        use pretty_assertions::assert_eq;
 
-    fn commit_file(dir: &Path, path: &str, message: &str) {
-        let path = dir.join(path);
-        fs::create_dir_all(path.parent().unwrap()).unwrap();
-        fs::write(&path, message).unwrap();
-        git(dir, &["add", "."]);
-        git(dir, &["commit", "-m", message]);
-    }
+        use super::*;
 
-    /// Creates a monorepo where the `a-*` and `b-*` releases are tagged on
-    /// commits that touch neither `a/` nor `b/`.
-    fn monorepo() -> TempDir {
-        let dir = TempDir::with_prefix("git-cliff-").unwrap();
-        git(dir.path(), &["init", "--initial-branch", "main"]);
-        commit_file(dir.path(), "a/file", "feat: add project a");
-        commit_file(dir.path(), "b/file", "feat: add project b");
-        commit_file(dir.path(), "README.md", "chore: prepare release");
-        git(dir.path(), &["tag", "a-1.0.0"]);
-        git(dir.path(), &["tag", "b-1.0.0"]);
-        dir
-    }
+        fn git(dir: &Path, args: &[&str]) {
+            let output = std::process::Command::new("git")
+                .args(["-c", "commit.gpgSign=false", "-c", "tag.gpgSign=false"])
+                .args(args)
+                .current_dir(dir)
+                .env("GIT_AUTHOR_NAME", "test")
+                .env("GIT_AUTHOR_EMAIL", "test@example.com")
+                .env("GIT_COMMITTER_NAME", "test")
+                .env("GIT_COMMITTER_EMAIL", "test@example.com")
+                .output()
+                .expect("failed to run git");
+            assert!(output.status.success(), "git {args:?} failed: {output:?}");
+        }
 
-    /// Processes the repository with the changelog scoped to project `a`.
-    fn process(dir: &TempDir, args: &[&str]) -> Result<Vec<Release<'static>>> {
-        let repository = Box::leak(Box::new(Repository::init(dir.path().to_path_buf())?));
-        let mut config: Config =
-            "[git]\ntag_pattern = \"a-.*\"\ninclude_paths = [\"a/**\"]".parse()?;
-        let args = Opt::parse_from(std::iter::once(&"git-cliff").chain(args).copied());
-        process_repository(repository, &mut config, &args)
-    }
+        fn commit_file(dir: &Path, path: &str, message: &str) {
+            let path = dir.join(path);
+            fs::create_dir_all(path.parent().unwrap()).unwrap();
+            fs::write(&path, message).unwrap();
+            git(dir, &["add", "."]);
+            git(dir, &["commit", "-m", message]);
+        }
 
-    fn summary(releases: &[Release<'_>]) -> Vec<(Option<String>, Vec<String>)> {
-        releases
-            .iter()
-            .map(|release| {
-                (
-                    release.version.clone(),
-                    release.commits.iter().map(|c| c.message.clone()).collect(),
-                )
-            })
-            .collect()
-    }
+        /// Creates a monorepo where the `a-*` and `b-*` releases are tagged on
+        /// commits that touch neither `a/` nor `b/`.
+        fn monorepo() -> TempDir {
+            let dir = TempDir::with_prefix("git-cliff-").unwrap();
+            git(dir.path(), &["init", "--initial-branch", "main"]);
+            commit_file(dir.path(), "a/file", "feat: add project a");
+            commit_file(dir.path(), "b/file", "feat: add project b");
+            commit_file(dir.path(), "README.md", "chore: prepare release");
+            git(dir.path(), &["tag", "a-1.0.0"]);
+            git(dir.path(), &["tag", "b-1.0.0"]);
+            dir
+        }
 
-    fn previous_version(release: &Release<'_>) -> Option<String> {
-        release.previous.as_ref().and_then(|p| p.version.clone())
-    }
+        /// Processes the repository with the changelog scoped to project `a`.
+        fn process(dir: &TempDir, args: &[&str]) -> Result<Vec<Release<'static>>> {
+            let repository = Box::leak(Box::new(Repository::init(dir.path().to_path_buf())?));
+            let mut config: Config =
+                "[git]\ntag_pattern = \"a-.*\"\ninclude_paths = [\"a/**\"]".parse()?;
+            let args = Opt::parse_from(std::iter::once(&"git-cliff").chain(args).copied());
+            process_repository(repository, &mut config, &args)
+        }
 
-    #[test]
-    fn path_filtered_tag_is_release_boundary() -> Result<()> {
-        let dir = monorepo();
-        commit_file(dir.path(), "a/file", "fix: fix project a");
-        commit_file(dir.path(), "b/file", "feat: add feature to project b");
+        fn summary(releases: &[Release<'_>]) -> Vec<(Option<String>, Vec<String>)> {
+            releases
+                .iter()
+                .map(|release| {
+                    (
+                        release.version.clone(),
+                        release.commits.iter().map(|c| c.message.clone()).collect(),
+                    )
+                })
+                .collect()
+        }
 
-        let releases = process(&dir, &[])?;
-        assert_eq!(
-            vec![
-                (Some(String::from("a-1.0.0")), vec![String::from(
-                    "feat: add project a"
-                )]),
-                (None, vec![String::from("fix: fix project a")]),
-            ],
-            summary(&releases)
-        );
-        let tag_commit = std::process::Command::new("git")
-            .args(["rev-parse", "a-1.0.0"])
-            .current_dir(dir.path())
-            .output()?
-            .stdout;
-        assert_eq!(
-            Some(String::from_utf8_lossy(&tag_commit).trim().to_string()),
-            releases[0].commit_id
-        );
-        assert_eq!(
-            Some(String::from("a-1.0.0")),
-            previous_version(&releases[1])
-        );
-        Ok(())
-    }
+        fn previous_version(release: &Release<'_>) -> Option<String> {
+            release.previous.as_ref().and_then(|p| p.version.clone())
+        }
 
-    #[test]
-    fn path_filtered_tag_without_commits_is_kept_as_previous_release() -> Result<()> {
-        let dir = monorepo();
-        commit_file(dir.path(), "b/file", "fix: fix project b");
-        commit_file(dir.path(), "README.md", "chore: prepare another release");
-        git(dir.path(), &["tag", "a-1.1.0"]);
-        commit_file(dir.path(), "a/file", "fix: fix project a");
+        #[test]
+        fn path_filtered_tag_is_release_boundary() -> Result<()> {
+            let dir = monorepo();
+            commit_file(dir.path(), "a/file", "fix: fix project a");
+            commit_file(dir.path(), "b/file", "feat: add feature to project b");
 
-        let releases = process(&dir, &[])?;
-        assert_eq!(
-            vec![
-                (Some(String::from("a-1.0.0")), vec![String::from(
-                    "feat: add project a"
-                )]),
-                (None, vec![String::from("fix: fix project a")]),
-            ],
-            summary(&releases)
-        );
-        assert_eq!(
-            Some(String::from("a-1.1.0")),
-            previous_version(&releases[1])
-        );
-        Ok(())
-    }
+            let releases = process(&dir, &[])?;
+            assert_eq!(
+                vec![
+                    (Some(String::from("a-1.0.0")), vec![String::from(
+                        "feat: add project a"
+                    )]),
+                    (None, vec![String::from("fix: fix project a")]),
+                ],
+                summary(&releases)
+            );
+            let tag_commit = std::process::Command::new("git")
+                .args(["rev-parse", "a-1.0.0"])
+                .current_dir(dir.path())
+                .output()?
+                .stdout;
+            assert_eq!(
+                Some(String::from_utf8_lossy(&tag_commit).trim().to_string()),
+                releases[0].commit_id
+            );
+            assert_eq!(
+                Some(String::from("a-1.0.0")),
+                previous_version(&releases[1])
+            );
+            Ok(())
+        }
 
-    #[test]
-    fn path_filtered_first_tag_without_commits_is_previous_release() -> Result<()> {
-        let dir = TempDir::with_prefix("git-cliff-")?;
-        git(dir.path(), &["init", "--initial-branch", "main"]);
-        commit_file(dir.path(), "README.md", "chore: prepare release");
-        git(dir.path(), &["tag", "a-1.0.0"]);
-        commit_file(dir.path(), "a/file", "fix: fix project a");
+        #[test]
+        fn path_filtered_tag_without_commits_is_kept_as_previous_release() -> Result<()> {
+            let dir = monorepo();
+            commit_file(dir.path(), "b/file", "fix: fix project b");
+            commit_file(dir.path(), "README.md", "chore: prepare another release");
+            git(dir.path(), &["tag", "a-1.1.0"]);
+            commit_file(dir.path(), "a/file", "fix: fix project a");
 
-        let releases = process(&dir, &[])?;
-        assert_eq!(
-            vec![(None, vec![String::from("fix: fix project a")])],
-            summary(&releases)
-        );
-        assert_eq!(
-            Some(String::from("a-1.0.0")),
-            previous_version(&releases[0])
-        );
-        Ok(())
-    }
+            let releases = process(&dir, &[])?;
+            assert_eq!(
+                vec![
+                    (Some(String::from("a-1.0.0")), vec![String::from(
+                        "feat: add project a"
+                    )]),
+                    (None, vec![String::from("fix: fix project a")]),
+                ],
+                summary(&releases)
+            );
+            assert_eq!(
+                Some(String::from("a-1.1.0")),
+                previous_version(&releases[1])
+            );
+            Ok(())
+        }
 
-    #[test]
-    fn path_filtered_tag_outside_walk_is_not_release_boundary() -> Result<()> {
-        let dir = monorepo();
-        git(dir.path(), &["switch", "--create", "side"]);
-        commit_file(dir.path(), "README.md", "chore: release from a side branch");
-        git(dir.path(), &["tag", "a-9.0.0"]);
-        git(dir.path(), &["switch", "main"]);
-        commit_file(dir.path(), "a/file", "fix: fix project a");
+        #[test]
+        fn path_filtered_first_tag_without_commits_is_previous_release() -> Result<()> {
+            let dir = TempDir::with_prefix("git-cliff-")?;
+            git(dir.path(), &["init", "--initial-branch", "main"]);
+            commit_file(dir.path(), "README.md", "chore: prepare release");
+            git(dir.path(), &["tag", "a-1.0.0"]);
+            commit_file(dir.path(), "a/file", "fix: fix project a");
 
-        let releases = process(&dir, &[])?;
-        assert_eq!(
-            vec![
-                (Some(String::from("a-1.0.0")), vec![String::from(
-                    "feat: add project a"
-                )]),
-                (None, vec![String::from("fix: fix project a")]),
-            ],
-            summary(&releases)
-        );
-        Ok(())
-    }
+            let releases = process(&dir, &[])?;
+            assert_eq!(
+                vec![(None, vec![String::from("fix: fix project a")])],
+                summary(&releases)
+            );
+            assert_eq!(
+                Some(String::from("a-1.0.0")),
+                previous_version(&releases[0])
+            );
+            Ok(())
+        }
 
-    #[test]
-    fn path_filtered_tag_arg_without_commits_is_unreleased_version() -> Result<()> {
-        let dir = monorepo();
-        commit_file(dir.path(), "b/file", "fix: fix project b");
+        #[test]
+        fn path_filtered_tag_outside_walk_is_not_release_boundary() -> Result<()> {
+            let dir = monorepo();
+            git(dir.path(), &["switch", "--create", "side"]);
+            commit_file(dir.path(), "README.md", "chore: release from a side branch");
+            git(dir.path(), &["tag", "a-9.0.0"]);
+            git(dir.path(), &["switch", "main"]);
+            commit_file(dir.path(), "a/file", "fix: fix project a");
 
-        let releases = process(&dir, &["--tag", "a-2.0.0", "a-1.0.0..HEAD"])?;
-        assert_eq!(
-            vec![(Some(String::from("a-2.0.0")), vec![])],
-            summary(&releases)
-        );
-        Ok(())
+            let releases = process(&dir, &[])?;
+            assert_eq!(
+                vec![
+                    (Some(String::from("a-1.0.0")), vec![String::from(
+                        "feat: add project a"
+                    )]),
+                    (None, vec![String::from("fix: fix project a")]),
+                ],
+                summary(&releases)
+            );
+            Ok(())
+        }
+
+        #[test]
+        fn path_filtered_tag_arg_without_commits_is_unreleased_version() -> Result<()> {
+            let dir = monorepo();
+            commit_file(dir.path(), "b/file", "fix: fix project b");
+
+            let releases = process(&dir, &["--tag", "a-2.0.0", "a-1.0.0..HEAD"])?;
+            assert_eq!(
+                vec![(Some(String::from("a-2.0.0")), vec![])],
+                summary(&releases)
+            );
+            Ok(())
+        }
     }
 }
