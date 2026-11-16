@@ -229,6 +229,22 @@ fn workdir_include_pattern(root: &Path, workdir: &Path) -> Result<Option<Pattern
     Ok(Some(Pattern::new(&pattern)?))
 }
 
+/// The release that `--with-commit` messages belong to: the release named by
+/// `--tag` when the changelog contains it, otherwise the latest release.
+fn custom_commit_release<'a, 'b>(
+    releases: &'a mut [Release<'b>],
+    tag: Option<&str>,
+) -> &'a mut Release<'b> {
+    let index = tag
+        .and_then(|tag| {
+            releases
+                .iter()
+                .position(|release| release.version.as_deref() == Some(tag))
+        })
+        .unwrap_or_else(|| releases.len() - 1);
+    &mut releases[index]
+}
+
 /// Processes the tags and commits for creating release entries for the
 /// changelog.
 ///
@@ -510,13 +526,17 @@ fn process_repository<'a>(
         }
     }
 
-    // Add custom commit messages to the latest release.
+    // Add custom commit messages to the release they belong to.
     if let Some(custom_commits) = &args.with_commit {
-        releases
-            .last_mut()
-            .unwrap()
-            .commits
-            .extend(custom_commits.iter().cloned().map(Commit::from));
+        let release = custom_commit_release(&mut releases, args.tag.as_deref());
+        let commits = custom_commits.iter().cloned().map(Commit::from);
+        if args.sort == Sort::Newest {
+            // Custom commit messages describe the release commit, which is the
+            // newest commit of the release.
+            release.commits.splice(0..0, commits);
+        } else {
+            release.commits.extend(commits);
+        }
     }
 
     // Set the previous release if the first release does not have one set.
@@ -1039,5 +1059,50 @@ mod tests {
         let root = TempDir::with_prefix("git-cliff-")?;
         assert_eq!(None, workdir_include_pattern(root.path(), root.path())?);
         Ok(())
+    }
+
+    fn release_with_version(version: Option<&str>, message: &str) -> Release<'static> {
+        Release {
+            version: version.map(str::to_string),
+            commits: vec![Commit::from(message.to_string())],
+            ..Release::default()
+        }
+    }
+
+    #[test]
+    fn custom_commits_go_to_the_tagged_release() {
+        let mut releases = vec![
+            release_with_version(Some("v1.0.0"), "fix: a bug"),
+            release_with_version(None, "feat: pending"),
+        ];
+        custom_commit_release(&mut releases, Some("v1.0.0"))
+            .commits
+            .extend([Commit::from("chore(release): v1.0.0".to_string())]);
+        assert_eq!(releases[0].commits.len(), 2);
+        assert_eq!(releases[1].commits.len(), 1);
+    }
+
+    #[test]
+    fn custom_commits_go_to_the_unreleased_release_without_tag() {
+        let mut releases = vec![
+            release_with_version(Some("v1.0.0"), "fix: a bug"),
+            release_with_version(None, "feat: pending"),
+        ];
+        custom_commit_release(&mut releases, None)
+            .commits
+            .extend([Commit::from("feat: another".to_string())]);
+        assert_eq!(releases[1].commits.len(), 2);
+    }
+
+    #[test]
+    fn custom_commits_fall_back_to_the_latest_release_for_an_unknown_tag() {
+        let mut releases = vec![
+            release_with_version(Some("v1.0.0"), "fix: a bug"),
+            release_with_version(None, "feat: pending"),
+        ];
+        custom_commit_release(&mut releases, Some("v9.9.9"))
+            .commits
+            .extend([Commit::from("feat: another".to_string())]);
+        assert_eq!(releases[1].commits.len(), 2);
     }
 }
