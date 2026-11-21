@@ -1,22 +1,28 @@
+# Local file paths and URL-encoded template placeholders (not real web URLs).
 file:///
 %7Busername%7D
-https://datatracker.ietf.org
+
+# Email addresses frequently fail automated SMTP/MX verification.
 protonmail
-https://github.com/cocogitto/cocogitto
-pypi.org
+
+# Sites with strict bot protection, JS challenges, or rate limiting / overload errors (403/429/503).
+# - MacPorts (503): https://trac.macports.org/ticket/68563?cversion=0&cnum_hist=14
 https://console.substack.com
-git-cliff/commit/
+https://datatracker.ietf.org
+https://github.com/cocogitto/cocogitto
+https://www.macports.org
 patreon
+pypi.org
+
 # Currently commented out; kept as a reference in case we want to skip npm in the future.
 # See: https://github.com/orgs/community/discussions/174098
-#https://www.npmjs.com
-# GitHub issues and PR links are occasionally unstable (502/403) due to GitHub edge/CDN behavior.
+# https://www.npmjs.com
+
+# GitHub commit, issue, and PR links are occasionally unstable (502/403) or hit rate limits (429).
 # These links are mostly generated in CHANGELOGs and do not need strict availability checks in CI.
+git-cliff/commit/
 https://github.com/.*/issues/.*
 https://github.com/.*/pull/.*
-# MacPorts links frequently suffer from temporary server overloads (503).
-# To prevent flaky builds, these non-critical reference links are excluded from CI checks.
-# See: https://trac.macports.org/ticket/68563?cversion=0&cnum_hist=14
-https://www.macports.org
+
 # The following GitHub user pages return 404 (account may be deleted, suspended, or renamed).
 https://github.com/SAY-5
