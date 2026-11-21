@@ -70,11 +70,11 @@ runs:
       shell: bash
       run: |
         if [ -f expected.md ]; then
-          current_date=$(date +"$IN_DATE_FORMAT")
-          previous_release_timestamp="$IN_PREVIOUS_RELEASE_TIMESTAMP"
-          previous_release_timestamp=$(date -d "$previous_release_timestamp" +%s)
-          current_release_timestamp=$(date +%s)
-          days_since_last_release=$(( (current_release_timestamp - previous_release_timestamp) / 86400 ))
+          current_date=$(date -u +"$IN_DATE_FORMAT")
+          previous_release_date=$(date -u -d "$IN_PREVIOUS_RELEASE_TIMESTAMP" +"$IN_DATE_FORMAT")
+          current_release_day=$(( $(date -u -d "$current_date" +%s) / 86400 ))
+          previous_release_day=$(( $(date -u -d "$previous_release_date" +%s) / 86400 ))
+          days_since_last_release=$(( current_release_day - previous_release_day ))
           sed -i "s/<<DATE>>/$current_date/g" expected.md
           sed -i "s/<<DAYS SINCE LAST RELEASE>>/$days_since_last_release/g" expected.md
           if ! diff --strip-trailing-cr output.md expected.md; then
