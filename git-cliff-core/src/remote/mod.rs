@@ -204,8 +204,15 @@ macro_rules! update_release_metadata {
                 mut commits: Vec<Box<dyn RemoteCommit>>,
                 pull_requests: Vec<Box<dyn RemotePullRequest>>,
             ) -> Result<()> {
+                use std::collections::HashMap;
+
                 let mut contributors: Vec<RemoteContributor> = Vec::new();
                 let mut release_commit_timestamp: Option<i64> = None;
+                // Timestamp of the commit whose pull request is currently
+                // reported as a contributor's `pr_number`. Commits are listed
+                // newest first, so the earliest one seen for a contributor is
+                // their first contribution to this release.
+                let mut first_contribution: HashMap<String, i64> = HashMap::new();
                 // retain the commits that are not a part of this release for later
                 // on checking the first contributors.
                 commits.retain(|v| {
@@ -230,6 +237,23 @@ macro_rules! update_release_metadata {
                                 if !existing.pr_numbers.contains(&pr_num) {
                                     existing.pr_numbers.push(pr_num);
                                 }
+                                // Keep `pr_number` on the earliest commit so it
+                                // is the first contribution instead of the latest
+                                // pull request. Commits without a pull request do
+                                // not overwrite it.
+                                if let (Some(username), Some(timestamp)) =
+                                    (&commit.$remote.username, v.timestamp())
+                                {
+                                    let is_first = first_contribution
+                                        .get(username)
+                                        .is_none_or(|first| timestamp < *first);
+                                    if is_first {
+                                        first_contribution.insert(username.clone(), timestamp);
+                                        existing.pr_number = Some(pr_num);
+                                        existing.pr_title = commit.$remote.pr_title.clone();
+                                        existing.pr_labels = commit.$remote.pr_labels.clone();
+                                    }
+                                }
                             }
                         } else {
                             contributors.push(RemoteContributor {
@@ -245,6 +269,11 @@ macro_rules! update_release_metadata {
                                 pr_labels: commit.$remote.pr_labels.clone(),
                                 is_first_time: false,
                             });
+                            if let (Some(username), Some(timestamp)) =
+                                (&commit.$remote.username, v.timestamp())
+                            {
+                                first_contribution.insert(username.clone(), timestamp);
+                            }
                         }
                         commit.remote = Some(commit.$remote.clone());
                         // if remote commit is the release commit store timestamp for
