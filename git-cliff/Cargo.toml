@@ -75,6 +75,12 @@ path = "../git-cliff-core"
 pretty_assertions = "1.4.1"
 serial_test = { version = "3.5.0", default-features = false }
 temp-dir = "0.1.16"
+criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }
+git2 = { version = "0.21", default-features = false }
+
+[[bench]]
+name = "changelog"
+harness = false
 
 [lints]
 workspace = true
