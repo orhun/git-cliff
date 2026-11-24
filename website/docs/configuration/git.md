@@ -422,6 +422,8 @@ Examples:
 
 These extracted links can be used in the [template](/docs/templating/context) with `commit.links` variable.
 
+Link parsers run on the full commit message, including the body and footers. See [Link the issues a commit closes](/docs/tips-and-tricks#link-the-issues-a-commit-closes) for an example.
+
 ### limit_commits
 
 `limit_commits` is an **optional** positive integer number that limits the number of included commits in the generated changelog.
