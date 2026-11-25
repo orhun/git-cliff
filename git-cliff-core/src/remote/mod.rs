@@ -25,7 +25,9 @@ use std::time::Duration;
 use cacache::RemoveOpts;
 use dyn_clone::DynClone;
 use etcetera::{BaseStrategy, choose_base_strategy};
-use http_cache_reqwest::{CACacheManager, Cache, CacheMode, HttpCache, HttpCacheOptions};
+use http_cache_reqwest::{
+    CACacheManager, Cache, CacheMode, CacheOptions, HttpCache, HttpCacheOptions,
+};
 use reqwest::Client;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
@@ -137,7 +139,13 @@ impl Remote {
                     path: strategy.cache_dir().join(env!("CARGO_PKG_NAME")),
                     remove_opts: RemoveOpts::default(),
                 },
-                options: HttpCacheOptions::default(),
+                options: HttpCacheOptions {
+                    cache_options: Some(CacheOptions {
+                        shared: false,
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                },
             }))
             .build();
         Ok(client)
