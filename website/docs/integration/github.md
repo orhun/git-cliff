@@ -126,7 +126,7 @@ This can be used in the template as follows:
 ```
 {% for commit in commits %}
   * {{ commit.message | split(pat="\n") | first | trim }}\
-    {% if commit.remote.username %} by @{{ commit.remote.username | replace(from="[bot]", to="") }}{%- endif %}\
+    {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif %}\
     {% if commit.remote.pr_number %} in #{{ commit.remote.pr_number }}{%- endif %}
 {%- endfor -%}
 ```
@@ -145,7 +145,7 @@ the merging user's account. A template that wants to credit the contributor can 
 `pr_author`:
 
 ```jinja2
-{% if commit.remote.pr_author or commit.remote.username %} by @{{ commit.remote.pr_author | default(value=commit.remote.username) | replace(from="[bot]", to="") }}{% endif %}
+{% if commit.remote.pr_author or commit.remote.username %} by @{{ commit.remote.pr_author | default(value=commit.remote.username) }}{% endif %}
 ```
 
 The guard matters: `commit.remote` is absent for any commit the remote API did not return, and an
@@ -187,7 +187,7 @@ This can be used in the template as follows:
 
 ```
 {% for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
-  * @{{ contributor.username | replace(from="[bot]", to="") }} made their first contribution in #{{ contributor.pr_number }}
+  * @{{ contributor.username }} made their first contribution in #{{ contributor.pr_number }}
 {%- endfor -%}
 ```
 
