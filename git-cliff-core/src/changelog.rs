@@ -328,16 +328,22 @@ impl<'a> Changelog<'a> {
                             return Err(err);
                         }
                     };
-                    let (commits, merge_requests) = tokio::try_join!(
-                        // Send id to these functions
-                        gitlab_client.get_commits(
-                            project_id.expect("Project id is required for git-cliff semantics"),
-                            ref_name
-                        ),
-                        gitlab_client.get_pull_requests(
-                            project_id.expect("Project id is required for git-cliff semantics")
-                        ),
-                    )?;
+                    let project_id =
+                        project_id.expect("Project id is required for git-cliff semantics");
+                    let relevant_commit_ids: HashSet<&str> = self
+                        .releases
+                        .iter()
+                        .flat_map(|release| {
+                            release
+                                .commits
+                                .iter()
+                                .chain(release.submodule_commits.values().flatten())
+                        })
+                        .map(|commit| commit.id.as_str())
+                        .collect();
+                    let (commits, merge_requests) = gitlab_client
+                        .get_metadata(project_id, ref_name, Some(&relevant_commit_ids))
+                        .await?;
                     tracing::debug!("Number of GitLab commits: {}", commits.len());
                     tracing::debug!("Number of GitLab merge requests: {}", merge_requests.len());
                     Ok((commits, merge_requests))
