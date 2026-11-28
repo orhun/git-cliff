@@ -116,6 +116,11 @@ features = ["debug-embed", "compression"]
 pretty_assertions = "1.4.1"
 expect-test = "1.5.1"
 temp-dir = "0.1.16"
+criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }
+
+[[bench]]
+name = "changelog"
+harness = false
 
 [package.metadata.docs.rs]
 all-features = true
