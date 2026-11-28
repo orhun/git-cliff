@@ -1099,15 +1099,6 @@ mod test {
                     is_first_time: true,
                 },
                 RemoteContributor {
-                    username: Some(String::from("orhun")),
-                    pr_author: None,
-                    pr_title: Some(String::from("1")),
-                    pr_number: Some(42),
-                    pr_numbers: vec![42, 66, 999_999],
-                    pr_labels: vec![String::from("rust")],
-                    is_first_time: true,
-                },
-                RemoteContributor {
                     username: Some(String::from("nuhro")),
                     pr_author: None,
                     pr_title: Some(String::from("3")),
@@ -1125,9 +1116,96 @@ mod test {
                     pr_labels: vec![String::from("deps")],
                     is_first_time: true,
                 },
+                RemoteContributor {
+                    username: Some(String::from("orhun")),
+                    pr_author: None,
+                    pr_title: Some(String::from("5")),
+                    pr_number: Some(999_999),
+                    pr_numbers: vec![42, 66, 999_999],
+                    pr_labels: vec![String::from("github")],
+                    is_first_time: true,
+                },
             ],
         };
         assert_eq!(expected_metadata, release.github);
+
+        Ok(())
+    }
+
+    #[cfg(feature = "github")]
+    #[test]
+    fn update_github_metadata_points_at_the_first_pull_request() -> Result<()> {
+        use crate::remote::github::{
+            GitHubCommit, GitHubCommitAuthor, GitHubCommitDetails, GitHubCommitDetailsAuthor,
+            GitHubPullRequest,
+        };
+
+        // The commits are listed newest first, like the GitHub API returns them,
+        // so the contributor is created from the newest commit: the oldest one
+        // is the first contribution and its pull request has to end up in
+        // `pr_number`.
+        let newest_sha = String::from("e6f1b0d4d4e0e1f0a5f1b3a2c4d5e6f708091011");
+        let oldest_sha = String::from("0b1c2d3e4f5061728394a5b6c7d8e9f011223344");
+        let mut release = Release {
+            version: Some(String::from("1.0.0")),
+            commits: vec![
+                Commit::from(format!("{newest_sha} add the feature")),
+                Commit::from(format!("{oldest_sha} fix the feature")),
+            ],
+            ..Default::default()
+        };
+        release.update_github_metadata(
+            vec![
+                Box::new(GitHubCommit {
+                    sha: newest_sha.clone(),
+                    author: Some(GitHubCommitAuthor {
+                        login: Some(String::from("contributor")),
+                    }),
+                    commit: Some(GitHubCommitDetails {
+                        author: GitHubCommitDetailsAuthor {
+                            date: String::from("2024-01-02T10:00:00+00:00"),
+                        },
+                    }),
+                }) as Box<dyn RemoteCommit>,
+                Box::new(GitHubCommit {
+                    sha: oldest_sha.clone(),
+                    author: Some(GitHubCommitAuthor {
+                        login: Some(String::from("contributor")),
+                    }),
+                    commit: Some(GitHubCommitDetails {
+                        author: GitHubCommitDetailsAuthor {
+                            date: String::from("2024-01-01T10:00:00+00:00"),
+                        },
+                    }),
+                }) as Box<dyn RemoteCommit>,
+            ],
+            vec![
+                Box::new(GitHubPullRequest {
+                    user: Some(GitHubCommitAuthor {
+                        login: Some(String::from("contributor")),
+                    }),
+                    title: Some(String::from("second pull request")),
+                    number: 200,
+                    merge_commit_sha: Some(newest_sha),
+                    labels: vec![],
+                }) as Box<dyn RemotePullRequest>,
+                Box::new(GitHubPullRequest {
+                    user: Some(GitHubCommitAuthor {
+                        login: Some(String::from("contributor")),
+                    }),
+                    title: Some(String::from("first pull request")),
+                    number: 100,
+                    merge_commit_sha: Some(oldest_sha),
+                    labels: vec![],
+                }) as Box<dyn RemotePullRequest>,
+            ],
+        )?;
+
+        assert_eq!(release.github.contributors.len(), 1);
+        let contributor = &release.github.contributors[0];
+        assert_eq!(contributor.pr_numbers, vec![100, 200]);
+        assert_eq!(contributor.pr_number, Some(100));
+        assert_eq!(contributor.pr_title.as_deref(), Some("first pull request"));
 
         Ok(())
     }
@@ -1204,7 +1282,7 @@ mod test {
                     authored_date: Some(String::new()),
                     committer_name: Some(String::new()),
                     committer_email: Some(String::new()),
-                    committed_date: Some(String::new()),
+                    committed_date: Some(String::from("2021-07-18T15:14:39+03:00")),
                     created_at: Some(String::new()),
                     message: Some(String::new()),
                     parent_ids: vec![],
@@ -1219,7 +1297,7 @@ mod test {
                     authored_date: Some(String::new()),
                     committer_name: Some(String::new()),
                     committer_email: Some(String::new()),
-                    committed_date: Some(String::new()),
+                    committed_date: Some(String::from("2021-07-18T15:12:19+03:00")),
                     created_at: Some(String::new()),
                     message: Some(String::new()),
                     parent_ids: vec![],
@@ -1234,7 +1312,7 @@ mod test {
                     authored_date: Some(String::new()),
                     committer_name: Some(String::new()),
                     committer_email: Some(String::new()),
-                    committed_date: Some(String::new()),
+                    committed_date: Some(String::from("2021-07-18T15:07:23+03:00")),
                     created_at: Some(String::new()),
                     message: Some(String::new()),
                     parent_ids: vec![],
@@ -1249,7 +1327,7 @@ mod test {
                     authored_date: Some(String::new()),
                     committer_name: Some(String::new()),
                     committer_email: Some(String::new()),
-                    committed_date: Some(String::new()),
+                    committed_date: Some(String::from("2021-07-18T15:05:10+03:00")),
                     created_at: Some(String::new()),
                     message: Some(String::new()),
                     parent_ids: vec![],
@@ -1264,7 +1342,7 @@ mod test {
                     authored_date: Some(String::new()),
                     committer_name: Some(String::new()),
                     committer_email: Some(String::new()),
-                    committed_date: Some(String::new()),
+                    committed_date: Some(String::from("2021-07-18T15:03:30+03:00")),
                     created_at: Some(String::new()),
                     message: Some(String::new()),
                     parent_ids: vec![],
@@ -1279,7 +1357,7 @@ mod test {
                     authored_date: Some(String::new()),
                     committer_name: Some(String::new()),
                     committer_email: Some(String::new()),
-                    committed_date: Some(String::new()),
+                    committed_date: Some(String::from("2021-07-18T15:00:38+03:00")),
                     created_at: Some(String::new()),
                     message: Some(String::new()),
                     parent_ids: vec![],
@@ -1294,7 +1372,7 @@ mod test {
                     authored_date: Some(String::new()),
                     committer_name: Some(String::new()),
                     committer_email: Some(String::new()),
-                    committed_date: Some(String::new()),
+                    committed_date: Some(String::from("2021-07-18T15:00:38+03:00")),
                     created_at: Some(String::new()),
                     message: Some(String::new()),
                     parent_ids: vec![],
@@ -1309,7 +1387,7 @@ mod test {
                     authored_date: Some(String::new()),
                     committer_name: Some(String::new()),
                     committer_email: Some(String::new()),
-                    committed_date: Some(String::new()),
+                    committed_date: Some(String::from("2021-07-18T15:00:38+03:00")),
                     created_at: Some(String::new()),
                     message: Some(String::new()),
                     parent_ids: vec![],
@@ -1888,15 +1966,6 @@ mod test {
                     is_first_time: true,
                 },
                 RemoteContributor {
-                    username: Some(String::from("orhun")),
-                    pr_author: None,
-                    pr_title: Some(String::from("1")),
-                    pr_number: Some(42),
-                    pr_numbers: vec![42, 66, 999_999],
-                    pr_labels: vec![String::from("rust")],
-                    is_first_time: true,
-                },
-                RemoteContributor {
                     username: Some(String::from("nuhro")),
                     pr_author: None,
                     pr_title: Some(String::from("3")),
@@ -1912,6 +1981,15 @@ mod test {
                     pr_number: Some(1_000),
                     pr_numbers: vec![1_000],
                     pr_labels: vec![String::from("deps")],
+                    is_first_time: true,
+                },
+                RemoteContributor {
+                    username: Some(String::from("orhun")),
+                    pr_author: None,
+                    pr_title: Some(String::from("5")),
+                    pr_number: Some(999_999),
+                    pr_numbers: vec![42, 66, 999_999],
+                    pr_labels: vec![String::from("github")],
                     is_first_time: true,
                 },
             ],
