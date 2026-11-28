@@ -109,6 +109,30 @@ commit_parsers = [
 {% endif %}
 ```
 
+## Link the issues a commit closes
+
+[`link_parsers`](/docs/configuration/git#link_parsers) run on the whole commit message, body included. When pull requests are squash-merged, the PR description usually ends up in the commit body, so a parser can collect closing keywords such as `Closes #123` or `Fixes: #45`:
+
+```toml
+[git]
+link_parsers = [
+  { pattern = '(?i)\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?):?\s+#(\d+)', text = "#$1", href = "https://github.com/orhun/git-cliff/issues/$1" },
+]
+```
+
+Then render the links next to each entry:
+
+```jinja2
+- {{ commit.message | split(pat="\n") | first | upper_first }}\
+  {% for link in commit.links %} ([{{ link.text }}]({{ link.href }})){% endfor %}
+```
+
+:::tip
+
+Every link parser runs on the message, so adding a generic `#(\d+)` parser as well would link the same issue twice. Keep only the closing-keyword parser if you want just the closed issues.
+
+:::
+
 ## Use GitHub PR labels as groups
 
 ```toml
