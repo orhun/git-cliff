@@ -59,7 +59,6 @@ fn determine_commit_range(
         args.topo_order,
         args.use_branch_tags,
     )?;
-
     let mut commit_range = args.range.clone();
     if args.unreleased {
         if let Some(last_tag) = tags.last().map(|(k, _)| k) {
@@ -244,42 +243,7 @@ fn process_repository<'a>(
         args.topo_order,
         args.use_branch_tags,
     )?;
-    let skip_regex = config.git.skip_tags.as_ref();
-    let ignore_regex = config.git.ignore_tags.as_ref();
-    let count_tags = config.git.count_tags.as_ref();
     let recurse_submodules = config.git.recurse_submodules.unwrap_or(false);
-    let compute_commit_statistics = args.context || config.uses_commit_statistics()?;
-    tags.retain(|_, tag| {
-        let name = &tag.name;
-
-        // Keep skip tags to drop commits in the later stage.
-        let skip = skip_regex.is_some_and(|r| r.is_match(name));
-        if skip {
-            return true;
-        }
-
-        let count = count_tags.is_none_or(|r| {
-            let count_tag = r.is_match(name);
-            if count_tag {
-                tracing::debug!("Counting release: {name}");
-            }
-            count_tag
-        });
-
-        let ignore = ignore_regex.is_some_and(|r| {
-            if r.as_str().trim().is_empty() {
-                return false;
-            }
-
-            let ignore_tag = r.is_match(name);
-            if ignore_tag {
-                tracing::debug!("Ignoring release: {name}");
-            }
-            ignore_tag
-        });
-
-        count && !ignore
-    });
 
     if !config.remote.is_any_set() {
         match repository.upstream_remote() {
@@ -369,6 +333,7 @@ fn process_repository<'a>(
     let include_path = (!include_path.is_empty()).then_some(include_path);
     let exclude_path =
         (!config.git.exclude_paths.is_empty()).then_some(config.git.exclude_paths.clone());
+    let compute_commit_statistics = config.uses_commit_statistics()?;
     let mut commits = repository.commits(
         commit_range.as_deref(),
         include_path,
@@ -856,6 +821,10 @@ pub fn run_with_changelog_modifier<'a>(
         config.bump.bump_type = Some(bump_type);
     }
 
+    if let Some(prerelease) = &args.prerelease {
+        config.bump.pre_release = Some(prerelease.clone());
+    }
+
     // Generate changelog from context.
     let mut changelog: Changelog = if let Some(context_path) = args.from_context {
         let mut input: Box<dyn io::Read> = if context_path == Path::new("-") {
@@ -995,6 +964,7 @@ pub fn write_changelog<W: io::Write>(
             return Ok(());
         }
     }
+    changelog.filter_releases();
     if args.context {
         changelog.write_context(&mut out)?;
         return Ok(());
